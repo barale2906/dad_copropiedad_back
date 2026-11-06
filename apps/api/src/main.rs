@@ -1,14 +1,10 @@
 //! Punto de entrada del servicio HTTP de DAD_COPROPIEDAD.
 
-mod error;
-mod routes;
-mod state;
-
 use anyhow::Context;
 use shared::{AppConfig, telemetry};
 use tokio::net::TcpListener;
 
-use crate::state::AppState;
+use api::{routes, state::AppState};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

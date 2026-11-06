@@ -1,0 +1,165 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DAD_COPROPIEDAD API",
+    "description": "API REST para la gestión de copropiedades sometidas al régimen de propiedad horizontal (Ley 675 de 2001).\n\n- Rutas de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/…`\n- Rutas de la cuenta autenticada: `/api/v1/yo/…`\n- Rutas globales de la plataforma: `/api/v1/plataforma/…`\n\nErrores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` (ver el esquema `CodigoError`). Listados: paginación por cursor con `?limite=&despues=`.",
+    "contact": {
+      "name": "DAD AI & SYSTEMS"
+    },
+    "license": {
+      "name": "LicenseRef-Proprietary",
+      "identifier": "LicenseRef-Proprietary"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "Liveness: el proceso está vivo. No toca dependencias externas.",
+        "operationId": "liveness",
+        "responses": {
+          "200": {
+            "description": "Proceso vivo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoVivo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "Readiness: el servicio puede atender tráfico (PostgreSQL responde).",
+        "operationId": "readiness",
+        "responses": {
+          "200": {
+            "description": "Listo para atender",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoListo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Una dependencia no responde (`no_disponible`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CodigoError": {
+        "type": "string",
+        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
+        "enum": [
+          "peticion_invalida",
+          "no_encontrado",
+          "conflicto_estado",
+          "ya_voto",
+          "no_inscrito",
+          "validacion",
+          "interno",
+          "no_disponible"
+        ]
+      },
+      "DetalleError": {
+        "type": "object",
+        "description": "Código estable y mensaje legible del error.",
+        "required": [
+          "codigo",
+          "mensaje"
+        ],
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/CodigoError"
+          },
+          "mensaje": {
+            "type": "string",
+            "description": "Mensaje para mostrar o registrar; nunca incluye detalles internos."
+          }
+        }
+      },
+      "ErrorRespuesta": {
+        "type": "object",
+        "description": "Cuerpo de toda respuesta de error.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/DetalleError"
+          }
+        },
+        "example": {
+          "error": {
+            "codigo": "no_encontrado",
+            "mensaje": "ruta no encontrada"
+          }
+        }
+      },
+      "EstadoListo": {
+        "type": "object",
+        "description": "El servicio puede atender tráfico.",
+        "required": [
+          "status",
+          "database"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "database": {
+            "type": "string",
+            "example": "ok"
+          }
+        }
+      },
+      "EstadoVivo": {
+        "type": "object",
+        "description": "El proceso está vivo.",
+        "required": [
+          "status",
+          "version"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "version": {
+            "type": "string",
+            "description": "Versión del binario desplegado.",
+            "example": "0.1.0"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "salud",
+      "description": "Sondas de vida y disponibilidad del servicio"
+    }
+  ]
+}

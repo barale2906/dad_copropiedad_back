@@ -131,6 +131,7 @@ mod tests {
             run_migrations: false,
             request_timeout: Duration::from_secs(5),
             log_format: LogFormat::Pretty,
+            docs_api_habilitada: false,
         };
         let db = PgPoolOptions::new()
             .connect_lazy(&config.database_url)

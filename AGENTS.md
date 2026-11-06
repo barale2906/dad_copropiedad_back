@@ -96,7 +96,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Criptografía | hmac + sha2 + hex | En uso | Firma de webhooks de Meta. |
 | Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
 | Limitador | governor | Previsto | 80 mensajes/s por línea. |
-| OpenAPI | utoipa (+ utoipa-swagger-ui / utoipa-scalar) | Previsto | Contrato de la API REST (§7). |
+| OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
 | Actas | Typst | Previsto | En `infra-pdf`. |
 | Contenedores | Docker Compose (dev) | En uso | Imagen de producción construida en CI. |
 | CI/CD | GitHub Actions | En uso | `.github/workflows/ci.yml`: fmt, clippy, pruebas con PostgreSQL, rustdoc, cargo-deny. Pendiente: build de imagen y despliegue. |
@@ -143,7 +143,7 @@ dos familias complementarias:
 | Adaptadores externos | Firma, parseo y normalización de payloads | `crates/infra-*` con fixtures reales (JSON de ejemplo de Meta) |
 | Funcionales de API | Endpoint completo: petición → respuesta y efectos | `tower::ServiceExt::oneshot` sobre el `router` de cada app (`apps/*/src/routes`); con BD real vía `#[sqlx::test]` cuando aplique |
 | Concurrencia | Emisiones simultáneas del mismo bien privado → un único voto | `tokio::spawn` + `#[sqlx::test]` |
-| Contrato | El OpenAPI generado coincide con lo publicado | Prueba que serializa el documento OpenAPI (cuando exista utoipa) |
+| Contrato | El OpenAPI generado coincide con `apps/api/openapi.json` | `apps/api/tests/contrato_openapi.rs`; regenerar a propósito con `make openapi` |
 
 Reglas:
 - Cada regla de negocio tiene al menos un caso positivo y uno negativo; cada invariante de §9 tiene una prueba que fallaría si se rompe.
@@ -175,7 +175,10 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - Enlaces internos con `[`Tipo`]` (intra-doc links); `make doc` debe pasar sin advertencias.
 - **Cada endpoint REST** se anota con `#[utoipa::path]`: método, ruta, parámetros, cuerpo, respuestas (incluidos errores con su `codigo`), seguridad y etiqueta del módulo. Cada DTO de entrada/salida deriva `ToSchema` con descripciones y ejemplos. Un endpoint sin documentación OpenAPI no está terminado.
 - DTOs de la API viven en `apps/api` (no se exponen entidades de dominio directamente); versionado en la ruta (`/api/v1`).
-- Formato de error uniforme: `{ "error": { "codigo": "...", "mensaje": "..." } }`; documentar cada `codigo` posible.
+- Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global). Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
+- Handlers con los extractores de `api::extractores` (`Json`, `Query`, `Path`), nunca los de `axum` directamente: así una petición mal formada también responde con el error uniforme (`peticion_invalida`).
+- Listados paginados por cursor: `ParametrosPagina` (`?limite=&despues=`) → `application::SolicitudPagina` → el repositorio consulta `filas_a_consultar()` → `Pagina::desde_filas` → `PaginaRespuesta<T>`. Nunca `OFFSET`.
+- Formato de error uniforme: `{ "error": { "codigo": "...", "mensaje": "..." } }` (`ErrorRespuesta`). Los códigos viven en `CodigoError` (`apps/api/src/error.rs`) con su tabla código → HTTP → significado; un código nuevo se agrega ahí y en la tabla.
 - Comentarios de línea solo para explicar el *porqué* (decisiones, normas legales, riesgos), no el *qué*.
 - Decisiones de arquitectura relevantes: registrar un ADR breve en `docs/adr/NNNN-titulo.md` (contexto, decisión, consecuencias).
 - `README.md`: cómo arrancar y operar. `AGENTS.md`: estándares. Mantener ambos al día.
@@ -244,6 +247,7 @@ Una tarea está terminada solo si:
 | Verificación completa | `make verificar` | `cargo fmt --all --check && cargo lint && cargo pruebas` |
 | Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) |
 | Documentación | `make doc` | `cargo doc --workspace --no-deps` |
+| Contrato OpenAPI | `make openapi` | `ACTUALIZAR_OPENAPI=1 cargo nextest run -p api --test contrato_openapi` |
 | Migraciones | `make migracion NOMBRE=x` · `make migrar` · `make revertir` | `sqlx migrate add -r x` … |
 | Dependencias | `make deny` · `make audit` | `cargo deny check` · `cargo audit` |
 

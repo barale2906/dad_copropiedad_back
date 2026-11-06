@@ -25,6 +25,11 @@ tokio = { version = "1.54.1", features = ["full"] }
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.7.1", features = ["trace", "cors", "request-id", "timeout", "util", "limit"] }
 
+# Contrato OpenAPI de la API REST (AGENTS.md §7)
+utoipa = { version = "6.0.0", features = ["axum_extras", "uuid", "chrono", "decimal", "preserve_order", "preserve_path_order"] }
+utoipa-axum = "0.3.0"
+utoipa-scalar = { version = "0.4.0", features = ["axum"] }
+
 # Serialización
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"

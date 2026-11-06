@@ -16,7 +16,7 @@ CARGO   := cargo
 .PHONY: help herramientas env setup \
 	    up down reiniciar-bd ps logs psql redis \
 	    api gateway dev \
-	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir \
+	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir openapi \
 	    migrar migracion revertir migraciones sqlx-prepare \
 	    deny audit build release limpiar
 
@@ -107,6 +107,9 @@ doc: ## Genera la documentación del código (rustdoc) sin advertencias → targ
 
 doc-abrir: ## Genera y abre la documentación en el navegador
 	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --workspace --no-deps --open
+
+openapi: ## Regenera el contrato apps/api/openapi.json tras cambiar rutas o DTOs (revisar el diff)
+	ACTUALIZAR_OPENAPI=1 $(CARGO) nextest run -p api --test contrato_openapi
 
 ##@ Base de datos (migraciones con DATABASE_URL = dueño del esquema)
 migrar: ## Aplica las migraciones pendientes

@@ -31,6 +31,9 @@ cargo gateway                 # webhook de WhatsApp en :8081
 curl localhost:8080/health    # {"status":"ok",...}
 curl localhost:8080/ready     # {"database":"ok","status":"ok"}
 ```
+Con `API_DOCS_HABILITADA=true` (así viene en `.env.example`): documentación interactiva en
+<http://localhost:8080/docs> y contrato en <http://localhost:8080/api-docs/openapi.json>.
+
 > El rol `dad_app` se crea con login la **primera vez** que se crea el volumen de PostgreSQL
 > (`docker/postgres/init`). Si ya tenías el volumen: `docker compose down -v && docker compose up -d --wait`.
 
@@ -66,5 +69,6 @@ sqlx migrate revert            # revertir la última
 
 ## Estándares y documentación
 - [`AGENTS.md`](AGENTS.md): **estándares obligatorios** (arquitectura, reutilización, pruebas, documentación, invariantes). Lo leen todas las herramientas: Claude Code (`CLAUDE.md`), Cursor (`.cursor/rules`), VS Code Copilot (`.github/copilot-instructions.md`), opencode y Codex.
-- `make doc`: documentación del código con rustdoc (`target/doc`). La documentación OpenAPI/Swagger de la API REST se generará con utoipa.
+- `make doc`: documentación del código con rustdoc (`target/doc`).
+- Contrato de la API REST: [`apps/api/openapi.json`](apps/api/openapi.json), generado con utoipa desde las rutas. Si cambias rutas o DTOs, `make openapi` lo regenera (una prueba falla si queda desactualizado).
 - [`docs/adr/`](docs/adr/): decisiones de arquitectura.

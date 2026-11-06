@@ -47,6 +47,9 @@ pub struct AppConfig {
     pub run_migrations: bool,
     pub request_timeout: Duration,
     pub log_format: LogFormat,
+    /// Publica la documentación interactiva (`/docs`) y el contrato (`/api-docs/openapi.json`).
+    /// Desactivada por defecto: en producción solo se activa si el acceso está protegido.
+    pub docs_api_habilitada: bool,
 }
 
 // `Debug` manual para no imprimir credenciales de la base de datos en los logs.
@@ -64,6 +67,7 @@ impl std::fmt::Debug for AppConfig {
             .field("run_migrations", &self.run_migrations)
             .field("request_timeout", &self.request_timeout)
             .field("log_format", &self.log_format)
+            .field("docs_api_habilitada", &self.docs_api_habilitada)
             .finish()
     }
 }
@@ -89,6 +93,7 @@ impl AppConfig {
             run_migrations: parse_or("RUN_MIGRATIONS", false)?,
             request_timeout: Duration::from_secs(parse_or("REQUEST_TIMEOUT_SECS", 30)?),
             log_format: parse_or("LOG_FORMAT", LogFormat::Pretty)?,
+            docs_api_habilitada: parse_or("API_DOCS_HABILITADA", false)?,
         };
         if config.run_migrations && config.migrations_database_url.is_none() {
             return Err(ConfigError::Missing("DATABASE_URL"));

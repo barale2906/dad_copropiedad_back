@@ -6,6 +6,10 @@ pub enum AppError {
     #[error(transparent)]
     Dominio(#[from] DominioError),
 
+    /// Datos de entrada que no cumplen las reglas del caso de uso (p. ej. límite de página).
+    #[error("{0}")]
+    Validacion(String),
+
     #[error("{0} no encontrada")]
     NoEncontrado(&'static str),
 

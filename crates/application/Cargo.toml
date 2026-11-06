@@ -17,6 +17,7 @@ chrono.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 rust_decimal = { workspace = true, features = ["macros"] }
