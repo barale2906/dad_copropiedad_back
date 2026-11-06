@@ -1,0 +1,83 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar API (dad_copropiedad_api)",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "api",
+          "--bin",
+          "dad_copropiedad_api"
+        ],
+        "filter": {
+          "name": "dad_copropiedad_api",
+          "kind": "bin"
+        }
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar gateway (dad_copropiedad_gateway)",
+      "cargo": {
+        "args": [
+          "build",
+          "-p",
+          "gateway",
+          "--bin",
+          "dad_copropiedad_gateway"
+        ],
+        "filter": {
+          "name": "dad_copropiedad_gateway",
+          "kind": "bin"
+        }
+      },
+      "envFile": "${workspaceFolder}/.env",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar pruebas del dominio",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "-p",
+          "domain",
+          "--lib"
+        ],
+        "filter": {
+          "name": "domain",
+          "kind": "lib"
+        }
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Depurar pruebas de aplicación",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "-p",
+          "application",
+          "--lib"
+        ],
+        "filter": {
+          "name": "application",
+          "kind": "lib"
+        }
+      },
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

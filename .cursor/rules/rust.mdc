@@ -1,0 +1,16 @@
+---
+description: Convenciones Rust del backend DAD_COPROPIEDAD
+globs: ["**/*.rs", "**/Cargo.toml"]
+alwaysApply: false
+---
+
+Sigue `AGENTS.md` en la raíz del repositorio. Resumen para código Rust:
+
+- Arquitectura hexagonal: `domain ← application ← infra-* ← apps/*`. `domain` sin IO; `application` solo depende de `domain` y define los puertos (traits).
+- Lógica de negocio en `crates/domain` / `crates/application`; los handlers de `apps/*` y los adaptadores `infra-*` solo traducen.
+- Errores con `thiserror` por crate (`DominioError` → `AppError` → `ApiError`); mapeo a HTTP solo en `apps/api/src/error.rs`. Nada de `unwrap()` fuera de pruebas.
+- Dinero y coeficientes con `rust_decimal::Decimal`, nunca `f64`. Tiempo vía el puerto `Reloj`.
+- Todo acceso a datos dentro de `transaccion_tenant` (multi-tenant con RLS).
+- Nombres de dominio en español.
+- Dependencias nuevas en `[workspace.dependencies]` del `Cargo.toml` raíz.
+- Al terminar: `cargo fmt --all && cargo lint && cargo pruebas`.

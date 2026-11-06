@@ -1,0 +1,7 @@
+# Atajos del proyecto:  cargo lint | cargo pruebas | cargo cov | cargo api | cargo gateway
+[alias]
+lint = "clippy --workspace --all-targets --all-features -- -D warnings"
+pruebas = "nextest run --workspace"
+cov = "llvm-cov nextest --workspace --html"
+api = "run -p api --bin dad_copropiedad_api"
+gateway = "run -p gateway --bin dad_copropiedad_gateway"

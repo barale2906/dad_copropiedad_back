@@ -1,0 +1,38 @@
+# Políticas de dependencias:  cargo deny check
+# Documentación: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+all-features = false
+
+[advisories]
+# Vulnerabilidades conocidas (RustSec). Toda excepción debe documentarse con motivo.
+ignore = []
+
+[licenses]
+# Licencias permisivas compatibles con software propietario. Agregar con criterio.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+# Los crates internos (publish = false) no se evalúan por licencia.
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

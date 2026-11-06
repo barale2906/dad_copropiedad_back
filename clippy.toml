@@ -1,0 +1,4 @@
+# En pruebas se permite unwrap/expect para mantenerlas legibles.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-dbg-in-tests = true

@@ -1,0 +1,26 @@
+[package]
+name = "application"
+description = "Casos de uso y puertos (traits) de DAD_COPROPIEDAD: Repositorio, Mensajeria, Reloj…"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Regla de arquitectura: solo depende de `domain`. Nada de SQLx, Axum, Redis ni clientes HTTP:
+# esas tecnologías viven en los adaptadores `infra-*`, que implementan los puertos de aquí.
+[dependencies]
+domain.workspace = true
+
+chrono.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+rust_decimal = { workspace = true, features = ["macros"] }
+tokio.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,12 @@
+---
+description: Reglas para migraciones y consultas SQL (multi-tenant y votaciones)
+globs: ["migrations/**/*.sql", "crates/infra-postgres/**/*.rs"]
+alwaysApply: false
+---
+
+- Nunca edites una migración existente: crea otra con `sqlx migrate add -r <nombre>` (con su `.down.sql`).
+- Toda tabla de negocio lleva `tenant_id`, FK compuestas `(tenant_id, …)`, `ENABLE ROW LEVEL SECURITY` y la política `aislamiento_tenant`; otorga a `dad_app` solo los permisos necesarios.
+- Consultas entre tenants solo con funciones `SECURITY DEFINER` (`SET search_path`, `REVOKE … FROM PUBLIC`).
+- Respeta los invariantes de `AGENTS.md` § "Invariantes críticos de votaciones":
+  unicidad por inmueble, idempotencia (`idempotency_key` y `wamid`), transacción única con outbox, secreto del voto (tabla `votos` sin inmueble/participación/hora, id UUID v4), append-only.
+- Enumeraciones como `TEXT` + `CHECK`, coeficientes `NUMERIC(10,8)`, fechas `TIMESTAMPTZ`.

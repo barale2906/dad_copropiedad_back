@@ -1,0 +1,37 @@
+[package]
+name = "gateway"
+description = "Gateway de WhatsApp de DAD_COPROPIEDAD: webhook, enrutamiento por línea, cola de salida (outbox) y worker"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "dad_copropiedad_gateway"
+path = "src/main.rs"
+
+[dependencies]
+application.workspace = true
+infra-postgres.workspace = true
+infra-whatsapp.workspace = true
+shared.workspace = true
+
+anyhow.workspace = true
+axum.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+hex.workspace = true
+hmac.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+tower.workspace = true
+
+[lints]
+workspace = true

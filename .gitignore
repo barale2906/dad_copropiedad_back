@@ -1,0 +1,20 @@
+# Compilación
+/target/
+
+# Variables locales (pueden contener secretos)
+.env
+.env.*
+!.env.example
+
+# Cobertura / perfiles
+*.profraw
+*.profdata
+lcov.info
+/coverage/
+
+# Editores y SO
+.idea/
+*.swp
+.DS_Store
+
+# Nota: la carpeta `.sqlx/` (consultas offline de SQLx) SÍ se versiona.

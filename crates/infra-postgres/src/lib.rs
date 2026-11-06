@@ -1,0 +1,20 @@
+//! Adaptador de PostgreSQL. Implementa los puertos de persistencia de `application`.
+//!
+//! Reglas de este crate:
+//! - Toda operación de negocio corre dentro de [`transaccion_tenant`]: fija `app.tenant_id`
+//!   con alcance de transacción y las políticas RLS filtran el resto.
+//! - La aplicación se conecta con el rol `dad_app` (sin `BYPASSRLS`, no dueño de las tablas);
+//!   [`verificar_rol_restringido`] impide arrancar con un rol privilegiado.
+//! - Las migraciones se ejecutan con otra conexión (dueño del esquema): [`migrar`].
+//! - Preferir `sqlx::query!`/`query_as!` en los repositorios y versionar `.sqlx/`.
+
+mod error;
+mod pool;
+mod tenant;
+
+pub use error::InfraPgError;
+pub use pool::{conectar, migrar, ping, verificar_rol_restringido};
+pub use tenant::transaccion_tenant;
+
+/// Re-exportado para que los binarios no dependan de SQLx solo por el tipo del pool.
+pub use sqlx::PgPool;

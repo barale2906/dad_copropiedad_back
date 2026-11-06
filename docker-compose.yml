@@ -1,0 +1,46 @@
+# Servicios de infraestructura para desarrollo local.
+# Uso: docker compose up -d   |   docker compose down   |   docker compose down -v (borra datos)
+name: dad_copropiedad
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: dad_copropiedad_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dad}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dad_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-dad_copropiedad}
+      # Contraseña del rol restringido `dad_app` (lo crea docker/postgres/init al crear el volumen)
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-dad_app_dev}
+      TZ: America/Bogota
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # PostgreSQL 18+ usa /var/lib/postgresql como raíz de datos (no /var/lib/postgresql/data)
+      - pg_data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:8-alpine
+    container_name: dad_copropiedad_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_data:
+  redis_data:

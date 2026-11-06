@@ -1,0 +1,19 @@
+[package]
+name = "shared"
+description = "Configuración, telemetría y utilidades transversales de DAD_COPROPIEDAD"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dotenvy.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true

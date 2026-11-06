@@ -1,0 +1,5 @@
+# Versión de Rust fijada para todo el equipo y CI. Actualizar de forma deliberada.
+[toolchain]
+channel = "1.99"
+components = ["rustfmt", "clippy", "rust-analyzer", "rust-src", "llvm-tools"]
+profile = "minimal"
