@@ -49,9 +49,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Instala la versión fijada en rust-toolchain.toml (con rustfmt y clippy).
+      # Instala explícitamente la versión y los componentes fijados en rust-toolchain.toml
+      # (no se depende de la autoinstalación de rustup, que varía entre versiones).
       - name: Toolchain de Rust
-        run: rustup show active-toolchain || rustup toolchain install
+        run: |
+          rustup --version
+          canal="$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)"
+          echo "Canal fijado: $canal"
+          rustup toolchain install "$canal" --profile minimal \
+            --component rustfmt,clippy,rust-analyzer,rust-src,llvm-tools
+          rustup show active-toolchain
+          cargo --version
 
       - uses: Swatinem/rust-cache@v2
 
