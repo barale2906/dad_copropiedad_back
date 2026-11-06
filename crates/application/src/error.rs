@@ -9,10 +9,10 @@ pub enum AppError {
     #[error("{0} no encontrada")]
     NoEncontrado(&'static str),
 
-    #[error("el inmueble ya votó en esta pregunta")]
-    InmuebleYaVoto,
+    #[error("el bien privado ya votó en esta pregunta")]
+    BienPrivadoYaVoto,
 
-    #[error("la persona no está inscrita como representante del inmueble en esta reunión")]
+    #[error("la persona no está inscrita como representante del bien privado en esta reunión")]
     NoInscrito,
 
     /// Fallo de un adaptador (BD, red, proveedor). El detalle va a logs, no al cliente.

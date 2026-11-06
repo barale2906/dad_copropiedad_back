@@ -3,7 +3,7 @@
 //! Implementará [`application::puertos::GeneradorActas`]. Lineamientos:
 //! - Plantilla Typst versionada en el repositorio; el adaptador solo inyecta datos ya
 //!   calculados ([`application::puertos::actas::DatosActa`]): no decide quórum ni resultados.
-//! - Para votaciones nominales el acta lista inmueble, coeficiente, canal, hora y apoderado
+//! - Para votaciones nominales el acta lista bien privado, coeficiente, canal, hora y apoderado
 //!   (tomados de `participaciones`); en secretas, solo totales por opción.
 //! - Se ejecuta en el worker (inicialmente el binario `gateway`), nunca en la ruta de votación.
 //!

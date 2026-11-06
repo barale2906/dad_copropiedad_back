@@ -14,7 +14,7 @@ const MIGRACIONES: sqlx::migrate::Migrator = sqlx::migrate!("../../migrations");
 
 struct Datos {
     tenant: TenantId,
-    inmueble: Uuid,
+    bien_privado: Uuid,
     persona: Uuid,
     pregunta: Uuid,
     opcion: Uuid,
@@ -24,7 +24,7 @@ struct Datos {
 async fn sembrar(pool: &PgPool, telefono: &str) -> Datos {
     let d = Datos {
         tenant: TenantId::nuevo(),
-        inmueble: Uuid::now_v7(),
+        bien_privado: Uuid::now_v7(),
         persona: Uuid::now_v7(),
         pregunta: Uuid::now_v7(),
         opcion: Uuid::now_v7(),
@@ -36,19 +36,19 @@ async fn sembrar(pool: &PgPool, telefono: &str) -> Datos {
         "INSERT INTO lineas_whatsapp (id, phone_number_id, numero_visible, nombre)
              VALUES ('{linea}', 'pnid-{linea}', '+57 300', 'Línea');
          INSERT INTO copropiedades (id, nombre) VALUES ('{t}', 'Conjunto {t}');
-         INSERT INTO inmuebles (id, tenant_id, codigo, coeficiente)
+         INSERT INTO bienes_privados (id, tenant_id, codigo, coeficiente)
              VALUES ('{i}', '{t}', 'T1-101', 0.0125);
          INSERT INTO personas (id, tenant_id, nombre, telefono)
              VALUES ('{p}', '{t}', 'Ana', '{telefono}');
          INSERT INTO reuniones (id, tenant_id, titulo, tipo, estado, fecha_programada, linea_whatsapp_id)
              VALUES ('{reunion}', '{t}', 'Asamblea 2027', 'ordinaria', 'instalada', now(), '{linea}');
-         INSERT INTO inscripciones (id, tenant_id, reunion_id, inmueble_id, persona_id, rol, metodo, telefono)
+         INSERT INTO inscripciones (id, tenant_id, reunion_id, bien_privado_id, persona_id, rol, metodo, telefono)
              VALUES ('{ins}', '{t}', '{reunion}', '{i}', '{p}', 'propietario', 'enlace', '{telefono}');
          INSERT INTO preguntas (id, tenant_id, reunion_id, orden, enunciado, tipo_voto, regla_mayoria)
              VALUES ('{q}', '{t}', '{reunion}', 1, '¿Aprueba?', 'secreto', 'simple');
          INSERT INTO opciones (id, tenant_id, pregunta_id, orden, texto)
              VALUES ('{o}', '{t}', '{q}', 1, 'Sí');",
-        i = d.inmueble,
+        i = d.bien_privado,
         p = d.persona,
         q = d.pregunta,
         o = d.opcion,
@@ -94,14 +94,14 @@ async fn contar_como_app(pool: &PgPool, tenant: Option<TenantId>, tabla: &str) -
 
 fn participacion(d: &Datos, clave: &str) -> String {
     format!(
-        "INSERT INTO participaciones (id, tenant_id, pregunta_id, inmueble_id, coeficiente, canal,
+        "INSERT INTO participaciones (id, tenant_id, pregunta_id, bien_privado_id, coeficiente, canal,
                                       emitido_por, idempotency_key, wamid)
          VALUES ('{}', '{}', '{}', '{}', 0.0125, 'whatsapp', '{}', '{clave}', '{clave}')
          ON CONFLICT DO NOTHING",
         Uuid::now_v7(),
         d.tenant,
         d.pregunta,
-        d.inmueble,
+        d.bien_privado,
         d.persona
     )
 }
@@ -118,20 +118,23 @@ async fn rls_aisla_tenants(pool: PgPool) {
     let a = sembrar(&pool, "573001110001").await;
     let b = sembrar(&pool, "573001110002").await;
 
-    assert_eq!(contar_como_app(&pool, Some(a.tenant), "inmuebles").await, 1);
+    assert_eq!(
+        contar_como_app(&pool, Some(a.tenant), "bienes_privados").await,
+        1
+    );
     assert_eq!(
         contar_como_app(&pool, Some(b.tenant), "copropiedades").await,
         1
     );
     // Sin tenant fijado no se ve nada.
-    assert_eq!(contar_como_app(&pool, None, "inmuebles").await, 0);
+    assert_eq!(contar_como_app(&pool, None, "bienes_privados").await, 0);
 
     // No se puede escribir en otro tenant.
     let err = como_app(
         &pool,
         a.tenant,
         &format!(
-            "INSERT INTO inmuebles (id, tenant_id, codigo, coeficiente)
+            "INSERT INTO bienes_privados (id, tenant_id, codigo, coeficiente)
              VALUES ('{}', '{}', 'X', 0.1)",
             Uuid::now_v7(),
             b.tenant
@@ -168,7 +171,7 @@ async fn participacion_exige_pregunta_abierta_y_es_idempotente(pool: PgPool) {
             .unwrap(),
         1
     );
-    // Reintento de Meta con el mismo wamid / otro mensaje del mismo inmueble: 0 filas.
+    // Reintento de Meta con el mismo wamid / otro mensaje del mismo bien privado: 0 filas.
     assert_eq!(
         como_app(&pool, d.tenant, &participacion(&d, "wamid.1"))
             .await
@@ -196,10 +199,10 @@ async fn participacion_exige_pregunta_abierta_y_es_idempotente(pool: PgPool) {
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn voto_secreto_sin_rastro(pool: PgPool) {
     let d = sembrar(&pool, "573001110004").await;
-    let voto = |id: Uuid, inmueble: &str| {
+    let voto = |id: Uuid, bien_privado: &str| {
         format!(
-            "INSERT INTO votos (id, tenant_id, pregunta_id, opcion_id, coeficiente, inmueble_id)
-             VALUES ('{id}', '{}', '{}', '{}', 0.0125, {inmueble})",
+            "INSERT INTO votos (id, tenant_id, pregunta_id, opcion_id, coeficiente, bien_privado_id)
+             VALUES ('{id}', '{}', '{}', '{}', 0.0125, {bien_privado})",
             d.tenant, d.pregunta, d.opcion
         )
     };
@@ -210,11 +213,11 @@ async fn voto_secreto_sin_rastro(pool: PgPool) {
         .unwrap_err();
     assert_eq!(sqlstate(&err), "23514", "{err}");
 
-    // Voto secreto que referencia el inmueble: rechazado por el trigger `validar_voto`.
+    // Voto secreto que referencia el bien privado: rechazado por el trigger `validar_voto`.
     let err = como_app(
         &pool,
         d.tenant,
-        &voto(Uuid::new_v4(), &format!("'{}'", d.inmueble)),
+        &voto(Uuid::new_v4(), &format!("'{}'", d.bien_privado)),
     )
     .await
     .unwrap_err();
@@ -255,4 +258,28 @@ async fn directorio_cruza_tenants_solo_por_funcion(pool: PgPool) {
             .await
             .unwrap();
     assert_eq!(filas, vec![(a.tenant.as_uuid(), "instalada".to_owned())]);
+}
+
+/// Glosario de la Ley 675 (ADR 0002): ninguna tabla, columna, restricción ni función conserva
+/// el término `inmueble`; el bien con coeficiente es un `bien_privado`.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn esquema_usa_terminos_de_la_ley_675(pool: PgPool) {
+    let restos: Vec<String> = sqlx::query_scalar(
+        "SELECT table_name || '.' || column_name FROM information_schema.columns
+          WHERE table_schema = 'public' AND (table_name ILIKE '%inmueble%' OR column_name ILIKE '%inmueble%')
+         UNION ALL
+         SELECT conname::text FROM pg_constraint WHERE conname ILIKE '%inmueble%'
+         UNION ALL
+         SELECT proname::text FROM pg_proc
+          WHERE pronamespace = 'public'::regnamespace AND prosrc ILIKE '%inmueble%'",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("consulta del catálogo");
+
+    assert!(
+        restos.is_empty(),
+        "objetos con el término viejo: {restos:?}"
+    );
+    assert_eq!(contar_como_app(&pool, None, "bienes_privados").await, 0);
 }

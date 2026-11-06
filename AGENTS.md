@@ -103,10 +103,12 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Despliegue | VPS Ubuntu + Nginx (HestiaCP) | Previsto | Binarios nativos/contenedor detrás de Nginx con TLS. |
 | Calidad | rustfmt · clippy · nextest · llvm-cov · cargo-deny · cargo-audit · bacon | En uso | |
 | Frontend (otro repo) | Vue 3 + TypeScript (Angular posible) | Externo | Consume el OpenAPI y genera su cliente tipado. |
+| Apps móviles (otro repo) | Android + iOS | Previsto | Mismo contrato OpenAPI que la web; notificaciones push. |
 | IA / analítica (futuro) | Python | Externo | Servicios aparte; integración por API/eventos, nunca tablas compartidas. |
 
 ## 5. Convenciones de código
 - Nombres de dominio en **español** (entidades, funciones de negocio, tablas, columnas, pruebas); términos técnicos estándar en inglés cuando sea lo natural (`router`, `state`, `config`, `tenant_id`).
+- **Glosario de la Ley 675 de 2001** (ADR 0002): en código, BD, API, documentación e interfaz se usan los términos de la ley. Copropiedad / propiedad horizontal = el tenant (`copropiedad`, `TenantId`); **bien privado** = unidad con coeficiente (`bienes_privados`, `BienPrivadoId`; nunca "inmueble" ni "unidad"); **bien común** (esencial, no esencial, de uso exclusivo); **expensas comunes**; **coeficiente de copropiedad**; **propietario**, **tenedor** (arrendatario u otro título) y **residente**; asamblea general de propietarios, consejo de administración, administrador, revisor fiscal, comité de convivencia; reglamento de propiedad horizontal. Lo que la ley no define usa un término técnico neutro documentado (`agrupacion`, `cuenta`, `organizacion`). Las etiquetas cotidianas ("Torre 3", "Apto 506") son valores configurables, no nombres de tipos.
 - Errores: `DominioError` (domain) → `AppError` (application) → `ApiError` (`apps/api/src/error.rs`, único mapeo a HTTP). `anyhow` solo en `main`/arranque. Mensajes de error al cliente sin detalles internos.
 - Puertos asíncronos: `fn x(&self, …) -> impl Future<Output = AppResult<T>> + Send` (sin `async-trait`); en la implementación basta `async fn`.
 - Casos de uso genéricos sobre sus puertos; se prueban con dobles en memoria (ver `casos_uso/emitir_voto.rs`).
@@ -140,13 +142,13 @@ dos familias complementarias:
 | Integración de BD | Esquema, RLS, triggers, restricciones, repositorios | `crates/infra-postgres/tests/` con `#[sqlx::test(migrator = …)]`; operar como la app con `SET LOCAL ROLE dad_app` |
 | Adaptadores externos | Firma, parseo y normalización de payloads | `crates/infra-*` con fixtures reales (JSON de ejemplo de Meta) |
 | Funcionales de API | Endpoint completo: petición → respuesta y efectos | `tower::ServiceExt::oneshot` sobre el `router` de cada app (`apps/*/src/routes`); con BD real vía `#[sqlx::test]` cuando aplique |
-| Concurrencia | Emisiones simultáneas del mismo inmueble → un único voto | `tokio::spawn` + `#[sqlx::test]` |
+| Concurrencia | Emisiones simultáneas del mismo bien privado → un único voto | `tokio::spawn` + `#[sqlx::test]` |
 | Contrato | El OpenAPI generado coincide con lo publicado | Prueba que serializa el documento OpenAPI (cuando exista utoipa) |
 
 Reglas:
 - Cada regla de negocio tiene al menos un caso positivo y uno negativo; cada invariante de §9 tiene una prueba que fallaría si se rompe.
 - Pruebas deterministas: sin dependencia del reloj real (puerto `Reloj`), del orden ni de la red externa.
-- Nombre descriptivo en español que diga el comportamiento: `secreto_no_deja_rastro_del_inmueble`.
+- Nombre descriptivo en español que diga el comportamiento: `secreto_no_deja_rastro_del_bien_privado`.
 - Patrón Preparar / Ejecutar / Verificar; un comportamiento por prueba; helpers y fixtures reutilizables en lugar de copiar.
 - Un bug corregido llega con la prueba que lo reproduce.
 - Cobertura orientativa ≥ 80 % en `domain` y `application` (`make cov`); el número no sustituye probar los casos importantes.
@@ -190,10 +192,10 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - Preferir `sqlx::query!`/`query_as!`; tras cambiar consultas: `make sqlx-prepare` y versionar `.sqlx/`. SQL dinámico solo con `AssertSqlSafe`, justificado, y con datos enlazados (`$1`), nunca interpolados desde la entrada del usuario. Prohibido `SELECT *`.
 
 ## 9. Invariantes críticos de votaciones (no romper)
-1. **Unicidad:** un inmueble vota una vez por pregunta → `UNIQUE (pregunta_id, inmueble_id)` en `participaciones`.
+1. **Unicidad:** un bien privado vota una vez por pregunta → `UNIQUE (pregunta_id, bien_privado_id)` en `participaciones`.
 2. **Idempotencia:** `UNIQUE (pregunta_id, idempotency_key)` y `UNIQUE (wamid)` (Meta reintenta webhooks); inserción con `ON CONFLICT DO NOTHING`; un reintento devuelve el resultado original.
 3. **Atomicidad:** verificar estado + insertar participación + voto + evento outbox + auditoría en **una sola transacción**. El trigger `validar_participacion` vuelve a exigir `abierta` con `FOR SHARE`.
-4. **Secreto del voto** (`tipo_voto = 'secreto'`): `votos` sin `inmueble_id`, sin `participacion_id`, sin marca de tiempo, id UUID v4 (CHECK + trigger). Ni la auditoría ni el outbox (confirmaciones) guardan la opción elegida. No exponer endpoints que crucen participaciones con votos.
+4. **Secreto del voto** (`tipo_voto = 'secreto'`): `votos` sin `bien_privado_id`, sin `participacion_id`, sin marca de tiempo, id UUID v4 (CHECK + trigger). Ni la auditoría ni el outbox (confirmaciones) guardan la opción elegida. No exponer endpoints que crucen participaciones con votos.
 5. **Peso por coeficiente:** resultados y quórum suman coeficientes copiados en la fila al votar, no cuentan votos.
 6. **Append-only:** `participaciones`, `votos` y `auditoria` rechazan UPDATE/DELETE/TRUNCATE (triggers + permisos).
 7. Solo preguntas `abierta` de reuniones `instalada` reciben votos.

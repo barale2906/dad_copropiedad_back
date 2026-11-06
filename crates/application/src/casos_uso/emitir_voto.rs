@@ -1,7 +1,8 @@
 //! Caso de uso: emitir un voto (web, WhatsApp o presencial).
 
 use domain::{
-    Canal, ClaveIdempotencia, InmuebleId, OpcionId, Papeleta, PersonaId, PreguntaId, RolAsistente,
+    BienPrivadoId, Canal, ClaveIdempotencia, OpcionId, Papeleta, PersonaId, PreguntaId,
+    RolAsistente,
 };
 
 use crate::{
@@ -18,7 +19,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SolicitudVoto {
     pub pregunta_id: PreguntaId,
-    pub inmueble_id: InmuebleId,
+    pub bien_privado_id: BienPrivadoId,
     pub opcion_id: OpcionId,
     pub emitido_por: PersonaId,
     pub canal: Canal,
@@ -59,14 +60,14 @@ where
             .vigente(
                 ctx,
                 pregunta.reunion_id,
-                solicitud.inmueble_id,
+                solicitud.bien_privado_id,
                 solicitud.emitido_por,
             )
             .await?
             .ok_or(AppError::NoInscrito)?;
 
         let papeleta = Papeleta {
-            inmueble_id: solicitud.inmueble_id,
+            bien_privado_id: solicitud.bien_privado_id,
             coeficiente: inscripcion.coeficiente,
             opcion_id: solicitud.opcion_id,
             canal: solicitud.canal,
@@ -139,13 +140,13 @@ mod tests {
             &self,
             _: &Contexto,
             _: ReunionId,
-            inmueble: InmuebleId,
+            bien_privado: BienPrivadoId,
             persona: PersonaId,
         ) -> AppResult<Option<InscripcionVigente>> {
             Ok(self
                 .0
                 .clone()
-                .filter(|i| i.inmueble_id == inmueble && i.persona_id == persona))
+                .filter(|i| i.bien_privado_id == bien_privado && i.persona_id == persona))
         }
     }
 
@@ -169,9 +170,9 @@ mod tests {
             }
             if filas
                 .iter()
-                .any(|(v, _)| v.participacion.inmueble_id == p.inmueble_id)
+                .any(|(v, _)| v.participacion.bien_privado_id == p.bien_privado_id)
             {
-                return Err(AppError::InmuebleYaVoto);
+                return Err(AppError::BienPrivadoYaVoto);
             }
             let id = p.id;
             filas.push((voto, confirmacion));
@@ -196,7 +197,7 @@ mod tests {
                 opciones: vec![OpcionId::nuevo(), OpcionId::nuevo()],
             },
             inscripcion: InscripcionVigente {
-                inmueble_id: InmuebleId::nuevo(),
+                bien_privado_id: BienPrivadoId::nuevo(),
                 persona_id: PersonaId::nuevo(),
                 rol,
                 coeficiente: Coeficiente::new(dec!(0.0125)).unwrap(),
@@ -207,7 +208,7 @@ mod tests {
     fn solicitud(e: &Escenario, clave: &str) -> SolicitudVoto {
         SolicitudVoto {
             pregunta_id: e.pregunta.id,
-            inmueble_id: e.inscripcion.inmueble_id,
+            bien_privado_id: e.inscripcion.bien_privado_id,
             opcion_id: e.pregunta.opciones[0],
             emitido_por: e.inscripcion.persona_id,
             canal: Canal::Whatsapp,
@@ -256,11 +257,11 @@ mod tests {
         assert_eq!(reintento, ResultadoRegistro::Reintento(id));
         assert_eq!(votos.0.lock().unwrap().len(), 1);
 
-        // Otro mensaje del mismo inmueble: rechazado.
+        // Otro mensaje del mismo bien privado: rechazado.
         let err = ejecutar(&e, &votos, solicitud(&e, "wamid.B"))
             .await
             .unwrap_err();
-        assert!(matches!(err, AppError::InmuebleYaVoto));
+        assert!(matches!(err, AppError::BienPrivadoYaVoto));
     }
 
     #[tokio::test]

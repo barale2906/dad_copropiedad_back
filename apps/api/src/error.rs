@@ -43,7 +43,7 @@ impl ApiError {
                 }
             },
             Self::App(AppError::NoEncontrado(_)) => (StatusCode::NOT_FOUND, "no_encontrado"),
-            Self::App(AppError::InmuebleYaVoto) => (StatusCode::CONFLICT, "ya_voto"),
+            Self::App(AppError::BienPrivadoYaVoto) => (StatusCode::CONFLICT, "ya_voto"),
             Self::App(AppError::NoInscrito) => (StatusCode::FORBIDDEN, "no_inscrito"),
             Self::App(AppError::Infraestructura(_)) | Self::Interno(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "interno")

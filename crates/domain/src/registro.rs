@@ -1,8 +1,8 @@
-//! Registro (inscripción) de inmuebles a una reunión.
+//! Registro (inscripción) de bienes privados a una reunión.
 
 use serde::{Deserialize, Serialize};
 
-/// Cómo quedó inscrito el inmueble en la reunión.
+/// Cómo quedó inscrito el bien privado en la reunión.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MetodoRegistro {
@@ -20,12 +20,12 @@ enum_texto!(MetodoRegistro {
     QrPuerta => "qr_puerta",
 });
 
-/// Calidad en la que la persona representa al inmueble.
+/// Calidad en la que la persona representa al bien privado.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RolAsistente {
     Propietario,
-    /// Representa al inmueble mediante poder (Ley 675, art. 37). Queda en el acta.
+    /// Representa al bien privado mediante poder (Ley 675, art. 37). Queda en el acta.
     Apoderado,
 }
 

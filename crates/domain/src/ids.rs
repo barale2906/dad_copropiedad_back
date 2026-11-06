@@ -1,4 +1,4 @@
-//! Identificadores tipados: impiden pasar un `InmuebleId` donde se espera un `PreguntaId`.
+//! Identificadores tipados: impiden pasar un `BienPrivadoId` donde se espera un `PreguntaId`.
 //!
 //! Todas las entidades usan **UUID v7** (ordenables por tiempo), excepto [`VotoId`], que usa
 //! **UUID v4** para no filtrar la hora del voto (secreto del voto).
@@ -63,8 +63,8 @@ id_entidad!(
 id_entidad!(PreguntaId, Uuid::now_v7);
 id_entidad!(OpcionId, Uuid::now_v7);
 id_entidad!(
-    /// Inmueble / unidad privada con coeficiente de copropiedad.
-    InmuebleId,
+    /// Bien privado o de dominio particular (Ley 675, art. 3): unidad con coeficiente de copropiedad.
+    BienPrivadoId,
     Uuid::now_v7
 );
 id_entidad!(
@@ -73,7 +73,7 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
-    /// Inscripción de un inmueble a una reunión (enlace, prerregistro o QR en puerta).
+    /// Inscripción de un bien privado a una reunión (enlace, prerregistro o QR en puerta).
     InscripcionId,
     Uuid::now_v7
 );
