@@ -13,6 +13,7 @@
 #[macro_use]
 mod macros;
 
+pub mod calendario;
 pub mod coeficiente;
 pub mod error;
 pub mod ids;

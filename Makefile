@@ -90,8 +90,9 @@ fmt-check: ## Verifica el formato sin modificar archivos
 lint: ## Clippy estricto (-D warnings)
 	$(CARGO) lint
 
-test: ## Todas las pruebas (las de esquema requieren 'make up')
+test: ## Todas las pruebas, incluidos los ejemplos de la documentación (las de esquema requieren 'make up')
 	$(CARGO) pruebas
+	$(CARGO) test --workspace --doc
 
 test-rapido: ## Solo pruebas sin base de datos (dominio y aplicación)
 	$(CARGO) nextest run -p domain -p application

@@ -246,7 +246,7 @@ Una tarea está terminada solo si:
 | Contenedores | `make up` · `make down` · `make reiniciar-bd` | `docker compose …` |
 | Ejecutar | `make api` · `make gateway` · `make dev` | `cargo api` · `cargo gateway` · `bacon` |
 | Verificación completa | `make verificar` | `cargo fmt --all --check && cargo lint && cargo pruebas` |
-| Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) |
+| Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) + `cargo test --workspace --doc` (doctests) |
 | Documentación | `make doc` | `cargo doc --workspace --no-deps` |
 | Contrato OpenAPI | `make openapi` | `ACTUALIZAR_OPENAPI=1 cargo nextest run -p api --test contrato_openapi` |
 | Migraciones | `make migracion NOMBRE=x` · `make migrar` · `make revertir` | `sqlx migrate add -r x` … |
