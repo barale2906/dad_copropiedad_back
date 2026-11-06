@@ -12,6 +12,9 @@
 lcov.info
 /coverage/
 
+# Planes de trabajo locales (no se versionan)
+/docs/planes/
+
 # Editores y SO
 .idea/
 *.swp
