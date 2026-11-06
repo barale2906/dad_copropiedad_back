@@ -1,0 +1,83 @@
+# Integración continua: hace obligatorio lo verificable de AGENTS.md (§11 Definición de terminado).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un push nuevo cancela la ejecución anterior de la misma rama.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  # Las macros query! se validan contra .sqlx/ versionado, no contra una BD en compilación.
+  SQLX_OFFLINE: "true"
+
+jobs:
+  calidad:
+    name: Formato, lint, pruebas y documentación
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: dad
+          POSTGRES_PASSWORD: dad_ci
+          POSTGRES_DB: dad_copropiedad
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dad -d dad_copropiedad"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      # Dueño del esquema: #[sqlx::test] crea una BD aislada por prueba y aplica las migraciones.
+      DATABASE_URL: postgres://dad:dad_ci@localhost:5432/dad_copropiedad
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Instala la versión fijada en rust-toolchain.toml (con rustfmt y clippy).
+      - name: Toolchain de Rust
+        run: rustup show active-toolchain || rustup toolchain install
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Instalar cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
+      - name: Formato
+        run: make fmt-check
+
+      - name: Clippy (-D warnings)
+        run: make lint
+
+      - name: Pruebas (código y funcionales, con PostgreSQL)
+        run: make test
+
+      - name: Documentación (rustdoc sin advertencias)
+        run: make doc
+
+  dependencias:
+    name: Licencias y vulnerabilidades (cargo-deny)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check

@@ -1,5 +1,7 @@
 # dad_copropiedad_back
 
+[![CI](https://github.com/barale2906/dad_copropiedad_back/actions/workflows/ci.yml/badge.svg)](https://github.com/barale2906/dad_copropiedad_back/actions/workflows/ci.yml)
+
 Backend de **DAD_COPROPIEDAD**, el software de gestión de propiedad horizontal de DAD AI & SYSTEMS.
 El primer módulo es **votaciones** en asambleas: multi-PH, con votos por web y por WhatsApp (botones o listas).
 

@@ -99,7 +99,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | OpenAPI | utoipa (+ utoipa-swagger-ui / utoipa-scalar) | Previsto | Contrato de la API REST (§7). |
 | Actas | Typst | Previsto | En `infra-pdf`. |
 | Contenedores | Docker Compose (dev) | En uso | Imagen de producción construida en CI. |
-| CI/CD | GitHub Actions | Previsto | fmt, clippy, pruebas con PostgreSQL, deny, build de imagen. |
+| CI/CD | GitHub Actions | En uso | `.github/workflows/ci.yml`: fmt, clippy, pruebas con PostgreSQL, rustdoc, cargo-deny. Pendiente: build de imagen y despliegue. |
 | Despliegue | VPS Ubuntu + Nginx (HestiaCP) | Previsto | Binarios nativos/contenedor detrás de Nginx con TLS. |
 | Calidad | rustfmt · clippy · nextest · llvm-cov · cargo-deny · cargo-audit · bacon | En uso | |
 | Frontend (otro repo) | Vue 3 + TypeScript (Angular posible) | Externo | Consume el OpenAPI y genera su cliente tipado. |
@@ -230,6 +230,7 @@ Una tarea está terminada solo si:
 - [ ] Variables nuevas en `.env.example`; dependencias nuevas pasan `make deny`.
 - [ ] Ninguna invariante de §9 se debilitó.
 - [ ] `AGENTS.md`/`README.md` actualizados si cambió tecnología, comandos, arquitectura o convenciones.
+- [ ] El CI (`.github/workflows/ci.yml`) está en verde.
 
 ## 12. Comandos
 | Acción | Make | Equivalente |
