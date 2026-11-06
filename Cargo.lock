@@ -64,6 +64,7 @@ dependencies = [
  "domain",
  "rust_decimal",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "tracing",
@@ -948,6 +949,7 @@ version = "0.1.0"
 dependencies = [
  "application",
  "domain",
+ "serde_json",
  "sqlx",
  "thiserror",
  "tokio",

@@ -2,12 +2,14 @@
 //!
 //! - [`puertos`]: traits que la aplicación **necesita** del mundo exterior (repositorios,
 //!   mensajería, reloj, sesiones…). Los implementan los crates `infra-*`.
+//! - [`auditoria`]: eventos de auditoría (acción, entidad, resultado, detalle sin datos personales).
 //! - [`paginacion`]: paginación por cursor ([`Pagina`], [`SolicitudPagina`]) común a los listados.
 //! - [`casos_uso`]: orquestan el dominio a través de los puertos. Son genéricos sobre los
 //!   puertos, así que se prueban con dobles en memoria sin base de datos ni red.
 //!
 //! Esta capa no conoce SQL, HTTP ni WhatsApp: solo tipos de `domain` y de este crate.
 
+pub mod auditoria;
 pub mod casos_uso;
 pub mod contexto;
 pub mod error;

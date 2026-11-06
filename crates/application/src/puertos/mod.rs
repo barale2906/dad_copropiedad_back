@@ -8,6 +8,7 @@ pub mod mensajeria;
 pub mod reloj;
 pub mod repositorios;
 pub mod sesiones;
+pub mod unidad_trabajo;
 
 pub use actas::GeneradorActas;
 pub use mensajeria::Mensajeria;
@@ -16,3 +17,4 @@ pub use repositorios::{
     DirectorioReuniones, RepositorioInscripciones, RepositorioPreguntas, RepositorioVotos,
 };
 pub use sesiones::SesionesConversacion;
+pub use unidad_trabajo::{RegistroAuditoria, Transaccion, UnidadDeTrabajo};

@@ -112,6 +112,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 - Errores: `DominioError` (domain) → `AppError` (application) → `ApiError` (`apps/api/src/error.rs`, único mapeo a HTTP). `anyhow` solo en `main`/arranque. Mensajes de error al cliente sin detalles internos.
 - Puertos asíncronos: `fn x(&self, …) -> impl Future<Output = AppResult<T>> + Send` (sin `async-trait`); en la implementación basta `async fn`.
 - Casos de uso genéricos sobre sus puertos; se prueban con dobles en memoria (ver `casos_uso/emitir_voto.rs`).
+- **Unidad de trabajo y auditoría**: un caso de uso que modifica datos abre una transacción con el puerto `UnidadDeTrabajo` (implementación `infra_postgres::UnidadDeTrabajoPg`, que fija el tenant), hace el cambio con los puertos que implementa la transacción, registra un `EventoAuditoria` con `RegistroAuditoria` y llama a `confirmar()`; sin `confirmar` todo se revierte. Acciones como constantes `AccionAuditoria::new("modulo.recurso.verbo")` (un formato inválido no compila). `DetalleAuditoria` rechaza claves de datos personales o del contenido de un voto. Dobles en memoria: `puertos::unidad_trabajo::memoria`.
 - **Estados como tipos**: transiciones solo en `EstadoReunion::transicionar` / `EstadoPregunta::transicionar`; votar exige una `PreguntaAbierta` (solo la construye `Pregunta::para_votar`).
 - IDs tipados (`TenantId`, `PreguntaId`, …): UUID v7, **excepto `VotoId` (UUID v4)**.
 - Enums persistidos con `enum_texto!` (`as_str` / `TryFrom<&str>`); el texto es contrato con la BD.
