@@ -4,10 +4,10 @@
 //! Tokio). Todo lo que aquí vive se prueba con tests unitarios rápidos.
 //!
 //! Invariantes críticos (ver `AGENTS.md`):
-//! - Un inmueble vota **una sola vez** por pregunta (unicidad en BD + validación aquí).
+//! - Un bien privado vota **una sola vez** por pregunta (unicidad en BD + validación aquí).
 //! - Reintentos con la misma clave de idempotencia (o el mismo `wamid`) **no** generan votos.
 //! - Solo una [`PreguntaAbierta`] puede emitir votos: el compilador impide votar en otra.
-//! - En votaciones secretas nada permite reconstruir qué opción eligió cada inmueble.
+//! - En votaciones secretas nada permite reconstruir qué opción eligió cada bien privado.
 //! - Resultados y quórum se calculan sumando **coeficientes** (`Decimal`), nunca contando votos.
 
 #[macro_use]
@@ -27,7 +27,7 @@ pub mod voto;
 pub use coeficiente::Coeficiente;
 pub use error::DominioError;
 pub use ids::{
-    InmuebleId, InscripcionId, OpcionId, ParticipacionId, PersonaId, PreguntaId, ReunionId,
+    BienPrivadoId, InscripcionId, OpcionId, ParticipacionId, PersonaId, PreguntaId, ReunionId,
     TenantId, VotoId,
 };
 pub use mayoria::ReglaMayoria;

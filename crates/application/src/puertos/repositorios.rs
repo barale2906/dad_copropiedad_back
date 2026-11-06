@@ -3,7 +3,7 @@
 use std::future::Future;
 
 use domain::{
-    Coeficiente, EstadoReunion, InmuebleId, ParticipacionId, PersonaId, Pregunta, PreguntaId,
+    BienPrivadoId, Coeficiente, EstadoReunion, ParticipacionId, PersonaId, Pregunta, PreguntaId,
     ReunionId, RolAsistente, TenantId, VotoEmitido,
 };
 
@@ -17,23 +17,23 @@ pub trait RepositorioPreguntas: Send + Sync {
     ) -> impl Future<Output = AppResult<Option<Pregunta>>> + Send;
 }
 
-/// Inscripción vigente de un inmueble en una reunión, con lo necesario para votar.
+/// Inscripción vigente de un bien privado en una reunión, con lo necesario para votar.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InscripcionVigente {
-    pub inmueble_id: InmuebleId,
+    pub bien_privado_id: BienPrivadoId,
     pub persona_id: PersonaId,
     pub rol: RolAsistente,
-    /// Coeficiente vigente del inmueble (se copia en la participación).
+    /// Coeficiente vigente del bien privado (se copia en la participación).
     pub coeficiente: Coeficiente,
 }
 
 pub trait RepositorioInscripciones: Send + Sync {
-    /// Devuelve la inscripción si `persona_id` representa a `inmueble_id` en la reunión.
+    /// Devuelve la inscripción si `persona_id` representa a `bien_privado_id` en la reunión.
     fn vigente(
         &self,
         ctx: &Contexto,
         reunion_id: ReunionId,
-        inmueble_id: InmuebleId,
+        bien_privado_id: BienPrivadoId,
         persona_id: PersonaId,
     ) -> impl Future<Output = AppResult<Option<InscripcionVigente>>> + Send;
 }
@@ -53,7 +53,7 @@ pub trait RepositorioVotos: Send + Sync {
     /// (`FOR SHARE`), inserta participación y voto (`ON CONFLICT DO NOTHING`), encola la
     /// confirmación en `outbox` y audita.
     ///
-    /// Errores esperados: [`crate::AppError::InmuebleYaVoto`] si el inmueble ya votó con otra
+    /// Errores esperados: [`crate::AppError::BienPrivadoYaVoto`] si el bien privado ya votó con otra
     /// clave; `Dominio(PreguntaNoAbierta)` si la pregunta se cerró entre la lectura y la
     /// escritura.
     fn registrar(

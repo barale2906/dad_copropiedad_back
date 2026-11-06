@@ -53,9 +53,9 @@ impl EstadoPregunta {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TipoVoto {
-    /// Se registra qué inmueble eligió qué opción (permite actas nominales).
+    /// Se registra qué bien privado eligió qué opción (permite actas nominales).
     Nominal,
-    /// Solo se registra **que** el inmueble votó; la opción elegida queda desvinculada.
+    /// Solo se registra **que** el bien privado votó; la opción elegida queda desvinculada.
     Secreto,
 }
 

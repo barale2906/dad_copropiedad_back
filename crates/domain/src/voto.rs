@@ -4,8 +4,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    Coeficiente, DominioError, InmuebleId, OpcionId, ParticipacionId, PersonaId, PreguntaAbierta,
-    PreguntaId, TipoVoto, VotoId,
+    BienPrivadoId, Coeficiente, DominioError, OpcionId, ParticipacionId, PersonaId,
+    PreguntaAbierta, PreguntaId, TipoVoto, VotoId,
 };
 
 /// Canal por el que llegó el voto (queda en el acta).
@@ -63,11 +63,11 @@ impl From<ClaveIdempotencia> for String {
     }
 }
 
-/// Lo que el votante entrega: inmueble, opción y metadatos para el acta.
+/// Lo que el votante entrega: bien privado, opción y metadatos para el acta.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Papeleta {
-    pub inmueble_id: InmuebleId,
-    /// Coeficiente vigente del inmueble; se **copia** en la fila al momento de votar.
+    pub bien_privado_id: BienPrivadoId,
+    /// Coeficiente vigente del bien privado; se **copia** en la fila al momento de votar.
     pub coeficiente: Coeficiente,
     pub opcion_id: OpcionId,
     pub canal: Canal,
@@ -85,7 +85,7 @@ pub struct Papeleta {
 pub struct ParticipacionNueva {
     pub id: ParticipacionId,
     pub pregunta_id: PreguntaId,
-    pub inmueble_id: InmuebleId,
+    pub bien_privado_id: BienPrivadoId,
     pub coeficiente: Coeficiente,
     pub canal: Canal,
     pub emitido_por: PersonaId,
@@ -95,10 +95,10 @@ pub struct ParticipacionNueva {
     pub registrado_en: DateTime<Utc>,
 }
 
-/// Vínculo voto ↔ inmueble. Solo existe en votaciones nominales.
+/// Vínculo voto ↔ bien privado. Solo existe en votaciones nominales.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VinculoNominal {
-    pub inmueble_id: InmuebleId,
+    pub bien_privado_id: BienPrivadoId,
     pub participacion_id: ParticipacionId,
 }
 
@@ -110,7 +110,7 @@ pub struct VotoNuevo {
     pub pregunta_id: PreguntaId,
     pub opcion_id: OpcionId,
     pub coeficiente: Coeficiente,
-    /// `None` en votaciones secretas: nada enlaza el voto con el inmueble.
+    /// `None` en votaciones secretas: nada enlaza el voto con el bien privado.
     pub vinculo: Option<VinculoNominal>,
 }
 
@@ -136,7 +136,7 @@ impl PreguntaAbierta<'_> {
         let participacion = ParticipacionNueva {
             id: ParticipacionId::nuevo(),
             pregunta_id: pregunta.id,
-            inmueble_id: papeleta.inmueble_id,
+            bien_privado_id: papeleta.bien_privado_id,
             coeficiente: papeleta.coeficiente,
             canal: papeleta.canal,
             emitido_por: papeleta.emitido_por,
@@ -148,7 +148,7 @@ impl PreguntaAbierta<'_> {
 
         let vinculo = match pregunta.tipo_voto {
             TipoVoto::Nominal => Some(VinculoNominal {
-                inmueble_id: participacion.inmueble_id,
+                bien_privado_id: participacion.bien_privado_id,
                 participacion_id: participacion.id,
             }),
             TipoVoto::Secreto => None,
@@ -190,7 +190,7 @@ mod tests {
 
     fn papeleta(opcion_id: OpcionId) -> Papeleta {
         Papeleta {
-            inmueble_id: InmuebleId::nuevo(),
+            bien_privado_id: BienPrivadoId::nuevo(),
             coeficiente: Coeficiente::new(dec!(0.0123)).unwrap(),
             opcion_id,
             canal: Canal::Whatsapp,
@@ -202,7 +202,7 @@ mod tests {
     }
 
     #[test]
-    fn nominal_vincula_voto_con_inmueble() {
+    fn nominal_vincula_voto_con_bien_privado() {
         let p = pregunta(TipoVoto::Nominal, EstadoPregunta::Abierta);
         let emitido = p
             .para_votar()
@@ -211,11 +211,14 @@ mod tests {
             .unwrap();
         let vinculo = emitido.voto.vinculo.expect("nominal debe tener vínculo");
         assert_eq!(vinculo.participacion_id, emitido.participacion.id);
-        assert_eq!(vinculo.inmueble_id, emitido.participacion.inmueble_id);
+        assert_eq!(
+            vinculo.bien_privado_id,
+            emitido.participacion.bien_privado_id
+        );
     }
 
     #[test]
-    fn secreto_no_deja_rastro_del_inmueble() {
+    fn secreto_no_deja_rastro_del_bien_privado() {
         let p = pregunta(TipoVoto::Secreto, EstadoPregunta::Abierta);
         let emitido = p
             .para_votar()
