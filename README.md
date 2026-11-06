@@ -11,6 +11,15 @@ El backend es un monolito modular con arquitectura hexagonal, hecho con Rust, Ax
 - `sqlx-cli`, `cargo-nextest`, `bacon` (opcionales: `cargo-deny`, `cargo-audit`, `cargo-llvm-cov`)
 
 ## Arranque rápido
+Con Make (`make` lista todos los comandos):
+```bash
+make herramientas   # una vez: sqlx-cli, nextest, bacon, deny, audit, llvm-cov
+make setup          # .env + contenedores + migraciones
+make api            # API en :8080   ·   make gateway → :8081
+make verificar      # fmt + clippy + pruebas, antes de terminar una tarea
+```
+
+Equivalente sin Make:
 ```bash
 cp .env.example .env          # variables locales
 docker compose up -d --wait   # PostgreSQL 18 (+ rol dad_app) y Redis 8
