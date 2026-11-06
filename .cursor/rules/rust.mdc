@@ -4,6 +4,8 @@ globs: ["**/*.rs", "**/Cargo.toml"]
 alwaysApply: false
 ---
 
+Complementa `AGENTS.md` (fuente única de verdad; prevalece en caso de conflicto).
+
 Sigue `AGENTS.md` en la raíz del repositorio. Resumen para código Rust:
 
 - Arquitectura hexagonal: `domain ← application ← infra-* ← apps/*`. `domain` sin IO; `application` solo depende de `domain` y define los puertos (traits).

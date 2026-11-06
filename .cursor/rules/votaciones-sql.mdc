@@ -4,6 +4,8 @@ globs: ["migrations/**/*.sql", "crates/infra-postgres/**/*.rs"]
 alwaysApply: false
 ---
 
+Complementa `AGENTS.md` (fuente única de verdad; prevalece en caso de conflicto).
+
 - Nunca edites una migración existente: crea otra con `sqlx migrate add -r <nombre>` (con su `.down.sql`).
 - Toda tabla de negocio lleva `tenant_id`, FK compuestas `(tenant_id, …)`, `ENABLE ROW LEVEL SECURITY` y la política `aislamiento_tenant`; otorga a `dad_app` solo los permisos necesarios.
 - Consultas entre tenants solo con funciones `SECURITY DEFINER` (`SET search_path`, `REVOKE … FROM PUBLIC`).

@@ -1,0 +1,13 @@
+---
+description: Estándares obligatorios del proyecto (fuente única: AGENTS.md)
+alwaysApply: true
+---
+
+Lee y cumple `AGENTS.md` en la raíz del repositorio antes de generar o modificar código; es la fuente
+única de verdad y prevalece sobre cualquier otra regla. En especial:
+
+- §3 Flujo obligatorio: buscar qué reutilizar antes de escribir código nuevo.
+- §6 Pruebas: de código y funcionales para todo lo nuevo o modificado.
+- §7 Documentación: rustdoc en lo público y OpenAPI (utoipa) en cada endpoint.
+- §11 Definición de terminado: `make verificar` debe pasar.
+- Premisa: si incorporas una tecnología, actualiza `AGENTS.md` en el mismo cambio.

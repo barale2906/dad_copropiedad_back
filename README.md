@@ -62,4 +62,7 @@ sqlx migrate revert            # revertir la última
 | `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook, outbox, worker |
 | `migrations/` | — | Esquema PostgreSQL versionado |
 
-Las convenciones, las reglas de dependencia y los invariantes de votaciones están en [`AGENTS.md`](AGENTS.md).
+## Estándares y documentación
+- [`AGENTS.md`](AGENTS.md): **estándares obligatorios** (arquitectura, reutilización, pruebas, documentación, invariantes). Lo leen todas las herramientas: Claude Code (`CLAUDE.md`), Cursor (`.cursor/rules`), VS Code Copilot (`.github/copilot-instructions.md`), opencode y Codex.
+- `make doc`: documentación del código con rustdoc (`target/doc`). La documentación OpenAPI/Swagger de la API REST se generará con utoipa.
+- [`docs/adr/`](docs/adr/): decisiones de arquitectura.

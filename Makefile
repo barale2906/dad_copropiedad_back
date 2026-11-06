@@ -16,7 +16,7 @@ CARGO   := cargo
 .PHONY: help herramientas env setup \
 	    up down reiniciar-bd ps logs psql redis \
 	    api gateway dev \
-	    check fmt fmt-check lint test test-rapido cov verificar \
+	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir \
 	    migrar migracion revertir migraciones sqlx-prepare \
 	    deny audit build release limpiar
 
@@ -100,6 +100,13 @@ cov: ## Reporte de cobertura HTML (target/llvm-cov/html/index.html)
 	$(CARGO) cov
 
 verificar: fmt-check lint test ## Lo que debe pasar antes de dar una tarea por terminada
+
+##@ Documentación
+doc: ## Genera la documentación del código (rustdoc) sin advertencias → target/doc
+	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --workspace --no-deps
+
+doc-abrir: ## Genera y abre la documentación en el navegador
+	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --workspace --no-deps --open
 
 ##@ Base de datos (migraciones con DATABASE_URL = dueño del esquema)
 migrar: ## Aplica las migraciones pendientes
