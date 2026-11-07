@@ -27,6 +27,7 @@ use utoipa::ToSchema;
 /// | `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |
 /// | `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |
 /// | `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |
+/// | `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |
 /// | `validacion` | 422 | Datos bien formados que violan una regla de negocio. |
 /// | `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |
 /// | `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |
@@ -45,6 +46,8 @@ pub enum CodigoError {
     NoInscrito,
     /// 403 · El enlace de descarga tiene una firma inválida o ya venció: hay que pedir otro.
     EnlaceInvalido,
+    /// 403 · La copropiedad no tiene contratado el módulo de esta ruta.
+    ModuloNoHabilitado,
     /// 422 · Los datos son sintácticamente correctos pero violan una regla de negocio.
     Validacion,
     /// 500 · Error inesperado; el detalle queda en los logs con el `x-request-id`.
@@ -146,6 +149,9 @@ impl ApiError {
             Self::App(AppError::BienPrivadoYaVoto) => (StatusCode::CONFLICT, C::YaVoto),
             Self::App(AppError::NoInscrito) => (StatusCode::FORBIDDEN, C::NoInscrito),
             Self::EnlaceInvalido => (StatusCode::FORBIDDEN, C::EnlaceInvalido),
+            Self::App(AppError::ModuloNoHabilitado(_)) => {
+                (StatusCode::FORBIDDEN, C::ModuloNoHabilitado)
+            }
             Self::PeticionInvalida(_) => (StatusCode::BAD_REQUEST, C::PeticionInvalida),
             Self::App(AppError::Infraestructura(_)) | Self::Interno(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, C::Interno)
@@ -209,5 +215,26 @@ mod tests {
             (status, codigo),
             (StatusCode::UNPROCESSABLE_ENTITY, CodigoError::Validacion)
         );
+    }
+
+    #[test]
+    fn errores_de_archivos_y_modulos_tienen_su_codigo() {
+        let casos = [
+            (
+                ApiError::EnlaceInvalido,
+                (StatusCode::FORBIDDEN, CodigoError::EnlaceInvalido),
+            ),
+            (
+                ApiError::App(AppError::ModuloNoHabilitado(domain::Modulo::Asambleas)),
+                (StatusCode::FORBIDDEN, CodigoError::ModuloNoHabilitado),
+            ),
+            (
+                ApiError::from(DominioError::TipoArchivoNoAdmitido),
+                (StatusCode::UNPROCESSABLE_ENTITY, CodigoError::Validacion),
+            ),
+        ];
+        for (error, esperado) in casos {
+            assert_eq!(error.status_y_codigo(), esperado, "{error}");
+        }
     }
 }

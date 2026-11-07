@@ -91,7 +91,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 |---|---|---|---|
 | Lenguaje backend | Rust 1.99, edición 2024 | En uso | Fijado en `rust-toolchain.toml`. |
 | HTTP / WebSocket | Axum 0.8 + Tokio + tower-http | En uso | Middlewares: request-id, trace, timeout, límite de cuerpo. |
-| Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. |
+| Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. Extensiones `unaccent` y `pg_trgm` (búsqueda normalizada). |
 | Caché / tiempo real | Redis 8 | Infra lista | Solo sesiones de conversación y pub/sub de resultados. La verdad vive en PostgreSQL. |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |
 | Decimales / fechas / IDs | rust_decimal · chrono · uuid (v7, v4 para votos) | En uso | |
@@ -198,6 +198,9 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - `lineas_whatsapp` es tabla de plataforma (sin tenant). Una línea o una por asamblea = configuración.
 - Toda modificación de esquema = nueva migración reversible (`make migracion NOMBRE=…`) probada con up → down → up. **Nunca editar una migración ya aplicada en otro entorno.**
 - **Archivos** (ADR 0003): nadie toca rutas de disco; todo pasa por `AlmacenArchivos` con una `ClaveArchivo`. La fila de `archivos` guarda la clave lógica y el `almacen`, nunca rutas absolutas. El tipo se valida por contenido (`TipoArchivo::validar`), nunca por extensión. El nombre original no va a logs ni a la auditoría. Casos de uso en `casos_uso::archivos` (`subir_archivo`, `enlace_descarga`, `migrar_lote`).
+- **Datos personales** (ADR 0004): toda columna con datos personales lleva `COMMENT ON COLUMN … IS 'dato_personal: …'` (o `dato_sensible:`) en su migración y se agrega a la prueba `columnas_personales_estan_clasificadas`. Antes de tratar datos para comunicaciones o publicidad se consulta `casos_uso::proteccion_datos::esta_autorizado`.
+- **Búsqueda**: por texto con `normalizar(columna)` (sin tildes ni mayúsculas) y un índice GIN `gin_trgm_ops` sobre esa expresión; nunca `ILIKE` sobre la columna cruda. Ordenar listados por nombre con `normalizar(...)`.
+- **Módulos contratados**: los casos de uso o routers de un módulo vendible (`domain::Modulo`) exigen `casos_uso::modulos::exigir_modulo`; si no está habilitado → `modulo_no_habilitado` (403).
 - Enumeraciones como `TEXT` + `CHECK`; coeficientes `NUMERIC(10,8)`; fechas `TIMESTAMPTZ`; índices para cada consulta frecuente y cada FK usada en filtros.
 - Preferir `sqlx::query!`/`query_as!`; tras cambiar consultas: `make sqlx-prepare` y versionar `.sqlx/`. SQL dinámico solo con `AssertSqlSafe`, justificado, y con datos enlazados (`$1`), nunca interpolados desde la entrada del usuario. Prohibido `SELECT *`.
 

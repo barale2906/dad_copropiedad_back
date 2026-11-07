@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, version, texto, archivo_id, vigente_desde\n             FROM politicas_tratamiento\n             WHERE vigente_desde <= $1\n             ORDER BY version DESC\n             LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "politicas_tratamiento",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "politicas_tratamiento",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "texto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "politicas_tratamiento",
+            "name": "texto"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "politicas_tratamiento",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "politicas_tratamiento",
+            "name": "vigente_desde"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ba49d2669b2f129b9507926a9f823c563a388c4ac790c9bed10fbbd17f209351"
+}

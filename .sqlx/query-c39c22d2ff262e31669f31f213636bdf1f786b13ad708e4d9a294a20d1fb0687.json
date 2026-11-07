@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE autorizaciones_tratamiento SET revocada_en = $3\n             WHERE persona_id = $1 AND finalidad = ANY($2) AND revocada_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "TextArray",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c39c22d2ff262e31669f31f213636bdf1f786b13ad708e4d9a294a20d1fb0687"
+}

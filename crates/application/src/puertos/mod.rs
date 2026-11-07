@@ -8,6 +8,8 @@ pub mod archivos;
 pub mod cola_salida;
 pub mod correo;
 pub mod mensajeria;
+pub mod modulos;
+pub mod proteccion_datos;
 pub mod reloj;
 pub mod repositorios;
 pub mod sesiones;
@@ -18,6 +20,8 @@ pub use archivos::{AlmacenArchivos, RepositorioArchivos};
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
 pub use correo::EnvioCorreo;
 pub use mensajeria::Mensajeria;
+pub use modulos::RepositorioModulos;
+pub use proteccion_datos::RepositorioProteccionDatos;
 pub use reloj::{Reloj, RelojSistema};
 pub use repositorios::{
     DirectorioReuniones, RepositorioInscripciones, RepositorioPreguntas, RepositorioVotos,

@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (\n                   SELECT 1 FROM modulos_habilitados\n                   WHERE modulo = $1 AND desde <= $2 AND (hasta IS NULL OR $2 < hasta)\n               ) AS \"habilitado!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "habilitado!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "c61b015d024b4e283fa048f019423033570323352fb83214791d75bd7a96bea4"
+}

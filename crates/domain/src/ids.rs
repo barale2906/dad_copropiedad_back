@@ -84,6 +84,21 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Versión de la política de tratamiento de datos de una copropiedad.
+    PoliticaTratamientoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Autorización de tratamiento de datos de un titular para una finalidad.
+    AutorizacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Consulta o reclamo de un titular sobre sus datos (Ley 1581, arts. 14 y 15).
+    SolicitudTitularId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

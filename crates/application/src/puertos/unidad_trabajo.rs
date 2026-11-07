@@ -59,13 +59,32 @@ pub(crate) mod memoria {
         sync::{Arc, Mutex},
     };
 
-    use domain::{Almacen, ArchivoId};
+    use chrono::{DateTime, Utc};
+    use domain::{Almacen, ArchivoId, FinalidadTratamiento, Modulo, PersonaId};
 
     use super::*;
     use crate::{
         AppError,
-        puertos::archivos::{Archivo, RepositorioArchivos},
+        puertos::{
+            archivos::{Archivo, RepositorioArchivos},
+            modulos::{PeriodoModulo, RepositorioModulos},
+            proteccion_datos::{
+                Autorizacion, PoliticaTratamiento, RepositorioProteccionDatos, SolicitudTitular,
+            },
+        },
     };
+
+    /// Datos de negocio en memoria. La transacción trabaja sobre una copia y la reemplaza
+    /// al confirmar.
+    #[derive(Default, Clone)]
+    pub struct Datos {
+        pub archivos: BTreeMap<ArchivoId, Archivo>,
+        pub politicas: Vec<PoliticaTratamiento>,
+        /// Autorizaciones con su fecha de revocación.
+        pub autorizaciones: Vec<(Autorizacion, Option<DateTime<Utc>>)>,
+        pub solicitudes: Vec<SolicitudTitular>,
+        pub modulos: Vec<PeriodoModulo>,
+    }
 
     /// Evento confirmado junto con el contexto de su transacción.
     pub type EventoConfirmado = (Contexto, EventoAuditoria);
@@ -74,7 +93,7 @@ pub(crate) mod memoria {
     pub struct UnidadEnMemoria {
         confirmados: Arc<Mutex<Vec<EventoConfirmado>>>,
         outbox: Arc<Mutex<Vec<(Contexto, EventoSaliente)>>>,
-        archivos: Arc<Mutex<BTreeMap<ArchivoId, Archivo>>>,
+        datos: Arc<Mutex<Datos>>,
         /// Si es `true`, `confirmar` falla (simula una caída de la BD al hacer COMMIT).
         falla_al_confirmar: bool,
     }
@@ -96,13 +115,13 @@ pub(crate) mod memoria {
             self.outbox.lock().expect("mutex sano").clone()
         }
 
+        /// Datos confirmados.
+        pub fn datos(&self) -> Datos {
+            self.datos.lock().expect("mutex sano").clone()
+        }
+
         pub fn archivos(&self) -> Vec<Archivo> {
-            self.archivos
-                .lock()
-                .expect("mutex sano")
-                .values()
-                .cloned()
-                .collect()
+            self.datos().archivos.into_values().collect()
         }
     }
 
@@ -110,8 +129,8 @@ pub(crate) mod memoria {
         ctx: Contexto,
         auditoria: Vec<EventoAuditoria>,
         salientes: Vec<EventoSaliente>,
-        /// Copia de los archivos confirmados; reemplaza al original solo al confirmar.
-        archivos: BTreeMap<ArchivoId, Archivo>,
+        /// Copia de los datos confirmados; reemplaza al original solo al confirmar.
+        datos: Datos,
         destino: UnidadEnMemoria,
     }
 
@@ -123,7 +142,7 @@ pub(crate) mod memoria {
                 ctx: ctx.clone(),
                 auditoria: Vec::new(),
                 salientes: Vec::new(),
-                archivos: self.archivos.lock().expect("mutex sano").clone(),
+                datos: self.datos(),
                 destino: self.clone(),
             })
         }
@@ -134,7 +153,7 @@ pub(crate) mod memoria {
             if self.destino.falla_al_confirmar {
                 return Err(AppError::infra(std::io::Error::other("COMMIT fallido")));
             }
-            *self.destino.archivos.lock().expect("mutex sano") = self.archivos;
+            *self.destino.datos.lock().expect("mutex sano") = self.datos;
             let ctx = self.ctx;
             self.destino
                 .confirmados
@@ -159,16 +178,17 @@ pub(crate) mod memoria {
 
     impl RepositorioArchivos for TransaccionEnMemoria {
         async fn insertar(&mut self, archivo: &Archivo) -> AppResult<()> {
-            self.archivos.insert(archivo.id, archivo.clone());
+            self.datos.archivos.insert(archivo.id, archivo.clone());
             Ok(())
         }
 
         async fn buscar(&mut self, id: ArchivoId) -> AppResult<Option<Archivo>> {
-            Ok(self.archivos.get(&id).cloned())
+            Ok(self.datos.archivos.get(&id).cloned())
         }
 
         async fn en_almacen(&mut self, almacen: Almacen, limite: u32) -> AppResult<Vec<Archivo>> {
             Ok(self
+                .datos
                 .archivos
                 .values()
                 .filter(|a| a.almacen == almacen)
@@ -179,11 +199,123 @@ pub(crate) mod memoria {
 
         async fn cambiar_almacen(&mut self, id: ArchivoId, almacen: Almacen) -> AppResult<()> {
             let archivo = self
+                .datos
                 .archivos
                 .get_mut(&id)
                 .ok_or(AppError::NoEncontrado("archivo"))?;
             archivo.almacen = almacen;
             Ok(())
+        }
+    }
+
+    impl RepositorioProteccionDatos for TransaccionEnMemoria {
+        async fn ultima_version_politica(&mut self) -> AppResult<u32> {
+            Ok(self
+                .datos
+                .politicas
+                .iter()
+                .map(|p| p.version)
+                .max()
+                .unwrap_or(0))
+        }
+
+        async fn insertar_politica(&mut self, politica: &PoliticaTratamiento) -> AppResult<()> {
+            self.datos.politicas.push(politica.clone());
+            Ok(())
+        }
+
+        async fn politica_vigente(
+            &mut self,
+            ahora: DateTime<Utc>,
+        ) -> AppResult<Option<PoliticaTratamiento>> {
+            Ok(self
+                .datos
+                .politicas
+                .iter()
+                .filter(|p| p.vigente_desde <= ahora)
+                .max_by_key(|p| p.version)
+                .cloned())
+        }
+
+        async fn insertar_autorizacion(&mut self, a: &Autorizacion) -> AppResult<bool> {
+            let ya_vigente = self.datos.autorizaciones.iter().any(|(x, revocada)| {
+                revocada.is_none() && x.persona_id == a.persona_id && x.finalidad == a.finalidad
+            });
+            if !ya_vigente {
+                self.datos.autorizaciones.push((a.clone(), None));
+            }
+            Ok(!ya_vigente)
+        }
+
+        async fn revocar_autorizaciones(
+            &mut self,
+            persona_id: PersonaId,
+            finalidades: &[FinalidadTratamiento],
+            ahora: DateTime<Utc>,
+        ) -> AppResult<u64> {
+            let mut revocadas = 0;
+            for (a, revocada) in &mut self.datos.autorizaciones {
+                if revocada.is_none()
+                    && a.persona_id == persona_id
+                    && finalidades.contains(&a.finalidad)
+                {
+                    *revocada = Some(ahora);
+                    revocadas += 1;
+                }
+            }
+            Ok(revocadas)
+        }
+
+        async fn finalidades_autorizadas(
+            &mut self,
+            persona_id: PersonaId,
+        ) -> AppResult<Vec<FinalidadTratamiento>> {
+            Ok(self
+                .datos
+                .autorizaciones
+                .iter()
+                .filter(|(a, revocada)| revocada.is_none() && a.persona_id == persona_id)
+                .map(|(a, _)| a.finalidad)
+                .collect())
+        }
+
+        async fn insertar_solicitud(&mut self, solicitud: &SolicitudTitular) -> AppResult<()> {
+            self.datos.solicitudes.push(solicitud.clone());
+            Ok(())
+        }
+    }
+
+    impl RepositorioModulos for TransaccionEnMemoria {
+        async fn modulo_habilitado(
+            &mut self,
+            modulo: Modulo,
+            ahora: DateTime<Utc>,
+        ) -> AppResult<bool> {
+            Ok(self
+                .datos
+                .modulos
+                .iter()
+                .any(|p| p.modulo == modulo && p.cubre(ahora)))
+        }
+
+        async fn insertar_periodo(&mut self, periodo: &PeriodoModulo) -> AppResult<()> {
+            self.datos.modulos.push(*periodo);
+            Ok(())
+        }
+
+        async fn terminar_periodos(
+            &mut self,
+            modulo: Modulo,
+            hasta: DateTime<Utc>,
+        ) -> AppResult<u64> {
+            let mut terminados = 0;
+            for p in &mut self.datos.modulos {
+                if p.modulo == modulo && p.desde < hasta && p.hasta.is_none_or(|h| h > hasta) {
+                    p.hasta = Some(hasta);
+                    terminados += 1;
+                }
+            }
+            Ok(terminados)
         }
     }
 

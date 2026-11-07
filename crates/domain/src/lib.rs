@@ -20,7 +20,9 @@ pub mod correo;
 pub mod error;
 pub mod ids;
 pub mod mayoria;
+pub mod modulo;
 pub mod pregunta;
+pub mod proteccion_datos;
 pub mod quorum;
 pub mod registro;
 pub mod resultados;
@@ -32,11 +34,13 @@ pub use coeficiente::Coeficiente;
 pub use correo::DireccionCorreo;
 pub use error::DominioError;
 pub use ids::{
-    ArchivoId, BienPrivadoId, InscripcionId, OpcionId, ParticipacionId, PersonaId, PreguntaId,
-    ReunionId, TenantId, VotoId,
+    ArchivoId, AutorizacionId, BienPrivadoId, InscripcionId, OpcionId, ParticipacionId, PersonaId,
+    PoliticaTratamientoId, PreguntaId, ReunionId, SolicitudTitularId, TenantId, VotoId,
 };
 pub use mayoria::ReglaMayoria;
+pub use modulo::Modulo;
 pub use pregunta::{EstadoPregunta, Pregunta, PreguntaAbierta, TipoVoto};
+pub use proteccion_datos::{FinalidadTratamiento, MedioAutorizacion, TipoSolicitudTitular};
 pub use quorum::{Convocatoria, Quorum};
 pub use registro::{MetodoRegistro, RolAsistente};
 pub use resultados::ProyeccionResultados;

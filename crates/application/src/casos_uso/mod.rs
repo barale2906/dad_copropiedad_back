@@ -3,6 +3,8 @@
 pub mod archivos;
 pub mod despachar_salida;
 pub mod emitir_voto;
+pub mod modulos;
+pub mod proteccion_datos;
 pub mod resolver_reunion;
 
 pub use archivos::{ArchivoSubido, ResumenMigracion, enlace_descarga, migrar_lote, subir_archivo};

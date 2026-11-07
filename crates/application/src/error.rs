@@ -1,4 +1,4 @@
-use domain::DominioError;
+use domain::{DominioError, Modulo};
 
 /// Error de los casos de uso. El mapeo a HTTP vive en `apps/api/src/error.rs`.
 #[derive(Debug, thiserror::Error)]
@@ -15,6 +15,10 @@ pub enum AppError {
 
     #[error("el bien privado ya votó en esta pregunta")]
     BienPrivadoYaVoto,
+
+    /// La copropiedad no tiene contratado el módulo.
+    #[error("el módulo `{0}` no está habilitado para esta copropiedad")]
+    ModuloNoHabilitado(Modulo),
 
     #[error("la persona no está inscrita como representante del bien privado en esta reunión")]
     NoInscrito,
