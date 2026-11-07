@@ -15,6 +15,7 @@
 mod archivos;
 mod auth;
 mod bienes_privados;
+mod censo;
 mod coeficientes;
 mod copropiedades;
 mod ficha;

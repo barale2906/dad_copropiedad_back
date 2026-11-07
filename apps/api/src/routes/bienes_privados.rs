@@ -20,7 +20,7 @@ use chrono::{DateTime, Utc};
 use domain::{
     AgrupacionId, ArchivoId, BienPrivadoId, CodigoAgrupacion, CodigoBienPrivado, CuentaId,
     DireccionCorreo, Documento, NumeroBienPrivado, PersonaId, Porcentaje, Telefono, TipoAgrupacion,
-    TipoBienPrivado, TipoPersona, TipoTitularidad, TipoUsoExclusivo, UsoBienPrivado,
+    TipoBienPrivado, TipoDocumento, TipoPersona, TipoTitularidad, TipoUsoExclusivo, UsoBienPrivado,
     UsoExclusivoId,
 };
 use rust_decimal::Decimal;
@@ -743,7 +743,7 @@ pub async fn listar_titulares(
 }
 
 /// Persona nueva (si el documento ya existe en la copropiedad se usa la registrada).
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct PersonaPeticion {
     #[serde(default = "persona_natural")]
     #[schema(value_type = String, example = "natural")]
@@ -752,6 +752,9 @@ pub struct PersonaPeticion {
     pub nombre: String,
     #[schema(value_type = String, example = "52123456")]
     pub documento: Documento,
+    /// `CC`, `CE`, `TI`, `RC`, `PA`, `PPT` o `NIT`.
+    #[schema(value_type = Option<String>, example = "CC")]
+    pub tipo_documento: Option<TipoDocumento>,
     #[schema(value_type = Option<String>, example = "573001234567")]
     pub telefono: Option<Telefono>,
     #[schema(value_type = Option<String>)]
@@ -785,24 +788,35 @@ const fn propietario() -> TipoTitularidad {
     TipoTitularidad::Propietario
 }
 
+/// Persona registrada (`persona_id`) o nueva (`persona`), exactamente una de las dos.
+///
+/// # Errors
+///
+/// [`crate::error::ApiError::PeticionInvalida`] si vienen ambas o ninguna.
+pub fn ref_persona(
+    persona_id: Option<Uuid>,
+    persona: Option<PersonaPeticion>,
+) -> Result<RefPersona, crate::error::ApiError> {
+    match (persona_id, persona) {
+        (Some(id), None) => Ok(RefPersona::Existente(PersonaId::from_uuid(id))),
+        (None, Some(p)) => Ok(RefPersona::Nueva(DatosPersona {
+            tipo: p.tipo,
+            nombre: p.nombre,
+            documento: p.documento,
+            telefono: p.telefono,
+            correo: p.correo,
+            cuenta_id: p.cuenta_id.map(CuentaId::from_uuid),
+            tipo_documento: p.tipo_documento,
+        })),
+        _ => Err(crate::error::ApiError::PeticionInvalida(
+            "indique `persona_id` o `persona`, no ambos".into(),
+        )),
+    }
+}
+
 impl TitularPeticion {
     fn a_solicitud(self) -> Result<SolicitudTitular, crate::error::ApiError> {
-        let persona = match (self.persona_id, self.persona) {
-            (Some(id), None) => RefPersona::Existente(PersonaId::from_uuid(id)),
-            (None, Some(p)) => RefPersona::Nueva(DatosPersona {
-                tipo: p.tipo,
-                nombre: p.nombre,
-                documento: p.documento,
-                telefono: p.telefono,
-                correo: p.correo,
-                cuenta_id: p.cuenta_id.map(CuentaId::from_uuid),
-            }),
-            _ => {
-                return Err(crate::error::ApiError::PeticionInvalida(
-                    "cada titular lleva `persona_id` o `persona`, no ambos".into(),
-                ));
-            }
-        };
+        let persona = ref_persona(self.persona_id, self.persona)?;
         Ok(SolicitudTitular {
             persona,
             tipo: self.tipo,

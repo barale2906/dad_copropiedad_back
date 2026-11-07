@@ -1,4 +1,4 @@
-//! Personas, titularidades e importaciones sobre la transacción del tenant.
+//! Titularidades e importaciones sobre la transacción del tenant.
 //!
 //! Las reglas del conjunto de titulares vigentes (suma 100 %, un representante, sin solapes) las
 //! repite el trigger diferido `trg_titularidades_validar`, que se evalúa al confirmar.
@@ -7,48 +7,18 @@ use application::{
     AppError, AppResult,
     puertos::{
         RepositorioImportaciones, RepositorioTitulares,
-        copropiedades::{Importacion, Persona, ResumenImportacion, Titularidad},
+        copropiedades::{Importacion, ResumenImportacion, Titularidad},
     },
 };
 use chrono::{DateTime, Utc};
 use domain::{
-    ArchivoId, BienPrivadoId, CuentaId, DireccionCorreo, Documento, EstadoImportacion,
-    ImportacionId, PersonaId, Porcentaje, Telefono, TipoImportacion, TipoPersona, TipoTitularidad,
-    TitularidadId, importacion::ErrorFila,
+    ArchivoId, BienPrivadoId, CuentaId, EstadoImportacion, ImportacionId, PersonaId, Porcentaje,
+    TipoImportacion, TipoTitularidad, TitularidadId, importacion::ErrorFila,
 };
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
-use crate::{
-    TransaccionPg,
-    copropiedades::{error_escritura, opcional},
-};
-
-struct FilaPersona {
-    id: Uuid,
-    tipo: String,
-    nombre: String,
-    documento: Option<String>,
-    telefono: Option<String>,
-    correo: Option<String>,
-    cuenta_id: Option<Uuid>,
-}
-
-impl TryFrom<FilaPersona> for Persona {
-    type Error = AppError;
-
-    fn try_from(f: FilaPersona) -> AppResult<Self> {
-        Ok(Self {
-            id: PersonaId::from_uuid(f.id),
-            tipo: TipoPersona::try_from(f.tipo.as_str())?,
-            nombre: f.nombre,
-            documento: opcional(f.documento, Documento::new)?,
-            telefono: opcional(f.telefono, Telefono::new)?,
-            correo: opcional(f.correo, DireccionCorreo::new)?,
-            cuenta_id: f.cuenta_id.map(CuentaId::from_uuid),
-        })
-    }
-}
+use crate::{TransaccionPg, copropiedades::error_escritura};
 
 struct FilaTitularidad {
     id: Uuid,
@@ -81,26 +51,6 @@ impl TryFrom<FilaTitularidad> for Titularidad {
 }
 
 impl TransaccionPg {
-    async fn personas_donde(
-        &mut self,
-        id: Option<Uuid>,
-        documento: Option<&str>,
-    ) -> AppResult<Option<Persona>> {
-        sqlx::query_as!(
-            FilaPersona,
-            "SELECT id, tipo, nombre, documento, telefono, correo, cuenta_id FROM personas
-             WHERE ($1::uuid IS NULL OR id = $1) AND ($2::text IS NULL OR documento = $2)
-             LIMIT 1",
-            id,
-            documento,
-        )
-        .fetch_optional(&mut *self.tx)
-        .await
-        .map_err(AppError::infra)?
-        .map(Persona::try_from)
-        .transpose()
-    }
-
     async fn titularidades(
         &mut self,
         bien: BienPrivadoId,
@@ -140,47 +90,6 @@ impl TransaccionPg {
 }
 
 impl RepositorioTitulares for TransaccionPg {
-    async fn persona(&mut self, id: PersonaId) -> AppResult<Option<Persona>> {
-        self.personas_donde(Some(id.as_uuid()), None).await
-    }
-
-    async fn persona_por_documento(&mut self, documento: &Documento) -> AppResult<Option<Persona>> {
-        self.personas_donde(None, Some(documento.as_str())).await
-    }
-
-    async fn insertar_persona(&mut self, p: &Persona) -> AppResult<()> {
-        sqlx::query!(
-            "INSERT INTO personas (id, tenant_id, tipo, nombre, documento, telefono, correo, cuenta_id)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-            p.id.as_uuid(),
-            self.ctx.tenant_id.as_uuid(),
-            p.tipo.as_str(),
-            p.nombre,
-            p.documento.as_ref().map(Documento::as_str),
-            p.telefono.as_ref().map(Telefono::as_str),
-            p.correo.as_ref().map(DireccionCorreo::as_str),
-            p.cuenta_id.map(CuentaId::as_uuid),
-        )
-        .execute(&mut *self.tx)
-        .await
-        .map_err(|e| {
-            error_escritura(e, "el documento o la cuenta ya están registrados", "cuenta")
-        })?;
-        Ok(())
-    }
-
-    async fn vincular_cuenta(&mut self, persona: PersonaId, cuenta: CuentaId) -> AppResult<()> {
-        sqlx::query!(
-            "UPDATE personas SET cuenta_id = $2 WHERE id = $1",
-            persona.as_uuid(),
-            cuenta.as_uuid(),
-        )
-        .execute(&mut *self.tx)
-        .await
-        .map_err(|e| error_escritura(e, "la cuenta ya está vinculada a otra persona", "cuenta"))?;
-        Ok(())
-    }
-
     async fn titulares_vigentes(&mut self, bien: BienPrivadoId) -> AppResult<Vec<Titularidad>> {
         self.titularidades(bien, true).await
     }

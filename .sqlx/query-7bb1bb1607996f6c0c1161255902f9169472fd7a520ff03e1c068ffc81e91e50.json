@@ -1,0 +1,136 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bien_privado_id, persona_id, tipo, placa, marca, color, tarjeta_archivo_id,\n                    vigente_desde, vigente_hasta\n             FROM vehiculos WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "placa",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "placa"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "marca",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "marca"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "color",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "color"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "tarjeta_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "tarjeta_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "vigente_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "vehiculos",
+            "name": "vigente_hasta"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "7bb1bb1607996f6c0c1161255902f9169472fd7a520ff03e1c068ffc81e91e50"
+}

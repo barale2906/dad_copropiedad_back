@@ -4,7 +4,8 @@
 //! - [`RepositorioCopropiedad`]: ficha de la PH, cargos vigentes y puntos de atención.
 //! - [`RepositorioBienesPrivados`]: agrupaciones, bienes privados y usos exclusivos.
 //! - [`RepositorioCoeficientes`]: cuadros de coeficientes versionados.
-//! - [`RepositorioTitulares`]: personas y titularidades.
+//! - [`RepositorioPersonas`]: personas registradas en la copropiedad.
+//! - [`RepositorioTitulares`]: titularidades de los bienes privados.
 //! - [`RepositorioImportaciones`]: importaciones masivas.
 //! - [`LectorPlanillas`]: lee CSV/XLSX (adaptador `infra-planillas`).
 
@@ -16,9 +17,9 @@ use domain::{
     Coeficiente, CuadroCoeficientesId, CuentaId, DireccionCorreo, Documento, EstadoCopropiedad,
     EstadoCuadro, EstadoImportacion, FormaCopropiedad, Horario, ImportacionId, Nit,
     NumeroBienPrivado, PersonaId, PlantillaNomenclatura, Porcentaje, PuntoAtencionId, Telefono,
-    TipoAgrupacion, TipoArchivo, TipoBienPrivado, TipoCopropiedad, TipoCuadro, TipoImportacion,
-    TipoPersona, TipoPuntoAtencion, TipoTitularidad, TipoUsoExclusivo, TitularidadId,
-    UsoBienPrivado, UsoExclusivoId, importacion::ErrorFila,
+    TipoAgrupacion, TipoArchivo, TipoBienPrivado, TipoCopropiedad, TipoCuadro, TipoDocumento,
+    TipoImportacion, TipoPersona, TipoPuntoAtencion, TipoTitularidad, TipoUsoExclusivo,
+    TitularidadId, UsoBienPrivado, UsoExclusivoId, importacion::ErrorFila,
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -349,6 +350,38 @@ pub struct Persona {
     pub correo: Option<DireccionCorreo>,
     /// Cuenta de la plataforma con que inicia sesión, si la tiene.
     pub cuenta_id: Option<CuentaId>,
+    pub tipo_documento: Option<TipoDocumento>,
+    /// Dato sensible: identifica a los menores de edad.
+    pub fecha_nacimiento: Option<NaiveDate>,
+    pub contacto_emergencia_nombre: Option<String>,
+    pub contacto_emergencia_telefono: Option<Telefono>,
+    /// Dato sensible (salud); solo con consentimiento.
+    pub movilidad_reducida: bool,
+}
+
+impl Persona {
+    /// Persona con los datos básicos y el resto vacío.
+    pub fn basica(
+        id: PersonaId,
+        tipo: TipoPersona,
+        nombre: String,
+        documento: Option<Documento>,
+    ) -> Self {
+        Self {
+            id,
+            tipo,
+            nombre,
+            documento,
+            telefono: None,
+            correo: None,
+            cuenta_id: None,
+            tipo_documento: None,
+            fecha_nacimiento: None,
+            contacto_emergencia_nombre: None,
+            contacto_emergencia_telefono: None,
+            movilidad_reducida: false,
+        }
+    }
 }
 
 /// Titularidad de una persona sobre un bien privado.
@@ -365,7 +398,7 @@ pub struct Titularidad {
     pub soporte_archivo_id: Option<ArchivoId>,
 }
 
-pub trait RepositorioTitulares: Send {
+pub trait RepositorioPersonas: Send {
     fn persona(&mut self, id: PersonaId)
     -> impl Future<Output = AppResult<Option<Persona>>> + Send;
 
@@ -392,6 +425,26 @@ pub trait RepositorioTitulares: Send {
         cuenta: CuentaId,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Reemplaza los datos de la persona (no su cuenta).
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si el documento ya lo tiene otra persona.
+    fn actualizar_persona(
+        &mut self,
+        persona: &Persona,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Personas de la copropiedad, opcionalmente filtradas por un fragmento del nombre (sin
+    /// tildes ni mayúsculas) o del documento.
+    fn listar_personas(
+        &mut self,
+        texto: Option<&str>,
+        pagina: SolicitudPagina,
+    ) -> impl Future<Output = AppResult<Pagina<Persona>>> + Send;
+}
+
+pub trait RepositorioTitulares: Send {
     /// Titulares vigentes del bien privado.
     fn titulares_vigentes(
         &mut self,

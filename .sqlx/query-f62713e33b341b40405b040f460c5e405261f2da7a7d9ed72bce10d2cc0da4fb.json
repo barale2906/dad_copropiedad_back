@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO mascotas (id, tenant_id, bien_privado_id, responsable_id, especie, nombre,\n                                   raza, potencialmente_peligrosa, poliza_numero, poliza_vence,\n                                   poliza_archivo_id, vacunas_vencen, carne_archivo_id,\n                                   esterilizada, foto_archivo_id, estado)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Text",
+        "Date",
+        "Uuid",
+        "Date",
+        "Uuid",
+        "Bool",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f62713e33b341b40405b040f460c5e405261f2da7a7d9ed72bce10d2cc0da4fb"
+}

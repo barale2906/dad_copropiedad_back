@@ -4,85 +4,9 @@
 mod comun;
 
 use axum::http::{Method, StatusCode};
-use comun::{Api, MIGRACIONES, api};
+use comun::{MIGRACIONES, ph};
 use serde_json::{Value, json};
 use sqlx::PgPool;
-
-/// Copropiedad dada de alta por la plataforma con su administrador.
-struct Ph {
-    api: Api,
-    base: String,
-    admin: String,
-    root: String,
-    id: String,
-}
-
-async fn ph(pool: PgPool) -> Ph {
-    let api = api(pool).await;
-    let root_id = api.registrar("root").await;
-    api.hacer_superusuario(&root_id).await;
-    let admin_id = api.registrar("admin").await;
-    let root = api.token_con_segundo_factor("root").await;
-    let (s, v) = api
-        .pedir(
-            Method::POST,
-            "/api/v1/plataforma/copropiedades",
-            Some(&root),
-            Some(json!({
-                "nombre": "Conjunto Alameda",
-                "administrador_cuenta_id": admin_id,
-                "nit": "800.197.268",
-                "tipo": "residencial",
-            })),
-        )
-        .await;
-    assert_eq!(s, StatusCode::CREATED, "{v}");
-    let id = v["id"].as_str().expect("id").to_owned();
-    Ph {
-        admin: api.token("admin").await,
-        base: format!("/api/v1/copropiedades/{id}"),
-        root,
-        id,
-        api,
-    }
-}
-
-impl Ph {
-    async fn pedir(
-        &self,
-        metodo: Method,
-        ruta: &str,
-        cuerpo: Option<Value>,
-    ) -> (StatusCode, Value) {
-        self.api
-            .pedir(
-                metodo,
-                &format!("{}{ruta}", self.base),
-                Some(&self.admin),
-                cuerpo,
-            )
-            .await
-    }
-
-    async fn estado(&self, estado: &str, token: &str) -> (StatusCode, Value) {
-        self.api
-            .pedir(
-                Method::POST,
-                &format!("/api/v1/plataforma/copropiedades/{}/estado", self.id),
-                Some(token),
-                Some(json!({ "estado": estado })),
-            )
-            .await
-    }
-
-    async fn crear_bien(&self, cuerpo: Value) -> Value {
-        let (s, v) = self
-            .pedir(Method::POST, "/bienes-privados", Some(cuerpo))
-            .await;
-        assert_eq!(s, StatusCode::CREATED, "{v}");
-        v
-    }
-}
 
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn cuadro_que_no_suma_uno_se_rechaza_y_corregido_se_activa(pool: PgPool) {

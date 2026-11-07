@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, tipo, nombre, documento, telefono, correo, cuenta_id FROM personas\n             WHERE ($1::uuid IS NULL OR id = $1) AND ($2::text IS NULL OR documento = $2)\n             LIMIT 1",
+  "query": "SELECT id, tipo, nombre, documento, telefono, correo, cuenta_id, tipo_documento,\n                    fecha_nacimiento, contacto_emergencia_nombre, contacto_emergencia_telefono,\n                    movilidad_reducida\n             FROM personas\n             WHERE ($1::uuid IS NULL OR id = $1) AND ($2::text IS NULL OR documento = $2)\n             LIMIT 1",
   "describe": {
     "columns": [
       {
@@ -79,6 +79,61 @@
             "name": "cuenta_id"
           }
         }
+      },
+      {
+        "ordinal": 7,
+        "name": "tipo_documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "tipo_documento"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "fecha_nacimiento",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "fecha_nacimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "contacto_emergencia_nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "contacto_emergencia_nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "contacto_emergencia_telefono",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "contacto_emergencia_telefono"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "movilidad_reducida",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "movilidad_reducida"
+          }
+        }
       }
     ],
     "parameters": {
@@ -94,8 +149,13 @@
       true,
       true,
       true,
-      true
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
     ]
   },
-  "hash": "763b31ad134ed1ef9294a897f271fee4ddaaf82d3ea2ab34bea18ad09e95f6b3"
+  "hash": "a52a6871bf295035fd3ab3d00991d693899ae7269ca96e1806567d8a4aa0c252"
 }

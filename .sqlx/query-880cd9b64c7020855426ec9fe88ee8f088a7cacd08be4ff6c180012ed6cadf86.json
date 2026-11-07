@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (\n                   SELECT 1 FROM personas p\n                   WHERE p.cuenta_id = $1 AND (\n                       EXISTS (SELECT 1 FROM titularidades t\n                               WHERE t.persona_id = p.id AND t.bien_privado_id = $2\n                                 AND t.vigente_hasta IS NULL)\n                       OR EXISTS (SELECT 1 FROM residencias r\n                                  WHERE r.persona_id = p.id AND r.bien_privado_id = $2\n                                    AND r.vigente_hasta IS NULL))\n               ) AS \"vinculada!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "vinculada!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "880cd9b64c7020855426ec9fe88ee8f088a7cacd08be4ff6c180012ed6cadf86"
+}

@@ -103,6 +103,14 @@ catalogo_permisos! {
     TitularesVer => "titulares.ver", Copropiedad;
     /// Registrar titulares, transferencias y representantes.
     TitularesEditar => "titulares.editar", Copropiedad;
+    /// Ver residentes, vehículos y mascotas.
+    CensoVer => "censo.ver", Copropiedad;
+    /// Registrar y terminar residencias, vehículos y mascotas.
+    CensoEditar => "censo.editar", Copropiedad;
+    /// Aprobar o rechazar los cambios que proponen residentes y propietarios.
+    CensoAprobar => "censo.aprobar", Copropiedad;
+    /// Exportar los libros de propietarios y residentes (art. 51).
+    CensoExportar => "censo.exportar", Copropiedad;
     /// Importar datos masivos desde CSV/XLSX.
     ImportacionesEjecutar => "importaciones.ejecutar", Copropiedad;
     BienesComunesVer => "bienes_comunes.ver", Copropiedad;
@@ -286,6 +294,9 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::OrganizacionesVincular,
             P::BienesPrivadosVer,
             P::TitularesVer,
+            P::CensoVer,
+            P::CensoEditar,
+            P::CensoAprobar,
             P::BienesComunesVer,
             P::ReservasAprobar,
             P::TicketsCrear,

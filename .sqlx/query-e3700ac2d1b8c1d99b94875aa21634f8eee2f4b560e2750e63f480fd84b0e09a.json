@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT r.persona_id FROM residencias r\n             WHERE r.vigente_hasta IS NULL\n               AND NOT EXISTS (SELECT 1 FROM autorizaciones_tratamiento a\n                               WHERE a.persona_id = r.persona_id AND a.finalidad = 'administracion'\n                                 AND a.revocada_en IS NULL)\n             ORDER BY 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "persona_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "e3700ac2d1b8c1d99b94875aa21634f8eee2f4b560e2750e63f480fd84b0e09a"
+}

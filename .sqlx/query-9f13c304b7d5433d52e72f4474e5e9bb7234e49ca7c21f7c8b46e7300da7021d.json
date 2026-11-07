@@ -1,0 +1,124 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "WITH cuadro AS (\n                 SELECT id FROM cuadros_coeficientes\n                 WHERE tipo = 'copropiedad' AND estado <> 'borrador' AND vigente_desde <= $1\n                 ORDER BY vigente_desde DESC LIMIT 1)\n             SELECT b.codigo, cb.coeficiente AS \"coeficiente?\", p.nombre, p.tipo_documento,\n                    p.documento, t.tipo, t.porcentaje, t.es_representante, t.vigente_desde\n             FROM titularidades t\n             JOIN bienes_privados b ON b.id = t.bien_privado_id\n             JOIN personas p        ON p.id = t.persona_id\n             LEFT JOIN coeficientes_bien_privado cb\n                    ON cb.bien_privado_id = b.id AND cb.cuadro_id = (SELECT id FROM cuadro)\n             WHERE t.vigente_desde <= $1 AND (t.vigente_hasta IS NULL OR t.vigente_hasta > $1)\n             ORDER BY normalizar(b.codigo), t.es_representante DESC, normalizar(p.nombre)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "coeficiente?",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "coeficientes_bien_privado",
+            "name": "coeficiente"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo_documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "tipo_documento"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "documento"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "titularidades",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "porcentaje",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "titularidades",
+            "name": "porcentaje"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "es_representante",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "titularidades",
+            "name": "es_representante"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "titularidades",
+            "name": "vigente_desde"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "9f13c304b7d5433d52e72f4474e5e9bb7234e49ca7c21f7c8b46e7300da7021d"
+}

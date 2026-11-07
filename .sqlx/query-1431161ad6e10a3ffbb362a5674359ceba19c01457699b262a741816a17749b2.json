@@ -1,0 +1,125 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bien_privado_id, persona_id, calidad, es_responsable, autorizado_por,\n                    contrato_archivo_id, vigente_desde, vigente_hasta\n             FROM residencias\n             WHERE ($1::uuid IS NULL OR bien_privado_id = $1) AND ($2 OR vigente_hasta IS NULL)\n             ORDER BY vigente_desde DESC, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "calidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "calidad"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "es_responsable",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "es_responsable"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "autorizado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "autorizado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "contrato_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "contrato_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "vigente_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "vigente_hasta"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "1431161ad6e10a3ffbb362a5674359ceba19c01457699b262a741816a17749b2"
+}

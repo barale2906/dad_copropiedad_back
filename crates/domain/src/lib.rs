@@ -16,6 +16,7 @@ mod macros;
 pub mod archivo;
 pub mod bien_privado;
 pub mod calendario;
+pub mod censo;
 pub mod coeficiente;
 pub mod copropiedad;
 pub mod correo;
@@ -44,6 +45,10 @@ pub use bien_privado::{
     CodigoAgrupacion, CodigoBienPrivado, NumeroBienPrivado, PlantillaNomenclatura, TipoAgrupacion,
     TipoBienPrivado, TipoUsoExclusivo, UsoBienPrivado,
 };
+pub use censo::{
+    AlertaMascota, CalidadResidencia, EspecieMascota, EstadoCambioCenso, EstadoMascota, Placa,
+    TipoCambioCenso, TipoDocumento, TipoVehiculo,
+};
 pub use coeficiente::Coeficiente;
 pub use copropiedad::{
     AdvertenciaFicha, CodigoDane, EstadoCopropiedad, EstadoLegal, FormaCopropiedad, Telefono,
@@ -55,11 +60,11 @@ pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
 pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
-    AgrupacionId, ArchivoId, AsignacionRolId, AutorizacionId, BienPrivadoId, ContratoServicioId,
-    CuadroCoeficientesId, CuentaId, ImportacionId, InscripcionId, OpcionId, OrganizacionId,
-    ParticipacionId, PersonaId, PoliticaTratamientoId, PreguntaId, PuntoAtencionId, ReclamacionId,
-    ReunionId, RolId, SesionId, SolicitudTitularId, TenantId, TitularidadId, UsoExclusivoId,
-    VotoId,
+    AgrupacionId, ArchivoId, AsignacionRolId, AutorizacionId, BienPrivadoId, CambioCensoId,
+    ContratoServicioId, CuadroCoeficientesId, CuentaId, ImportacionId, InscripcionId, MascotaId,
+    OpcionId, OrganizacionId, ParticipacionId, PersonaId, PoliticaTratamientoId, PreguntaId,
+    PuntoAtencionId, ReclamacionId, ResidenciaId, ReunionId, RolId, SesionId, SolicitudTitularId,
+    TenantId, TitularidadId, UsoExclusivoId, VehiculoId, VotoId,
 };
 pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
 pub use mayoria::ReglaMayoria;

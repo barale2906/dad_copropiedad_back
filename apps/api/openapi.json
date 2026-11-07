@@ -3246,6 +3246,1251 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/residencias": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Residentes (de un bien o de todos).",
+        "operationId": "listar_residencias",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "historial",
+            "in": "query",
+            "description": "Incluir los terminados, retirados o inactivos (historial).",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Residencias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResidenciaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Registra que una persona reside en un bien privado. Tenedores, familiares y propietarios\nresidentes con cuenta reciben el rol `residente`.",
+        "operationId": "registrar_residencia",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaResidenciaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Residencia registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidenciaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya reside allí o ya hay responsable (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Propietario no titular o tenedor sin autorización (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/residencias/{residencia_id}/terminar": {
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Termina una residencia (vence su rol `residente` en la misma transacción).",
+        "operationId": "terminar_residencia",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "residencia_id",
+            "in": "path",
+            "description": "Residencia",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Terminada"
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/vehiculos": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Vehículos (de un bien, por placa o todos).",
+        "operationId": "listar_vehiculos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "placa",
+            "in": "query",
+            "description": "Placa exacta (se normaliza).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "historial",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vehículos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VehiculoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Registra un vehículo de un bien privado.",
+        "operationId": "registrar_vehiculo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoVehiculoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Vehículo registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehiculoRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Placa ya registrada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Carro o moto sin placa (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/vehiculos/{vehiculo_id}/retirar": {
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Retira un vehículo (su placa queda libre).",
+        "operationId": "retirar_vehiculo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "vehiculo_id",
+            "in": "path",
+            "description": "Vehículo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Retirado"
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mascotas": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Mascotas (activas, o todas con `historial=true`).",
+        "operationId": "listar_mascotas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "historial",
+            "in": "query",
+            "description": "Incluir los terminados, retirados o inactivos (historial).",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mascotas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MascotaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Registra una mascota de un bien privado.",
+        "operationId": "registrar_mascota",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaMascotaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Mascota registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MascotaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mascotas/{mascota_id}": {
+      "patch": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Actualiza una mascota (vacunas, póliza, estado…).",
+        "operationId": "actualizar_mascota",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mascota_id",
+            "in": "path",
+            "description": "Mascota",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosMascotaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Mascota actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MascotaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cambio de estado no permitido (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cambios-censo": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Propuestas de cambio: todas (con `censo.aprobar`) o las propias (`mias=true`).",
+        "operationId": "listar_cambios",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mias",
+            "in": "query",
+            "description": "Solo las propias (no exige `censo.aprobar`).",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Propuestas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CambioRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.aprobar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Un residente o propietario propone un cambio del censo de su bien privado (queda pendiente\nde aprobación).",
+        "operationId": "proponer_cambio",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PropuestaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Propuesta registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CambioRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No es titular ni residente del bien (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cambios-censo/{cambio_id}/aprobar": {
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Aprueba una propuesta: crea el registro en la misma transacción.",
+        "operationId": "aprobar_cambio",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cambio_id",
+            "in": "path",
+            "description": "Propuesta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aprobada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CambioRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya resuelta (`conflicto_estado`) o choca con el censo (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cambios-censo/{cambio_id}/rechazar": {
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Rechaza una propuesta con un motivo.",
+        "operationId": "rechazar_cambio",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cambio_id",
+            "in": "path",
+            "description": "Propuesta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RechazoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rechazada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CambioRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya resuelta (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/libros/propietarios": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Libro de propietarios a una fecha de corte (Ley 675, art. 51), en JSON o CSV.",
+        "operationId": "libro_propietarios",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "description": "Fecha y hora de corte (por defecto, ahora).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "formato",
+            "in": "query",
+            "description": "`json` (por defecto) o `csv` (separado por `;`, para Excel).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Libro de propietarios (JSON o `text/csv`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaPropietarioRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.exportar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/libros/residentes": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Libro de residentes a una fecha de corte (Ley 675, art. 51), en JSON o CSV.",
+        "operationId": "libro_residentes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "description": "Fecha y hora de corte (por defecto, ahora).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "formato",
+            "in": "query",
+            "description": "`json` (por defecto) o `csv` (separado por `;`, para Excel).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Libro de residentes (JSON o `text/csv`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaResidenteRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.exportar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/censo/alertas": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Vacunas y pólizas vencidas o por vencer (30 días) y residentes sin autorización de datos.",
+        "operationId": "alertas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alertas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertasRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/personas": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Personas registradas en la copropiedad (paginado).",
+        "operationId": "listar_personas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Fragmento del nombre (sin tildes ni mayúsculas) o del documento.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Personas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_PersonaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `personas.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/personas/{persona_id}": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Una persona.",
+        "operationId": "ver_persona",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Persona",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Actualiza los datos de una persona.",
+        "operationId": "actualizar_persona",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosPersonaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Persona actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `personas.editar` o sin permiso de datos sensibles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Documento repetido (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/importaciones/bienes-privados": {
       "post": {
         "tags": [
@@ -4447,6 +5692,50 @@
           }
         }
       },
+      "AlertaMascotaRespuesta": {
+        "type": "object",
+        "description": "Alertas de una mascota.",
+        "required": [
+          "mascota",
+          "alertas"
+        ],
+        "properties": {
+          "mascota": {
+            "$ref": "#/components/schemas/MascotaRespuesta"
+          },
+          "alertas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "`vacunas_vencidas`, `vacunas_por_vencer`, `sin_registro_de_vacunas`, `sin_poliza`,\n`poliza_vencida` o `poliza_por_vencer`."
+          }
+        }
+      },
+      "AlertasRespuesta": {
+        "type": "object",
+        "description": "Alertas del censo.",
+        "required": [
+          "mascotas",
+          "residentes_sin_autorizacion"
+        ],
+        "properties": {
+          "mascotas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlertaMascotaRespuesta"
+            }
+          },
+          "residentes_sin_autorizacion": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Residentes sin autorización de tratamiento de datos para administración (Ley 1581)."
+          }
+        }
+      },
       "ArbolRespuesta": {
         "type": "object",
         "description": "Árbol de agrupaciones con los bienes privados activos.",
@@ -4755,6 +6044,77 @@
           }
         }
       },
+      "CambioRespuesta": {
+        "type": "object",
+        "description": "Propuesta de cambio del censo.",
+        "required": [
+          "id",
+          "bien_privado_id",
+          "tipo",
+          "datos",
+          "estado",
+          "propuesto_por",
+          "propuesto_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "vehiculo"
+          },
+          "datos": {
+            "type": "object"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`pendiente`, `aprobado` o `rechazado`.",
+            "example": "pendiente"
+          },
+          "propuesto_por": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "propuesto_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revisado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "revisado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "resultado_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Residencia, vehículo o mascota creados al aprobar."
+          }
+        }
+      },
       "CambiosBienPeticion": {
         "type": "object",
         "description": "Cambios a un bien privado (los omitidos no cambian; un texto vacío lo borra). El\ncoeficiente no se edita aquí: lo fija la activación de un cuadro.",
@@ -5010,6 +6370,149 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "CambiosMascotaPeticion": {
+        "type": "object",
+        "description": "Cambios a una mascota (los omitidos no cambian).",
+        "properties": {
+          "raza": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "potencialmente_peligrosa": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "poliza_numero": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "poliza_vence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "poliza_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vacunas_vencen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "carne_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "esterilizada": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "foto_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "responsable_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`fallecida` o `trasladada` (desde `activa`)."
+          }
+        }
+      },
+      "CambiosPersonaPeticion": {
+        "type": "object",
+        "description": "Cambios a una persona (los omitidos no cambian).",
+        "properties": {
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tipo_documento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "TI"
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contacto_emergencia_nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contacto_emergencia_telefono": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fecha_nacimiento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Dato sensible: exige `personas.datos_sensibles.ver`."
+          },
+          "movilidad_reducida": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Dato sensible (salud): exige `personas.datos_sensibles.ver` y el consentimiento del\ntitular."
           }
         }
       },
@@ -5769,6 +7272,101 @@
           }
         }
       },
+      "FilaPropietarioRespuesta": {
+        "type": "object",
+        "description": "Fila del libro de propietarios.",
+        "required": [
+          "codigo",
+          "nombre",
+          "tipo",
+          "porcentaje",
+          "es_representante",
+          "vigente_desde"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "T3-506"
+          },
+          "coeficiente": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tipo": {
+            "type": "string",
+            "example": "propietario"
+          },
+          "porcentaje": {
+            "type": "string"
+          },
+          "es_representante": {
+            "type": "boolean"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "FilaResidenteRespuesta": {
+        "type": "object",
+        "description": "Fila del libro de residentes.",
+        "required": [
+          "codigo",
+          "nombre",
+          "calidad",
+          "es_responsable",
+          "vigente_desde"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "calidad": {
+            "type": "string",
+            "example": "tenedor"
+          },
+          "es_responsable": {
+            "type": "boolean"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "FilaVistaPreviaRespuesta": {
         "type": "object",
         "description": "Fila de la vista previa (sin datos personales).",
@@ -6003,6 +7601,180 @@
           }
         }
       },
+      "MascotaDatos": {
+        "type": "object",
+        "description": "Datos de una mascota (sin el bien privado).",
+        "required": [
+          "especie",
+          "nombre"
+        ],
+        "properties": {
+          "especie": {
+            "type": "string",
+            "example": "perro"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "raza": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "potencialmente_peligrosa": {
+            "type": "boolean",
+            "description": "Raza potencialmente peligrosa (Ley 1801): exige póliza."
+          },
+          "poliza_numero": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "poliza_vence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "poliza_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vacunas_vencen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Vencimiento de la vacunación vigente."
+          },
+          "carne_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "esterilizada": {
+            "type": "boolean"
+          },
+          "foto_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "responsable_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "MascotaRespuesta": {
+        "type": "object",
+        "description": "Mascota.",
+        "required": [
+          "id",
+          "bien_privado_id",
+          "especie",
+          "nombre",
+          "potencialmente_peligrosa",
+          "esterilizada",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "responsable_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "especie": {
+            "type": "string",
+            "example": "perro"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "raza": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "potencialmente_peligrosa": {
+            "type": "boolean"
+          },
+          "poliza_numero": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "poliza_vence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "poliza_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vacunas_vencen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "carne_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "esterilizada": {
+            "type": "boolean"
+          },
+          "foto_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`activa`, `fallecida` o `trasladada`.",
+            "example": "activa"
+          }
+        }
+      },
       "MembresiaRespuesta": {
         "type": "object",
         "description": "Copropiedad donde la cuenta tiene roles vigentes.",
@@ -6154,6 +7926,26 @@
           }
         }
       },
+      "NuevaMascotaPeticion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/MascotaDatos"
+          },
+          {
+            "type": "object",
+            "required": [
+              "bien_privado_id"
+            ],
+            "properties": {
+              "bien_privado_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        ],
+        "description": "Mascota nueva."
+      },
       "NuevaOrganizacionPeticion": {
         "type": "object",
         "description": "Organización nueva.",
@@ -6198,6 +7990,26 @@
             ]
           }
         }
+      },
+      "NuevaResidenciaPeticion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ResidenciaDatos"
+          },
+          {
+            "type": "object",
+            "required": [
+              "bien_privado_id"
+            ],
+            "properties": {
+              "bien_privado_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        ],
+        "description": "Residencia nueva."
       },
       "NuevoBienPeticion": {
         "type": "object",
@@ -6390,6 +8202,26 @@
           }
         }
       },
+      "NuevoVehiculoPeticion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/VehiculoDatos"
+          },
+          {
+            "type": "object",
+            "required": [
+              "bien_privado_id"
+            ],
+            "properties": {
+              "bien_privado_id": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        ],
+        "description": "Vehículo nuevo."
+      },
       "OrganizacionCreada": {
         "type": "object",
         "description": "Organización creada o reutilizada.",
@@ -6518,6 +8350,116 @@
           }
         }
       },
+      "PaginaRespuesta_PersonaRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Persona (datos personales). La fecha de nacimiento y la movilidad reducida solo se ven con\n`personas.datos_sensibles.ver`.",
+              "required": [
+                "id",
+                "tipo",
+                "nombre",
+                "movilidad_reducida",
+                "datos_sensibles_ocultos"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "tipo": {
+                  "type": "string",
+                  "example": "natural"
+                },
+                "nombre": {
+                  "type": "string"
+                },
+                "tipo_documento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "CC"
+                },
+                "documento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "telefono": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "correo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cuenta_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "fecha_nacimiento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date"
+                },
+                "contacto_emergencia_nombre": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "contacto_emergencia_telefono": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "movilidad_reducida": {
+                  "type": "boolean"
+                },
+                "es_menor": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "Menor de edad (si se conoce la fecha de nacimiento): datos con tratamiento especial."
+                },
+                "datos_sensibles_ocultos": {
+                  "type": "boolean",
+                  "description": "Se ocultaron los datos sensibles por falta de permiso."
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PerfilRespuesta": {
         "type": "object",
         "description": "Perfil de la cuenta.",
@@ -6621,6 +8563,14 @@
             "type": "string",
             "example": "52123456"
           },
+          "tipo_documento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`CC`, `CE`, `TI`, `RC`, `PA`, `PPT` o `NIT`.",
+            "example": "CC"
+          },
           "telefono": {
             "type": [
               "string",
@@ -6641,6 +8591,117 @@
             ],
             "format": "uuid",
             "description": "Cuenta de la plataforma de esa persona (búsquela con `GET /cuentas`): recibe el rol\n`propietario`."
+          }
+        }
+      },
+      "PersonaRespuesta": {
+        "type": "object",
+        "description": "Persona (datos personales). La fecha de nacimiento y la movilidad reducida solo se ven con\n`personas.datos_sensibles.ver`.",
+        "required": [
+          "id",
+          "tipo",
+          "nombre",
+          "movilidad_reducida",
+          "datos_sensibles_ocultos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "natural"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_documento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "CC"
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cuenta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "fecha_nacimiento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "contacto_emergencia_nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "contacto_emergencia_telefono": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "movilidad_reducida": {
+            "type": "boolean"
+          },
+          "es_menor": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Menor de edad (si se conoce la fecha de nacimiento): datos con tratamiento especial."
+          },
+          "datos_sensibles_ocultos": {
+            "type": "boolean",
+            "description": "Se ocultaron los datos sensibles por falta de permiso."
+          }
+        }
+      },
+      "PropuestaPeticion": {
+        "type": "object",
+        "description": "Propuesta de cambio: `tipo` y los `datos` del registro (los mismos campos que en\n`POST /residencias`, `/vehiculos` o `/mascotas`, sin `bien_privado_id`).",
+        "required": [
+          "bien_privado_id",
+          "tipo",
+          "datos"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "vehiculo"
+          },
+          "datos": {
+            "type": "object"
           }
         }
       },
@@ -6680,6 +8741,19 @@
           },
           "horario": {
             "$ref": "#/components/schemas/HorarioDto"
+          }
+        }
+      },
+      "RechazoPeticion": {
+        "type": "object",
+        "description": "Motivo del rechazo.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "example": "La placa no corresponde a la tarjeta de propiedad"
           }
         }
       },
@@ -6802,6 +8876,116 @@
           "persona_id": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "ResidenciaDatos": {
+        "type": "object",
+        "description": "Datos de una residencia (sin el bien privado).",
+        "required": [
+          "calidad"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Persona registrada…"
+          },
+          "persona": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PersonaPeticion",
+                "description": "…o persona nueva."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calidad": {
+            "type": "string",
+            "description": "`propietario_residente`, `tenedor`, `familiar`, `huesped_temporal` o\n`empleado_domestico`.",
+            "example": "tenedor"
+          },
+          "es_responsable": {
+            "type": "boolean",
+            "description": "Cabeza del bien ante la copropiedad (a lo sumo uno vigente)."
+          },
+          "autorizado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Titular vigente que autoriza al tenedor (obligatorio para tenedores)."
+          },
+          "contrato_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Contrato de arrendamiento (archivo ya subido)."
+          }
+        }
+      },
+      "ResidenciaRespuesta": {
+        "type": "object",
+        "description": "Residencia con su persona.",
+        "required": [
+          "id",
+          "bien_privado_id",
+          "persona",
+          "calidad",
+          "es_responsable",
+          "vigente_desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona": {
+            "$ref": "#/components/schemas/PersonaRespuesta"
+          },
+          "calidad": {
+            "type": "string",
+            "example": "tenedor"
+          },
+          "es_responsable": {
+            "type": "boolean"
+          },
+          "autorizado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "contrato_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -7253,6 +9437,120 @@
           }
         }
       },
+      "VehiculoDatos": {
+        "type": "object",
+        "description": "Datos de un vehículo (sin el bien privado).",
+        "required": [
+          "tipo"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "example": "carro"
+          },
+          "placa": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatoria para carros y motos; se normaliza (`abc-123` → `ABC123`).",
+            "example": "ABC123"
+          },
+          "marca": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "tarjeta_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "VehiculoRespuesta": {
+        "type": "object",
+        "description": "Vehículo.",
+        "required": [
+          "id",
+          "bien_privado_id",
+          "tipo",
+          "vigente_desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "carro"
+          },
+          "placa": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "marca": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "color": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tarjeta_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "VinculoPeticion": {
         "type": "object",
         "description": "Bien principal de un anexo.",
@@ -7331,6 +9629,10 @@
     {
       "name": "coeficientes",
       "description": "Cuadros de coeficientes versionados (suma exacta = 1)"
+    },
+    {
+      "name": "censo",
+      "description": "Censo: residentes, vehículos, mascotas, personas, autoservicio con aprobación y libros (art. 51)"
     },
     {
       "name": "importaciones",

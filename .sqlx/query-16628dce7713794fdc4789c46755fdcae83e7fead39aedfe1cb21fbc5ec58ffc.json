@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE vehiculos SET vigente_hasta = greatest($2, vigente_desde)\n             WHERE id = $1 AND vigente_hasta IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "16628dce7713794fdc4789c46755fdcae83e7fead39aedfe1cb21fbc5ec58ffc"
+}
