@@ -1,10 +1,8 @@
 //! Punto de entrada del servicio HTTP de DAD_COPROPIEDAD.
 
 use anyhow::Context;
-use std::sync::Arc;
-
 use infra_archivos::{AlmacenLocal, FirmanteEnlaces};
-use shared::{AppConfig, ArchivosConfig, TipoAlmacen, telemetry};
+use shared::{AppConfig, ArchivosConfig, SeguridadConfig, TipoAlmacen, telemetry};
 use tokio::net::TcpListener;
 
 use api::{routes, state::AppState};
@@ -51,10 +49,11 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    let state = AppState {
-        db,
-        archivos: Arc::new(archivos),
-    };
+    let seguridad = SeguridadConfig::from_env().context("configuración de seguridad inválida")?;
+    if !seguridad.plataforma_exige_segundo_factor {
+        tracing::warn!("PLATAFORMA_EXIGE_SEGUNDO_FACTOR=false: solo aceptable en desarrollo");
+    }
+    let state = AppState::new(db, archivos, seguridad.plataforma_exige_segundo_factor);
     let app = routes::router(state, &config);
     let addr = config.socket_addr()?;
     let listener = TcpListener::bind(addr)

@@ -12,10 +12,12 @@
 //! - [`extractores`]: `Json`, `Query` y `Path` que responden con el error uniforme.
 //! - [`paginacion`]: DTOs de la paginación por cursor.
 //! - [`openapi`]: metadatos del contrato OpenAPI.
+//! - [`sesion`]: extractores de autenticación y autorización.
 
 pub mod error;
 pub mod extractores;
 pub mod openapi;
 pub mod paginacion;
 pub mod routes;
+pub mod sesion;
 pub mod state;

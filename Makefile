@@ -12,10 +12,11 @@ NOMBRE        ?=
 COMPOSE := docker compose
 CARGO   := cargo
 
+SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: help herramientas env setup \
 	    up down reiniciar-bd ps logs psql redis \
-	    api gateway dev \
+	    api gateway dev superusuario \
 	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir openapi \
 	    migrar migracion revertir migraciones sqlx-prepare \
 	    deny audit build release limpiar
@@ -73,6 +74,12 @@ api: ## Ejecuta la API REST/WebSocket (:8080; migra si RUN_MIGRATIONS=true)
 
 gateway: ## Ejecuta el gateway de WhatsApp (:8081)
 	$(CARGO) gateway
+
+superusuario: ## Crea el primer superusuario: make superusuario USUARIO=admin CORREO=a@b.co (pide la contraseña)
+	@[ -n "$(USUARIO)" ] || { echo "Uso: make superusuario USUARIO=<usuario> CORREO=<correo> [NOMBRE=...]"; exit 1; }
+	@read -s -p "Contraseña del superusuario (mín. 10 caracteres): " clave; echo; \
+	DAD_ADMIN_CONTRASENA="$$clave" $(CARGO) run -q --bin dad_admin -- crear-superusuario \
+	    --usuario "$(USUARIO)" $(if $(CORREO),--correo "$(CORREO)") --nombre "$(or $(NOMBRE),$(USUARIO))"
 
 dev: ## Revisión continua al guardar (bacon)
 	bacon

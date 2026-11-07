@@ -16,6 +16,37 @@ use crate::error::{CodigoError, DetalleError, ErrorRespuesta};
 pub const ETIQUETA_SALUD: &str = "salud";
 /// Etiqueta de archivos y adjuntos.
 pub const ETIQUETA_ARCHIVOS: &str = "archivos";
+/// Etiqueta de autenticación.
+pub const ETIQUETA_AUTH: &str = "autenticacion";
+/// Etiqueta de la cuenta autenticada.
+pub const ETIQUETA_CUENTA: &str = "cuenta";
+/// Etiqueta de roles y permisos.
+pub const ETIQUETA_ROLES: &str = "roles";
+/// Etiqueta de organizaciones y contratos.
+pub const ETIQUETA_ORGANIZACIONES: &str = "organizaciones";
+/// Etiqueta de la operación de la plataforma.
+pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
+
+/// Registra el esquema de seguridad `bearer` (token de acceso opaco).
+struct EsquemaBearer;
+
+impl utoipa::Modify for EsquemaBearer {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
+        let componentes = openapi.components.get_or_insert_with(Default::default);
+        componentes.add_security_scheme(
+            "bearer",
+            SecurityScheme::Http(
+                HttpBuilder::new()
+                    .scheme(HttpAuthScheme::Bearer)
+                    .description(Some(
+                        "Token de acceso de `POST /api/v1/auth/sesion` (opaco, 30 minutos)",
+                    ))
+                    .build(),
+            ),
+        );
+    }
+}
 
 /// Metadatos del documento. Las rutas las agrega [`crate::routes::openapi`] a partir del router.
 #[derive(OpenApi)]
@@ -36,7 +67,13 @@ pub const ETIQUETA_ARCHIVOS: &str = "archivos";
         (name = ETIQUETA_SALUD, description = "Sondas de vida y disponibilidad del servicio"),
         (name = ETIQUETA_ARCHIVOS, description = "Archivos y adjuntos: descarga con enlaces \
                                                   firmados de vida corta"),
+        (name = ETIQUETA_AUTH, description = "Registro, inicio y cierre de sesión"),
+        (name = ETIQUETA_CUENTA, description = "La cuenta autenticada"),
+        (name = ETIQUETA_ROLES, description = "Roles, permisos y asignaciones"),
+        (name = ETIQUETA_ORGANIZACIONES, description = "Organizaciones compartidas y contratos de servicio"),
+        (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
     ),
+    modifiers(&EsquemaBearer),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))
 )]
 pub struct ApiDoc;

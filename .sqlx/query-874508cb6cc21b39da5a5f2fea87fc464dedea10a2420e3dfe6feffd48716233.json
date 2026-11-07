@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, cuenta_id, rol_id, vigente_desde, vigente_hasta, origen, origen_id, asignado_por\n             FROM asignaciones_rol WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "rol_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "rol_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "vigente_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "vigente_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "origen",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "origen"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "origen_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "origen_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "asignado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_rol",
+            "name": "asignado_por"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "874508cb6cc21b39da5a5f2fea87fc464dedea10a2420e3dfe6feffd48716233"
+}

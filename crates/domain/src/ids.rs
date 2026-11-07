@@ -99,6 +99,41 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Cuenta global de una persona en la plataforma (inicia sesión una vez, opera en varias PH).
+    CuentaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Sesión de una cuenta en un dispositivo.
+    SesionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Rol (plantilla del sistema o propio de una copropiedad).
+    RolId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Asignación de un rol a una cuenta, con vigencia.
+    AsignacionRolId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Organización (empresa o persona natural con RUT) compartida entre copropiedades.
+    OrganizacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Contrato de servicio entre una copropiedad y una organización.
+    ContratoServicioId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Solicitud para reclamar la ficha de una organización.
+    ReclamacionId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

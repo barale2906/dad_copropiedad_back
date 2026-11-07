@@ -20,6 +20,7 @@ infra-whatsapp = { path = "crates/infra-whatsapp" }
 infra-pdf = { path = "crates/infra-pdf" }
 infra-correo = { path = "crates/infra-correo" }
 infra-archivos = { path = "crates/infra-archivos" }
+infra-seguridad = { path = "crates/infra-seguridad" }
 
 # HTTP / async
 axum = { version = "0.8.9", features = ["macros", "ws"] }
@@ -66,6 +67,10 @@ lettre = { version = "0.11.23", default-features = false, features = ["builder",
 
 # Criptografía (firma de webhooks de Meta, enlaces de descarga firmados, huellas SHA-256)
 hmac = "0.13.0"
+sha1 = "0.11.0"
+# Contraseñas (Argon2id) y aleatoriedad del sistema operativo (tokens de sesión, códigos)
+argon2 = { version = "0.6.0", features = ["getrandom"] }
+getrandom = "0.4.3"
 sha2 = "0.11.1"
 hex = "0.4.3"
 

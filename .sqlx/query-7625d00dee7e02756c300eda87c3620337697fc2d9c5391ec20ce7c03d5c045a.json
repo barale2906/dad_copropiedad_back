@@ -1,0 +1,160 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, cuenta_id, hash_acceso, acceso_expira_en, hash_refresh, expira_maximo_en,\n                    segundo_factor_pendiente, segundo_factor_verificado, equipo_compartido,\n                    agente, creada_en, revocada_en\n             FROM sesiones WHERE hash_refresh = $1\n             FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "hash_acceso",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "hash_acceso"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "acceso_expira_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "acceso_expira_en"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "hash_refresh",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "hash_refresh"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "expira_maximo_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "expira_maximo_en"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "segundo_factor_pendiente",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "segundo_factor_pendiente"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "segundo_factor_verificado",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "segundo_factor_verificado"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "equipo_compartido",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "equipo_compartido"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "agente",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "agente"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "revocada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sesiones",
+            "name": "revocada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "7625d00dee7e02756c300eda87c3620337697fc2d9c5391ec20ce7c03d5c045a"
+}

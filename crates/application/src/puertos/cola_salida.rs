@@ -21,7 +21,8 @@ use crate::{
 pub struct MensajePendiente {
     /// Id de la fila en `outbox`.
     pub id: i64,
-    pub tenant_id: TenantId,
+    /// `None` = mensaje de plataforma (p. ej. recuperar contraseña).
+    pub tenant_id: Option<TenantId>,
     /// Intentos fallidos previos.
     pub intentos: u32,
     /// Contenido; `Err` si el payload guardado no se puede interpretar (no tiene sentido

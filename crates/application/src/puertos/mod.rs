@@ -7,6 +7,7 @@ pub mod actas;
 pub mod archivos;
 pub mod cola_salida;
 pub mod correo;
+pub mod identidad;
 pub mod mensajeria;
 pub mod modulos;
 pub mod proteccion_datos;
@@ -19,6 +20,11 @@ pub use actas::GeneradorActas;
 pub use archivos::{AlmacenArchivos, RepositorioArchivos};
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
 pub use correo::EnvioCorreo;
+pub use identidad::{
+    HashContrasenas, RepositorioContratos, RepositorioCuentas, RepositorioOrganizaciones,
+    RepositorioPlataforma, RepositorioRoles, RepositorioSesiones, SegundoFactor,
+    UnidadDeTrabajoPlataforma,
+};
 pub use mensajeria::Mensajeria;
 pub use modulos::RepositorioModulos;
 pub use proteccion_datos::RepositorioProteccionDatos;

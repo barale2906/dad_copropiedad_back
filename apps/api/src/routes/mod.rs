@@ -4,16 +4,21 @@
 //! - `/api/v1/plataforma/…` — operaciones globales (módulo `plataforma`).
 //! - `/api/v1/yo/…` — la cuenta autenticada (módulo `yo`).
 //! - `/api/v1/copropiedades/{copropiedad_id}/…` — todo lo de una copropiedad (módulo `copropiedades`).
-//! - `/api/v1/archivos/descarga` — única excepción: descarga con enlace firmado, sin sesión
-//!   (módulo `archivos`).
+//! - `/api/v1/auth/…` — registro, inicio y cierre de sesión (módulo `auth`, sin sesión).
+//! - `/api/v1/organizaciones/{organizacion_id}/…` — ficha global de una organización
+//!   (módulo `organizaciones`), y `/api/v1/permisos` — catálogo.
+//! - `/api/v1/archivos/descarga` — descarga con enlace firmado, sin sesión (módulo `archivos`).
 //!
 //! Cada handler se registra con `utoipa_axum::routes!` para que el contrato OpenAPI salga de
 //! las mismas rutas que se sirven.
 
 mod archivos;
+mod auth;
 mod copropiedades;
 mod health;
+mod organizaciones;
 mod plataforma;
+mod roles;
 mod yo;
 
 use axum::{
@@ -103,6 +108,9 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .nest("/plataforma", plataforma::rutas())
         .nest("/yo", yo::rutas())
         .nest("/archivos", archivos::rutas())
+        .nest("/auth", auth::rutas())
+        .nest("/organizaciones", organizaciones::rutas_cuenta())
+        .nest("/permisos", roles::rutas_catalogo())
         .nest(
             &format!("/copropiedades/{{{PARAMETRO_COPROPIEDAD}}}"),
             copropiedades::rutas(),
@@ -153,10 +161,7 @@ mod tests {
             infra_archivos::FirmanteEnlaces::new(&[7; 32], "http://localhost").expect("válido");
         let archivos = infra_archivos::AlmacenLocal::abrir(std::env::temp_dir(), enlaces)
             .expect("directorio temporal");
-        let state = AppState {
-            db,
-            archivos: std::sync::Arc::new(archivos),
-        };
+        let state = AppState::new(db, archivos, true);
         router(state, &cfg)
             .oneshot(
                 Request::get(uri)

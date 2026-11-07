@@ -9,7 +9,7 @@ use application::{
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{RegistroAuditoria, Transaccion, UnidadDeTrabajo},
 };
-use domain::{PersonaId, TenantId};
+use domain::{CuentaId, TenantId};
 use infra_postgres::UnidadDeTrabajoPg;
 use sqlx::{Executor, PgPool};
 use uuid::Uuid;
@@ -29,9 +29,9 @@ async fn contar_auditoria(pool: &PgPool, tenant: TenantId) -> i64 {
 
 fn contexto(tenant: TenantId) -> Contexto {
     Contexto {
-        tenant_id: tenant,
-        actor_id: Some(PersonaId::nuevo()),
+        actor_id: Some(CuentaId::nuevo()),
         request_id: Some("req-123".into()),
+        ..Contexto::new(tenant)
     }
 }
 
@@ -67,7 +67,7 @@ async fn auditoria_confirmada_guarda_contexto_y_detalle(pool: PgPool) {
     .fetch_one(&pool)
     .await
     .expect("una fila de auditoría");
-    assert_eq!(fila.0, ctx.actor_id.map(PersonaId::as_uuid));
+    assert_eq!(fila.0, ctx.actor_id.map(CuentaId::as_uuid));
     assert_eq!(fila.1, "pruebas.recurso.crear");
     assert_eq!(fila.2, "recurso");
     assert_eq!(fila.3, Some(entidad_id));

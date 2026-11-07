@@ -1,4 +1,4 @@
-use crate::{EstadoPregunta, EstadoReunion, OpcionId};
+use crate::{EstadoPregunta, EstadoReunion, OpcionId, Permiso};
 
 /// Errores de reglas de negocio. El mapeo a HTTP vive en `apps/api/src/error.rs`.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -44,6 +44,23 @@ pub enum DominioError {
 
     #[error("clave de archivo inválida")]
     ClaveArchivoInvalida,
+
+    #[error(
+        "nombre de usuario inválido: de 3 a 30 caracteres a-z, 0-9, punto, guion o guion bajo, empezando por letra"
+    )]
+    NombreUsuarioInvalido,
+
+    #[error(
+        "la contraseña debe tener entre 10 y 128 caracteres y no puede ser un solo carácter repetido"
+    )]
+    ContrasenaDebil,
+
+    /// No incluye el valor: el NIT de una persona natural es su cédula.
+    #[error("NIT inválido o con dígito de verificación incorrecto")]
+    NitInvalido,
+
+    #[error("el permiso `{0}` no corresponde al ámbito del rol")]
+    PermisoDeOtroAmbito(Permiso),
 
     #[error("valor desconocido `{valor}` para {tipo}")]
     ValorDesconocido { tipo: &'static str, valor: String },

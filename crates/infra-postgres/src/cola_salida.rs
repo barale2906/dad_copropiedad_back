@@ -40,7 +40,7 @@ impl ColaSalida for ColaSalidaPg {
         let mut tx = self.pool.begin().await.map_err(AppError::infra)?;
 
         let filas = sqlx::query!(
-            r#"SELECT id AS "id!", tenant_id AS "tenant_id!", intentos AS "intentos!",
+            r#"SELECT id AS "id!", tenant_id AS "tenant_id?", intentos AS "intentos!",
                       payload AS "payload!"
                FROM outbox_reclamar($1, $2)"#,
             &canales,
@@ -54,7 +54,7 @@ impl ColaSalida for ColaSalidaPg {
             .into_iter()
             .map(|f| MensajePendiente {
                 id: f.id,
-                tenant_id: TenantId::from_uuid(f.tenant_id),
+                tenant_id: f.tenant_id.map(TenantId::from_uuid),
                 intentos: u32::try_from(f.intentos).unwrap_or(0),
                 mensaje: serde_json::from_value::<MensajeOutbox>(f.payload)
                     .map_err(|e| e.to_string()),

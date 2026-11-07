@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sesiones SET hash_acceso = $2, acceso_expira_en = $3, hash_refresh = $4,\n                                 hash_refresh_anterior = $5, renovada_en = $6\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "578d245a7c783d72e759d907239fa808dc261e94b03b2fcd4cee36b8e0470daf"
+}

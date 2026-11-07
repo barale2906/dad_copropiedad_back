@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cuentas SET correo_verificado_en = coalesce(correo_verificado_en, $2)\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b667817f521251dd9d9e37e4d5fce77b94d1f4faa106764f3ac37e0d5c87d8c9"
+}

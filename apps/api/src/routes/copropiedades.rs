@@ -4,9 +4,8 @@
 //! elige en qué copropiedad trabaja y puede cambiar sin volver a autenticarse. Cada módulo
 //! (bienes privados, bienes comunes, reservas, asambleas…) agrega aquí su router.
 //!
-//! Cuando exista autenticación (plan 02), un extractor validará que la cuenta tenga un rol
-//! vigente en `copropiedad_id` antes de abrir `infra_postgres::transaccion_tenant`. Aún no hay
-//! endpoints.
+//! Cada handler usa el extractor [`crate::sesion::EnCopropiedad`]: exige sesión, carga los
+//! permisos de la cuenta en `copropiedad_id` y responde 404 si no tiene ningún rol allí.
 
 use utoipa_axum::router::OpenApiRouter;
 
@@ -18,4 +17,7 @@ pub const PARAMETRO_COPROPIEDAD: &str = "copropiedad_id";
 /// Router de una copropiedad (se monta en `/api/v1/copropiedades/{copropiedad_id}`).
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
+        .merge(super::roles::rutas())
+        .merge(super::organizaciones::rutas_copropiedad())
+        .merge(super::archivos::rutas_copropiedad())
 }

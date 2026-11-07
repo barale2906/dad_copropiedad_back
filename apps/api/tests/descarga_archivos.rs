@@ -21,6 +21,10 @@ use tower::ServiceExt;
 const URL_PUBLICA: &str = "https://api.dad.co";
 const PDF: &[u8] = b"%PDF-1.7\nacta de asamblea";
 
+fn enlaces() -> FirmanteEnlaces {
+    FirmanteEnlaces::new(b"secreto-de-pruebas-de-32-bytes!!", URL_PUBLICA).expect("válido")
+}
+
 /// Directorio temporal del almacén; se borra al terminar la prueba.
 struct Entorno {
     dir: PathBuf,
@@ -30,9 +34,7 @@ struct Entorno {
 impl Entorno {
     fn new() -> Self {
         let dir = std::env::temp_dir().join(format!("dad-api-archivos-{}", uuid::Uuid::new_v4()));
-        let enlaces =
-            FirmanteEnlaces::new(b"secreto-de-pruebas-de-32-bytes!!", URL_PUBLICA).expect("válido");
-        let almacen = Arc::new(AlmacenLocal::abrir(&dir, enlaces).expect("abre"));
+        let almacen = Arc::new(AlmacenLocal::abrir(&dir, enlaces()).expect("abre"));
         Self { dir, almacen }
     }
 
@@ -51,10 +53,12 @@ impl Entorno {
         let db = PgPoolOptions::new()
             .connect_lazy(&config.database_url)
             .expect("URL válida");
-        let state = AppState {
+        let mut state = AppState::new(
             db,
-            archivos: Arc::clone(&self.almacen),
-        };
+            AlmacenLocal::abrir(&self.dir, enlaces()).expect("abre"),
+            true,
+        );
+        state.archivos = Arc::clone(&self.almacen);
         let ruta = url.strip_prefix(URL_PUBLICA).expect("URL de la API");
         routes::router(state, &config)
             .oneshot(Request::get(ruta).body(Body::empty()).expect("petición"))

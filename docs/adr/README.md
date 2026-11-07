@@ -10,3 +10,4 @@ Los ADR no se reescriben: si una decisión cambia, se crea uno nuevo que reempla
 | [0002](0002-terminologia-ley-675.md) | Términos de la Ley 675 de 2001 en todo el sistema | Aceptada |
 | [0003](0003-almacenamiento-de-archivos.md) | Archivos en el disco del VPS, listos para migrar a S3 | Aceptada |
 | [0004](0004-proteccion-de-datos-personales.md) | Protección de datos personales por finalidad (Ley 1581) | Aceptada |
+| [0005](0005-identidad-roles-y-permisos.md) | Identidad global, roles por ámbito y sesiones opacas | Aceptada |

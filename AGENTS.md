@@ -48,6 +48,7 @@ crates/
   infra-pdf/       actas con Typst (pendiente)
   infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
   infra-archivos/  almacén de archivos (disco local; S3 previsto) y enlaces firmados: puerto AlmacenArchivos
+  infra-seguridad/ contraseñas Argon2id y segundo factor TOTP: puertos HashContrasenas y SegundoFactor
   shared/          configuración (env), telemetría, apagado. Sin Axum ni SQL.
 apps/
   api/             binario `dad_copropiedad_api`: REST para el front + WebSocket de resultados
@@ -95,7 +96,8 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Caché / tiempo real | Redis 8 | Infra lista | Solo sesiones de conversación y pub/sub de resultados. La verdad vive en PostgreSQL. |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |
 | Decimales / fechas / IDs | rust_decimal · chrono · uuid (v7, v4 para votos) | En uso | |
-| Criptografía | hmac + sha2 + hex | En uso | Firma de webhooks de Meta, enlaces de descarga firmados, SHA-256 de archivos. |
+| Criptografía | hmac + sha2 + sha1 + hex · argon2 · getrandom | En uso | Firma de webhooks de Meta, enlaces firmados, SHA-256 de archivos y tokens; Argon2id para contraseñas; TOTP (HMAC-SHA1, RFC 6238) en `infra-seguridad`. |
+| Autenticación | Tokens opacos propios + TOTP | En uso | Usuario o correo + contraseña; acceso 30 min, renovación rotativa con detección de reutilización (ADR 0005). Sin JWT. |
 | Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
 | Correo | lettre 0.11 (SMTP, rustls) · SMTP de HestiaCP en producción · Mailpit en desarrollo | En uso | Crate `infra-correo`, puerto `EnvioCorreo`; variables `SMTP_*`. Mailpit atrapa los correos locales (bandeja en `localhost:8025`). |
 | Archivos | Disco del VPS (`ARCHIVOS_DIR`) · S3 previsto | En uso | Crate `infra-archivos`, puerto `AlmacenArchivos`; clave lógica + columna `almacen`; descargas con enlace HMAC de 5 min. Metodología de migración en ADR 0003. |
@@ -117,6 +119,8 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 - Puertos asíncronos: `fn x(&self, …) -> impl Future<Output = AppResult<T>> + Send` (sin `async-trait`); en la implementación basta `async fn`.
 - Casos de uso genéricos sobre sus puertos; se prueban con dobles en memoria (ver `casos_uso/emitir_voto.rs`).
 - **Unidad de trabajo y auditoría**: un caso de uso que modifica datos abre una transacción con el puerto `UnidadDeTrabajo` (implementación `infra_postgres::UnidadDeTrabajoPg`, que fija el tenant), hace el cambio con los puertos que implementa la transacción, registra un `EventoAuditoria` con `RegistroAuditoria` y llama a `confirmar()`; sin `confirmar` todo se revierte. Acciones como constantes `AccionAuditoria::new("modulo.recurso.verbo")` (un formato inválido no compila). `DetalleAuditoria` rechaza claves de datos personales o del contenido de un voto. Dobles en memoria: `puertos::unidad_trabajo::memoria`.
+- **Permisos**: todo caso de uso que lee o modifica datos de negocio llama a `ctx.exigir(Permiso::…)` (`AppError::SinPermiso` → 403 `sin_permiso`). `Contexto::new(tenant)` es el contexto del **sistema** (todos los permisos de copropiedad); las peticiones usan `Contexto::de_cuenta`. Un permiso nuevo = variante en `domain::Permiso` + migración que lo inserte en `permisos` (y en las plantillas que correspondan); la prueba `catalogo_de_permisos_y_plantillas_coinciden_con_el_codigo` lo exige. Nadie otorga lo que no tiene (no escalamiento).
+- **Dos ámbitos de transacción**: `UnidadDeTrabajo` (copropiedad, `app.tenant_id`) y `UnidadDeTrabajoPlataforma` (cuentas, sesiones, roles de plataforma, organizaciones; `app.plataforma = on`). Nunca leer cuentas o sesiones desde una transacción de copropiedad: lo que cruce ámbitos va por una función `SECURITY DEFINER`.
 - **Estados como tipos**: transiciones solo en `EstadoReunion::transicionar` / `EstadoPregunta::transicionar`; votar exige una `PreguntaAbierta` (solo la construye `Pregunta::para_votar`).
 - IDs tipados (`TenantId`, `PreguntaId`, …): UUID v7, **excepto `VotoId` (UUID v4)**.
 - Enums persistidos con `enum_texto!` (`as_str` / `TryFrom<&str>`); el texto es contrato con la BD.
@@ -181,7 +185,8 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Cada endpoint REST** se anota con `#[utoipa::path]`: método, ruta, parámetros, cuerpo, respuestas (incluidos errores con su `codigo`), seguridad y etiqueta del módulo. Cada DTO de entrada/salida deriva `ToSchema` con descripciones y ejemplos. Un endpoint sin documentación OpenAPI no está terminado.
 - DTOs de la API viven en `apps/api` (no se exponen entidades de dominio directamente); versionado en la ruta (`/api/v1`).
 - Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global). Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
-- Única excepción a esas rutas: `/api/v1/archivos/descarga`, sin sesión porque el enlace firmado es la credencial (ADR 0003).
+- Otras rutas: `/api/v1/auth/…` (sin sesión: registro, inicio de sesión), `/api/v1/organizaciones/{organizacion_id}/…`, `/api/v1/permisos` y `/api/v1/archivos/descarga` (sin sesión: el enlace firmado es la credencial, ADR 0003).
+- Autorización en los handlers con los extractores de `api::sesion`: `CuentaAutenticada` (`/yo`, `/organizaciones`), `OperadorPlataforma` (`/plataforma`, exige segundo factor) y `EnCopropiedad` (`/copropiedades/{copropiedad_id}`, carga los permisos; 404 si la cuenta no tiene roles allí). Cada endpoint protegido declara `security(("bearer" = []))`.
 - Handlers con los extractores de `api::extractores` (`Json`, `Query`, `Path`), nunca los de `axum` directamente: así una petición mal formada también responde con el error uniforme (`peticion_invalida`).
 - Listados paginados por cursor: `ParametrosPagina` (`?limite=&despues=`) → `application::SolicitudPagina` → el repositorio consulta `filas_a_consultar()` → `Pagina::desde_filas` → `PaginaRespuesta<T>`. Nunca `OFFSET`.
 - Formato de error uniforme: `{ "error": { "codigo": "...", "mensaje": "..." } }` (`ErrorRespuesta`). Los códigos viven en `CodigoError` (`apps/api/src/error.rs`) con su tabla código → HTTP → significado; un código nuevo se agrega ahí y en la tabla.
@@ -254,6 +259,7 @@ Una tarea está terminada solo si:
 | Primer arranque | `make herramientas` · `make setup` | `cp .env.example .env && docker compose up -d --wait && sqlx migrate run` |
 | Contenedores | `make up` · `make down` · `make reiniciar-bd` | `docker compose …` |
 | Ejecutar | `make api` · `make gateway` · `make dev` | `cargo api` · `cargo gateway` · `bacon` |
+| Primer superusuario | `make superusuario USUARIO=admin CORREO=a@b.co` | `DAD_ADMIN_CONTRASENA=… cargo run --bin dad_admin -- crear-superusuario --usuario admin` |
 | Verificación completa | `make verificar` | `cargo fmt --all --check && cargo lint && cargo pruebas` |
 | Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) + `cargo test --workspace --doc` (doctests) |
 | Documentación | `make doc` | `cargo doc --workspace --no-deps` |

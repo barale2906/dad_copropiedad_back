@@ -126,7 +126,7 @@ async fn el_worker_solo_reclama_sus_canales_y_marca_enviado(pool: PgPool) {
     let mensajes = lote.tomar_mensajes();
     assert_eq!(mensajes.len(), 1);
     assert!(matches!(mensajes[0].mensaje, Ok(MensajeOutbox::Correo(_))));
-    assert_eq!(mensajes[0].tenant_id, tenant);
+    assert_eq!(mensajes[0].tenant_id, Some(tenant));
     lote.marcar_enviado(mensajes[0].id, Some("id-smtp-1".into()))
         .await
         .expect("marca");

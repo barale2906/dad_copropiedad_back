@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE asignaciones_rol SET vigente_hasta = greatest($3, vigente_desde)\n             WHERE origen = $1 AND origen_id = $2 AND (vigente_hasta IS NULL OR vigente_hasta > $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6c82e5928fc9589aff85957a1e31c2d167eeb93fccfd29f224c60ea517730718"
+}

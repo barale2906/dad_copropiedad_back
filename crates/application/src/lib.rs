@@ -16,7 +16,8 @@ pub mod error;
 pub mod outbox;
 pub mod paginacion;
 pub mod puertos;
+pub mod seguridad;
 
-pub use contexto::Contexto;
+pub use contexto::{Contexto, ContextoPlataforma};
 pub use error::{AppError, AppResult};
 pub use paginacion::{Pagina, SolicitudPagina};

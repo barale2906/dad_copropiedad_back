@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE contratos_servicio\n             SET estado = 'terminado',\n                 vigente_hasta = CASE WHEN vigente_hasta IS NULL OR vigente_hasta > $2\n                                      THEN greatest($2, vigente_desde) ELSE vigente_hasta END\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c3c0cbc736eefec01c92d6c5be4dc86d1ab6e785283deb179cce6af0c69cd3fb"
+}

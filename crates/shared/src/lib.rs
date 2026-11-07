@@ -7,6 +7,6 @@ pub mod config;
 pub mod telemetry;
 
 pub use config::{
-    AppConfig, ArchivosConfig, ConfigError, LogFormat, SeguridadSmtp, SmtpConfig, TipoAlmacen,
-    WhatsappConfig,
+    AppConfig, ArchivosConfig, ConfigError, LogFormat, SeguridadConfig, SeguridadSmtp, SmtpConfig,
+    TipoAlmacen, WhatsappConfig,
 };

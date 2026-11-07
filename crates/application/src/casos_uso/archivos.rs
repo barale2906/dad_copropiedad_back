@@ -1,11 +1,11 @@
 //! Casos de uso de archivos: subir, generar el enlace de descarga y migrar entre almacenes.
 //!
-//! El permiso para subir o ver un archivo lo verifica quien llama (endpoint, con el sistema de
-//! permisos del plan 02) antes de invocar estos casos de uso.
+//! Permisos: `archivos.subir` para subir; `archivos.ver` para pedir el enlace de un archivo
+//! público o interno, y además `archivos.personales.ver` si es personal o sensible.
 
 use std::time::Duration;
 
-use domain::{ArchivoId, ClasificacionArchivo, ClaveArchivo, NombreArchivo, TipoArchivo};
+use domain::{ArchivoId, ClasificacionArchivo, ClaveArchivo, NombreArchivo, Permiso, TipoArchivo};
 use sha2::{Digest, Sha256};
 
 use crate::{
@@ -61,6 +61,7 @@ where
     U::Transaccion: RepositorioArchivos + RegistroAuditoria,
     A: AlmacenArchivos,
 {
+    ctx.exigir(Permiso::ArchivosSubir)?;
     let tipo = TipoArchivo::validar(&subido.contenido)?;
     let id = ArchivoId::nuevo();
     let archivo = Archivo {
@@ -133,6 +134,7 @@ where
     U::Transaccion: RepositorioArchivos,
     A: AlmacenArchivos,
 {
+    ctx.exigir(Permiso::ArchivosVer)?;
     // Solo lectura: la transacción se suelta sin confirmar.
     let archivo = unidad
         .iniciar(ctx)
@@ -140,6 +142,12 @@ where
         .buscar(id)
         .await?
         .ok_or(AppError::NoEncontrado("archivo"))?;
+    if matches!(
+        archivo.clasificacion,
+        ClasificacionArchivo::Personal | ClasificacionArchivo::Sensible
+    ) {
+        ctx.exigir(Permiso::ArchivosPersonalesVer)?;
+    }
     if archivo.almacen != almacen.almacen() {
         return Err(AppError::infra(AlmacenDistinto {
             archivo: archivo.almacen,
@@ -460,6 +468,52 @@ mod tests {
                 .await
                 .is_err()
         );
+    }
+
+    #[tokio::test]
+    async fn sin_permiso_no_se_sube_ni_se_ve_un_archivo_personal() {
+        use domain::{ConjuntoPermisos, CuentaId};
+        let unidad = UnidadEnMemoria::default();
+        let almacen = AlmacenEnMemoria::new(Almacen::Local);
+        let tenant = TenantId::nuevo();
+        let solo_ver = Contexto::de_cuenta(
+            tenant,
+            CuentaId::nuevo(),
+            [Permiso::ArchivosVer]
+                .into_iter()
+                .collect::<ConjuntoPermisos>(),
+        );
+        let mut personal = pdf();
+        personal.clasificacion = ClasificacionArchivo::Personal;
+        let archivo = subir_archivo(
+            &unidad,
+            &almacen,
+            &RelojFijo,
+            &Contexto::new(tenant),
+            personal,
+        )
+        .await
+        .expect("el sistema sube");
+
+        let subir = subir_archivo(&unidad, &almacen, &RelojFijo, &solo_ver, pdf()).await;
+        let ver = enlace_descarga(
+            &unidad,
+            &almacen,
+            &RelojFijo,
+            &solo_ver,
+            archivo.id,
+            VIGENCIA_ENLACE,
+        )
+        .await;
+
+        assert!(matches!(
+            subir,
+            Err(AppError::SinPermiso(Permiso::ArchivosSubir))
+        ));
+        assert!(matches!(
+            ver,
+            Err(AppError::SinPermiso(Permiso::ArchivosPersonalesVer))
+        ));
     }
 
     #[tokio::test]

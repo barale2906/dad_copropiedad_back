@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE codigos_verificacion SET intentos = intentos + 1 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "212a342cb693e6fea5b05fdc14499562eee540b6cedd9bdb3ea80f1b8799aa03"
+}

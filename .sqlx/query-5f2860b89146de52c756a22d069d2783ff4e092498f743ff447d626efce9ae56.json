@@ -1,0 +1,98 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, organizacion_id, tipo_servicio, vigente_desde, vigente_hasta, estado, valor\n             FROM contratos_servicio ORDER BY vigente_desde DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo_servicio",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "tipo_servicio"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "vigente_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "vigente_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "5f2860b89146de52c756a22d069d2783ff4e092498f743ff447d626efce9ae56"
+}

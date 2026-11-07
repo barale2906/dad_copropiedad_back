@@ -284,6 +284,26 @@ impl ArchivosConfig {
     }
 }
 
+/// Seguridad de las cuentas.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SeguridadConfig {
+    /// Operar en el ámbito de plataforma exige una sesión con segundo factor (TOTP)
+    /// (`PLATAFORMA_EXIGE_SEGUNDO_FACTOR`, `true` por defecto). Solo se apaga en desarrollo.
+    pub plataforma_exige_segundo_factor: bool,
+}
+
+impl SeguridadConfig {
+    /// # Errors
+    ///
+    /// [`ConfigError::Invalid`] si el valor no es un booleano.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        Ok(Self {
+            plataforma_exige_segundo_factor: parse_or("PLATAFORMA_EXIGE_SEGUNDO_FACTOR", true)?,
+        })
+    }
+}
+
 fn optional(var: &'static str) -> Option<String> {
     env::var(var).ok().filter(|v| !v.trim().is_empty())
 }

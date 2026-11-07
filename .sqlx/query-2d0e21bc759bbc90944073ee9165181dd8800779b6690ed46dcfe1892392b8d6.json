@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT rol FROM organizaciones_miembros WHERE organizacion_id = $1 AND cuenta_id = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "rol",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "organizaciones_miembros",
+            "name": "rol"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "2d0e21bc759bbc90944073ee9165181dd8800779b6690ed46dcfe1892392b8d6"
+}

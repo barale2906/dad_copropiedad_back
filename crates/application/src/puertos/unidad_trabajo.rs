@@ -60,13 +60,18 @@ pub(crate) mod memoria {
     };
 
     use chrono::{DateTime, Utc};
-    use domain::{Almacen, ArchivoId, FinalidadTratamiento, Modulo, PersonaId};
+    use domain::{
+        Almacen, Ambito, ArchivoId, AsignacionRolId, ConjuntoPermisos, CuentaId,
+        FinalidadTratamiento, Identificador, Modulo, OrigenAsignacion, PersonaId, RolId, TenantId,
+        permisos::{CODIGO_ADMINISTRADOR, ROLES_PLANTILLA},
+    };
 
     use super::*;
     use crate::{
         AppError,
         puertos::{
             archivos::{Archivo, RepositorioArchivos},
+            identidad::{Asignacion, CuentaResumen, RepositorioRoles, Rol},
             modulos::{PeriodoModulo, RepositorioModulos},
             proteccion_datos::{
                 Autorizacion, PoliticaTratamiento, RepositorioProteccionDatos, SolicitudTitular,
@@ -84,6 +89,27 @@ pub(crate) mod memoria {
         pub autorizaciones: Vec<(Autorizacion, Option<DateTime<Utc>>)>,
         pub solicitudes: Vec<SolicitudTitular>,
         pub modulos: Vec<PeriodoModulo>,
+        /// Roles propios de copropiedades (las plantillas salen de `ROLES_PLANTILLA`).
+        pub roles: Vec<Rol>,
+        pub asignaciones: Vec<(TenantId, Asignacion)>,
+    }
+
+    /// Plantillas con ids fijos (en la BD se derivan del código).
+    fn plantillas() -> Vec<Rol> {
+        ROLES_PLANTILLA
+            .iter()
+            .enumerate()
+            .map(|(i, p)| Rol {
+                id: RolId::from_uuid(uuid::Uuid::from_u128(i as u128 + 1)),
+                tenant_id: None,
+                codigo: p.codigo.into(),
+                nombre: p.nombre.into(),
+                descripcion: None,
+                ambito: p.ambito,
+                es_plantilla: true,
+                permisos: p.conjunto(),
+            })
+            .collect()
     }
 
     /// Evento confirmado junto con el contexto de su transacción.
@@ -281,6 +307,156 @@ pub(crate) mod memoria {
 
         async fn insertar_solicitud(&mut self, solicitud: &SolicitudTitular) -> AppResult<()> {
             self.datos.solicitudes.push(solicitud.clone());
+            Ok(())
+        }
+    }
+
+    impl TransaccionEnMemoria {
+        fn roles_visibles(&self) -> Vec<Rol> {
+            plantillas()
+                .into_iter()
+                .filter(|r| r.ambito == Ambito::Copropiedad)
+                .chain(
+                    self.datos
+                        .roles
+                        .iter()
+                        .filter(|r| r.tenant_id == Some(self.ctx.tenant_id))
+                        .cloned(),
+                )
+                .collect()
+        }
+
+        fn asignaciones_tenant(&self) -> impl Iterator<Item = &Asignacion> {
+            self.datos
+                .asignaciones
+                .iter()
+                .filter(|(t, _)| *t == self.ctx.tenant_id)
+                .map(|(_, a)| a)
+        }
+    }
+
+    impl RepositorioRoles for TransaccionEnMemoria {
+        async fn roles(&mut self) -> AppResult<Vec<Rol>> {
+            Ok(self.roles_visibles())
+        }
+
+        async fn rol(&mut self, id: RolId) -> AppResult<Option<Rol>> {
+            Ok(self.roles_visibles().into_iter().find(|r| r.id == id))
+        }
+
+        async fn rol_por_codigo(&mut self, codigo: &str) -> AppResult<Option<Rol>> {
+            Ok(self
+                .roles_visibles()
+                .into_iter()
+                .find(|r| r.codigo == codigo))
+        }
+
+        async fn insertar_rol(&mut self, rol: &Rol) -> AppResult<()> {
+            if self.roles_visibles().iter().any(|r| r.codigo == rol.codigo) {
+                return Err(AppError::Conflicto("código de rol repetido".into()));
+            }
+            self.datos.roles.push(rol.clone());
+            Ok(())
+        }
+
+        async fn reemplazar_permisos(
+            &mut self,
+            rol: RolId,
+            permisos: &ConjuntoPermisos,
+        ) -> AppResult<()> {
+            if let Some(r) = self.datos.roles.iter_mut().find(|r| r.id == rol) {
+                r.permisos = permisos.clone();
+            }
+            Ok(())
+        }
+
+        async fn insertar_asignacion(&mut self, a: &Asignacion) -> AppResult<()> {
+            let tenant = self.ctx.tenant_id;
+            self.datos.asignaciones.push((tenant, a.clone()));
+            Ok(())
+        }
+
+        async fn asignacion(&mut self, id: AsignacionRolId) -> AppResult<Option<Asignacion>> {
+            Ok(self.asignaciones_tenant().find(|a| a.id == id).cloned())
+        }
+
+        async fn asignaciones(&mut self, cuenta: Option<CuentaId>) -> AppResult<Vec<Asignacion>> {
+            Ok(self
+                .asignaciones_tenant()
+                .filter(|a| cuenta.is_none_or(|c| a.cuenta_id == c))
+                .cloned()
+                .collect())
+        }
+
+        async fn terminar_asignacion(
+            &mut self,
+            id: AsignacionRolId,
+            ahora: DateTime<Utc>,
+        ) -> AppResult<()> {
+            let tenant = self.ctx.tenant_id;
+            for (t, a) in &mut self.datos.asignaciones {
+                if *t == tenant && a.id == id && a.vigente_hasta.is_none_or(|h| h > ahora) {
+                    a.vigente_hasta = Some(ahora.max(a.vigente_desde));
+                }
+            }
+            Ok(())
+        }
+
+        async fn terminar_por_origen(
+            &mut self,
+            origen: OrigenAsignacion,
+            origen_id: uuid::Uuid,
+            ahora: DateTime<Utc>,
+        ) -> AppResult<u64> {
+            let tenant = self.ctx.tenant_id;
+            let mut n = 0;
+            for (t, a) in &mut self.datos.asignaciones {
+                if *t == tenant
+                    && a.origen == origen
+                    && a.origen_id == Some(origen_id)
+                    && a.vigente_hasta.is_none_or(|h| h > ahora)
+                {
+                    a.vigente_hasta = Some(ahora.max(a.vigente_desde));
+                    n += 1;
+                }
+            }
+            Ok(n)
+        }
+
+        async fn permisos_de_cuenta(
+            &mut self,
+            cuenta: CuentaId,
+            ahora: DateTime<Utc>,
+        ) -> AppResult<ConjuntoPermisos> {
+            let roles = self.roles_visibles();
+            Ok(self
+                .asignaciones_tenant()
+                .filter(|a| a.cuenta_id == cuenta && a.vigente_en(ahora))
+                .filter_map(|a| roles.iter().find(|r| r.id == a.rol_id))
+                .flat_map(|r| r.permisos.iter())
+                .collect())
+        }
+
+        async fn administradores_vigentes(&mut self, ahora: DateTime<Utc>) -> AppResult<u64> {
+            let admin = self
+                .roles_visibles()
+                .into_iter()
+                .find(|r| r.es_plantilla && r.codigo == CODIGO_ADMINISTRADOR)
+                .map(|r| r.id);
+            Ok(self
+                .asignaciones_tenant()
+                .filter(|a| Some(a.rol_id) == admin && a.vigente_en(ahora))
+                .count() as u64)
+        }
+
+        async fn buscar_cuenta(
+            &mut self,
+            _identificador: &Identificador,
+        ) -> AppResult<Option<CuentaResumen>> {
+            Ok(None)
+        }
+
+        async fn insertar_copropiedad(&mut self, _nombre: &str) -> AppResult<()> {
             Ok(())
         }
     }

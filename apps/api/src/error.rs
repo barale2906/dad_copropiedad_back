@@ -22,6 +22,12 @@ use utoipa::ToSchema;
 /// | Código | HTTP | Significado |
 /// |---|---|---|
 /// | `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |
+/// | `no_autenticado` | 401 | Falta la sesión o venció (`Authorization: Bearer …`). |
+/// | `credenciales_invalidas` | 401 | Usuario/correo o contraseña (o código) incorrectos. |
+/// | `sin_permiso` | 403 | La cuenta no tiene el permiso necesario en esta copropiedad o en la plataforma. |
+/// | `segundo_factor_requerido` | 403 | La operación de plataforma exige una sesión con segundo factor. |
+/// | `conflicto` | 409 | Ya existe (usuario, correo, código de rol) o rompe una regla (último administrador). |
+/// | `demasiados_intentos` | 429 | Demasiados intentos fallidos; esperar unos minutos. |
 /// | `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |
 /// | `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |
 /// | `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |
@@ -36,6 +42,18 @@ use utoipa::ToSchema;
 pub enum CodigoError {
     /// 400 · La petición está mal formada (JSON inválido, parámetro con tipo incorrecto).
     PeticionInvalida,
+    /// 401 · Falta la sesión o venció.
+    NoAutenticado,
+    /// 401 · Usuario/correo o contraseña (o código) incorrectos.
+    CredencialesInvalidas,
+    /// 403 · La cuenta no tiene el permiso necesario.
+    SinPermiso,
+    /// 403 · La operación de plataforma exige una sesión con segundo factor.
+    SegundoFactorRequerido,
+    /// 409 · El recurso ya existe o la operación rompe una regla del estado actual.
+    Conflicto,
+    /// 429 · Demasiados intentos fallidos.
+    DemasiadosIntentos,
     /// 404 · El recurso o la ruta no existen (o no pertenecen a la copropiedad).
     NoEncontrado,
     /// 409 · La operación no es válida en el estado actual del recurso.
@@ -138,6 +156,10 @@ impl ApiError {
                 | DominioError::ArchivoDemasiadoGrande { .. }
                 | DominioError::NombreArchivoInvalido
                 | DominioError::ClaveArchivoInvalida
+                | DominioError::NombreUsuarioInvalido
+                | DominioError::ContrasenaDebil
+                | DominioError::NitInvalido
+                | DominioError::PermisoDeOtroAmbito(_)
                 | DominioError::ValorDesconocido { .. } => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion)
                 }
@@ -149,6 +171,18 @@ impl ApiError {
             Self::App(AppError::BienPrivadoYaVoto) => (StatusCode::CONFLICT, C::YaVoto),
             Self::App(AppError::NoInscrito) => (StatusCode::FORBIDDEN, C::NoInscrito),
             Self::EnlaceInvalido => (StatusCode::FORBIDDEN, C::EnlaceInvalido),
+            Self::App(AppError::NoAutenticado) => (StatusCode::UNAUTHORIZED, C::NoAutenticado),
+            Self::App(AppError::CredencialesInvalidas) => {
+                (StatusCode::UNAUTHORIZED, C::CredencialesInvalidas)
+            }
+            Self::App(AppError::SinPermiso(_)) => (StatusCode::FORBIDDEN, C::SinPermiso),
+            Self::App(AppError::SegundoFactorRequerido) => {
+                (StatusCode::FORBIDDEN, C::SegundoFactorRequerido)
+            }
+            Self::App(AppError::Conflicto(_)) => (StatusCode::CONFLICT, C::Conflicto),
+            Self::App(AppError::DemasiadosIntentos) => {
+                (StatusCode::TOO_MANY_REQUESTS, C::DemasiadosIntentos)
+            }
             Self::App(AppError::ModuloNoHabilitado(_)) => {
                 (StatusCode::FORBIDDEN, C::ModuloNoHabilitado)
             }
@@ -173,7 +207,14 @@ impl IntoResponse for ApiError {
         let cuerpo = ErrorRespuesta {
             error: DetalleError { codigo, mensaje },
         };
-        (status, Json(cuerpo)).into_response()
+        let mut respuesta = (status, Json(cuerpo)).into_response();
+        if status == StatusCode::UNAUTHORIZED {
+            respuesta.headers_mut().insert(
+                axum::http::header::WWW_AUTHENTICATE,
+                axum::http::HeaderValue::from_static("Bearer"),
+            );
+        }
+        respuesta
     }
 }
 

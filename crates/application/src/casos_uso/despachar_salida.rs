@@ -66,7 +66,7 @@ where
                 lote.marcar_fallido(id, format!("payload inválido: {e}"), politica.espera(0), 1)
                     .await?;
                 resumen.fallidos += 1;
-                tracing::error!(outbox_id = id, %tenant_id, "mensaje del outbox con payload inválido");
+                tracing::error!(outbox_id = id, tenant_id = ?tenant_id, "mensaje del outbox con payload inválido");
                 continue;
             }
         };
@@ -82,7 +82,7 @@ where
                 lote.marcar_fallido(id, error, politica.espera(intentos), politica.max_intentos)
                     .await?;
                 resumen.fallidos += 1;
-                tracing::warn!(outbox_id = id, %tenant_id, intentos = intentos + 1, "envío fallido; se reintentará");
+                tracing::warn!(outbox_id = id, tenant_id = ?tenant_id, intentos = intentos + 1, "envío fallido; se reintentará");
             }
         }
     }
@@ -198,7 +198,7 @@ mod tests {
     fn correo(id: i64, para: &str, intentos: u32) -> MensajePendiente {
         MensajePendiente {
             id,
-            tenant_id: TenantId::nuevo(),
+            tenant_id: Some(TenantId::nuevo()),
             intentos,
             mensaje: Ok(MensajeOutbox::Correo(CorreoSaliente {
                 para: DireccionCorreo::new(para).expect("válida"),
@@ -275,7 +275,7 @@ mod tests {
     async fn payload_invalido_queda_fallido_sin_reintentos() {
         let roto = MensajePendiente {
             id: 7,
-            tenant_id: TenantId::nuevo(),
+            tenant_id: Some(TenantId::nuevo()),
             intentos: 0,
             mensaje: Err("formato desconocido".into()),
         };
@@ -293,7 +293,7 @@ mod tests {
     async fn canal_sin_despachador_se_registra_como_fallo() {
         let whatsapp = MensajePendiente {
             id: 3,
-            tenant_id: TenantId::nuevo(),
+            tenant_id: Some(TenantId::nuevo()),
             intentos: 0,
             mensaje: Ok(MensajeOutbox::WhatsApp(MensajeSaliente {
                 linea: "1".into(),

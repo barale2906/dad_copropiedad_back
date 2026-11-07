@@ -34,6 +34,12 @@ curl localhost:8080/ready     # {"database":"ok","status":"ok"}
 Correos en desarrollo: `docker compose up -d` también levanta **Mailpit**; todo lo que envíe el
 gateway aparece en <http://localhost:8025> (no sale a internet).
 
+Primer acceso: cree el superusuario con `make superusuario USUARIO=admin CORREO=admin@dominio.co`
+(pide la contraseña), inicie sesión en `POST /api/v1/auth/sesion` desde `/docs` y use el token
+con el botón *Authorize*. Con él se dan de alta copropiedades (`POST /api/v1/plataforma/copropiedades`)
+y se asignan sus administradores. En desarrollo `PLATAFORMA_EXIGE_SEGUNDO_FACTOR=false`; en
+producción la plataforma exige segundo factor (`/api/v1/yo/segundo-factor`).
+
 Archivos en desarrollo: se guardan en `./datos/archivos` (`ARCHIVOS_DIR`, ignorado por git). En
 producción, un directorio fuera del código incluido en la copia de seguridad del VPS y un
 `ARCHIVOS_SECRETO_ENLACES` propio (`openssl rand -hex 32`). Migrar luego a S3: ADR 0003.
@@ -70,6 +76,7 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-whatsapp` | Adaptador | Cloud API de Meta: firma, webhook, envío |
 | `crates/infra-pdf` | Adaptador | Actas con Typst (pendiente) |
 | `crates/infra-correo` | Adaptador | Correo saliente por SMTP (lettre) |
+| `crates/infra-seguridad` | Adaptador | Contraseñas Argon2id y segundo factor TOTP |
 | `crates/infra-archivos` | Adaptador | Almacén de archivos en disco y enlaces de descarga firmados (S3 previsto, ADR 0003) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |

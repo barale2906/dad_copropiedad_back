@@ -61,6 +61,7 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: RepositorioProteccionDatos + RegistroAuditoria,
 {
+    ctx.exigir(domain::Permiso::ProteccionDatosGestionar)?;
     let texto = nueva.texto.filter(|t| !t.trim().is_empty());
     if texto.is_none() && nueva.archivo_id.is_none() {
         return Err(AppError::Validacion(

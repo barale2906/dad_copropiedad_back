@@ -14,7 +14,7 @@ use std::future::Future;
 
 use chrono::{DateTime, Utc};
 use domain::{
-    Almacen, ArchivoId, ClasificacionArchivo, ClaveArchivo, NombreArchivo, PersonaId, TipoArchivo,
+    Almacen, ArchivoId, ClasificacionArchivo, ClaveArchivo, CuentaId, NombreArchivo, TipoArchivo,
 };
 
 use crate::AppResult;
@@ -35,7 +35,7 @@ pub struct Archivo {
     pub sha256: String,
     pub clasificacion: ClasificacionArchivo,
     /// `None` = lo subió el sistema (p. ej. un acta generada).
-    pub subido_por: Option<PersonaId>,
+    pub subido_por: Option<CuentaId>,
     pub creado_en: DateTime<Utc>,
 }
 

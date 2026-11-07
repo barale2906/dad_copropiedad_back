@@ -12,16 +12,24 @@ publish.workspace = true
 name = "dad_copropiedad_api"
 path = "src/main.rs"
 
+# Comandos de operación (crear el primer superusuario).
+[[bin]]
+name = "dad_admin"
+path = "src/bin/dad_admin.rs"
+
 [dependencies]
 # Raíz de composición: aquí se conectan los adaptadores (infra-*) con los casos de uso.
 application.workspace = true
 domain.workspace = true
 infra-archivos.workspace = true
 infra-postgres.workspace = true
+infra-seguridad.workspace = true
 shared.workspace = true
 
 anyhow.workspace = true
 axum.workspace = true
+chrono.workspace = true
+rust_decimal.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

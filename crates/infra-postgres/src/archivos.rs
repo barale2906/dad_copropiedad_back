@@ -6,7 +6,7 @@ use application::{
 };
 use chrono::{DateTime, Utc};
 use domain::{
-    Almacen, ArchivoId, ClasificacionArchivo, ClaveArchivo, NombreArchivo, PersonaId, TipoArchivo,
+    Almacen, ArchivoId, ClasificacionArchivo, ClaveArchivo, CuentaId, NombreArchivo, TipoArchivo,
 };
 use uuid::Uuid;
 
@@ -38,7 +38,7 @@ impl TryFrom<FilaArchivo> for Archivo {
             tamano_bytes: u64::try_from(f.tamano_bytes).map_err(AppError::infra)?,
             sha256: f.sha256,
             clasificacion: ClasificacionArchivo::try_from(f.clasificacion.as_str())?,
-            subido_por: f.subido_por.map(PersonaId::from_uuid),
+            subido_por: f.subido_por.map(CuentaId::from_uuid),
             creado_en: f.creado_en,
         })
     }
@@ -59,7 +59,7 @@ impl RepositorioArchivos for TransaccionPg {
             i64::try_from(a.tamano_bytes).map_err(AppError::infra)?,
             a.sha256,
             a.clasificacion.as_str(),
-            a.subido_por.map(PersonaId::as_uuid),
+            a.subido_por.map(CuentaId::as_uuid),
             a.creado_en,
         )
         .execute(&mut *self.tx)

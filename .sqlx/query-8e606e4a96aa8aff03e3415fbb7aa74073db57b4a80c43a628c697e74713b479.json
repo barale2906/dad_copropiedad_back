@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE asignaciones_plataforma SET vigente_hasta = greatest($2, vigente_desde)\n             WHERE id = $1 AND (vigente_hasta IS NULL OR vigente_hasta > $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8e606e4a96aa8aff03e3415fbb7aa74073db57b4a80c43a628c697e74713b479"
+}

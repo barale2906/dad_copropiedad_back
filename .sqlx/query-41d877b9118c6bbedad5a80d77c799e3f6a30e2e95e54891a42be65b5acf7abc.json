@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(DISTINCT a.cuenta_id) AS \"n!\"\n               FROM asignaciones_rol a JOIN roles r ON r.id = a.rol_id\n               WHERE r.es_plantilla AND r.codigo = $1 AND a.vigente_desde <= $2\n                 AND (a.vigente_hasta IS NULL OR a.vigente_hasta > $2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "41d877b9118c6bbedad5a80d77c799e3f6a30e2e95e54891a42be65b5acf7abc"
+}
