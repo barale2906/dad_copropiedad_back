@@ -12,7 +12,8 @@ use crate::{
     AppError, AppResult, Contexto,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
-        AlmacenArchivos, RegistroAuditoria, Reloj, RepositorioArchivos, UnidadDeTrabajo,
+        AlmacenArchivos, RegistroAuditoria, Reloj, RepositorioArchivos, Transaccion,
+        UnidadDeTrabajo,
         archivos::{Archivo, DescargaArchivo},
     },
 };
@@ -63,54 +64,75 @@ where
 {
     ctx.exigir(Permiso::ArchivosSubir)?;
     let tipo = TipoArchivo::validar(&subido.contenido)?;
+    let archivo = nuevo_archivo(ctx, almacen, reloj, &subido, tipo);
+    almacen.guardar(&archivo.clave, &subido.contenido).await?;
+    let resultado = async {
+        let mut tx = unidad.iniciar(ctx).await?;
+        registrar_en(&mut tx, &archivo).await?;
+        tx.confirmar().await
+    }
+    .await;
+    if let Err(e) = resultado {
+        borrar_huerfano(almacen, ctx, &archivo).await;
+        return Err(e);
+    }
+    Ok(archivo)
+}
+
+/// Archivo nuevo (aún sin guardar) de la copropiedad del contexto, con su clave e id.
+pub(crate) fn nuevo_archivo(
+    ctx: &Contexto,
+    almacen: &impl AlmacenArchivos,
+    reloj: &impl Reloj,
+    subido: &ArchivoSubido,
+    tipo: TipoArchivo,
+) -> Archivo {
     let id = ArchivoId::nuevo();
-    let archivo = Archivo {
+    Archivo {
         id,
         clave: ClaveArchivo::new(ctx.tenant_id, id),
         almacen: almacen.almacen(),
-        nombre_original: subido.nombre_original,
+        nombre_original: subido.nombre_original.clone(),
         tipo,
         tamano_bytes: subido.contenido.len() as u64,
         sha256: sha256_hex(&subido.contenido),
         clasificacion: subido.clasificacion,
         subido_por: ctx.actor_id,
         creado_en: reloj.ahora(),
-    };
-
-    almacen.guardar(&archivo.clave, &subido.contenido).await?;
-    if let Err(e) = registrar(unidad, ctx, &archivo).await {
-        if let Err(limpieza) = almacen.eliminar(&archivo.clave).await {
-            tracing::warn!(
-                tenant_id = %ctx.tenant_id,
-                archivo_id = %archivo.id,
-                error = %limpieza,
-                "no se pudo borrar el archivo huérfano"
-            );
-        }
-        return Err(e);
     }
-    Ok(archivo)
 }
 
-async fn registrar<U>(unidad: &U, ctx: &Contexto, archivo: &Archivo) -> AppResult<()>
-where
-    U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioArchivos + RegistroAuditoria,
-{
-    use crate::puertos::Transaccion as _;
+/// Borra los bytes de un archivo cuyo registro falló (queda en logs si tampoco se puede).
+pub(crate) async fn borrar_huerfano(
+    almacen: &impl AlmacenArchivos,
+    ctx: &Contexto,
+    archivo: &Archivo,
+) {
+    if let Err(limpieza) = almacen.eliminar(&archivo.clave).await {
+        tracing::warn!(
+            tenant_id = %ctx.tenant_id,
+            archivo_id = %archivo.id,
+            error = %limpieza,
+            "no se pudo borrar el archivo huérfano"
+        );
+    }
+}
 
+/// Registra el archivo y su auditoría dentro de una transacción abierta.
+pub(crate) async fn registrar_en<T>(tx: &mut T, archivo: &Archivo) -> AppResult<()>
+where
+    T: RepositorioArchivos + RegistroAuditoria,
+{
     // El nombre original no se audita: puede contener datos personales.
     let detalle = DetalleAuditoria::vacio()
         .con("tipo", archivo.tipo.as_str())?
         .con("tamano_bytes", archivo.tamano_bytes)?
         .con("clasificacion", archivo.clasificacion.as_str())?;
-    let mut tx = unidad.iniciar(ctx).await?;
     tx.insertar(archivo).await?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_SUBIR, "archivo", archivo.id.as_uuid()).con_detalle(detalle),
     )
-    .await?;
-    tx.confirmar().await
+    .await
 }
 
 /// URL temporal para descargar el archivo `id` de la copropiedad del contexto, válida por

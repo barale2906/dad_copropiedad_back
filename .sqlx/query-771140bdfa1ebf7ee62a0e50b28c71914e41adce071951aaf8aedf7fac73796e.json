@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO bienes_privados\n                 (id, tenant_id, codigo, coeficiente, activo, tipo, agrupacion_id, numero, piso,\n                  area_privada_m2, matricula_inmobiliaria, cedula_catastral, uso,\n                  bien_principal_id)\n             VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Bool",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int2",
+        "Numeric",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "771140bdfa1ebf7ee62a0e50b28c71914e41adce071951aaf8aedf7fac73796e"
+}

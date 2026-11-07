@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (SELECT 1 FROM usos_exclusivos WHERE id = $1 AND bien_privado_id = $2)\n                   AS \"existe!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "existe!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "1bc88e743b1307a30e9402df05a1cb31662de432be16adabd562d052befd8cae"
+}

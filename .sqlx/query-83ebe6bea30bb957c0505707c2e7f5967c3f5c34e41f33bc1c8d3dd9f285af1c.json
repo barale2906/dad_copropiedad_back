@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM coeficientes_bien_privado WHERE cuadro_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "83ebe6bea30bb957c0505707c2e7f5967c3f5c34e41f33bc1c8d3dd9f285af1c"
+}

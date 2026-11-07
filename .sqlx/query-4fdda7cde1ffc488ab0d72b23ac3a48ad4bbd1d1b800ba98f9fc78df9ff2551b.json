@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO importaciones (id, tenant_id, tipo, archivo_id, estado, total_filas,\n                                        filas_validas, errores, resumen, creada_por, creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int4",
+        "Int4",
+        "Jsonb",
+        "Jsonb",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4fdda7cde1ffc488ab0d72b23ac3a48ad4bbd1d1b800ba98f9fc78df9ff2551b"
+}

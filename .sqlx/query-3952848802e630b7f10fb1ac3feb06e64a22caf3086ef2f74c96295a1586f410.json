@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, tipo, nombre, codigo, padre_id, orden FROM agrupaciones\n             ORDER BY orden, normalizar(nombre), id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "agrupaciones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "agrupaciones",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "agrupaciones",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "agrupaciones",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "padre_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "agrupaciones",
+            "name": "padre_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "orden",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "agrupaciones",
+            "name": "orden"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "3952848802e630b7f10fb1ac3feb06e64a22caf3086ef2f74c96295a1586f410"
+}

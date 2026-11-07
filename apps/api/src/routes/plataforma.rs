@@ -4,12 +4,16 @@
 //! bloqueo de cuentas y revisión de reclamaciones de organizaciones. Exigen permisos de
 //! plataforma y, salvo que se desactive en desarrollo, una sesión con segundo factor.
 
+use application::puertos::copropiedades::AltaCopropiedad;
 use application::{
     casos_uso::{organizaciones as org, plataforma as uc},
     puertos::RelojSistema,
 };
 use axum::{extract::State, http::StatusCode};
-use domain::{AsignacionRolId, CuentaId, ReclamacionId, RolId};
+use domain::{
+    AsignacionRolId, CuentaId, EstadoCopropiedad, FormaCopropiedad, Nit, ReclamacionId, RolId,
+    TenantId, TipoCopropiedad,
+};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -31,6 +35,7 @@ use crate::{
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(listar_copropiedades, crear_copropiedad))
+        .routes(routes!(cambiar_estado_copropiedad))
         .routes(routes!(listar_roles, crear_rol))
         .routes(routes!(editar_permisos_rol))
         .routes(routes!(asignar))
@@ -81,9 +86,19 @@ pub struct NuevaCopropiedadPeticion {
     pub nombre: String,
     /// Cuenta que será su primer administrador.
     pub administrador_cuenta_id: Uuid,
+    /// NIT con o sin dígito de verificación (se valida con el algoritmo de la DIAN).
+    #[schema(value_type = Option<String>, example = "900123456-8")]
+    pub nit: Option<Nit>,
+    /// `residencial` (por defecto), `comercial` o `mixta`.
+    #[schema(value_type = Option<String>, example = "residencial")]
+    pub tipo: Option<TipoCopropiedad>,
+    /// `conjunto` (por defecto), `edificio`, `condominio`, `centro_comercial`, `parcelacion`
+    /// u `otro`.
+    #[schema(value_type = Option<String>, example = "conjunto")]
+    pub forma: Option<FormaCopropiedad>,
 }
 
-/// Da de alta una copropiedad y le asigna su primer administrador.
+/// Da de alta una copropiedad (en configuración) y le asigna su primer administrador.
 #[utoipa::path(
     post,
     path = "/copropiedades",
@@ -94,6 +109,7 @@ pub struct NuevaCopropiedadPeticion {
         (status = CREATED, description = "Copropiedad creada", body = CopropiedadRespuesta),
         (status = FORBIDDEN, description = "Sin `plataforma.copropiedades.crear`", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "La cuenta del administrador no existe", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Otra copropiedad tiene ese NIT (`conflicto`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_copropiedad(
@@ -106,7 +122,12 @@ pub async fn crear_copropiedad(
         &state.unidad,
         &RelojSistema,
         &op.ctx,
-        &p.nombre,
+        AltaCopropiedad {
+            nombre: p.nombre.clone(),
+            nit: p.nit,
+            tipo: p.tipo.unwrap_or(TipoCopropiedad::Residencial),
+            forma: p.forma.unwrap_or(FormaCopropiedad::Conjunto),
+        },
         CuentaId::from_uuid(p.administrador_cuenta_id),
     )
     .await?;
@@ -117,6 +138,52 @@ pub async fn crear_copropiedad(
             nombre: p.nombre.trim().to_owned(),
         }),
     ))
+}
+
+/// Estado nuevo de una copropiedad.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct EstadoCopropiedadPeticion {
+    /// `activa`, `suspendida` o `retirada` (desde `en_configuracion` solo `activa` o `retirada`).
+    #[schema(value_type = String, example = "activa")]
+    pub estado: EstadoCopropiedad,
+}
+
+/// Estado resultante.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct EstadoCopropiedadRespuesta {
+    #[schema(value_type = String, example = "activa")]
+    pub estado: EstadoCopropiedad,
+}
+
+/// Activa, suspende, reactiva o retira una copropiedad.
+#[utoipa::path(
+    post,
+    path = "/copropiedades/{copropiedad_id}/estado",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    request_body = EstadoCopropiedadPeticion,
+    responses(
+        (status = OK, description = "Estado cambiado", body = EstadoCopropiedadRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.copropiedades.crear`", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Transición no permitida (`conflicto_estado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn cambiar_estado_copropiedad(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Path(copropiedad_id): Path<Uuid>,
+    Json(p): Json<EstadoCopropiedadPeticion>,
+) -> ApiResult<Json<EstadoCopropiedadRespuesta>> {
+    let estado = uc::cambiar_estado_copropiedad(
+        &state.unidad,
+        &op.ctx,
+        TenantId::from_uuid(copropiedad_id),
+        p.estado,
+    )
+    .await?;
+    Ok(Json(EstadoCopropiedadRespuesta { estado }))
 }
 
 /// Roles de plataforma (plantillas y propios).

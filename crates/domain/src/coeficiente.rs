@@ -33,6 +33,46 @@ impl Coeficiente {
     pub const fn valor(self) -> Decimal {
         self.0
     }
+
+    /// Lee un coeficiente escrito por una persona: **porcentaje** si termina en `%`
+    /// (`"0,5230 %"` → `0.005230`) o **fracción** si no (`"0.00523"`). Acepta coma o punto
+    /// decimal y espacios; no acepta separadores de miles.
+    ///
+    /// ```
+    /// use domain::Coeficiente;
+    /// use rust_decimal::Decimal;
+    ///
+    /// let c = Coeficiente::desde_texto("0,5230 %").expect("válido");
+    /// assert_eq!(c.valor(), Decimal::new(523, 5));
+    /// assert_eq!(Coeficiente::desde_texto("0.00523").expect("válido").valor(), Decimal::new(523, 5));
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// [`DominioError::CoeficienteInvalido`] si no es un número, queda fuera de (0, 1] o tiene
+    /// más de [`Self::ESCALA`] decimales como fracción.
+    pub fn desde_texto(texto: &str) -> Result<Self, DominioError> {
+        let limpio: String = texto.chars().filter(|c| !c.is_whitespace()).collect();
+        let (numero, es_porcentaje) = match limpio.strip_suffix('%') {
+            Some(n) => (n, true),
+            None => (limpio.as_str(), false),
+        };
+        let numero = numero.replace(',', ".");
+        if numero.is_empty() || numero.matches('.').count() > 1 {
+            return Err(DominioError::CoeficienteInvalido(
+                "escriba un número como 0,5230 % o 0.005230".into(),
+            ));
+        }
+        let valor: Decimal = numero.parse().map_err(|_| {
+            DominioError::CoeficienteInvalido("escriba un número como 0,5230 % o 0.005230".into())
+        })?;
+        let fraccion = if es_porcentaje {
+            valor / Decimal::ONE_HUNDRED
+        } else {
+            valor
+        };
+        Self::new(fraccion.normalize())
+    }
 }
 
 impl TryFrom<Decimal> for Coeficiente {
@@ -67,5 +107,45 @@ mod tests {
         assert!(Coeficiente::new(dec!(-0.1)).is_err());
         assert!(Coeficiente::new(dec!(1.00000001)).is_err());
         assert!(Coeficiente::new(dec!(0.000000001)).is_err());
+    }
+}
+
+#[cfg(test)]
+mod pruebas_texto {
+    use rust_decimal::dec;
+
+    use super::Coeficiente;
+
+    #[test]
+    fn lee_porcentaje_y_fraccion_con_coma_o_punto() {
+        for (texto, esperado) in [
+            ("0,5230 %", dec!(0.00523)),
+            ("0.523%", dec!(0.00523)),
+            ("0,00523", dec!(0.00523)),
+            ("100 %", dec!(1)),
+            (" 1 ", dec!(1)),
+        ] {
+            assert_eq!(
+                Coeficiente::desde_texto(texto).expect(texto).valor(),
+                esperado,
+                "{texto}"
+            );
+        }
+    }
+
+    #[test]
+    fn rechaza_textos_invalidos() {
+        for texto in [
+            "",
+            "%",
+            "abc",
+            "1.000,5",
+            "0,5,2",
+            "0 %",
+            "101 %",
+            "0.0000000001",
+        ] {
+            assert!(Coeficiente::desde_texto(texto).is_err(), "{texto:?}");
+        }
     }
 }

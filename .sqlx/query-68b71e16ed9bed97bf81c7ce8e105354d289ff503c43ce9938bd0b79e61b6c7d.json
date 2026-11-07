@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO franjas_punto_atencion\n                 (tenant_id, punto_atencion_id, dia_semana, hora_inicio, hora_fin, aplica_festivos)\n             SELECT $1, $2, d, i, f, a\n             FROM unnest($3::smallint[], $4::time[], $5::time[], $6::bool[]) AS t (d, i, f, a)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2Array",
+        "TimeArray",
+        "TimeArray",
+        "BoolArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "68b71e16ed9bed97bf81c7ce8e105354d289ff503c43ce9938bd0b79e61b6c7d"
+}

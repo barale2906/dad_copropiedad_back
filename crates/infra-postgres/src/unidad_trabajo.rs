@@ -47,7 +47,16 @@ impl UnidadDeTrabajo for UnidadDeTrabajoPg {
 
 impl Transaccion for TransaccionPg {
     async fn confirmar(self) -> AppResult<()> {
-        self.tx.commit().await.map_err(AppError::infra)
+        self.tx.commit().await.map_err(|e| {
+            // Restricciones diferidas que se evalúan al confirmar (p. ej. los titulares de un
+            // bien privado). El mensaje del trigger no lleva datos personales.
+            match e.as_database_error() {
+                Some(d) if d.code().is_some_and(|c| c.starts_with('V')) => {
+                    AppError::Conflicto(d.message().to_owned())
+                }
+                _ => AppError::infra(e),
+            }
+        })
     }
 }
 

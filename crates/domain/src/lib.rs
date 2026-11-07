@@ -14,12 +14,17 @@
 mod macros;
 
 pub mod archivo;
+pub mod bien_privado;
 pub mod calendario;
 pub mod coeficiente;
+pub mod copropiedad;
 pub mod correo;
+pub mod cuadro_coeficientes;
 pub mod cuenta;
 pub mod error;
+pub mod horario;
 pub mod ids;
+pub mod importacion;
 pub mod mayoria;
 pub mod modulo;
 pub mod nit;
@@ -31,18 +36,32 @@ pub mod quorum;
 pub mod registro;
 pub mod resultados;
 pub mod reunion;
+pub mod titularidad;
 pub mod voto;
 
 pub use archivo::{Almacen, ClasificacionArchivo, ClaveArchivo, NombreArchivo, TipoArchivo};
+pub use bien_privado::{
+    CodigoAgrupacion, CodigoBienPrivado, NumeroBienPrivado, PlantillaNomenclatura, TipoAgrupacion,
+    TipoBienPrivado, TipoUsoExclusivo, UsoBienPrivado,
+};
 pub use coeficiente::Coeficiente;
+pub use copropiedad::{
+    AdvertenciaFicha, CodigoDane, EstadoCopropiedad, EstadoLegal, FormaCopropiedad, Telefono,
+    TipoCopropiedad, TipoPuntoAtencion,
+};
 pub use correo::DireccionCorreo;
+pub use cuadro_coeficientes::{EstadoCuadro, RevisionCuadro, TipoCuadro};
 pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
 pub use error::DominioError;
+pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
-    ArchivoId, AsignacionRolId, AutorizacionId, BienPrivadoId, ContratoServicioId, CuentaId,
-    InscripcionId, OpcionId, OrganizacionId, ParticipacionId, PersonaId, PoliticaTratamientoId,
-    PreguntaId, ReclamacionId, ReunionId, RolId, SesionId, SolicitudTitularId, TenantId, VotoId,
+    AgrupacionId, ArchivoId, AsignacionRolId, AutorizacionId, BienPrivadoId, ContratoServicioId,
+    CuadroCoeficientesId, CuentaId, ImportacionId, InscripcionId, OpcionId, OrganizacionId,
+    ParticipacionId, PersonaId, PoliticaTratamientoId, PreguntaId, PuntoAtencionId, ReclamacionId,
+    ReunionId, RolId, SesionId, SolicitudTitularId, TenantId, TitularidadId, UsoExclusivoId,
+    VotoId,
 };
+pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
 pub use mayoria::ReglaMayoria;
 pub use modulo::Modulo;
 pub use nit::Nit;
@@ -57,6 +76,7 @@ pub use quorum::{Convocatoria, Quorum};
 pub use registro::{MetodoRegistro, RolAsistente};
 pub use resultados::ProyeccionResultados;
 pub use reunion::{EstadoReunion, TipoReunion};
+pub use titularidad::{ConjuntoTitulares, Porcentaje, TipoPersona, TipoTitularidad, TitularNuevo};
 pub use voto::{
     Canal, ClaveIdempotencia, Papeleta, ParticipacionNueva, VinculoNominal, VotoEmitido, VotoNuevo,
 };

@@ -4,6 +4,7 @@ use application::{
     AppError, AppResult,
     puertos::{
         RepositorioContratos, RepositorioRoles,
+        copropiedades::AltaCopropiedad,
         identidad::{
             Asignacion, ContratoServicio, CuentaResumen, FichaOrganizacion, NuevaOrganizacion, Rol,
         },
@@ -296,15 +297,18 @@ impl RepositorioRoles for TransaccionPg {
         }))
     }
 
-    async fn insertar_copropiedad(&mut self, nombre: &str) -> AppResult<()> {
+    async fn insertar_copropiedad(&mut self, alta: &AltaCopropiedad) -> AppResult<()> {
         sqlx::query!(
-            "INSERT INTO copropiedades (id, nombre) VALUES ($1, $2)",
+            "INSERT INTO copropiedades (id, nombre, nit, tipo, forma) VALUES ($1, $2, $3, $4, $5)",
             self.ctx.tenant_id.as_uuid(),
-            nombre,
+            alta.nombre,
+            alta.nit.as_ref().map(ToString::to_string),
+            alta.tipo.as_str(),
+            alta.forma.as_str(),
         )
         .execute(&mut *self.tx)
         .await
-        .map_err(AppError::infra)?;
+        .map_err(|e| conflicto_si_unico(e, "otra copropiedad ya tiene ese NIT"))?;
         Ok(())
     }
 }

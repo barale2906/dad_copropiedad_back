@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT punto_atencion_id, fecha, hora_inicio, hora_fin, motivo\n             FROM excepciones_punto_atencion ORDER BY punto_atencion_id, fecha",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "punto_atencion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "excepciones_punto_atencion",
+            "name": "punto_atencion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "excepciones_punto_atencion",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "hora_inicio",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "excepciones_punto_atencion",
+            "name": "hora_inicio"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "hora_fin",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "excepciones_punto_atencion",
+            "name": "hora_fin"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "excepciones_punto_atencion",
+            "name": "motivo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "935f473188b78d4bdeef4a94730f41e75ce598fc3a504c7a0ec9d9bae05da321"
+}

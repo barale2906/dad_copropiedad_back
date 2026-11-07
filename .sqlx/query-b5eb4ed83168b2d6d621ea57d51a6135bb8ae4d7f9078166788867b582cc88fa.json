@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT coalesce(max(version), 0) AS \"v!\" FROM cuadros_coeficientes\n               WHERE tipo = 'copropiedad'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "v!",
+        "type_info": "Int4",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "b5eb4ed83168b2d6d621ea57d51a6135bb8ae4d7f9078166788867b582cc88fa"
+}

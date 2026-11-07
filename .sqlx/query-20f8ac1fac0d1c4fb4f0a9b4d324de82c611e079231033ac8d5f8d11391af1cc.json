@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE importaciones SET estado = 'aplicada', resumen = $2, aplicada_en = $3\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "20f8ac1fac0d1c4fb4f0a9b4d324de82c611e079231033ac8d5f8d11391af1cc"
+}

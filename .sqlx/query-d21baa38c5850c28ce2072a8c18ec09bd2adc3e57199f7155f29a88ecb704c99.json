@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO coeficientes_bien_privado (tenant_id, cuadro_id, bien_privado_id, coeficiente)\n             SELECT $1, $2, b, c FROM unnest($3::uuid[], $4::numeric[]) AS t (b, c)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray",
+        "NumericArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d21baa38c5850c28ce2072a8c18ec09bd2adc3e57199f7155f29a88ecb704c99"
+}

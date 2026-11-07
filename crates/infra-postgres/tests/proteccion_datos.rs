@@ -193,7 +193,9 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
            AND (c.table_name, c.column_name) IN (
                ('personas', 'nombre'), ('personas', 'documento'), ('personas', 'telefono'),
                ('personas', 'correo'), ('archivos', 'nombre_original'), ('outbox', 'destino'),
-               ('outbox', 'payload'), ('outbox', 'ultimo_error'))
+               ('outbox', 'payload'), ('outbox', 'ultimo_error'),
+               ('bienes_privados', 'matricula_inmobiliaria'),
+               ('bienes_privados', 'cedula_catastral'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

@@ -79,10 +79,23 @@ pub(crate) mod memoria {
         },
     };
 
+    mod copropiedades;
+
     /// Datos de negocio en memoria. La transacción trabaja sobre una copia y la reemplaza
     /// al confirmar.
     #[derive(Default, Clone)]
     pub struct Datos {
+        pub agrupaciones: Vec<crate::puertos::copropiedades::Agrupacion>,
+        pub bienes: BTreeMap<domain::BienPrivadoId, crate::puertos::copropiedades::BienPrivado>,
+        pub usos_exclusivos: Vec<crate::puertos::copropiedades::UsoExclusivo>,
+        pub cuadros: Vec<crate::puertos::copropiedades::CuadroCoeficientes>,
+        pub coeficientes: BTreeMap<
+            domain::CuadroCoeficientesId,
+            BTreeMap<domain::BienPrivadoId, domain::Coeficiente>,
+        >,
+        pub personas: Vec<crate::puertos::copropiedades::Persona>,
+        pub titularidades: Vec<crate::puertos::copropiedades::Titularidad>,
+        pub reuniones_instaladas: u64,
         pub archivos: BTreeMap<ArchivoId, Archivo>,
         pub politicas: Vec<PoliticaTratamiento>,
         /// Autorizaciones con su fecha de revocación.
@@ -148,6 +161,11 @@ pub(crate) mod memoria {
 
         pub fn archivos(&self) -> Vec<Archivo> {
             self.datos().archivos.into_values().collect()
+        }
+
+        /// Simula reuniones instaladas en la copropiedad.
+        pub fn fijar_reuniones_instaladas(&self, n: u64) {
+            self.datos.lock().expect("mutex sano").reuniones_instaladas = n;
         }
     }
 
@@ -456,7 +474,10 @@ pub(crate) mod memoria {
             Ok(None)
         }
 
-        async fn insertar_copropiedad(&mut self, _nombre: &str) -> AppResult<()> {
+        async fn insertar_copropiedad(
+            &mut self,
+            _alta: &crate::puertos::copropiedades::AltaCopropiedad,
+        ) -> AppResult<()> {
             Ok(())
         }
     }

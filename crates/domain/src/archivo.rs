@@ -22,6 +22,10 @@ pub enum TipoArchivo {
     Webp,
     /// Fotos de iPhone.
     Heic,
+    /// Planilla de texto separada por comas o punto y coma (solo importaciones).
+    Csv,
+    /// Libro de Excel (solo importaciones).
+    Xlsx,
 }
 
 enum_texto!(TipoArchivo {
@@ -30,6 +34,8 @@ enum_texto!(TipoArchivo {
     Png => "image/png",
     Webp => "image/webp",
     Heic => "image/heic",
+    Csv => "text/csv",
+    Xlsx => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 });
 
 const MB: u64 = 1024 * 1024;
@@ -69,7 +75,7 @@ impl TipoArchivo {
     pub const fn tamano_maximo(self) -> u64 {
         match self {
             Self::Pdf => Self::TAMANO_MAXIMO_GLOBAL,
-            Self::Jpeg | Self::Png | Self::Webp | Self::Heic => 10 * MB,
+            Self::Jpeg | Self::Png | Self::Webp | Self::Heic | Self::Csv | Self::Xlsx => 10 * MB,
         }
     }
 
@@ -81,6 +87,8 @@ impl TipoArchivo {
             Self::Png => "png",
             Self::Webp => "webp",
             Self::Heic => "heic",
+            Self::Csv => "csv",
+            Self::Xlsx => "xlsx",
         }
     }
 
@@ -95,6 +103,44 @@ impl TipoArchivo {
             return Err(DominioError::ArchivoVacio);
         }
         let tipo = Self::detectar(contenido).ok_or(DominioError::TipoArchivoNoAdmitido)?;
+        if contenido.len() as u64 > tipo.tamano_maximo() {
+            return Err(DominioError::ArchivoDemasiadoGrande {
+                maximo_bytes: tipo.tamano_maximo(),
+            });
+        }
+        Ok(tipo)
+    }
+}
+
+impl TipoArchivo {
+    /// Detecta una planilla por el contenido: XLSX (contenedor ZIP con la carpeta `xl/`) o CSV
+    /// (texto UTF-8 sin bytes nulos ni caracteres de control, salvo tabulador y saltos de línea).
+    pub fn detectar_planilla(contenido: &[u8]) -> Option<Self> {
+        if contenido.starts_with(b"PK\x03\x04") {
+            return contenido
+                .windows(3)
+                .any(|w| w == b"xl/")
+                .then_some(Self::Xlsx);
+        }
+        let texto = std::str::from_utf8(contenido).ok()?;
+        let es_texto = texto
+            .chars()
+            .all(|c| !c.is_control() || matches!(c, '\t' | '\r' | '\n'));
+        (es_texto && !texto.trim().is_empty()).then_some(Self::Csv)
+    }
+
+    /// Valida una planilla para importar: no vacía, CSV o XLSX y dentro del tamaño máximo.
+    /// Las planillas **solo** se aceptan por este camino, nunca como adjuntos generales.
+    ///
+    /// # Errors
+    ///
+    /// [`DominioError::ArchivoVacio`], [`DominioError::TipoArchivoNoAdmitido`] o
+    /// [`DominioError::ArchivoDemasiadoGrande`].
+    pub fn validar_planilla(contenido: &[u8]) -> Result<Self, DominioError> {
+        if contenido.is_empty() {
+            return Err(DominioError::ArchivoVacio);
+        }
+        let tipo = Self::detectar_planilla(contenido).ok_or(DominioError::TipoArchivoNoAdmitido)?;
         if contenido.len() as u64 > tipo.tamano_maximo() {
             return Err(DominioError::ArchivoDemasiadoGrande {
                 maximo_bytes: tipo.tamano_maximo(),
@@ -379,5 +425,38 @@ mod tests {
         }
         assert!(NombreArchivo::new(&"ñ".repeat(255)).is_ok());
         assert!(NombreArchivo::new(&"ñ".repeat(256)).is_err());
+    }
+}
+
+#[cfg(test)]
+mod pruebas_planillas {
+    use super::*;
+
+    #[test]
+    fn planillas_solo_se_aceptan_por_su_camino() {
+        let csv = "numero;coeficiente\n101;0,5 %\n".as_bytes();
+        assert_eq!(TipoArchivo::validar_planilla(csv), Ok(TipoArchivo::Csv));
+        assert_eq!(
+            TipoArchivo::validar(csv),
+            Err(DominioError::TipoArchivoNoAdmitido)
+        );
+        let xlsx = b"PK\x03\x04....[Content_Types].xml....xl/workbook.xml";
+        assert_eq!(TipoArchivo::validar_planilla(xlsx), Ok(TipoArchivo::Xlsx));
+    }
+
+    #[test]
+    fn rechaza_binarios_y_zip_que_no_son_excel() {
+        assert_eq!(
+            TipoArchivo::validar_planilla(b"PK\x03\x04 documento.docx word/"),
+            Err(DominioError::TipoArchivoNoAdmitido)
+        );
+        assert_eq!(
+            TipoArchivo::validar_planilla(b"%PDF-1.7\x00\x01"),
+            Err(DominioError::TipoArchivoNoAdmitido)
+        );
+        assert_eq!(
+            TipoArchivo::validar_planilla(b""),
+            Err(DominioError::ArchivoVacio)
+        );
     }
 }

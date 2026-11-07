@@ -134,6 +134,36 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Agrupación de bienes privados (edificio, torre, etapa, bloque, manzana…).
+    AgrupacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión del cuadro de coeficientes de copropiedad.
+    CuadroCoeficientesId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Titularidad de una persona sobre un bien privado, con vigencia.
+    TitularidadId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Asignación de un bien común de uso exclusivo a un bien privado (Ley 675, art. 22).
+    UsoExclusivoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Punto de atención de la copropiedad (oficina de administración, portería…).
+    PuntoAtencionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Importación masiva desde un archivo CSV/XLSX.
+    ImportacionId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

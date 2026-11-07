@@ -21,6 +21,7 @@ infra-pdf = { path = "crates/infra-pdf" }
 infra-correo = { path = "crates/infra-correo" }
 infra-archivos = { path = "crates/infra-archivos" }
 infra-seguridad = { path = "crates/infra-seguridad" }
+infra-planillas = { path = "crates/infra-planillas" }
 
 # HTTP / async
 axum = { version = "0.8.9", features = ["macros", "ws"] }
@@ -64,6 +65,10 @@ dotenvy = "0.15.7"
 
 # Correo saliente por SMTP (sin OpenSSL: rustls + raíces webpki)
 lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls-tls"] }
+
+# Planillas de importación masiva: CSV y libros de Excel (solo lectura, Rust puro)
+csv = "1.4.0"
+calamine = "0.38.0"
 
 # Criptografía (firma de webhooks de Meta, enlaces de descarga firmados, huellas SHA-256)
 hmac = "0.13.0"

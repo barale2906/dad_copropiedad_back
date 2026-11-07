@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (SELECT 1 FROM puntos_atencion WHERE id = $1) AS \"existe!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "existe!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ff4a45b10b13c17c8cdd0008dcf1deffbb16b56db9e498cfc9be4ef682531a20"
+}

@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE bienes_privados SET\n                 codigo = $2, activo = $3, tipo = $4, agrupacion_id = $5, numero = $6, piso = $7,\n                 area_privada_m2 = $8, matricula_inmobiliaria = $9, cedula_catastral = $10,\n                 uso = $11, bien_principal_id = $12, actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Bool",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int2",
+        "Numeric",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ac493135176943b867ccd5c2f54dd9cce3a3546e67a01e6984b7e4bcc1d5bdc0"
+}

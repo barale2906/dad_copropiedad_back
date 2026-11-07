@@ -5,7 +5,8 @@
 //! se queda la plataforma sin superusuario.
 
 use domain::{
-    Ambito, AsignacionRolId, ConjuntoPermisos, CuentaId, EstadoCuenta, Permiso, RolId, TenantId,
+    Ambito, AsignacionRolId, ConjuntoPermisos, CuentaId, EstadoCopropiedad, EstadoCuenta, Permiso,
+    RolId, TenantId,
     permisos::{CODIGO_ADMINISTRADOR, CODIGO_SUPERUSUARIO},
 };
 
@@ -14,8 +15,10 @@ use crate::{
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     casos_uso::roles::{NuevoRol, SolicitudAsignacion, asignar_en, validar_nuevo_rol},
     puertos::{
-        RegistroAuditoria, Reloj, RepositorioCuentas, RepositorioPlataforma, RepositorioRoles,
-        RepositorioSesiones, Transaccion, UnidadDeTrabajo, UnidadDeTrabajoPlataforma,
+        RegistroAuditoria, Reloj, RepositorioCopropiedad, RepositorioCuentas,
+        RepositorioPlataforma, RepositorioRoles, RepositorioSesiones, Transaccion, UnidadDeTrabajo,
+        UnidadDeTrabajoPlataforma,
+        copropiedades::AltaCopropiedad,
         identidad::{AsignacionPlataforma, CopropiedadResumen, Rol},
     },
 };
@@ -29,19 +32,23 @@ pub const ACCION_ASIGNAR: AccionAuditoria = AccionAuditoria::new("plataforma.asi
 pub const ACCION_REVOCAR: AccionAuditoria = AccionAuditoria::new("plataforma.asignacion.terminar");
 pub const ACCION_BLOQUEAR: AccionAuditoria = AccionAuditoria::new("plataforma.cuenta.bloquear");
 
-/// Da de alta una copropiedad y le asigna su primer administrador.
+pub const ACCION_CAMBIAR_ESTADO: AccionAuditoria =
+    AccionAuditoria::new("plataforma.copropiedad.cambiar_estado");
+
+/// Da de alta una copropiedad (en configuración) y le asigna su primer administrador.
 ///
 /// # Errors
 ///
 /// - [`AppError::SinPermiso`] sin `plataforma.copropiedades.crear`.
 /// - [`AppError::Validacion`] si el nombre está vacío.
 /// - [`AppError::NoEncontrado`] si la cuenta del administrador no existe.
+/// - [`AppError::Conflicto`] si el NIT ya lo usa otra copropiedad.
 pub async fn crear_copropiedad<UP, U>(
     plataforma: &UP,
     unidad: &U,
     reloj: &impl Reloj,
     ctx: &ContextoPlataforma,
-    nombre: &str,
+    alta: AltaCopropiedad,
     administrador: CuentaId,
 ) -> AppResult<TenantId>
 where
@@ -51,12 +58,10 @@ where
     U::Transaccion: RepositorioRoles + RegistroAuditoria,
 {
     ctx.exigir(Permiso::PlataformaCopropiedadesCrear)?;
-    let nombre = nombre.trim();
-    if nombre.is_empty() || nombre.chars().count() > 200 {
-        return Err(AppError::Validacion(
-            "el nombre debe tener entre 1 y 200 caracteres".into(),
-        ));
-    }
+    let alta = AltaCopropiedad {
+        nombre: domain::copropiedad::texto_obligatorio("nombre", &alta.nombre, 200)?,
+        ..alta
+    };
     plataforma
         .iniciar_plataforma(ctx)
         .await?
@@ -75,7 +80,7 @@ where
         permisos: ConjuntoPermisos::todos(Ambito::Copropiedad),
     };
     let mut tx = unidad.iniciar(&ctx_ph).await?;
-    tx.insertar_copropiedad(nombre).await?;
+    tx.insertar_copropiedad(&alta).await?;
     let rol = tx
         .rol_por_codigo(CODIGO_ADMINISTRADOR)
         .await?
@@ -95,6 +100,52 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(tenant)
+}
+
+/// Cambia el estado de una copropiedad (activar, suspender, reactivar o retirar). La
+/// plataforma decide el ciclo de vida del servicio; la máquina de estados es
+/// [`EstadoCopropiedad::transicionar`].
+///
+/// # Errors
+///
+/// - [`AppError::SinPermiso`] sin `plataforma.copropiedades.crear`.
+/// - [`AppError::NoEncontrado`] si la copropiedad no existe.
+/// - [`AppError::Dominio`] si la transición no está permitida.
+pub async fn cambiar_estado_copropiedad<U>(
+    unidad: &U,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+    hacia: EstadoCopropiedad,
+) -> AppResult<EstadoCopropiedad>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioCopropiedad + RegistroAuditoria,
+{
+    ctx.exigir(Permiso::PlataformaCopropiedadesCrear)?;
+    let ctx_ph = Contexto {
+        tenant_id: tenant,
+        actor_id: ctx.actor_id,
+        request_id: ctx.request_id.clone(),
+        permisos: ConjuntoPermisos::todos(Ambito::Copropiedad),
+    };
+    let mut tx = unidad.iniciar(&ctx_ph).await?;
+    let mut ficha = tx
+        .ficha()
+        .await?
+        .ok_or(AppError::NoEncontrado("copropiedad"))?;
+    let desde = ficha.estado;
+    ficha.estado = desde.transicionar(hacia)?;
+    tx.guardar_ficha(&ficha).await?;
+    let detalle = DetalleAuditoria::vacio()
+        .con("desde", desde.as_str())?
+        .con("hacia", hacia.as_str())?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_CAMBIAR_ESTADO, "copropiedad", tenant.as_uuid())
+            .con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(hacia)
 }
 
 /// Todas las copropiedades.

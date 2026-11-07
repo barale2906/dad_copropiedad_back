@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT t.bien_privado_id\n             FROM titularidades t JOIN personas p ON p.id = t.persona_id\n             WHERE p.cuenta_id = $1 AND t.vigente_hasta IS NULL\n             ORDER BY 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "titularidades",
+            "name": "bien_privado_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ac63f4102ea8e054d43de79d0713941761bce73bd85ab5d54caefd2e944a8244"
+}

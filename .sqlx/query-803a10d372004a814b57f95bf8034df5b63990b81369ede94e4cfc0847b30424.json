@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO puntos_atencion (id, tenant_id, tipo, nombre, ubicacion, telefono)\n             VALUES ($1, $2, $3, $4, $5, $6)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "803a10d372004a814b57f95bf8034df5b63990b81369ede94e4cfc0847b30424"
+}
