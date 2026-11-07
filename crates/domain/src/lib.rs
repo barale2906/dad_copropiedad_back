@@ -15,6 +15,7 @@ mod macros;
 
 pub mod calendario;
 pub mod coeficiente;
+pub mod correo;
 pub mod error;
 pub mod ids;
 pub mod mayoria;
@@ -26,6 +27,7 @@ pub mod reunion;
 pub mod voto;
 
 pub use coeficiente::Coeficiente;
+pub use correo::DireccionCorreo;
 pub use error::DominioError;
 pub use ids::{
     BienPrivadoId, InscripcionId, OpcionId, ParticipacionId, PersonaId, PreguntaId, ReunionId,

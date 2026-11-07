@@ -24,13 +24,16 @@ make verificar      # fmt + clippy + pruebas, antes de terminar una tarea
 Equivalente sin Make:
 ```bash
 cp .env.example .env          # variables locales
-docker compose up -d --wait   # PostgreSQL 18 (+ rol dad_app) y Redis 8
+docker compose up -d --wait   # PostgreSQL 18 (+ rol dad_app), Redis 8 y Mailpit
 cargo api                     # aplica migraciones y levanta la API en :8080
 cargo gateway                 # webhook de WhatsApp en :8081
 
 curl localhost:8080/health    # {"status":"ok",...}
 curl localhost:8080/ready     # {"database":"ok","status":"ok"}
 ```
+Correos en desarrollo: `docker compose up -d` también levanta **Mailpit**; todo lo que envíe el
+gateway aparece en <http://localhost:8025> (no sale a internet).
+
 Con `API_DOCS_HABILITADA=true` (así viene en `.env.example`): documentación interactiva en
 <http://localhost:8080/docs> y contrato en <http://localhost:8080/api-docs/openapi.json>.
 
@@ -62,6 +65,7 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-postgres` | Adaptador | SQLx, RLS por tenant, repositorios |
 | `crates/infra-whatsapp` | Adaptador | Cloud API de Meta: firma, webhook, envío |
 | `crates/infra-pdf` | Adaptador | Actas con Typst (pendiente) |
+| `crates/infra-correo` | Adaptador | Correo saliente por SMTP (lettre) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |
 | `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook, outbox, worker |

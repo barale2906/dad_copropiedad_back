@@ -14,6 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 application.workspace = true
+infra-correo.workspace = true
 infra-postgres.workspace = true
 infra-whatsapp.workspace = true
 shared.workspace = true
@@ -27,6 +28,7 @@ tower-http.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
 hex.workspace = true
 hmac.workspace = true
 sha2.workspace = true

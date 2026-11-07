@@ -122,6 +122,7 @@ impl ApiError {
                 DominioError::OpcionInvalida(_)
                 | DominioError::CoeficienteInvalido(_)
                 | DominioError::ClaveIdempotenciaInvalida(_)
+                | DominioError::CorreoInvalido
                 | DominioError::ValorDesconocido { .. } => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion)
                 }

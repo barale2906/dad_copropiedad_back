@@ -139,6 +139,90 @@ impl WhatsappConfig {
     }
 }
 
+/// Cifrado de la conexión SMTP.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SeguridadSmtp {
+    /// Conexión en claro que se cifra con STARTTLS (puerto 587). Recomendado.
+    Starttls,
+    /// TLS desde el inicio (puerto 465).
+    Tls,
+    /// Sin cifrado: **solo desarrollo** (Mailpit en `localhost:1025`).
+    Ninguna,
+}
+
+impl FromStr for SeguridadSmtp {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "starttls" => Ok(Self::Starttls),
+            "tls" => Ok(Self::Tls),
+            "ninguna" => Ok(Self::Ninguna),
+            otro => Err(format!(
+                "se esperaba `starttls`, `tls` o `ninguna`, se recibió `{otro}`"
+            )),
+        }
+    }
+}
+
+/// Servidor de correo saliente (en producción, el SMTP de HestiaCP del VPS).
+#[derive(Clone)]
+pub struct SmtpConfig {
+    pub host: String,
+    pub puerto: u16,
+    pub seguridad: SeguridadSmtp,
+    /// Usuario y contraseña; ambos vacíos = sin autenticación (Mailpit).
+    pub usuario: Option<String>,
+    pub contrasena: Option<String>,
+    /// Remitente de todos los correos, p. ej. `DAD Copropiedad <no-responder@dominio.co>`.
+    pub remitente: String,
+}
+
+impl std::fmt::Debug for SmtpConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SmtpConfig")
+            .field("host", &self.host)
+            .field("puerto", &self.puerto)
+            .field("seguridad", &self.seguridad)
+            .field("usuario", &self.usuario.as_ref().map(|_| "<oculto>"))
+            .field("contrasena", &self.contrasena.as_ref().map(|_| "<oculto>"))
+            .field("remitente", &self.remitente)
+            .finish()
+    }
+}
+
+impl SmtpConfig {
+    /// Lee `SMTP_*`. Devuelve `None` si `SMTP_HOST` no está definido: el envío de correo queda
+    /// desactivado (el gateway lo advierte al arrancar).
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si `SMTP_HOST` existe pero falta `SMTP_REMITENTE`, si un valor es
+    /// inválido o si se define solo uno de usuario y contraseña.
+    pub fn from_env() -> Result<Option<Self>, ConfigError> {
+        let _ = dotenvy::dotenv();
+        let Some(host) = optional("SMTP_HOST") else {
+            return Ok(None);
+        };
+        let usuario = optional("SMTP_USUARIO");
+        let contrasena = optional("SMTP_CONTRASENA");
+        if usuario.is_some() != contrasena.is_some() {
+            return Err(ConfigError::Invalid {
+                var: "SMTP_USUARIO/SMTP_CONTRASENA",
+                detail: "defina ambos o ninguno".into(),
+            });
+        }
+        Ok(Some(Self {
+            host,
+            puerto: parse_or("SMTP_PUERTO", 587)?,
+            seguridad: parse_or("SMTP_SEGURIDAD", SeguridadSmtp::Starttls)?,
+            usuario,
+            contrasena,
+            remitente: required("SMTP_REMITENTE")?,
+        }))
+    }
+}
+
 fn optional(var: &'static str) -> Option<String> {
     env::var(var).ok().filter(|v| !v.trim().is_empty())
 }

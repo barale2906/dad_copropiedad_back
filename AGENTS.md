@@ -46,6 +46,7 @@ crates/
   infra-postgres/  SQLx: pool, migraciones, transacción por tenant (RLS), repositorios
   infra-whatsapp/  Cloud API: firma de Meta, webhook entrante, (próximo) cliente de envío
   infra-pdf/       actas con Typst (pendiente)
+  infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
   shared/          configuración (env), telemetría, apagado. Sin Axum ni SQL.
 apps/
   api/             binario `dad_copropiedad_api`: REST para el front + WebSocket de resultados
@@ -95,6 +96,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Decimales / fechas / IDs | rust_decimal · chrono · uuid (v7, v4 para votos) | En uso | |
 | Criptografía | hmac + sha2 + hex | En uso | Firma de webhooks de Meta. |
 | Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
+| Correo | lettre 0.11 (SMTP, rustls) · SMTP de HestiaCP en producción · Mailpit en desarrollo | En uso | Crate `infra-correo`, puerto `EnvioCorreo`; variables `SMTP_*`. Mailpit atrapa los correos locales (bandeja en `localhost:8025`). |
 | Limitador | governor | Previsto | 80 mensajes/s por línea. |
 | OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
 | Actas | Typst | Previsto | En `infra-pdf`. |
@@ -211,7 +213,7 @@ Riesgo residual conocido: el orden físico de inserción en `votos` podría corr
 - Webhook: verificar `X-Hub-Signature-256` sobre el cuerpo **crudo** antes de deserializar; responder rápido.
 - Sesión por **(línea, teléfono)** (`wa:sesion:{linea}:{telefono}`), resuelta contra las reuniones activas en que el teléfono está inscrito; si hay varias, se pregunta con una lista (`casos_uso::resolver_reunion`).
 - Votos con botones (≤ 3 opciones) o listas (≤ 10) — `ContenidoSaliente::elecciones`.
-- **Outbox** en lugar de colas externas: consumo con `outbox_reclamar` (`FOR UPDATE SKIP LOCKED`) y marcado con `outbox_marcar_enviado` / `outbox_marcar_fallido`. Prioridad: confirmaciones de voto → preguntas nuevas → recordatorios, dentro de 80 mps por línea.
+- **Outbox multicanal** (`canal`: whatsapp, correo, push) en lugar de colas externas: se encola con `RegistroOutbox` dentro de la transacción del hecho; el worker del gateway (`worker_salida`, caso de uso `despachar_lote`) reclama **solo los canales que sabe enviar** con `outbox_reclamar(canales, límite)` (`FOR UPDATE SKIP LOCKED`) y marca con `outbox_marcar_enviado` / `outbox_marcar_fallido` (reintentos con espera exponencial, `PoliticaReintentos`). Prioridad: confirmaciones → eventos → recordatorios → publicidad (9), dentro de 80 mps por línea en WhatsApp. El texto de error de un envío puede contener el destino: va a la fila del outbox, nunca a los logs.
 - Resultados en vivo: proyección en memoria (`ProyeccionResultados`) emitida cada ~500 ms por reunión; nunca un mensaje por voto.
 - Registro: enlace prellenado con botones, prerregistro y QR en puerta (`inscripciones.metodo`); los tokens se guardan como hash.
 

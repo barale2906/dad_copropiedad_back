@@ -19,6 +19,7 @@ uuid.workspace = true
 
 [dev-dependencies]
 rust_decimal = { workspace = true, features = ["macros"] }
+serde_json.workspace = true
 
 [lints]
 workspace = true

@@ -25,6 +25,10 @@ pub enum DominioError {
     #[error("clave de idempotencia inválida: {0}")]
     ClaveIdempotenciaInvalida(&'static str),
 
+    /// No incluye el valor recibido: un correo es dato personal y no debe llegar a los logs.
+    #[error("dirección de correo inválida")]
+    CorreoInvalido,
+
     #[error("valor desconocido `{valor}` para {tipo}")]
     ValorDesconocido { tipo: &'static str, valor: String },
 }

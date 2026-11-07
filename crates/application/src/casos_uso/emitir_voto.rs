@@ -7,7 +7,7 @@ use domain::{
 
 use crate::{
     AppError, AppResult, Contexto,
-    outbox::{EventoSaliente, PrioridadSalida},
+    outbox::{EventoSaliente, MensajeOutbox, PrioridadSalida},
     puertos::{
         Reloj, RepositorioInscripciones, RepositorioPreguntas, RepositorioVotos,
         mensajeria::{ContenidoSaliente, MensajeSaliente},
@@ -83,14 +83,14 @@ where
         let confirmacion = solicitud
             .confirmar_a
             .map(|(linea, telefono)| EventoSaliente {
-                prioridad: PrioridadSalida::ConfirmacionVoto,
-                mensaje: MensajeSaliente {
+                prioridad: PrioridadSalida::Confirmacion,
+                mensaje: MensajeOutbox::WhatsApp(MensajeSaliente {
                     linea,
                     telefono,
                     contenido: ContenidoSaliente::Texto {
                         cuerpo: format!("✅ Su voto fue registrado: «{}».", pregunta.enunciado),
                     },
-                },
+                }),
             });
 
         let resultado = self.votos.registrar(ctx, emitido, confirmacion).await?;
@@ -285,7 +285,7 @@ mod tests {
         );
         assert_eq!(
             confirmacion.as_ref().map(|c| c.prioridad),
-            Some(PrioridadSalida::ConfirmacionVoto)
+            Some(PrioridadSalida::Confirmacion)
         );
     }
 

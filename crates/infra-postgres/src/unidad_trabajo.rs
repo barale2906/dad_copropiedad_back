@@ -1,11 +1,12 @@
 //! Unidad de trabajo sobre PostgreSQL: cada [`TransaccionPg`] es una transacción con
 //! `app.tenant_id` fijado ([`transaccion_tenant`]) que implementa los puertos de persistencia
-//! que se usan dentro de ella, empezando por la auditoría.
+//! que se usan dentro de ella: auditoría y outbox.
 
 use application::{
     AppError, AppResult, Contexto,
     auditoria::EventoAuditoria,
-    puertos::{RegistroAuditoria, Transaccion, UnidadDeTrabajo},
+    outbox::EventoSaliente,
+    puertos::{RegistroAuditoria, RegistroOutbox, Transaccion, UnidadDeTrabajo},
 };
 use sqlx::{PgPool, Postgres};
 
@@ -65,6 +66,26 @@ impl RegistroAuditoria for TransaccionPg {
             evento.resultado.as_str(),
             evento.detalle.a_json(),
             self.ctx.request_id.as_deref(),
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+}
+
+impl RegistroOutbox for TransaccionPg {
+    async fn encolar(&mut self, evento: EventoSaliente) -> AppResult<()> {
+        let payload = serde_json::to_value(&evento.mensaje).map_err(AppError::infra)?;
+        sqlx::query!(
+            "INSERT INTO outbox (tenant_id, canal, prioridad, linea, destino, payload)
+             VALUES ($1, $2, $3, $4, $5, $6)",
+            self.ctx.tenant_id.as_uuid(),
+            evento.mensaje.canal().as_str(),
+            evento.prioridad.as_i16(),
+            evento.mensaje.linea(),
+            evento.mensaje.destino(),
+            payload,
         )
         .execute(&mut *self.tx)
         .await

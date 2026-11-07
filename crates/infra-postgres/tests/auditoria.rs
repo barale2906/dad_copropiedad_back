@@ -11,36 +11,13 @@ use application::{
 };
 use domain::{PersonaId, TenantId};
 use infra_postgres::UnidadDeTrabajoPg;
-use sqlx::{Executor, PgPool, postgres::PgPoolOptions};
+use sqlx::{Executor, PgPool};
 use uuid::Uuid;
 
-const MIGRACIONES: sqlx::migrate::Migrator = sqlx::migrate!("../../migrations");
+mod comun;
+use comun::{MIGRACIONES, crear_copropiedad, pool_como_app};
+
 const ACCION: AccionAuditoria = AccionAuditoria::new("pruebas.recurso.crear");
-
-/// Pool sobre la misma BD de la prueba, pero con el rol restringido de la aplicación.
-async fn pool_como_app(pool: &PgPool) -> PgPool {
-    PgPoolOptions::new()
-        .max_connections(2)
-        .after_connect(|conn, _| {
-            Box::pin(async move {
-                conn.execute("SET ROLE dad_app").await?;
-                Ok(())
-            })
-        })
-        .connect_with((*pool.connect_options()).clone())
-        .await
-        .expect("pool con rol dad_app")
-}
-
-async fn crear_copropiedad(pool: &PgPool) -> TenantId {
-    let tenant = TenantId::nuevo();
-    sqlx::query("INSERT INTO copropiedades (id, nombre) VALUES ($1, 'PH de prueba')")
-        .bind(tenant.as_uuid())
-        .execute(pool)
-        .await
-        .expect("copropiedad");
-    tenant
-}
 
 async fn contar_auditoria(pool: &PgPool, tenant: TenantId) -> i64 {
     sqlx::query_scalar("SELECT count(*) FROM auditoria WHERE tenant_id = $1")

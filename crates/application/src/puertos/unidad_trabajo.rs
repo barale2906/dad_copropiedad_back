@@ -1,5 +1,5 @@
 //! Unidad de trabajo: agrupa en **una sola transacción** el cambio de negocio, su auditoría y
-//! (más adelante) el evento del outbox, todo dentro del tenant del [`Contexto`].
+//! los mensajes del outbox, todo dentro del tenant del [`Contexto`].
 //!
 //! Patrón de uso en un caso de uso:
 //!
@@ -7,17 +7,18 @@
 //! let mut tx = unidad.iniciar(ctx).await?;      // fija el tenant (RLS)
 //! tx.guardar(&bien_privado).await?;             // repositorio implementado por la transacción
 //! tx.registrar(evento_auditoria).await?;        // RegistroAuditoria, misma transacción
+//! tx.encolar(notificacion).await?;              // RegistroOutbox: sale solo si hay COMMIT
 //! tx.confirmar().await?;                        // COMMIT; si no se llama, ROLLBACK al soltarla
 //! ```
 //!
 //! La transacción implementa los puertos que necesita cada caso de uso (empezando por
-//! [`RegistroAuditoria`]); el caso de uso los exige con *bounds* sobre
+//! [`RegistroAuditoria`] y [`RegistroOutbox`]); el caso de uso los exige con *bounds* sobre
 //! [`UnidadDeTrabajo::Transaccion`]. Así la capa de aplicación no conoce SQL y se prueba con
 //! dobles en memoria.
 
 use std::future::Future;
 
-use crate::{AppResult, Contexto, auditoria::EventoAuditoria};
+use crate::{AppResult, Contexto, auditoria::EventoAuditoria, outbox::EventoSaliente};
 
 /// Abre transacciones dentro del tenant del contexto.
 pub trait UnidadDeTrabajo: Send + Sync {
@@ -33,6 +34,13 @@ pub trait UnidadDeTrabajo: Send + Sync {
 pub trait Transaccion: Send {
     /// Confirma todos los cambios de la transacción (COMMIT).
     fn confirmar(self) -> impl Future<Output = AppResult<()>> + Send;
+}
+
+/// Encolado de mensajes salientes (outbox) dentro de una transacción: el mensaje solo sale si
+/// el hecho que lo origina se confirma.
+pub trait RegistroOutbox: Send {
+    /// Agrega el mensaje al outbox del tenant de la transacción.
+    fn encolar(&mut self, evento: EventoSaliente) -> impl Future<Output = AppResult<()>> + Send;
 }
 
 /// Registro de eventos de auditoría dentro de una transacción.
@@ -56,18 +64,24 @@ pub(crate) mod memoria {
     #[derive(Default, Clone)]
     pub struct UnidadEnMemoria {
         confirmados: Arc<Mutex<Vec<EventoConfirmado>>>,
+        outbox: Arc<Mutex<Vec<(Contexto, EventoSaliente)>>>,
     }
 
     impl UnidadEnMemoria {
         pub fn confirmados(&self) -> Vec<EventoConfirmado> {
             self.confirmados.lock().expect("mutex sano").clone()
         }
+
+        pub fn outbox(&self) -> Vec<(Contexto, EventoSaliente)> {
+            self.outbox.lock().expect("mutex sano").clone()
+        }
     }
 
     pub struct TransaccionEnMemoria {
         ctx: Contexto,
-        pendientes: Vec<EventoAuditoria>,
-        destino: Arc<Mutex<Vec<EventoConfirmado>>>,
+        auditoria: Vec<EventoAuditoria>,
+        salientes: Vec<EventoSaliente>,
+        destino: UnidadEnMemoria,
     }
 
     impl UnidadDeTrabajo for UnidadEnMemoria {
@@ -76,23 +90,40 @@ pub(crate) mod memoria {
         async fn iniciar(&self, ctx: &Contexto) -> AppResult<TransaccionEnMemoria> {
             Ok(TransaccionEnMemoria {
                 ctx: ctx.clone(),
-                pendientes: Vec::new(),
-                destino: Arc::clone(&self.confirmados),
+                auditoria: Vec::new(),
+                salientes: Vec::new(),
+                destino: self.clone(),
             })
         }
     }
 
     impl Transaccion for TransaccionEnMemoria {
         async fn confirmar(self) -> AppResult<()> {
-            let mut destino = self.destino.lock().expect("mutex sano");
-            destino.extend(self.pendientes.into_iter().map(|e| (self.ctx.clone(), e)));
+            let ctx = self.ctx;
+            self.destino
+                .confirmados
+                .lock()
+                .expect("mutex sano")
+                .extend(self.auditoria.into_iter().map(|e| (ctx.clone(), e)));
+            self.destino
+                .outbox
+                .lock()
+                .expect("mutex sano")
+                .extend(self.salientes.into_iter().map(|e| (ctx.clone(), e)));
             Ok(())
         }
     }
 
     impl RegistroAuditoria for TransaccionEnMemoria {
         async fn registrar(&mut self, evento: EventoAuditoria) -> AppResult<()> {
-            self.pendientes.push(evento);
+            self.auditoria.push(evento);
+            Ok(())
+        }
+    }
+
+    impl RegistroOutbox for TransaccionEnMemoria {
+        async fn encolar(&mut self, evento: EventoSaliente) -> AppResult<()> {
+            self.salientes.push(evento);
             Ok(())
         }
     }
@@ -125,6 +156,30 @@ mod tests {
         let confirmados = unidad.confirmados();
         assert_eq!(confirmados.len(), 1);
         assert_eq!(confirmados[0].0, ctx);
+    }
+
+    #[tokio::test]
+    async fn outbox_y_auditoria_se_confirman_juntos() {
+        let unidad = UnidadEnMemoria::default();
+        let ctx = Contexto::new(TenantId::nuevo());
+        let correo = crate::outbox::EventoSaliente {
+            prioridad: crate::outbox::PrioridadSalida::Evento,
+            mensaje: crate::outbox::MensajeOutbox::Correo(crate::puertos::correo::CorreoSaliente {
+                para: domain::DireccionCorreo::new("a@b.co").expect("válida"),
+                asunto: "Asunto".into(),
+                texto: "Texto".into(),
+                html: None,
+            }),
+        };
+
+        let mut tx = unidad.iniciar(&ctx).await.expect("inicia");
+        tx.registrar(evento()).await.expect("registra");
+        tx.encolar(correo.clone()).await.expect("encola");
+        assert!(unidad.outbox().is_empty());
+        tx.confirmar().await.expect("confirma");
+
+        assert_eq!(unidad.outbox(), vec![(ctx, correo)]);
+        assert_eq!(unidad.confirmados().len(), 1);
     }
 
     #[tokio::test]

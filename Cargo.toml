@@ -18,6 +18,7 @@ application = { path = "crates/application" }
 infra-postgres = { path = "crates/infra-postgres" }
 infra-whatsapp = { path = "crates/infra-whatsapp" }
 infra-pdf = { path = "crates/infra-pdf" }
+infra-correo = { path = "crates/infra-correo" }
 
 # HTTP / async
 axum = { version = "0.8.9", features = ["macros", "ws"] }
@@ -58,6 +59,9 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
 thiserror = "2.0.21"
 anyhow = "1.0.104"
 dotenvy = "0.15.7"
+
+# Correo saliente por SMTP (sin OpenSSL: rustls + raíces webpki)
+lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls-tls"] }
 
 # Criptografía (verificación de firma de webhooks de Meta)
 hmac = "0.13.0"
