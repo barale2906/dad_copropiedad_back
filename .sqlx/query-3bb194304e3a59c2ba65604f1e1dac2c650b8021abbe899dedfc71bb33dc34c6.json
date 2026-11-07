@@ -1,0 +1,125 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, version, tipo, estado, descripcion, soporte_archivo_id, vigente_desde,\n                    aprobado_por, creado_en\n             FROM cuadros_coeficientes\n             WHERE ($1::uuid IS NULL OR id = $1)\n               AND (NOT $2 OR (estado = 'vigente' AND tipo = 'copropiedad'))\n             ORDER BY version DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "soporte_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "soporte_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "aprobado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "aprobado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "3bb194304e3a59c2ba65604f1e1dac2c650b8021abbe899dedfc71bb33dc34c6"
+}

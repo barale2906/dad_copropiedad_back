@@ -49,6 +49,7 @@ crates/
   infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
   infra-archivos/  almacén de archivos (disco local; S3 previsto) y enlaces firmados: puerto AlmacenArchivos
   infra-seguridad/ contraseñas Argon2id y segundo factor TOTP: puertos HashContrasenas y SegundoFactor
+  infra-planillas/ lectura de CSV/XLSX para importaciones masivas: puerto LectorPlanillas
   shared/          configuración (env), telemetría, apagado. Sin Axum ni SQL.
 apps/
   api/             binario `dad_copropiedad_api`: REST para el front + WebSocket de resultados
@@ -101,6 +102,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
 | Correo | lettre 0.11 (SMTP, rustls) · SMTP de HestiaCP en producción · Mailpit en desarrollo | En uso | Crate `infra-correo`, puerto `EnvioCorreo`; variables `SMTP_*`. Mailpit atrapa los correos locales (bandeja en `localhost:8025`). |
 | Archivos | Disco del VPS (`ARCHIVOS_DIR`) · S3 previsto | En uso | Crate `infra-archivos`, puerto `AlmacenArchivos`; clave lógica + columna `almacen`; descargas con enlace HMAC de 5 min. Metodología de migración en ADR 0003. |
+| Planillas | csv 1.4 · calamine 0.38 | En uso | Crate `infra-planillas`, puerto `LectorPlanillas` (solo lectura, Rust puro). Importación con vista previa (ADR 0006). |
 | Limitador | governor | Previsto | 80 mensajes/s por línea. |
 | OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
 | Actas | Typst | Previsto | En `infra-pdf`. |
@@ -205,6 +207,9 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Archivos** (ADR 0003): nadie toca rutas de disco; todo pasa por `AlmacenArchivos` con una `ClaveArchivo`. La fila de `archivos` guarda la clave lógica y el `almacen`, nunca rutas absolutas. El tipo se valida por contenido (`TipoArchivo::validar`), nunca por extensión. El nombre original no va a logs ni a la auditoría. Casos de uso en `casos_uso::archivos` (`subir_archivo`, `enlace_descarga`, `migrar_lote`).
 - **Datos personales** (ADR 0004): toda columna con datos personales lleva `COMMENT ON COLUMN … IS 'dato_personal: …'` (o `dato_sensible:`) en su migración y se agrega a la prueba `columnas_personales_estan_clasificadas`. Antes de tratar datos para comunicaciones o publicidad se consulta `casos_uso::proteccion_datos::esta_autorizado`.
 - **Búsqueda**: por texto con `normalizar(columna)` (sin tildes ni mayúsculas) y un índice GIN `gin_trgm_ops` sobre esa expresión; nunca `ILIKE` sobre la columna cruda. Ordenar listados por nombre con `normalizar(...)`.
+- **Coeficientes** (ADR 0006): nunca se editan uno por uno. Se prepara un `cuadros_coeficientes` borrador, se revisa (`RevisionCuadro`) y se activa; la suma es exactamente 1 (sin tolerancia) y `bienes_privados.coeficiente` solo lo escribe la activación (trigger). No se activa con una reunión `instalada`.
+- **Titulares**: los vigentes de un bien suman 100 % por clase de derecho y tienen un representante (`ConjuntoTitulares` + trigger diferido). Cambiar de dueño = `transferir_titularidad` (cierra y abre en una transacción); el rol `propietario` se deriva de la titularidad (origen `propiedad`), nunca se asigna a mano.
+- **Importaciones** (`casos_uso::importaciones`): archivo → validación fila por fila → vista previa → confirmar → aplicar en una transacción. Una importación nueva reutiliza ese flujo; los errores no repiten el valor de la celda.
 - **Módulos contratados**: los casos de uso o routers de un módulo vendible (`domain::Modulo`) exigen `casos_uso::modulos::exigir_modulo`; si no está habilitado → `modulo_no_habilitado` (403).
 - Enumeraciones como `TEXT` + `CHECK`; coeficientes `NUMERIC(10,8)`; fechas `TIMESTAMPTZ`; índices para cada consulta frecuente y cada FK usada en filtros.
 - Preferir `sqlx::query!`/`query_as!`; tras cambiar consultas: `make sqlx-prepare` y versionar `.sqlx/`. SQL dinámico solo con `AssertSqlSafe`, justificado, y con datos enlazados (`$1`), nunca interpolados desde la entrada del usuario. Prohibido `SELECT *`.

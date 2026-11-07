@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE titularidades SET es_representante = TRUE\n             WHERE id = (SELECT id FROM titularidades\n                         WHERE bien_privado_id = $1 AND persona_id = $2 AND vigente_hasta IS NULL\n                         ORDER BY id LIMIT 1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0c355b22e6fa6bad9a86968779ce890a668b03afe7ed34f6537829e2b39e7e01"
+}

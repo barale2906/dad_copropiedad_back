@@ -19,7 +19,7 @@ use application::{
     },
     puertos::{
         HashContrasenas, RelojSistema, RepositorioPlataforma, RepositorioRoles, UnidadDeTrabajo,
-        UnidadDeTrabajoPlataforma, identidad::NuevaOrganizacion,
+        UnidadDeTrabajoPlataforma, copropiedades::AltaCopropiedad, identidad::NuevaOrganizacion,
     },
 };
 use domain::{
@@ -260,7 +260,7 @@ async fn alta_de_copropiedad_deja_administrador_y_membresia(pool: PgPool) {
         &e.unidad,
         &RelojSistema,
         &ContextoPlataforma::sistema(),
-        "Conjunto Alameda",
+        AltaCopropiedad::con_nombre("Conjunto Alameda"),
         admin,
     )
     .await

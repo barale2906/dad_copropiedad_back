@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM franjas_punto_atencion WHERE punto_atencion_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "476cdf77bf5a1e3a591ebaae9e9494ee6bf7fe030dfcde751732897f41b85701"
+}

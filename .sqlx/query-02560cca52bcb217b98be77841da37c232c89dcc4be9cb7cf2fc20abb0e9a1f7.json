@@ -1,0 +1,56 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT rol AS \"rol!\", rol_nombre AS \"rol_nombre!\", cuenta_id AS \"cuenta_id!\",\n                      nombre AS \"nombre!\", organizacion, vigente_desde AS \"vigente_desde!\"\n               FROM cargos_vigentes()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "rol!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "rol_nombre!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "cuenta_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "nombre!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "organizacion",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "vigente_desde!",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "02560cca52bcb217b98be77841da37c232c89dcc4be9cb7cf2fc20abb0e9a1f7"
+}

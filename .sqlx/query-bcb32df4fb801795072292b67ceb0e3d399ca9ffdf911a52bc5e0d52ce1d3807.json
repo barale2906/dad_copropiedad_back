@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM excepciones_punto_atencion WHERE punto_atencion_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bcb32df4fb801795072292b67ceb0e3d399ca9ffdf911a52bc5e0d52ce1d3807"
+}

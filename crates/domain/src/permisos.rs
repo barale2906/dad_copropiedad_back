@@ -93,7 +93,18 @@ catalogo_permisos! {
     ContratosGestionar => "contratos.gestionar", Copropiedad;
     BienesPrivadosVer => "bienes_privados.ver", Copropiedad;
     BienesPrivadosEditar => "bienes_privados.editar", Copropiedad;
+    /// Crear y llenar borradores de cuadros de coeficientes.
     BienesPrivadosCoeficientesEditar => "bienes_privados.coeficientes.editar", Copropiedad;
+    /// Activar un cuadro de coeficientes (reforma del reglamento ya aprobada).
+    BienesPrivadosCoeficientesActivar => "bienes_privados.coeficientes.activar", Copropiedad;
+    /// Crear y editar edificios, etapas, bloques y demás agrupaciones.
+    AgrupacionesEditar => "agrupaciones.editar", Copropiedad;
+    /// Ver los titulares (propietarios) de los bienes privados.
+    TitularesVer => "titulares.ver", Copropiedad;
+    /// Registrar titulares, transferencias y representantes.
+    TitularesEditar => "titulares.editar", Copropiedad;
+    /// Importar datos masivos desde CSV/XLSX.
+    ImportacionesEjecutar => "importaciones.ejecutar", Copropiedad;
     BienesComunesVer => "bienes_comunes.ver", Copropiedad;
     BienesComunesEditar => "bienes_comunes.editar", Copropiedad;
     ReservasCrear => "reservas.crear", Copropiedad;
@@ -274,6 +285,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::OrganizacionesCrear,
             P::OrganizacionesVincular,
             P::BienesPrivadosVer,
+            P::TitularesVer,
             P::BienesComunesVer,
             P::ReservasAprobar,
             P::TicketsCrear,
@@ -303,6 +315,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::ArchivosVer,
             P::AuditoriaVer,
             P::BienesPrivadosVer,
+            P::TitularesVer,
             P::ContabilidadVer,
             P::AsambleasVer,
         ]),

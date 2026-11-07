@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO titularidades (id, tenant_id, bien_privado_id, persona_id, tipo, porcentaje,\n                                        es_representante, vigente_desde, vigente_hasta,\n                                        soporte_archivo_id)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Bool",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e0a2b7f6fecfb857720d60c4ff09c2d40ffcbde2362d1366dc0d39fb073dad29"
+}

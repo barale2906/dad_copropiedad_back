@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cuadros_coeficientes\n             SET estado = 'vigente', vigente_desde = $2, aprobado_por = $3\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "42c69843e7511d34cec1a2dafaad125d25540894cff9f10a9f7b6c632193cf6d"
+}

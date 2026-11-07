@@ -24,6 +24,14 @@ pub const ETIQUETA_CUENTA: &str = "cuenta";
 pub const ETIQUETA_ROLES: &str = "roles";
 /// Etiqueta de organizaciones y contratos.
 pub const ETIQUETA_ORGANIZACIONES: &str = "organizaciones";
+/// Etiqueta de la ficha de la copropiedad (datos, cargos, puntos de atención).
+pub const ETIQUETA_COPROPIEDAD: &str = "copropiedad";
+/// Etiqueta de agrupaciones, bienes privados, usos exclusivos y titulares.
+pub const ETIQUETA_BIENES_PRIVADOS: &str = "bienes_privados";
+/// Etiqueta de los cuadros de coeficientes.
+pub const ETIQUETA_COEFICIENTES: &str = "coeficientes";
+/// Etiqueta de las importaciones masivas.
+pub const ETIQUETA_IMPORTACIONES: &str = "importaciones";
 /// Etiqueta de la operación de la plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
@@ -71,6 +79,14 @@ impl utoipa::Modify for EsquemaBearer {
         (name = ETIQUETA_CUENTA, description = "La cuenta autenticada"),
         (name = ETIQUETA_ROLES, description = "Roles, permisos y asignaciones"),
         (name = ETIQUETA_ORGANIZACIONES, description = "Organizaciones compartidas y contratos de servicio"),
+        (name = ETIQUETA_COPROPIEDAD, description = "Ficha de la copropiedad: datos legales, cargos \
+                                                     vigentes, advertencias y puntos de atención"),
+        (name = ETIQUETA_BIENES_PRIVADOS, description = "Agrupaciones, bienes privados, anexos, usos \
+                                                         exclusivos y titulares"),
+        (name = ETIQUETA_COEFICIENTES, description = "Cuadros de coeficientes versionados (suma \
+                                                      exacta = 1)"),
+        (name = ETIQUETA_IMPORTACIONES, description = "Importación masiva desde CSV/XLSX con vista \
+                                                       previa"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
     ),
     modifiers(&EsquemaBearer),

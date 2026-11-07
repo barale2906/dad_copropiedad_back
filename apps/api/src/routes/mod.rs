@@ -14,8 +14,12 @@
 
 mod archivos;
 mod auth;
+mod bienes_privados;
+mod coeficientes;
 mod copropiedades;
+mod ficha;
 mod health;
+mod importaciones;
 mod organizaciones;
 mod plataforma;
 mod roles;

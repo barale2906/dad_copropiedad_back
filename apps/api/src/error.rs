@@ -35,6 +35,7 @@ use utoipa::ToSchema;
 /// | `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |
 /// | `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |
 /// | `validacion` | 422 | Datos bien formados que violan una regla de negocio. |
+/// | `coeficientes_no_suman_uno` | 422 | El cuadro de coeficientes no suma exactamente 1 (el mensaje trae la diferencia). |
 /// | `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |
 /// | `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ToSchema)]
@@ -68,6 +69,8 @@ pub enum CodigoError {
     ModuloNoHabilitado,
     /// 422 · Los datos son sintácticamente correctos pero violan una regla de negocio.
     Validacion,
+    /// 422 · El cuadro de coeficientes no suma exactamente 1; el mensaje indica la diferencia.
+    CoeficientesNoSumanUno,
     /// 500 · Error inesperado; el detalle queda en los logs con el `x-request-id`.
     Interno,
     /// 503 · Una dependencia (p. ej. la base de datos) no está disponible.
@@ -160,8 +163,15 @@ impl ApiError {
                 | DominioError::ContrasenaDebil
                 | DominioError::NitInvalido
                 | DominioError::PermisoDeOtroAmbito(_)
+                | DominioError::CuadroIncompleto { .. }
+                | DominioError::TitularesInvalidos(_)
+                | DominioError::PlantillaInvalida(_)
+                | DominioError::DatoInvalido { .. }
                 | DominioError::ValorDesconocido { .. } => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion)
+                }
+                DominioError::CoeficientesNoSumanUno { .. } => {
+                    (StatusCode::UNPROCESSABLE_ENTITY, C::CoeficientesNoSumanUno)
                 }
             },
             Self::App(AppError::Validacion(_)) => (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion),
@@ -272,6 +282,16 @@ mod tests {
             (
                 ApiError::from(DominioError::TipoArchivoNoAdmitido),
                 (StatusCode::UNPROCESSABLE_ENTITY, CodigoError::Validacion),
+            ),
+            (
+                ApiError::from(DominioError::CoeficientesNoSumanUno {
+                    suma: rust_decimal::Decimal::ONE,
+                    diferencia: rust_decimal::Decimal::ZERO,
+                }),
+                (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    CodigoError::CoeficientesNoSumanUno,
+                ),
             ),
         ];
         for (error, esperado) in casos {

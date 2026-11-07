@@ -362,7 +362,14 @@ pub trait RepositorioRoles: Send {
     ) -> impl Future<Output = AppResult<Option<CuentaResumen>>> + Send;
 
     /// Crea la fila de la copropiedad de la transacción (alta desde la plataforma).
-    fn insertar_copropiedad(&mut self, nombre: &str) -> impl Future<Output = AppResult<()>> + Send;
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si el NIT ya lo usa otra copropiedad.
+    fn insertar_copropiedad(
+        &mut self,
+        alta: &crate::puertos::copropiedades::AltaCopropiedad,
+    ) -> impl Future<Output = AppResult<()>> + Send;
 }
 
 /// Copropiedad donde la cuenta tiene roles vigentes.

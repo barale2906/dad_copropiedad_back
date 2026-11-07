@@ -78,6 +78,7 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-correo` | Adaptador | Correo saliente por SMTP (lettre) |
 | `crates/infra-seguridad` | Adaptador | Contraseñas Argon2id y segundo factor TOTP |
 | `crates/infra-archivos` | Adaptador | Almacén de archivos en disco y enlaces de descarga firmados (S3 previsto, ADR 0003) |
+| `crates/infra-planillas` | Adaptador | Lectura de planillas CSV/XLSX para importaciones masivas (ADR 0006) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |
 | `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook, outbox, worker |

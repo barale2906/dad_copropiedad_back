@@ -17,6 +17,10 @@ pub const PARAMETRO_COPROPIEDAD: &str = "copropiedad_id";
 /// Router de una copropiedad (se monta en `/api/v1/copropiedades/{copropiedad_id}`).
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
+        .merge(super::ficha::rutas())
+        .merge(super::bienes_privados::rutas())
+        .merge(super::coeficientes::rutas())
+        .merge(super::importaciones::rutas())
         .merge(super::roles::rutas())
         .merge(super::organizaciones::rutas_copropiedad())
         .merge(super::archivos::rutas_copropiedad())

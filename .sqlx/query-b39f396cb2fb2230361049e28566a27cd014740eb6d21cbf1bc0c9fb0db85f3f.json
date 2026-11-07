@@ -1,0 +1,304 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT nombre, razon_social, nit, tipo, forma, direccion, municipio_dane, departamento,\n                    barrio, latitud, longitud, estrato, telefono, correo, sitio_web,\n                    escritura_numero, notaria, escritura_fecha, matricula_matriz,\n                    reglamento_archivo_id, certificado_archivo_id, zona_horaria, estado,\n                    plantilla_codigo\n             FROM copropiedades WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "razon_social",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "razon_social"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nit",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "nit"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "forma",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "forma"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "direccion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "direccion"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "municipio_dane",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "municipio_dane"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "departamento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "departamento"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "barrio",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "barrio"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "latitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "latitud"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "longitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "longitud"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "estrato",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "estrato"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "telefono",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "telefono"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "correo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "correo"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "sitio_web",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "sitio_web"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "escritura_numero",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "escritura_numero"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "notaria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "notaria"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "escritura_fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "escritura_fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "matricula_matriz",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "matricula_matriz"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "reglamento_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "reglamento_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "certificado_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "certificado_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "zona_horaria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "zona_horaria"
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "plantilla_codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "copropiedades",
+            "name": "plantilla_codigo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b39f396cb2fb2230361049e28566a27cd014740eb6d21cbf1bc0c9fb0db85f3f"
+}

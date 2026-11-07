@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO usos_exclusivos (id, tenant_id, bien_privado_id, tipo, codigo, descripcion,\n                                          vigente_desde, vigente_hasta)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ed612a14c6115c760bce4ffc7850e41e3a846eb66c32e6a16d4bd27d7fd2d3fe"
+}

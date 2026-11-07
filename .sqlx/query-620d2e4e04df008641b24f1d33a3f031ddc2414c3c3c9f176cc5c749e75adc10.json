@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE usos_exclusivos SET vigente_hasta = greatest($2, vigente_desde)\n                 WHERE id = $1 AND vigente_hasta IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "620d2e4e04df008641b24f1d33a3f031ddc2414c3c3c9f176cc5c749e75adc10"
+}

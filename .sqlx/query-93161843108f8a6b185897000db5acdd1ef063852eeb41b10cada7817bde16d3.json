@@ -1,0 +1,177 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, codigo, tipo, agrupacion_id, numero, piso, area_privada_m2,\n                      matricula_inmobiliaria, cedula_catastral, uso, activo, bien_principal_id,\n                      coeficiente\n               FROM bienes_privados\n               WHERE ($1::uuid IS NULL OR id > $1)\n                 AND ($2 OR activo)\n                 AND ($3::text IS NULL OR tipo = $3)\n                 AND ($4::uuid IS NULL OR agrupacion_id = $4)\n                 AND ($5::text IS NULL OR normalizar(codigo) LIKE normalizar($5) ESCAPE '\\')\n               ORDER BY id\n               LIMIT $6",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "agrupacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "agrupacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "numero",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "piso",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "piso"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "area_privada_m2",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "area_privada_m2"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "matricula_inmobiliaria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "matricula_inmobiliaria"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "cedula_catastral",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "cedula_catastral"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "uso",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "uso"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "activo",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "activo"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "bien_principal_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "bien_principal_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "coeficiente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "coeficiente"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "93161843108f8a6b185897000db5acdd1ef063852eeb41b10cada7817bde16d3"
+}

@@ -1,0 +1,148 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, tipo, archivo_id, estado, total_filas, filas_validas, errores, resumen,\n                    creada_por, creada_en, aplicada_en\n             FROM importaciones WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "total_filas",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "total_filas"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "filas_validas",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "filas_validas"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "errores",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "errores"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "resumen",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "resumen"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "aplicada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "importaciones",
+            "name": "aplicada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "3818d29b8ed6df10370ec93cc14bca3e66909aed3c10b48c806d752cac61600c"
+}

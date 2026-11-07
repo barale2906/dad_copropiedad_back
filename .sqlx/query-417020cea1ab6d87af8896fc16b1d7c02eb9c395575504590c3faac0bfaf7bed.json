@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) AS \"n!\" FROM bienes_privados\n               WHERE activo AND tipo NOT IN ('parqueadero', 'deposito')",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "417020cea1ab6d87af8896fc16b1d7c02eb9c395575504590c3faac0bfaf7bed"
+}

@@ -62,6 +62,31 @@ pub enum DominioError {
     #[error("el permiso `{0}` no corresponde al ámbito del rol")]
     PermisoDeOtroAmbito(Permiso),
 
+    /// La suma de un cuadro de coeficientes no es exactamente 1 (sin tolerancia).
+    #[error("los coeficientes suman {suma} y deben sumar exactamente 1 (diferencia: {diferencia})")]
+    CoeficientesNoSumanUno {
+        suma: rust_decimal::Decimal,
+        /// `1 - suma`: positiva si falta, negativa si sobra.
+        diferencia: rust_decimal::Decimal,
+    },
+
+    #[error("el cuadro de coeficientes no incluye {faltantes} bien(es) privado(s) activo(s)")]
+    CuadroIncompleto { faltantes: usize },
+
+    /// Conjunto de titulares de un bien privado que rompe una regla (suma, representante…).
+    #[error("titulares inválidos: {0}")]
+    TitularesInvalidos(&'static str),
+
+    #[error("plantilla de nomenclatura inválida: {0}")]
+    PlantillaInvalida(&'static str),
+
+    /// Dato de entrada con formato inválido. No incluye el valor (puede ser un dato personal).
+    #[error("`{campo}` inválido: {regla}")]
+    DatoInvalido {
+        campo: &'static str,
+        regla: &'static str,
+    },
+
     #[error("valor desconocido `{valor}` para {tipo}")]
     ValorDesconocido { tipo: &'static str, valor: String },
 }
