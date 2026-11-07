@@ -34,8 +34,8 @@ use crate::{
     puertos::{
         AlmacenArchivos, LectorPlanillas, RegistroAuditoria, Reloj, RepositorioArchivos,
         RepositorioBienesPrivados, RepositorioCoeficientes, RepositorioCopropiedad,
-        RepositorioImportaciones, RepositorioRoles, RepositorioTitulares, Transaccion,
-        UnidadDeTrabajo,
+        RepositorioImportaciones, RepositorioPersonas, RepositorioRoles, RepositorioTitulares,
+        Transaccion, UnidadDeTrabajo,
         copropiedades::{
             Agrupacion, BienPrivado, CuadroCoeficientes, Importacion, ResumenImportacion,
         },
@@ -454,6 +454,7 @@ where
         + RepositorioCopropiedad
         + RepositorioCoeficientes
         + RepositorioTitulares
+        + RepositorioPersonas
         + RepositorioRoles
         + RegistroAuditoria,
     A: AlmacenArchivos,
@@ -516,6 +517,7 @@ where
     T: RepositorioBienesPrivados
         + RepositorioCoeficientes
         + RepositorioTitulares
+        + RepositorioPersonas
         + RepositorioRoles
         + RegistroAuditoria,
 {
@@ -579,6 +581,7 @@ where
                     telefono: t.telefono.clone(),
                     correo: t.correo.clone(),
                     cuenta_id: None,
+                    tipo_documento: None,
                 }),
             )
             .await?;

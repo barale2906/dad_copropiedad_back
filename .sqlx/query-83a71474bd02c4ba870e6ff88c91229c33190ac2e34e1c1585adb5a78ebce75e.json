@@ -1,0 +1,197 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bien_privado_id, responsable_id, especie, nombre, raza,\n                    potencialmente_peligrosa, poliza_numero, poliza_vence, poliza_archivo_id,\n                    vacunas_vencen, carne_archivo_id, esterilizada, foto_archivo_id, estado\n             FROM mascotas\n             WHERE ($1::uuid IS NULL OR bien_privado_id = $1) AND (NOT $2 OR estado = 'activa')\n             ORDER BY nombre, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "responsable_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "responsable_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "especie",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "especie"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "raza",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "raza"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "potencialmente_peligrosa",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "potencialmente_peligrosa"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "poliza_numero",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "poliza_numero"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "poliza_vence",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "poliza_vence"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "poliza_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "poliza_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "vacunas_vencen",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "vacunas_vencen"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "carne_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "carne_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "esterilizada",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "esterilizada"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "foto_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "foto_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "mascotas",
+            "name": "estado"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "83a71474bd02c4ba870e6ff88c91229c33190ac2e34e1c1585adb5a78ebce75e"
+}

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE personas SET\n                 nombre = $2, documento = $3, telefono = $4, correo = $5, tipo_documento = $6,\n                 fecha_nacimiento = $7, contacto_emergencia_nombre = $8,\n                 contacto_emergencia_telefono = $9, movilidad_reducida = $10, actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Date",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d77a9345bb01cbec8d857b850b8774e3dc02e78a55f95dda8e32704e1813195b"
+}

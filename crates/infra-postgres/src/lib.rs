@@ -17,11 +17,13 @@
 
 mod archivos;
 mod bienes_privados;
+mod censo;
 mod coeficientes;
 mod cola_salida;
 mod copropiedades;
 mod error;
 mod modulos;
+mod personas;
 mod plataforma;
 mod pool;
 mod proteccion_datos;

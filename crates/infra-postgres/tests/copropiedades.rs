@@ -263,6 +263,7 @@ fn persona(doc: &str) -> RefPersona {
         telefono: None,
         correo: None,
         cuenta_id: None,
+        tipo_documento: None,
     })
 }
 

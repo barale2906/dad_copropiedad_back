@@ -95,6 +95,24 @@ impl Api {
         (status, json)
     }
 
+    /// GET que devuelve texto (CSV): estado, `Content-Type` y cuerpo.
+    pub async fn pedir_texto(&self, uri: &str, token: &str) -> (StatusCode, String, String) {
+        let req = Request::get(uri)
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .expect("petición");
+        let res = self.router.clone().oneshot(req).await.expect("router");
+        let status = res.status();
+        let tipo = res
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_owned();
+        let bytes = to_bytes(res.into_body(), usize::MAX).await.expect("cuerpo");
+        (status, tipo, String::from_utf8_lossy(&bytes).into_owned())
+    }
+
     /// Envía un cuerpo binario (archivo) y devuelve el estado y el JSON de la respuesta.
     pub async fn subir(&self, uri: &str, token: &str, contenido: Vec<u8>) -> (StatusCode, Value) {
         let req = Request::post(uri)
@@ -200,5 +218,81 @@ impl Api {
             .await;
         assert_eq!(s, StatusCode::OK, "{v}");
         v["token_acceso"].as_str().expect("token").to_owned()
+    }
+}
+
+/// Copropiedad dada de alta por la plataforma con su administrador.
+pub struct Ph {
+    pub api: Api,
+    pub base: String,
+    pub admin: String,
+    pub root: String,
+    pub id: String,
+}
+
+pub async fn ph(pool: PgPool) -> Ph {
+    let api = api(pool).await;
+    let root_id = api.registrar("root").await;
+    api.hacer_superusuario(&root_id).await;
+    let admin_id = api.registrar("admin").await;
+    let root = api.token_con_segundo_factor("root").await;
+    let (s, v) = api
+        .pedir(
+            Method::POST,
+            "/api/v1/plataforma/copropiedades",
+            Some(&root),
+            Some(json!({
+                "nombre": "Conjunto Alameda",
+                "administrador_cuenta_id": admin_id,
+                "nit": "800.197.268",
+                "tipo": "residencial",
+            })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    let id = v["id"].as_str().expect("id").to_owned();
+    Ph {
+        admin: api.token("admin").await,
+        base: format!("/api/v1/copropiedades/{id}"),
+        root,
+        id,
+        api,
+    }
+}
+
+impl Ph {
+    pub async fn pedir(
+        &self,
+        metodo: Method,
+        ruta: &str,
+        cuerpo: Option<Value>,
+    ) -> (StatusCode, Value) {
+        self.api
+            .pedir(
+                metodo,
+                &format!("{}{ruta}", self.base),
+                Some(&self.admin),
+                cuerpo,
+            )
+            .await
+    }
+
+    pub async fn estado(&self, estado: &str, token: &str) -> (StatusCode, Value) {
+        self.api
+            .pedir(
+                Method::POST,
+                &format!("/api/v1/plataforma/copropiedades/{}/estado", self.id),
+                Some(token),
+                Some(json!({ "estado": estado })),
+            )
+            .await
+    }
+
+    pub async fn crear_bien(&self, cuerpo: Value) -> Value {
+        let (s, v) = self
+            .pedir(Method::POST, "/bienes-privados", Some(cuerpo))
+            .await;
+        assert_eq!(s, StatusCode::CREATED, "{v}");
+        v
     }
 }

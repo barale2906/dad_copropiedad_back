@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "UPDATE personas SET cuenta_id = $2 WHERE id = $1",
+  "query": "UPDATE personas SET cuenta_id = $2, actualizado_en = now() WHERE id = $1",
   "describe": {
     "columns": [],
     "parameters": {
@@ -11,5 +11,5 @@
     },
     "nullable": []
   },
-  "hash": "5019fe667a83a8c97b74266e0e84608271030d92fe6fac2fed501d490153fcf0"
+  "hash": "788ca64e12d385496a71b8040167324acc28870ad193a7b07001397f8820432b"
 }

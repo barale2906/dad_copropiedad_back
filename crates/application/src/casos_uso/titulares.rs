@@ -11,16 +11,17 @@
 
 use domain::{
     Ambito, ArchivoId, BienPrivadoId, ConjuntoPermisos, ConjuntoTitulares, CuentaId,
-    DireccionCorreo, Documento, OrigenAsignacion, Permiso, PersonaId, Telefono, TipoPersona,
-    TitularNuevo, TitularidadId, copropiedad::texto_obligatorio,
+    DireccionCorreo, Documento, OrigenAsignacion, Permiso, PersonaId, Telefono, TipoDocumento,
+    TipoPersona, TitularNuevo, TitularidadId, copropiedad::texto_obligatorio,
 };
+use serde::{Deserialize, Serialize};
 
 use crate::{
     AppError, AppResult, Contexto,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     casos_uso::roles::{SolicitudAsignacion, asignar_en},
     puertos::{
-        RegistroAuditoria, Reloj, RepositorioBienesPrivados, RepositorioRoles,
+        RegistroAuditoria, Reloj, RepositorioBienesPrivados, RepositorioPersonas, RepositorioRoles,
         RepositorioTitulares, Transaccion, UnidadDeTrabajo,
         copropiedades::{Persona, Titularidad},
     },
@@ -36,7 +37,7 @@ pub const ACCION_REPRESENTANTE: AccionAuditoria =
 pub const CODIGO_PROPIETARIO: &str = "propietario";
 
 /// Persona nueva que se registra como titular.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DatosPersona {
     pub tipo: TipoPersona,
     pub nombre: String,
@@ -46,11 +47,13 @@ pub struct DatosPersona {
     /// Cuenta de la plataforma de esa persona (la encontró el administrador por usuario o
     /// correo exactos).
     pub cuenta_id: Option<CuentaId>,
+    pub tipo_documento: Option<TipoDocumento>,
 }
 
 /// Quién es el titular: una persona ya registrada o una nueva. Si el documento de una nueva
 /// ya existe en la copropiedad, se usa la persona existente (sus datos no se sobrescriben).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum RefPersona {
     Existente(PersonaId),
     Nueva(DatosPersona),
@@ -68,7 +71,7 @@ pub struct SolicitudTitular {
 /// Resuelve (o crea) la persona y vincula su cuenta si viene una.
 pub(crate) async fn resolver_persona<T>(tx: &mut T, r: RefPersona) -> AppResult<(Persona, bool)>
 where
-    T: RepositorioTitulares,
+    T: RepositorioPersonas,
 {
     match r {
         RefPersona::Existente(id) => Ok((
@@ -96,13 +99,16 @@ where
                 return Ok((existente, false));
             }
             let persona = Persona {
-                id: PersonaId::nuevo(),
-                tipo: d.tipo,
-                nombre: texto_obligatorio("nombre", &d.nombre, 200)?,
-                documento: Some(d.documento),
                 telefono: d.telefono,
                 correo: d.correo,
                 cuenta_id: d.cuenta_id,
+                tipo_documento: d.tipo_documento,
+                ..Persona::basica(
+                    PersonaId::nuevo(),
+                    d.tipo,
+                    texto_obligatorio("nombre", &d.nombre, 200)?,
+                    Some(d.documento),
+                )
             };
             tx.insertar_persona(&persona).await?;
             Ok((persona, true))
@@ -177,7 +183,7 @@ async fn preparar<T>(
     solicitudes: Vec<SolicitudTitular>,
 ) -> AppResult<(Vec<Persona>, ConjuntoTitulares)>
 where
-    T: RepositorioTitulares,
+    T: RepositorioPersonas,
 {
     let mut personas = Vec::new();
     let mut titulares = Vec::new();
@@ -220,8 +226,11 @@ pub async fn registrar_titulares<U>(
 ) -> AppResult<Vec<Titularidad>>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion:
-        RepositorioTitulares + RepositorioBienesPrivados + RepositorioRoles + RegistroAuditoria,
+    U::Transaccion: RepositorioTitulares
+        + RepositorioPersonas
+        + RepositorioBienesPrivados
+        + RepositorioRoles
+        + RegistroAuditoria,
 {
     ctx.exigir(Permiso::TitularesEditar)?;
     let mut tx = unidad.iniciar(ctx).await?;
@@ -260,8 +269,11 @@ pub async fn transferir_titularidad<U>(
 ) -> AppResult<Vec<Titularidad>>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion:
-        RepositorioTitulares + RepositorioBienesPrivados + RepositorioRoles + RegistroAuditoria,
+    U::Transaccion: RepositorioTitulares
+        + RepositorioPersonas
+        + RepositorioBienesPrivados
+        + RepositorioRoles
+        + RegistroAuditoria,
 {
     ctx.exigir(Permiso::TitularesEditar)?;
     let mut tx = unidad.iniciar(ctx).await?;
@@ -349,7 +361,7 @@ pub async fn listar_titulares<U>(
 ) -> AppResult<Vec<TitularConPersona>>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioTitulares + RepositorioBienesPrivados,
+    U::Transaccion: RepositorioTitulares + RepositorioPersonas + RepositorioBienesPrivados,
 {
     ctx.exigir(Permiso::TitularesVer)?;
     let mut tx = unidad.iniciar(ctx).await?;
@@ -387,6 +399,7 @@ mod tests {
             telefono: None,
             correo: None,
             cuenta_id: cuenta,
+            tipo_documento: None,
         })
     }
 

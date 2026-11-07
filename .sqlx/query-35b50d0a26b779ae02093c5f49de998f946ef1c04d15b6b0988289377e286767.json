@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE mascotas SET\n                 responsable_id = $2, raza = $3, potencialmente_peligrosa = $4,\n                 poliza_numero = $5, poliza_vence = $6, poliza_archivo_id = $7,\n                 vacunas_vencen = $8, carne_archivo_id = $9, esterilizada = $10,\n                 foto_archivo_id = $11, estado = $12, actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Bool",
+        "Text",
+        "Date",
+        "Uuid",
+        "Date",
+        "Uuid",
+        "Bool",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "35b50d0a26b779ae02093c5f49de998f946ef1c04d15b6b0988289377e286767"
+}

@@ -5,6 +5,7 @@
 
 pub mod actas;
 pub mod archivos;
+pub mod censo;
 pub mod cola_salida;
 pub mod copropiedades;
 pub mod correo;
@@ -19,10 +20,11 @@ pub mod unidad_trabajo;
 
 pub use actas::GeneradorActas;
 pub use archivos::{AlmacenArchivos, RepositorioArchivos};
+pub use censo::RepositorioCenso;
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
 pub use copropiedades::{
     LectorPlanillas, RepositorioBienesPrivados, RepositorioCoeficientes, RepositorioCopropiedad,
-    RepositorioImportaciones, RepositorioTitulares,
+    RepositorioImportaciones, RepositorioPersonas, RepositorioTitulares,
 };
 pub use correo::EnvioCorreo;
 pub use identidad::{

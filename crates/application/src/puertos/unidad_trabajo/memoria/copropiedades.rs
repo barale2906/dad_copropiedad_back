@@ -14,7 +14,7 @@ use crate::{
     AppError, AppResult, Pagina, SolicitudPagina,
     puertos::{
         RepositorioBienesPrivados, RepositorioCoeficientes, RepositorioCopropiedad,
-        RepositorioTitulares,
+        RepositorioPersonas, RepositorioTitulares,
         copropiedades::{
             Agrupacion, BienPrivado, CargoVigente, CuadroCoeficientes, FichaCopropiedad,
             FiltroBienes, Persona, PuntoAtencion, Titularidad, UsoExclusivo,
@@ -309,7 +309,7 @@ impl RepositorioCoeficientes for TransaccionEnMemoria {
     }
 }
 
-impl RepositorioTitulares for TransaccionEnMemoria {
+impl RepositorioPersonas for TransaccionEnMemoria {
     async fn persona(&mut self, id: PersonaId) -> AppResult<Option<Persona>> {
         Ok(self.datos.personas.iter().find(|p| p.id == id).cloned())
     }
@@ -335,6 +335,33 @@ impl RepositorioTitulares for TransaccionEnMemoria {
         Ok(())
     }
 
+    async fn actualizar_persona(&mut self, persona: &Persona) -> AppResult<()> {
+        if let Some(p) = self.datos.personas.iter_mut().find(|p| p.id == persona.id) {
+            *p = persona.clone();
+        }
+        Ok(())
+    }
+
+    async fn listar_personas(
+        &mut self,
+        texto: Option<&str>,
+        pagina: SolicitudPagina,
+    ) -> AppResult<Pagina<Persona>> {
+        let mut filas: Vec<_> = self
+            .datos
+            .personas
+            .iter()
+            .filter(|p| texto.is_none_or(|t| p.nombre.to_lowercase().contains(&t.to_lowercase())))
+            .filter(|p| pagina.despues().is_none_or(|d| p.id.as_uuid() > d))
+            .cloned()
+            .collect();
+        filas.sort_by_key(|p| p.id);
+        filas.truncate(usize::try_from(pagina.filas_a_consultar()).unwrap_or(usize::MAX));
+        Ok(Pagina::desde_filas(filas, pagina, |p| p.id.as_uuid()))
+    }
+}
+
+impl RepositorioTitulares for TransaccionEnMemoria {
     async fn titulares_vigentes(&mut self, bien: BienPrivadoId) -> AppResult<Vec<Titularidad>> {
         Ok(self
             .datos

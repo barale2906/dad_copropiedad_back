@@ -1,0 +1,148 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bien_privado_id, tipo, datos, estado, propuesto_por, propuesto_en,\n                    revisado_por, revisado_en, motivo, resultado_id\n             FROM cambios_censo WHERE id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "datos",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "datos"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "propuesto_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "propuesto_por"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "propuesto_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "propuesto_en"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "revisado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "revisado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "revisado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "revisado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "resultado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cambios_censo",
+            "name": "resultado_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "a011b528e9586e9b2afe92b8472a17d0cb2fc3cb2ff20b08e7d0c31d51249bab"
+}

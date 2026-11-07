@@ -3,6 +3,7 @@
 pub mod archivos;
 pub mod autenticacion;
 pub mod bienes_privados;
+pub mod censo;
 pub mod coeficientes;
 pub mod copropiedades;
 pub mod despachar_salida;

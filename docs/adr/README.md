@@ -12,3 +12,4 @@ Los ADR no se reescriben: si una decisión cambia, se crea uno nuevo que reempla
 | [0004](0004-proteccion-de-datos-personales.md) | Protección de datos personales por finalidad (Ley 1581) | Aceptada |
 | [0005](0005-identidad-roles-y-permisos.md) | Identidad global, roles por ámbito y sesiones opacas | Aceptada |
 | [0006](0006-copropiedades-coeficientes-y-titulares.md) | Coeficientes versionados, titulares e importación masiva | Aceptada |
+| [0007](0007-censo-residentes-vehiculos-mascotas.md) | Censo: residentes, vehículos, mascotas y autoservicio | Aceptada |

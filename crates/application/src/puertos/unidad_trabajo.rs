@@ -79,6 +79,7 @@ pub(crate) mod memoria {
         },
     };
 
+    mod censo;
     mod copropiedades;
 
     /// Datos de negocio en memoria. La transacción trabaja sobre una copia y la reemplaza
@@ -96,6 +97,10 @@ pub(crate) mod memoria {
         pub personas: Vec<crate::puertos::copropiedades::Persona>,
         pub titularidades: Vec<crate::puertos::copropiedades::Titularidad>,
         pub reuniones_instaladas: u64,
+        pub residencias: Vec<crate::puertos::censo::Residencia>,
+        pub vehiculos: Vec<crate::puertos::censo::Vehiculo>,
+        pub mascotas: Vec<crate::puertos::censo::Mascota>,
+        pub cambios_censo: Vec<crate::puertos::censo::CambioCenso>,
         pub archivos: BTreeMap<ArchivoId, Archivo>,
         pub politicas: Vec<PoliticaTratamiento>,
         /// Autorizaciones con su fecha de revocación.

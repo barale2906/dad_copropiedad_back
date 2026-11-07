@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT b.codigo, p.nombre, p.tipo_documento, p.documento, r.calidad,\n                    r.es_responsable, r.vigente_desde\n             FROM residencias r\n             JOIN bienes_privados b ON b.id = r.bien_privado_id\n             JOIN personas p        ON p.id = r.persona_id\n             WHERE r.vigente_desde <= $1 AND (r.vigente_hasta IS NULL OR r.vigente_hasta > $1)\n             ORDER BY normalizar(b.codigo), r.es_responsable DESC, normalizar(p.nombre)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo_documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "tipo_documento"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "documento"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "calidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "calidad"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "es_responsable",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "es_responsable"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "vigente_desde"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "554241449d33db9aa194409c2e074574900d15f552b8c4b7f79af201e8624515"
+}

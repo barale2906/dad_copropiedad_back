@@ -164,6 +164,26 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Residencia de una persona en un bien privado (censo).
+    ResidenciaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Vehículo registrado en el censo.
+    VehiculoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Mascota registrada en el censo.
+    MascotaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Propuesta de cambio del censo (autoservicio).
+    CambioCensoId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4
