@@ -81,6 +81,7 @@ pub(crate) mod memoria {
 
     mod censo;
     mod copropiedades;
+    mod reservas;
 
     /// Datos de negocio en memoria. La transacción trabaja sobre una copia y la reemplaza
     /// al confirmar.
@@ -101,6 +102,15 @@ pub(crate) mod memoria {
         pub vehiculos: Vec<crate::puertos::censo::Vehiculo>,
         pub mascotas: Vec<crate::puertos::censo::Mascota>,
         pub cambios_censo: Vec<crate::puertos::censo::CambioCenso>,
+        pub recursos: Vec<crate::puertos::reservas::Recurso>,
+        pub reservas: Vec<crate::puertos::reservas::Reserva>,
+        pub entregas: Vec<crate::puertos::reservas::Entrega>,
+        pub cargos: Vec<crate::puertos::reservas::CargoPendiente>,
+        pub restricciones: Vec<crate::puertos::reservas::Restriccion>,
+        pub asignaciones_parqueadero: Vec<crate::puertos::reservas::AsignacionParqueadero>,
+        pub sorteos: Vec<crate::puertos::reservas::Sorteo>,
+        pub inscripciones_sorteo: Vec<crate::puertos::reservas::InscripcionSorteo>,
+        pub recordadas: Vec<domain::ReservaId>,
         pub archivos: BTreeMap<ArchivoId, Archivo>,
         pub politicas: Vec<PoliticaTratamiento>,
         /// Autorizaciones con su fecha de revocación.
@@ -166,6 +176,19 @@ pub(crate) mod memoria {
 
         pub fn archivos(&self) -> Vec<Archivo> {
             self.datos().archivos.into_values().collect()
+        }
+
+        /// Habilita un módulo desde siempre y sin fecha de fin.
+        pub fn habilitar(&self, modulo: Modulo) {
+            self.datos
+                .lock()
+                .expect("mutex sano")
+                .modulos
+                .push(PeriodoModulo {
+                    modulo,
+                    desde: DateTime::<Utc>::MIN_UTC,
+                    hasta: None,
+                });
         }
 
         /// Simula reuniones instaladas en la copropiedad.

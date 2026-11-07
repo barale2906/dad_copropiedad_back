@@ -22,7 +22,9 @@ mod ficha;
 mod health;
 mod importaciones;
 mod organizaciones;
+mod parqueaderos;
 mod plataforma;
+mod reservas;
 mod roles;
 mod yo;
 

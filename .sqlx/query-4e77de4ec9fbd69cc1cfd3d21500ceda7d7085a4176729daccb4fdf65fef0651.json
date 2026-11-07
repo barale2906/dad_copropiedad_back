@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO reservas (id, tenant_id, recurso_id, bien_privado_id,\n                 solicitante_persona_id, solicitada_por, franja, exclusiva, invitados, estado,\n                 valor, deposito, penalidad, estado_pago, idempotency_key, canal, modalidad,\n                 motivo, placa_visitante, observacion, creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19, $20, $21)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "TstzRange",
+        "Bool",
+        "Int4",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4e77de4ec9fbd69cc1cfd3d21500ceda7d7085a4176729daccb4fdf65fef0651"
+}

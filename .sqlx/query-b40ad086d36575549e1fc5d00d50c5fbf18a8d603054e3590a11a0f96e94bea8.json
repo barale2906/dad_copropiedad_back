@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO bienes_comunes (recurso_id, tenant_id, categoria, area_m2, es_esencial,\n                                             reglas, reglas_archivo_id)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7)\n                 ON CONFLICT (recurso_id) DO UPDATE SET\n                     categoria = EXCLUDED.categoria, area_m2 = EXCLUDED.area_m2,\n                     es_esencial = EXCLUDED.es_esencial, reglas = EXCLUDED.reglas,\n                     reglas_archivo_id = EXCLUDED.reglas_archivo_id",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Bool",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b40ad086d36575549e1fc5d00d50c5fbf18a8d603054e3590a11a0f96e94bea8"
+}

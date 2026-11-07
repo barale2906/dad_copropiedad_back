@@ -4491,6 +4491,1816 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/recursos": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Recursos reservables (bienes comunes, parqueaderos, agenda, herramientas).",
+        "operationId": "listar_recursos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recursos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecursoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `bienes_comunes.ver` o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Crea un bien común, la agenda de la administración o una herramienta prestable.",
+        "operationId": "crear_recurso",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoRecursoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Recurso creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecursoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `bienes_comunes.editar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Política u horario inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/recursos/{recurso_id}": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Un recurso.",
+        "operationId": "ver_recurso",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recurso_id",
+            "in": "path",
+            "description": "Recurso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recurso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecursoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Edita datos, política, horario o detalle de un recurso.",
+        "operationId": "editar_recurso",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recurso_id",
+            "in": "path",
+            "description": "Recurso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosRecursoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recurso actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecursoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/recursos/{recurso_id}/estado": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Cambia el estado del recurso. Cerrarlo (mantenimiento, fuera de servicio, inactivo) cancela\nlas reservas futuras y avisa a los solicitantes.",
+        "operationId": "cambiar_estado",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recurso_id",
+            "in": "path",
+            "description": "Recurso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoRecursoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Estado cambiado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoRecursoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/recursos/{recurso_id}/disponibilidad": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Franjas libres del recurso (horario − excepciones − reservas − alistamiento).",
+        "operationId": "disponibilidad",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recurso_id",
+            "in": "path",
+            "description": "Recurso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Franjas libres",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FranjaDto"
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rango inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Reservas (todas con `reservas.ver_todas`, o las propias con `mias=true`).",
+        "operationId": "listar_reservas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "mias",
+            "in": "query",
+            "description": "Solo las que pidió la cuenta (no exige `reservas.ver_todas`).",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "recurso_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reservas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReservaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `reservas.ver_todas` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Solicita una reserva. Con confirmación inmediata queda aprobada; si no, solicitada.",
+        "operationId": "solicitar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Reserva creada (o la original si se reintenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Franja ocupada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Incumple la política, el horario, los límites, el cupo o hay restricción (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Una reserva con su entrega y su recibo (propia, o con `reservas.ver_todas`).",
+        "operationId": "ver_reserva",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reserva",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalleReservaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es visible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}/aprobar": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Aprueba una reserva solicitada (avisa al solicitante).",
+        "operationId": "aprobar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aprobada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está solicitada (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}/rechazar": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Rechaza una reserva solicitada.",
+        "operationId": "rechazar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rechazada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está solicitada (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}/cancelar": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Cancela una reserva (la propia, con penalidad si es tarde; o cualquiera con\n`reservas.cancelar_cualquiera`, sin penalidad).",
+        "operationId": "cancelar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Cancelada (con la penalidad aplicada)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No es suya (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya empezó o terminó (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}/entrega": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Registra la entrega del recurso (aprobada → en curso).",
+        "operationId": "entrega",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntregaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Entregado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `reservas.entregas.registrar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está aprobada (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}/recibo": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Registra el recibo (en curso → finalizada, o con novedad si hay novedad o daños).",
+        "operationId": "recibo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntregaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recibido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está en curso (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}/no-asistio": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Marca que el solicitante no asistió.",
+        "operationId": "no_asistio",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Marcada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está aprobada (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/reservas/{reserva_id}/pago": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Registra a mano el pago de una reserva (pagado o exonerado).",
+        "operationId": "pago",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reserva_id",
+            "in": "path",
+            "description": "Reserva",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Pago registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReservaRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No tiene valor que pagar (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/restricciones-reserva": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Restricciones de reserva (mora o sanción).",
+        "operationId": "listar_restricciones",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restricciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RestriccionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `reservas.restringir` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Restringe las reservas de un bien privado (marca manual de mora o sanción; no aplica a los\nbienes comunes esenciales, art. 59).",
+        "operationId": "restringir",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestriccionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Restricción creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestriccionRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `reservas.restringir` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/restricciones-reserva/{restriccion_id}/levantar": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Levanta una restricción desde ahora.",
+        "operationId": "levantar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "restriccion_id",
+            "in": "path",
+            "description": "Restricción",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Levantada"
+          },
+          "404": {
+            "description": "No existe o ya terminó",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/residencias/{residencia_id}/autorizacion-reservas": {
+      "put": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "El propietario (o la administración) autoriza o retira las reservas de su tenedor, cuando\nla política del recurso lo exige.",
+        "operationId": "autorizar_tenedor",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "residencia_id",
+            "in": "path",
+            "description": "Residencia del tenedor",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutorizacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Guardada"
+          },
+          "403": {
+            "description": "No es titular del bien ni tiene `censo.editar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No es una residencia de tenedor vigente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/parqueaderos": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Parqueaderos con su asignación vigente.",
+        "operationId": "listar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Parqueaderos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParqueaderoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `parqueaderos.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Crea un parqueadero (privado, de uso exclusivo, comunal o de visitantes).",
+        "operationId": "crear",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoParqueaderoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Parqueadero creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecursoRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código repetido (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos incoherentes (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/parqueaderos/{recurso_id}/asignaciones": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Asigna un parqueadero a un bien privado por un periodo.",
+        "operationId": "asignar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recurso_id",
+            "in": "path",
+            "description": "Parqueadero",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Asignado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsignacionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya asignado en ese periodo (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asignaciones-parqueadero/{asignacion_id}/liberar": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Libera un parqueadero (termina la asignación desde ahora).",
+        "operationId": "liberar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "asignacion_id",
+            "in": "path",
+            "description": "Asignación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Liberado"
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/sorteos": {
+      "get": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Sorteos de la copropiedad (públicos para quien ve los bienes comunes).",
+        "operationId": "listar_sorteos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sorteos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SorteoRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Crea un sorteo y publica el compromiso de su semilla.",
+        "operationId": "crear_sorteo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoSorteoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Sorteo creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SorteoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `sorteos.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin parqueaderos comunales o vigencia inválida (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/sorteos/{sorteo_id}/inscripciones": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Inscribe un bien privado (lo hace su titular o residente, o la administración).",
+        "operationId": "inscribir",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sorteo_id",
+            "in": "path",
+            "description": "Sorteo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InscripcionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Inscrito"
+          },
+          "403": {
+            "description": "Sin vínculo con el bien ni `sorteos.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya inscrito o sorteo ejecutado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/sorteos/{sorteo_id}/ejecutar": {
+      "post": {
+        "tags": [
+          "reservas"
+        ],
+        "summary": "Ejecuta el sorteo: revela la semilla y asigna los parqueaderos por el periodo.",
+        "operationId": "ejecutar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sorteo_id",
+            "in": "path",
+            "description": "Sorteo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ejecutado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadoRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya ejecutado o parqueadero ocupado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/importaciones/bienes-privados": {
       "post": {
         "tags": [
@@ -5821,35 +7631,41 @@
       },
       "AsignacionPeticion": {
         "type": "object",
-        "description": "Asignación manual de un rol.",
+        "description": "Asignación nueva.",
         "required": [
-          "cuenta_id",
-          "rol_id"
+          "bien_privado_id",
+          "origen"
         ],
         "properties": {
-          "cuenta_id": {
+          "bien_privado_id": {
             "type": "string",
             "format": "uuid"
           },
-          "rol_id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "vigente_desde": {
+          "vehiculo_id": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time",
-            "description": "Por defecto, desde ahora."
+            "format": "uuid"
           },
-          "vigente_hasta": {
+          "origen": {
+            "type": "string",
+            "description": "`propiedad`, `arriendo` o `manual` (las de sorteo las crea el sorteo).",
+            "example": "arriendo"
+          },
+          "desde": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time",
-            "description": "Por defecto, sin fecha de fin."
+            "format": "date-time"
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -5886,51 +7702,99 @@
       },
       "AsignacionRespuesta": {
         "type": "object",
-        "description": "Asignación de un rol con su vigencia.",
+        "description": "Asignación de un parqueadero.",
         "required": [
           "id",
-          "cuenta_id",
-          "rol_id",
-          "vigente_desde",
-          "origen"
+          "recurso_id",
+          "bien_privado_id",
+          "origen",
+          "desde"
         ],
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
-          "cuenta_id": {
+          "recurso_id": {
             "type": "string",
             "format": "uuid"
           },
-          "rol_id": {
+          "bien_privado_id": {
             "type": "string",
             "format": "uuid"
           },
-          "vigente_desde": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "vigente_hasta": {
+          "vehiculo_id": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time",
-            "description": "`null` = sin fecha de fin."
+            "format": "uuid"
           },
           "origen": {
             "type": "string",
-            "description": "`manual`, `contrato_servicio`, `propiedad`, `residencia` o `asamblea`."
+            "description": "`propiedad`, `sorteo`, `arriendo` o `manual`.",
+            "example": "sorteo"
           },
-          "origen_id": {
+          "desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "sorteo_id": {
             "type": [
               "string",
               "null"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "AutorizacionPeticion": {
+        "type": "object",
+        "description": "Autorización de reservas de un tenedor.",
+        "required": [
+          "autorizadas"
+        ],
+        "properties": {
+          "autorizadas": {
+            "type": "boolean"
+          }
+        }
+      },
+      "BienComunDto": {
+        "type": "object",
+        "description": "Detalle de un bien común.",
+        "required": [
+          "categoria"
+        ],
+        "properties": {
+          "categoria": {
+            "type": "string",
+            "example": "salon_social"
           },
-          "asignado_por": {
+          "area_m2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "es_esencial": {
+            "type": "boolean",
+            "description": "Art. 59: un bien esencial no se restringe por mora."
+          },
+          "reglas": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reglas_archivo_id": {
             "type": [
               "string",
               "null"
@@ -6516,6 +8380,60 @@
           }
         }
       },
+      "CambiosRecursoPeticion": {
+        "type": "object",
+        "description": "Cambios a un recurso (los omitidos no cambian).",
+        "properties": {
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "politica": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PoliticaDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "horario": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HorarioDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bien_comun": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BienComunDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "CargoRespuesta": {
         "type": "object",
         "description": "Cargo vigente en la copropiedad.",
@@ -6552,6 +8470,34 @@
           "vigente_desde": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ChecklistDto": {
+        "type": "object",
+        "description": "Elemento del checklist.",
+        "required": [
+          "elemento"
+        ],
+        "properties": {
+          "elemento": {
+            "type": "string",
+            "example": "Sillas"
+          },
+          "cantidad": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "estado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "bueno"
           }
         }
       },
@@ -6738,6 +8684,28 @@
           },
           "nombre": {
             "type": "string"
+          }
+        }
+      },
+      "CriteriosDto": {
+        "type": "object",
+        "description": "Puntos de cada prioridad del sorteo.",
+        "required": [
+          "puntos_discapacidad",
+          "puntos_no_favorecido"
+        ],
+        "properties": {
+          "puntos_discapacidad": {
+            "type": "integer",
+            "format": "int32",
+            "example": 100,
+            "minimum": 0
+          },
+          "puntos_no_favorecido": {
+            "type": "integer",
+            "format": "int32",
+            "example": 10,
+            "minimum": 0
           }
         }
       },
@@ -7028,6 +8996,25 @@
           }
         }
       },
+      "DetalleReservaRespuesta": {
+        "type": "object",
+        "description": "Reserva con su entrega y su recibo.",
+        "required": [
+          "reserva",
+          "entregas"
+        ],
+        "properties": {
+          "reserva": {
+            "$ref": "#/components/schemas/ReservaRespuesta"
+          },
+          "entregas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntregaRespuesta"
+            }
+          }
+        }
+      },
       "EnlaceRespuesta": {
         "type": "object",
         "description": "Enlace temporal de descarga.",
@@ -7038,6 +9025,84 @@
           "url": {
             "type": "string",
             "description": "URL firmada; vence en 5 minutos."
+          }
+        }
+      },
+      "EntregaPeticion": {
+        "type": "object",
+        "description": "Datos de una entrega o un recibo.",
+        "properties": {
+          "checklist": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistDto"
+            }
+          },
+          "fotos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Fotos (archivos ya subidos)."
+          },
+          "novedad": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "valor_danos": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo en el recibo: valor de los daños (queda como cargo pendiente del bien privado)."
+          }
+        }
+      },
+      "EntregaRespuesta": {
+        "type": "object",
+        "description": "Entrega o recibo registrado.",
+        "required": [
+          "tipo",
+          "checklist",
+          "fotos",
+          "registrado_en"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "example": "recibo"
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChecklistDto"
+            }
+          },
+          "fotos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "novedad": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "valor_danos": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registrado_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -7126,6 +9191,39 @@
           "database": {
             "type": "string",
             "example": "ok"
+          }
+        }
+      },
+      "EstadoRecursoPeticion": {
+        "type": "object",
+        "description": "Estado nuevo de un recurso.",
+        "required": [
+          "estado"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "example": "en_mantenimiento"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "EstadoRecursoRespuesta": {
+        "type": "object",
+        "description": "Reservas canceladas al cerrar el recurso.",
+        "required": [
+          "reservas_canceladas"
+        ],
+        "properties": {
+          "reservas_canceladas": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },
@@ -7583,6 +9681,23 @@
           }
         }
       },
+      "InscripcionPeticion": {
+        "type": "object",
+        "description": "Inscripción en un sorteo.",
+        "required": [
+          "bien_privado_id"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "discapacidad": {
+            "type": "boolean",
+            "description": "Inscribe a una persona con discapacidad (dato sensible: prioridad del sorteo)."
+          }
+        }
+      },
       "InscripcionRespuesta": {
         "type": "object",
         "description": "Secreto para la app autenticadora.",
@@ -7818,6 +9933,18 @@
             "type": "string",
             "description": "`dueno`, `gestor` u `operario`.",
             "example": "operario"
+          }
+        }
+      },
+      "MotivoPeticion": {
+        "type": "object",
+        "description": "Motivo opcional.",
+        "properties": {
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -8101,6 +10228,59 @@
           }
         }
       },
+      "NuevoParqueaderoPeticion": {
+        "type": "object",
+        "description": "Parqueadero nuevo.",
+        "required": [
+          "codigo",
+          "tipo_vehiculo",
+          "naturaleza"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "S1-045"
+          },
+          "tipo_vehiculo": {
+            "type": "string",
+            "example": "carro"
+          },
+          "naturaleza": {
+            "type": "string",
+            "description": "`privado`, `uso_exclusivo`, `comunal` o `visitantes`.",
+            "example": "comunal"
+          },
+          "bien_privado_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Solo para los privados."
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "politica": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PoliticaDto",
+                "description": "Solo visitantes (por defecto: franjas inmediatas de 30 min a 4 h, hasta 7 días antes)."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "horario": {
+            "$ref": "#/components/schemas/HorarioDto",
+            "description": "Horario de uso (visitantes)."
+          }
+        }
+      },
       "NuevoPuntoPeticion": {
         "type": "object",
         "description": "Punto de atención nuevo.",
@@ -8131,6 +10311,55 @@
           },
           "horario": {
             "$ref": "#/components/schemas/HorarioDto"
+          }
+        }
+      },
+      "NuevoRecursoPeticion": {
+        "type": "object",
+        "description": "Recurso nuevo (los parqueaderos se crean en `/parqueaderos`).",
+        "required": [
+          "tipo",
+          "nombre",
+          "politica"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "description": "`bien_comun`, `agenda_administracion` o `herramienta`.",
+            "example": "bien_comun"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Salón social"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "politica": {
+            "$ref": "#/components/schemas/PoliticaDto"
+          },
+          "horario": {
+            "$ref": "#/components/schemas/HorarioDto"
+          },
+          "bien_comun": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BienComunDto",
+                "description": "Obligatorio para los bienes comunes."
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -8165,6 +10394,49 @@
             },
             "example": [
               "contabilidad.ver"
+            ]
+          }
+        }
+      },
+      "NuevoSorteoPeticion": {
+        "type": "object",
+        "description": "Sorteo nuevo.",
+        "required": [
+          "nombre",
+          "recursos",
+          "vigencia_desde",
+          "vigencia_hasta"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Parqueaderos comunales, primer semestre 2027"
+          },
+          "recursos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Parqueaderos comunales que se adjudican."
+          },
+          "vigencia_desde": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Periodo de las asignaciones (p. ej. 3, 6 o 12 meses)."
+          },
+          "vigencia_hasta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "criterios": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CriteriosDto"
+              },
+              {
+                "type": "null"
+              }
             ]
           }
         }
@@ -8460,6 +10732,71 @@
           }
         }
       },
+      "PagoPeticion": {
+        "type": "object",
+        "description": "Estado del pago.",
+        "required": [
+          "estado_pago"
+        ],
+        "properties": {
+          "estado_pago": {
+            "type": "string",
+            "description": "`pagado` o `exonerado`.",
+            "example": "pagado"
+          }
+        }
+      },
+      "ParqueaderoDto": {
+        "type": "object",
+        "description": "Detalle de un parqueadero.",
+        "required": [
+          "codigo",
+          "tipo_vehiculo",
+          "naturaleza"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "tipo_vehiculo": {
+            "type": "string",
+            "example": "carro"
+          },
+          "naturaleza": {
+            "type": "string",
+            "example": "comunal"
+          },
+          "bien_privado_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ParqueaderoRespuesta": {
+        "type": "object",
+        "description": "Parqueadero con su asignación vigente.",
+        "required": [
+          "recurso"
+        ],
+        "properties": {
+          "recurso": {
+            "$ref": "#/components/schemas/RecursoRespuesta"
+          },
+          "asignacion": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/AsignacionRespuesta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "PerfilRespuesta": {
         "type": "object",
         "description": "Perfil de la cuenta.",
@@ -8683,6 +11020,141 @@
           }
         }
       },
+      "PoliticaDto": {
+        "type": "object",
+        "description": "Política de reserva de un recurso. Montos en pesos (texto decimal).",
+        "required": [
+          "modo",
+          "duracion_minima_min",
+          "duracion_maxima_min",
+          "granularidad_min",
+          "anticipacion_minima_horas",
+          "anticipacion_maxima_dias",
+          "alistamiento_min",
+          "quien",
+          "tenedor_requiere_autorizacion",
+          "tarifa",
+          "cobro_por",
+          "deposito",
+          "cancelacion_sin_penalidad_horas",
+          "penalidad_porcentaje",
+          "max_invitados",
+          "metodo_entrega"
+        ],
+        "properties": {
+          "modo": {
+            "type": "string",
+            "description": "`libre`, `franja_inmediata`, `franja_con_aprobacion`, `sorteo` o `turno_rotativo`.",
+            "example": "franja_con_aprobacion"
+          },
+          "duracion_minima_min": {
+            "type": "integer",
+            "format": "int32",
+            "example": 60,
+            "minimum": 0
+          },
+          "duracion_maxima_min": {
+            "type": "integer",
+            "format": "int32",
+            "example": 240,
+            "minimum": 0
+          },
+          "granularidad_min": {
+            "type": "integer",
+            "format": "int32",
+            "example": 60,
+            "minimum": 0
+          },
+          "anticipacion_minima_horas": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "anticipacion_maxima_dias": {
+            "type": "integer",
+            "format": "int32",
+            "example": 60,
+            "minimum": 0
+          },
+          "max_reservas_mes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "max_simultaneas": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "alistamiento_min": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "quien": {
+            "type": "string",
+            "description": "`propietario`, `residente` o `ambos`.",
+            "example": "ambos"
+          },
+          "tenedor_requiere_autorizacion": {
+            "type": "boolean",
+            "description": "Los tenedores necesitan la autorización del propietario."
+          },
+          "aforo": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Cupo de personas por franja; `null` = uso exclusivo.",
+            "minimum": 0
+          },
+          "tarifa": {
+            "type": "string",
+            "example": "150000"
+          },
+          "cobro_por": {
+            "type": "string",
+            "description": "`reserva` u `hora`.",
+            "example": "reserva"
+          },
+          "tarifa_festivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "deposito": {
+            "type": "string",
+            "example": "0"
+          },
+          "cancelacion_sin_penalidad_horas": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "penalidad_porcentaje": {
+            "type": "string",
+            "example": "0"
+          },
+          "max_invitados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "metodo_entrega": {
+            "type": "string",
+            "description": "`sin_entrega`, `entrega_llaves`, `entrega_con_inventario` o `acceso_automatico`.",
+            "example": "entrega_con_inventario"
+          }
+        }
+      },
       "PropuestaPeticion": {
         "type": "object",
         "description": "Propuesta de cambio: `tipo` y los `datos` del registro (los mismos campos que en\n`POST /residencias`, `/vehiculos` o `/mascotas`, sin `bien_privado_id`).",
@@ -8820,6 +11292,75 @@
           }
         }
       },
+      "RecursoRespuesta": {
+        "type": "object",
+        "description": "Recurso reservable.",
+        "required": [
+          "id",
+          "tipo",
+          "nombre",
+          "estado",
+          "politica",
+          "horario"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "`bien_comun`, `parqueadero`, `agenda_administracion` o `herramienta`.",
+            "example": "bien_comun"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`disponible`, `en_mantenimiento`, `fuera_de_servicio` o `inactivo`.",
+            "example": "disponible"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "politica": {
+            "$ref": "#/components/schemas/PoliticaDto"
+          },
+          "horario": {
+            "$ref": "#/components/schemas/HorarioDto"
+          },
+          "bien_comun": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BienComunDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parqueadero": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ParqueaderoDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "RegistroPeticion": {
         "type": "object",
         "description": "Datos para crear una cuenta. Se inicia sesión luego con el usuario o el correo.",
@@ -8876,6 +11417,111 @@
           "persona_id": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "ReservaRespuesta": {
+        "type": "object",
+        "description": "Reserva (o cita).",
+        "required": [
+          "id",
+          "recurso_id",
+          "bien_privado_id",
+          "inicio",
+          "fin",
+          "invitados",
+          "estado",
+          "valor",
+          "deposito",
+          "penalidad",
+          "estado_pago",
+          "canal",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recurso_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "solicitante_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "invitados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "estado": {
+            "type": "string",
+            "description": "`solicitada`, `aprobada`, `rechazada`, `en_curso`, `finalizada`, `con_novedad`,\n`cancelada` o `no_asistio`.",
+            "example": "aprobada"
+          },
+          "valor": {
+            "type": "string",
+            "example": "150000.00"
+          },
+          "deposito": {
+            "type": "string"
+          },
+          "penalidad": {
+            "type": "string"
+          },
+          "estado_pago": {
+            "type": "string",
+            "description": "`no_aplica`, `pendiente`, `pagado` o `exonerado`.",
+            "example": "pendiente"
+          },
+          "canal": {
+            "type": "string",
+            "example": "web"
+          },
+          "modalidad": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "placa_visitante": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "observacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -9025,6 +11671,99 @@
           },
           "contrasena_nueva": {
             "type": "string"
+          }
+        }
+      },
+      "RestriccionPeticion": {
+        "type": "object",
+        "description": "Restricción nueva.",
+        "required": [
+          "bien_privado_id",
+          "motivo"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo": {
+            "type": "string",
+            "example": "Mora superior a tres cuotas de administración"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "`null` = hasta levantarla."
+          }
+        }
+      },
+      "RestriccionRespuesta": {
+        "type": "object",
+        "description": "Restricción de reservas de un bien privado.",
+        "required": [
+          "id",
+          "bien_privado_id",
+          "motivo",
+          "desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ResultadoRespuesta": {
+        "type": "object",
+        "description": "Resultado del sorteo con las asignaciones creadas.",
+        "required": [
+          "sorteo",
+          "asignaciones"
+        ],
+        "properties": {
+          "sorteo": {
+            "$ref": "#/components/schemas/SorteoRespuesta"
+          },
+          "asignaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AsignacionRespuesta"
+            }
           }
         }
       },
@@ -9203,6 +11942,151 @@
             "type": "integer",
             "format": "int64",
             "minimum": 0
+          }
+        }
+      },
+      "SolicitudPeticion": {
+        "type": "object",
+        "description": "Solicitud de una reserva, cita o parqueadero de visitantes.",
+        "required": [
+          "recurso_id",
+          "bien_privado_id",
+          "inicio",
+          "fin",
+          "idempotency_key"
+        ],
+        "properties": {
+          "recurso_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "invitados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "idempotency_key": {
+            "type": "string",
+            "description": "La genera el cliente; un reintento con la misma clave devuelve la reserva original.",
+            "example": "2b0c6a4e-…"
+          },
+          "canal": {
+            "type": "string",
+            "example": "web"
+          },
+          "modalidad": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Citas: `presencial`, `llamada` o `videollamada`."
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "placa_visitante": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatoria en parqueaderos de visitantes.",
+            "example": "ABC123"
+          }
+        }
+      },
+      "SorteoRespuesta": {
+        "type": "object",
+        "description": "Sorteo. La `semilla` aparece solo después de ejecutarlo; antes, su `compromiso` (SHA-256)\npermite verificar que no se cambió.",
+        "required": [
+          "id",
+          "nombre",
+          "recursos",
+          "vigencia_desde",
+          "vigencia_hasta",
+          "estado",
+          "compromiso",
+          "criterios",
+          "inscritos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "recursos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "vigencia_desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vigencia_hasta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`abierto` o `ejecutado`.",
+            "example": "abierto"
+          },
+          "compromiso": {
+            "type": "string"
+          },
+          "semilla": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "criterios": {
+            "$ref": "#/components/schemas/CriteriosDto"
+          },
+          "resultado": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Orden de los bienes privados (el primero, el primer favorecido)."
+          },
+          "inscritos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "ejecutado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -9633,6 +12517,10 @@
     {
       "name": "censo",
       "description": "Censo: residentes, vehículos, mascotas, personas, autoservicio con aprobación y libros (art. 51)"
+    },
+    {
+      "name": "reservas",
+      "description": "Bienes comunes, reservas, citas con la administración, parqueaderos y sorteos (módulo `bienes_comunes`)"
     },
     {
       "name": "importaciones",

@@ -28,6 +28,8 @@ pub struct Residencia {
     pub contrato_archivo_id: Option<ArchivoId>,
     pub vigente_desde: DateTime<Utc>,
     pub vigente_hasta: Option<DateTime<Utc>>,
+    /// El propietario autorizó sus reservas (tenedores, cuando la política lo exige).
+    pub reservas_autorizadas: bool,
 }
 
 /// Vehículo de un bien privado.

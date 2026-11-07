@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, bien_privado_id, persona_id, calidad, es_responsable, autorizado_por,\n                    contrato_archivo_id, vigente_desde, vigente_hasta\n             FROM residencias WHERE id = $1",
+  "query": "SELECT id, bien_privado_id, persona_id, calidad, es_responsable, autorizado_por,\n                    contrato_archivo_id, vigente_desde, vigente_hasta, reservas_autorizadas\n             FROM residencias WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -101,6 +101,17 @@
             "name": "vigente_hasta"
           }
         }
+      },
+      {
+        "ordinal": 9,
+        "name": "reservas_autorizadas",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "residencias",
+            "name": "reservas_autorizadas"
+          }
+        }
       }
     ],
     "parameters": {
@@ -117,8 +128,9 @@
       true,
       true,
       false,
-      true
+      true,
+      false
     ]
   },
-  "hash": "b8cf7fb80df0d0f1a1b7aef5cb7d77d2ff879671d80fa78eea5c572f2b651106"
+  "hash": "2691ca3836806ac306568d53cea0f259d5e4ad480be5f365b6e6e2a78dfb193d"
 }

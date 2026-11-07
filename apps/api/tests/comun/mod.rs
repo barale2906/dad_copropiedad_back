@@ -295,4 +295,40 @@ impl Ph {
         assert_eq!(s, StatusCode::CREATED, "{v}");
         v
     }
+
+    /// Bien privado `101` con un titular que tiene cuenta (`dueno`, correo
+    /// `dueno@correo.co`). Devuelve el id del bien y el de la persona titular.
+    pub async fn bien_con_dueno(&self) -> (String, String) {
+        let cuenta = self.api.registrar("dueno").await;
+        let bien = self
+            .crear_bien(json!({ "tipo": "apartamento", "numero": "101" }))
+            .await;
+        let id = bien["id"].as_str().expect("id").to_owned();
+        let (s, v) = self
+            .pedir(
+                Method::POST,
+                &format!("/bienes-privados/{id}/titulares"),
+                Some(json!({ "titulares": [{
+                    "persona": { "nombre": "Ana Dueña", "documento": "52123456",
+                                 "correo": "dueno@correo.co", "cuenta_id": cuenta },
+                    "porcentaje": "100"
+                }]})),
+            )
+            .await;
+        assert_eq!(s, StatusCode::CREATED, "{v}");
+        (id, v[0]["persona_id"].as_str().expect("persona").to_owned())
+    }
+
+    /// Habilita un módulo vendible para la copropiedad.
+    pub async fn habilitar(&self, modulo: &str) {
+        sqlx::query(
+            "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
+             VALUES (gen_random_uuid(), $1::uuid, $2, now() - interval '1 day')",
+        )
+        .bind(&self.id)
+        .bind(modulo)
+        .execute(&self.api.duenio)
+        .await
+        .expect("módulo");
+    }
 }

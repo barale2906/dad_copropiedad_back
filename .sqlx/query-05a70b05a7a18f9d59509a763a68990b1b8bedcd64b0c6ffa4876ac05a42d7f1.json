@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM excepciones_recurso WHERE recurso_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "05a70b05a7a18f9d59509a763a68990b1b8bedcd64b0c6ffa4876ac05a42d7f1"
+}

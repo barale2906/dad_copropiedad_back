@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sorteos (id, tenant_id, nombre, recursos, vigencia, estado, compromiso,\n                                  semilla, criterios, creado_en)\n             VALUES ($1, $2, $3, $4, $5, 'abierto', $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "UuidArray",
+        "TstzRange",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d95021b4e6e7cbb9c20f36bc215a49d2e48ff9c5354874c19784a6e303eecb5a"
+}

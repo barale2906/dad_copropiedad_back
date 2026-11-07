@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO asignaciones_parqueadero (id, tenant_id, recurso_id, bien_privado_id,\n                                                   vehiculo_id, origen, vigencia, sorteo_id)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "TstzRange",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3769f39bcfc5868faaef2c7fa1d2979a1cb58ecc53f8c9830cfd9afbdf5816fd"
+}

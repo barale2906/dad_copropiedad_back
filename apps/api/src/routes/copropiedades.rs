@@ -21,6 +21,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(super::bienes_privados::rutas())
         .merge(super::coeficientes::rutas())
         .merge(super::censo::rutas())
+        .merge(super::reservas::rutas())
+        .merge(super::parqueaderos::rutas())
         .merge(super::importaciones::rutas())
         .merge(super::roles::rutas())
         .merge(super::organizaciones::rutas_copropiedad())

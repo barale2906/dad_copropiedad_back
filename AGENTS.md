@@ -93,10 +93,10 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 |---|---|---|---|
 | Lenguaje backend | Rust 1.99, edición 2024 | En uso | Fijado en `rust-toolchain.toml`. |
 | HTTP / WebSocket | Axum 0.8 + Tokio + tower-http | En uso | Middlewares: request-id, trace, timeout, límite de cuerpo. |
-| Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. Extensiones `unaccent` y `pg_trgm` (búsqueda normalizada). |
+| Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. Extensiones `unaccent` y `pg_trgm` (búsqueda normalizada) y `btree_gist` (reservas y asignaciones sin solapes con `EXCLUDE`). |
 | Caché / tiempo real | Redis 8 | Infra lista | Solo sesiones de conversación y pub/sub de resultados. La verdad vive en PostgreSQL. |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |
-| Decimales / fechas / IDs | rust_decimal · chrono · uuid (v7, v4 para votos) | En uso | |
+| Decimales / fechas / IDs | rust_decimal · chrono · chrono-tz · uuid (v7, v4 para votos) | En uso | `chrono-tz`: los horarios de cada PH se evalúan en su zona IANA (`copropiedades.zona_horaria`). |
 | Criptografía | hmac + sha2 + sha1 + hex · argon2 · getrandom | En uso | Firma de webhooks de Meta, enlaces firmados, SHA-256 de archivos y tokens; Argon2id para contraseñas; TOTP (HMAC-SHA1, RFC 6238) en `infra-seguridad`. |
 | Autenticación | Tokens opacos propios + TOTP | En uso | Usuario o correo + contraseña; acceso 30 min, renovación rotativa con detección de reutilización (ADR 0005). Sin JWT. |
 | Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
@@ -210,6 +210,7 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Coeficientes** (ADR 0006): nunca se editan uno por uno. Se prepara un `cuadros_coeficientes` borrador, se revisa (`RevisionCuadro`) y se activa; la suma es exactamente 1 (sin tolerancia) y `bienes_privados.coeficiente` solo lo escribe la activación (trigger). No se activa con una reunión `instalada`.
 - **Titulares**: los vigentes de un bien suman 100 % por clase de derecho y tienen un representante (`ConjuntoTitulares` + trigger diferido). Cambiar de dueño = `transferir_titularidad` (cierra y abre en una transacción); el rol `propietario` se deriva de la titularidad (origen `propiedad`), nunca se asigna a mano.
 - **Censo** (ADR 0007): residencias con calidad y un responsable vigente por bien; el rol `residente` se deriva de la residencia (origen `residencia`) y vence al terminarla en la misma transacción. Placas normalizadas (`domain::Placa`) y únicas entre las vigentes. Fecha de nacimiento y movilidad reducida son `dato_sensible`: se ocultan sin `personas.datos_sensibles.ver`. Lo que proponen residentes y propietarios entra a `cambios_censo` y solo cambia el censo al aprobarlo.
+- **Reservas** (ADR 0008): todo recurso reservable (bien común, parqueadero, agenda, herramienta) usa el mismo motor (`casos_uso::reservas`) y su `PoliticaReserva`. Horarios en la hora local de la PH. Exclusivos: `EXCLUDE` en la BD; con aforo: bloquear el recurso y contar personas. Solicitar es idempotente. Montos liquidados en `Decimal`; penalidades y daños como `cargos_pendientes`. Los casos de uso del módulo exigen `exigir_modulo_en(.., Modulo::BienesComunes)` dentro de su transacción.
 - **Importaciones** (`casos_uso::importaciones`): archivo → validación fila por fila → vista previa → confirmar → aplicar en una transacción. Una importación nueva reutiliza ese flujo; los errores no repiten el valor de la celda.
 - **Módulos contratados**: los casos de uso o routers de un módulo vendible (`domain::Modulo`) exigen `casos_uso::modulos::exigir_modulo`; si no está habilitado → `modulo_no_habilitado` (403).
 - Enumeraciones como `TEXT` + `CHECK`; coeficientes `NUMERIC(10,8)`; fechas `TIMESTAMPTZ`; índices para cada consulta frecuente y cada FK usada en filtros.

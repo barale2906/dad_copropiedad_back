@@ -117,6 +117,19 @@ catalogo_permisos! {
     BienesComunesEditar => "bienes_comunes.editar", Copropiedad;
     ReservasCrear => "reservas.crear", Copropiedad;
     ReservasAprobar => "reservas.aprobar", Copropiedad;
+    /// Ver las reservas de todos los bienes privados.
+    ReservasVerTodas => "reservas.ver_todas", Copropiedad;
+    /// Cancelar reservas ajenas.
+    ReservasCancelarCualquiera => "reservas.cancelar_cualquiera", Copropiedad;
+    /// Registrar entrega, recibo y no asistencia (portería, conserjería).
+    ReservasEntregasRegistrar => "reservas.entregas.registrar", Copropiedad;
+    /// Restringir las reservas de un bien privado (mora o sanción, art. 59).
+    ReservasRestringir => "reservas.restringir", Copropiedad;
+    ParqueaderosVer => "parqueaderos.ver", Copropiedad;
+    /// Crear parqueaderos y asignarlos o liberarlos.
+    ParqueaderosAsignar => "parqueaderos.asignar", Copropiedad;
+    /// Crear y ejecutar sorteos.
+    SorteosGestionar => "sorteos.gestionar", Copropiedad;
     TicketsCrear => "tickets.crear", Copropiedad;
     TicketsAsignar => "tickets.asignar", Copropiedad;
     TicketsAtender => "tickets.atender", Copropiedad;
@@ -299,6 +312,10 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::CensoAprobar,
             P::BienesComunesVer,
             P::ReservasAprobar,
+            P::ReservasVerTodas,
+            P::ReservasCancelarCualquiera,
+            P::ReservasEntregasRegistrar,
+            P::ParqueaderosVer,
             P::TicketsCrear,
             P::TicketsAsignar,
             P::AsambleasVer,
@@ -395,7 +412,13 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
         codigo: "vigilante",
         nombre: "Vigilante / portero",
         ambito: Ambito::Copropiedad,
-        permisos: Some(&[P::AccesoRegistrar, P::AccesoBitacoraVer, P::TicketsCrear]),
+        permisos: Some(&[
+            P::AccesoRegistrar,
+            P::AccesoBitacoraVer,
+            P::TicketsCrear,
+            P::ReservasEntregasRegistrar,
+            P::ParqueaderosVer,
+        ]),
     },
     RolPlantilla {
         codigo: "supervisor_seguridad",
@@ -406,6 +429,8 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AccesoBitacoraVer,
             P::AccesoVisitantesAutorizar,
             P::TicketsCrear,
+            P::ReservasEntregasRegistrar,
+            P::ParqueaderosVer,
         ]),
     },
     RolPlantilla {

@@ -3,36 +3,14 @@
 mod comun;
 
 use axum::http::{Method, StatusCode};
-use comun::{MIGRACIONES, Ph, ph};
+use comun::{MIGRACIONES, ph};
 use serde_json::{Value, json};
 use sqlx::PgPool;
-
-/// Bien privado con un titular que tiene cuenta (`dueno`). Devuelve el id del bien y el de la
-/// persona titular.
-async fn bien_con_dueno(ph: &Ph) -> (String, String) {
-    let cuenta = ph.api.registrar("dueno").await;
-    let bien = ph
-        .crear_bien(json!({ "tipo": "apartamento", "numero": "101" }))
-        .await;
-    let id = bien["id"].as_str().expect("id").to_owned();
-    let (s, v) = ph
-        .pedir(
-            Method::POST,
-            &format!("/bienes-privados/{id}/titulares"),
-            Some(json!({ "titulares": [{
-                "persona": { "nombre": "Ana Dueña", "documento": "52123456", "cuenta_id": cuenta },
-                "porcentaje": "100"
-            }]})),
-        )
-        .await;
-    assert_eq!(s, StatusCode::CREATED, "{v}");
-    (id, v[0]["persona_id"].as_str().expect("persona").to_owned())
-}
 
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn el_propietario_propone_un_vehiculo_y_la_administracion_lo_aprueba(pool: PgPool) {
     let ph = ph(pool).await;
-    let (bien, _) = bien_con_dueno(&ph).await;
+    let (bien, _) = ph.bien_con_dueno().await;
     let dueno = ph.api.token("dueno").await;
     let ruta = |r: &str| format!("{}{r}", ph.base);
 
@@ -107,7 +85,7 @@ async fn el_propietario_propone_un_vehiculo_y_la_administracion_lo_aprueba(pool:
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn el_tenedor_entra_con_su_residencia_y_sale_al_terminarla(pool: PgPool) {
     let ph = ph(pool).await;
-    let (bien, dueno) = bien_con_dueno(&ph).await;
+    let (bien, dueno) = ph.bien_con_dueno().await;
     let inquilino = ph.api.registrar("inquilino").await;
     let residencia = |autorizado: Value| {
         json!({
@@ -153,7 +131,7 @@ async fn el_tenedor_entra_con_su_residencia_y_sale_al_terminarla(pool: PgPool) {
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn libro_de_propietarios_en_csv(pool: PgPool) {
     let ph = ph(pool).await;
-    bien_con_dueno(&ph).await;
+    ph.bien_con_dueno().await;
     let (s, tipo, texto) = ph
         .api
         .pedir_texto(
@@ -175,7 +153,7 @@ async fn libro_de_propietarios_en_csv(pool: PgPool) {
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn alertas_de_mascotas_y_datos_de_menores(pool: PgPool) {
     let ph = ph(pool).await;
-    let (bien, dueno) = bien_con_dueno(&ph).await;
+    let (bien, dueno) = ph.bien_con_dueno().await;
     let (s, m) = ph
         .pedir(
             Method::POST,

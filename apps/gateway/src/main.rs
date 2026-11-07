@@ -6,16 +6,18 @@
 //! - Cola de salida (outbox) con prioridad y limitador de 80 mps por línea.
 //! - Al comienzo también hace de worker (envíos y actas); se separa solo si la carga lo pide.
 //!   Hoy despacha correo ([`worker_salida`]); WhatsApp se suma con su cliente de envío.
+//! - Encola los recordatorios de reservas ([`worker_recordatorios`]).
 
 mod routes;
 mod state;
+mod worker_recordatorios;
 mod worker_salida;
 
 use std::sync::Arc;
 
 use anyhow::Context;
 use infra_correo::CorreoSmtp;
-use infra_postgres::ColaSalidaPg;
+use infra_postgres::{ColaSalidaPg, DirectorioRecordatoriosPg, UnidadDeTrabajoPg};
 use shared::{AppConfig, SmtpConfig, WhatsappConfig, telemetry};
 use tokio::{net::TcpListener, sync::watch};
 
@@ -62,6 +64,12 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
+    let recordatorios = tokio::spawn(worker_recordatorios::ejecutar(
+        DirectorioRecordatoriosPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        esperar_apagado(apagado.clone()),
+    ));
+
     let state = GatewayState {
         db,
         whatsapp: Arc::new(whatsapp),
@@ -82,6 +90,10 @@ async fn main() -> anyhow::Result<()> {
         && let Err(e) = worker.await
     {
         tracing::error!(error = %e, "el worker de envíos terminó con error");
+    }
+
+    if let Err(e) = recordatorios.await {
+        tracing::error!(error = %e, "el worker de recordatorios terminó con error");
     }
 
     tracing::info!("gateway detenido correctamente");

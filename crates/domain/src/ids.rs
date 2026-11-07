@@ -184,6 +184,36 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Recurso reservable (bien común, parqueadero, agenda de la administración, herramienta).
+    RecursoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Reserva (o cita) de un recurso.
+    ReservaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Asignación de un parqueadero a un bien privado.
+    AsignacionParqueaderoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Sorteo de recursos.
+    SorteoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Restricción de reservas de un bien privado (mora o sanción).
+    RestriccionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Cargo pendiente para el futuro módulo de contabilidad.
+    CargoId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

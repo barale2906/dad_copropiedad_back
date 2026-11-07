@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recursos SET nombre = $2, estado = $3, ubicacion = $4, descripcion = $5,\n                 modo_asignacion = $6, duracion_minima_min = $7, duracion_maxima_min = $8,\n                 granularidad_min = $9, anticipacion_minima_horas = $10,\n                 anticipacion_maxima_dias = $11, max_reservas_mes = $12, max_simultaneas = $13,\n                 alistamiento_min = $14, quien_reserva = $15, tenedor_requiere_autorizacion = $16,\n                 aforo = $17, tarifa = $18, cobro_por = $19, tarifa_festivo = $20, deposito = $21,\n                 cancelacion_sin_penalidad_horas = $22, penalidad_porcentaje = $23,\n                 max_invitados = $24, metodo_entrega = $25, actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Text",
+        "Bool",
+        "Int4",
+        "Numeric",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Int4",
+        "Numeric",
+        "Int4",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "62d30955cab37a60b018521f65f86a988e06c99896a860d0c57bc6d5733cf46b"
+}

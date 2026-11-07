@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT recurso_id, fecha, hora_inicio, hora_fin, motivo\n             FROM excepciones_recurso ORDER BY recurso_id, fecha",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "recurso_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "excepciones_recurso",
+            "name": "recurso_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "excepciones_recurso",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "hora_inicio",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "excepciones_recurso",
+            "name": "hora_inicio"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "hora_fin",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "excepciones_recurso",
+            "name": "hora_fin"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "excepciones_recurso",
+            "name": "motivo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "44ad3570efb49a9be2c6cd617f49c938bc9ddecb53291addd3f77cf498ca1671"
+}

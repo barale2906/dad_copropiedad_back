@@ -27,6 +27,7 @@ mod personas;
 mod plataforma;
 mod pool;
 mod proteccion_datos;
+mod reservas;
 mod roles;
 mod tenant;
 mod titulares;
@@ -36,6 +37,7 @@ pub use cola_salida::{ColaSalidaPg, LoteSalidaPg};
 pub use error::InfraPgError;
 pub use plataforma::{TransaccionPlataformaPg, UnidadDeTrabajoPlataformaPg};
 pub use pool::{conectar, migrar, ping, verificar_rol_restringido};
+pub use reservas::DirectorioRecordatoriosPg;
 pub use tenant::transaccion_tenant;
 pub use unidad_trabajo::{TransaccionPg, UnidadDeTrabajoPg};
 

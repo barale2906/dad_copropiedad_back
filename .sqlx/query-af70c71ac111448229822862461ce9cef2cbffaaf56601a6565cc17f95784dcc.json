@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT reserva_id, tipo, checklist, fotos, novedad, valor_danos, registrado_por,\n                    registrado_en\n             FROM entregas_reserva WHERE reserva_id = $1 ORDER BY registrado_en",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "reserva_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "reserva_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "checklist",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "checklist"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "fotos",
+        "type_info": "UuidArray",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "fotos"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "novedad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "novedad"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "valor_danos",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "valor_danos"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "registrado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "registrado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "registrado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "entregas_reserva",
+            "name": "registrado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "af70c71ac111448229822862461ce9cef2cbffaaf56601a6565cc17f95784dcc"
+}
