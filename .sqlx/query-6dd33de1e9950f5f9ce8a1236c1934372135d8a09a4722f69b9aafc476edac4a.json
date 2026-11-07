@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE restricciones_reserva SET hasta = greatest($2, desde + interval '1 microsecond')\n             WHERE id = $1 AND (hasta IS NULL OR hasta > $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6dd33de1e9950f5f9ce8a1236c1934372135d8a09a4722f69b9aafc476edac4a"
+}

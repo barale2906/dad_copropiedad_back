@@ -87,6 +87,10 @@ pub enum DominioError {
         regla: &'static str,
     },
 
+    /// La reserva incumple la política del recurso o los límites del bien privado.
+    #[error("reserva no permitida: {0}")]
+    ReservaNoPermitida(&'static str),
+
     #[error("valor desconocido `{valor}` para {tipo}")]
     ValorDesconocido { tipo: &'static str, valor: String },
 }

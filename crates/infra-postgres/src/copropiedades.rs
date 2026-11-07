@@ -25,6 +25,8 @@ pub(crate) fn error_escritura(e: sqlx::Error, unico: &str, foranea: &'static str
     match e.as_database_error() {
         Some(d) if d.is_unique_violation() => AppError::Conflicto(unico.to_owned()),
         Some(d) if d.is_foreign_key_violation() => AppError::NoEncontrado(foranea),
+        // Restricción de exclusión (franjas o vigencias que se solapan).
+        Some(d) if d.code().as_deref() == Some("23P01") => AppError::Conflicto(unico.to_owned()),
         Some(d) if d.code().is_some_and(|c| c.starts_with('V')) => {
             AppError::Conflicto(d.message().to_owned())
         }
@@ -102,14 +104,14 @@ impl TryFrom<FilaFicha> for FichaCopropiedad {
     }
 }
 
-fn dia(n: i16) -> AppResult<Weekday> {
+pub(crate) fn dia(n: i16) -> AppResult<Weekday> {
     u8::try_from(n - 1)
         .ok()
         .and_then(|d| Weekday::try_from(d).ok())
         .ok_or_else(|| AppError::infra(std::io::Error::other("dia_semana fuera de rango")))
 }
 
-fn numero_dia(d: Weekday) -> i16 {
+pub(crate) fn numero_dia(d: Weekday) -> i16 {
     i16::from(u8::try_from(d.number_from_monday()).unwrap_or(1))
 }
 

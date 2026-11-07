@@ -15,6 +15,7 @@ pub mod modulos;
 pub mod proteccion_datos;
 pub mod reloj;
 pub mod repositorios;
+pub mod reservas;
 pub mod sesiones;
 pub mod unidad_trabajo;
 
@@ -39,5 +40,6 @@ pub use reloj::{Reloj, RelojSistema};
 pub use repositorios::{
     DirectorioReuniones, RepositorioInscripciones, RepositorioPreguntas, RepositorioVotos,
 };
+pub use reservas::{DirectorioRecordatorios, RepositorioReservas};
 pub use sesiones::SesionesConversacion;
 pub use unidad_trabajo::{RegistroAuditoria, RegistroOutbox, Transaccion, UnidadDeTrabajo};

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE asignaciones_parqueadero\n             SET vigencia = tstzrange(lower(vigencia),\n                                      greatest($2, lower(vigencia) + interval '1 microsecond'))\n             WHERE id = $1 AND (upper(vigencia) IS NULL OR upper(vigencia) > $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "76cb4453eb75ac64752c054c9d246e823904e0bf20be8a083426b515089115b3"
+}

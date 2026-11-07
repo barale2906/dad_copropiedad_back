@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO restricciones_reserva (id, tenant_id, bien_privado_id, motivo,\n                                                soporte_archivo_id, desde, hasta, creada_por)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "94bb6cd9ddfa9ac4411b6bdf3cf51f9b4c448c405037b52c88cec70b32e58fc6"
+}

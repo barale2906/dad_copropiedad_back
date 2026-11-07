@@ -1,0 +1,262 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, recurso_id, bien_privado_id, solicitante_persona_id, solicitada_por, franja,\n                    exclusiva, invitados, estado, valor, deposito, penalidad, estado_pago,\n                    idempotency_key, canal, modalidad, motivo, placa_visitante, observacion,\n                    creada_en\n             FROM reservas\n             WHERE ($1::uuid IS NULL OR recurso_id = $1)\n               AND ($2::uuid IS NULL OR bien_privado_id = $2)\n               AND ($3::text IS NULL OR estado = $3)\n               AND ($4::uuid IS NULL OR solicitada_por = $4)\n               AND ($5::tstzrange IS NULL OR franja && $5)\n               AND ($6::text IS NULL OR idempotency_key = $6)\n               AND ($7::uuid IS NULL OR id = $7)\n             ORDER BY lower(franja), id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "recurso_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "recurso_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "solicitante_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "solicitante_persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "solicitada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "solicitada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "franja",
+        "type_info": "TstzRange",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "franja"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "exclusiva",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "exclusiva"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "invitados",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "invitados"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "deposito",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "deposito"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "penalidad",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "penalidad"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "estado_pago",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "estado_pago"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "idempotency_key",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "idempotency_key"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "canal",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "canal"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "modalidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "modalidad"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "placa_visitante",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "placa_visitante"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "observacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "observacion"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reservas",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "TstzRange",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "b657035c4f06a8566c05cb1098878369750032de08da96267756c89588e00070"
+}

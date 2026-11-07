@@ -30,6 +30,8 @@ pub const ETIQUETA_COPROPIEDAD: &str = "copropiedad";
 pub const ETIQUETA_BIENES_PRIVADOS: &str = "bienes_privados";
 /// Etiqueta del censo: residentes, vehículos, mascotas, personas y libros.
 pub const ETIQUETA_CENSO: &str = "censo";
+/// Etiqueta de bienes comunes, reservas, citas, parqueaderos y sorteos.
+pub const ETIQUETA_RESERVAS: &str = "reservas";
 /// Etiqueta de los cuadros de coeficientes.
 pub const ETIQUETA_COEFICIENTES: &str = "coeficientes";
 /// Etiqueta de las importaciones masivas.
@@ -89,6 +91,9 @@ impl utoipa::Modify for EsquemaBearer {
                                                       exacta = 1)"),
         (name = ETIQUETA_CENSO, description = "Censo: residentes, vehículos, mascotas, personas, \
                                                autoservicio con aprobación y libros (art. 51)"),
+        (name = ETIQUETA_RESERVAS, description = "Bienes comunes, reservas, citas con la \
+                                                  administración, parqueaderos y sorteos \
+                                                  (módulo `bienes_comunes`)"),
         (name = ETIQUETA_IMPORTACIONES, description = "Importación masiva desde CSV/XLSX con vista \
                                                        previa"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),

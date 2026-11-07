@@ -340,7 +340,7 @@ fn dia_semana(n: u8) -> Result<Weekday, ApiError> {
 }
 
 impl HorarioDto {
-    fn a_dominio(self) -> Result<Horario, ApiError> {
+    pub(crate) fn a_dominio(self) -> Result<Horario, ApiError> {
         let franjas = self
             .franjas
             .into_iter()
@@ -365,7 +365,7 @@ impl HorarioDto {
         Ok(Horario::new(franjas, excepciones)?)
     }
 
-    fn desde(h: &Horario) -> Self {
+    pub(crate) fn desde(h: &Horario) -> Self {
         Self {
             franjas: h
                 .franjas()

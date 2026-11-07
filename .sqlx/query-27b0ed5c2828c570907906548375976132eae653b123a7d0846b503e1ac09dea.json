@@ -1,0 +1,148 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, nombre, recursos, vigencia, estado, compromiso, semilla, criterios,\n                    resultado, creado_en, ejecutado_en\n             FROM sorteos WHERE ($1::uuid IS NULL OR id = $1)\n             ORDER BY creado_en DESC, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "recursos",
+        "type_info": "UuidArray",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "recursos"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vigencia",
+        "type_info": "TstzRange",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "vigencia"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "compromiso",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "compromiso"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "semilla",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "semilla"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "criterios",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "criterios"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "resultado",
+        "type_info": "UuidArray",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "resultado"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "ejecutado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sorteos",
+            "name": "ejecutado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "27b0ed5c2828c570907906548375976132eae653b123a7d0846b503e1ac09dea"
+}

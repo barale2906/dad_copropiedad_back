@@ -1,0 +1,102 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, recurso_id, bien_privado_id, vehiculo_id, origen, vigencia, sorteo_id\n             FROM asignaciones_parqueadero\n             WHERE ($1::uuid IS NULL OR id = $1) AND ($2::uuid IS NULL OR recurso_id = $2)\n               AND ($3::uuid IS NULL OR bien_privado_id = $3)\n             ORDER BY lower(vigencia) DESC, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_parqueadero",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "recurso_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_parqueadero",
+            "name": "recurso_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_parqueadero",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vehiculo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_parqueadero",
+            "name": "vehiculo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "origen",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_parqueadero",
+            "name": "origen"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "vigencia",
+        "type_info": "TstzRange",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_parqueadero",
+            "name": "vigencia"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "sorteo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_parqueadero",
+            "name": "sorteo_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "c2683b14738ad96dc4f4acc81a86e37d6c4ae1818f0390685523d8c62bd79391"
+}

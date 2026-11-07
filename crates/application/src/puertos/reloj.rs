@@ -14,3 +14,15 @@ impl Reloj for RelojSistema {
         Utc::now()
     }
 }
+
+/// Reloj detenido en un instante (pruebas deterministas).
+#[cfg(test)]
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct RelojFijo(pub DateTime<Utc>);
+
+#[cfg(test)]
+impl Reloj for RelojFijo {
+    fn ahora(&self) -> DateTime<Utc> {
+        self.0
+    }
+}

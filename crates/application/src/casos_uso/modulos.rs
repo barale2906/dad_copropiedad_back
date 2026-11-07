@@ -19,6 +19,24 @@ use crate::{
 pub const ACCION_HABILITAR: AccionAuditoria = AccionAuditoria::new("plataforma.modulo.habilitar");
 pub const ACCION_TERMINAR: AccionAuditoria = AccionAuditoria::new("plataforma.modulo.terminar");
 
+/// Como [`exigir_modulo`], pero dentro de una transacción ya abierta (los casos de uso de un
+/// módulo vendible lo verifican en su propia transacción).
+///
+/// # Errors
+///
+/// [`AppError::ModuloNoHabilitado`] si el módulo no está habilitado.
+pub(crate) async fn exigir_modulo_en<T: RepositorioModulos>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    modulo: Modulo,
+) -> AppResult<()> {
+    if tx.modulo_habilitado(modulo, reloj.ahora()).await? {
+        Ok(())
+    } else {
+        Err(AppError::ModuloNoHabilitado(modulo))
+    }
+}
+
 /// Exige que la copropiedad del contexto tenga el módulo habilitado ahora.
 ///
 /// # Errors

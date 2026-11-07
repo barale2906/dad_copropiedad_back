@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT recurso_id, dia_semana, hora_inicio, hora_fin, aplica_festivos\n             FROM franjas_recurso ORDER BY recurso_id, dia_semana, hora_inicio",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "recurso_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "franjas_recurso",
+            "name": "recurso_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "dia_semana",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "franjas_recurso",
+            "name": "dia_semana"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "hora_inicio",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "franjas_recurso",
+            "name": "hora_inicio"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "hora_fin",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "franjas_recurso",
+            "name": "hora_fin"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "aplica_festivos",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "franjas_recurso",
+            "name": "aplica_festivos"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cd979e002b2654e8dafe1d7cde4eb7aee3b6c8c047b0d233c945a3e67cb65011"
+}

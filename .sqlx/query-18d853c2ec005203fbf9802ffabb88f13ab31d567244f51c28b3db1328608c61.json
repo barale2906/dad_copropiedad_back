@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO inscripciones_sorteo (id, tenant_id, sorteo_id, bien_privado_id,\n                                               discapacidad, inscrito_por, inscrito_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Bool",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "18d853c2ec005203fbf9802ffabb88f13ab31d567244f51c28b3db1328608c61"
+}

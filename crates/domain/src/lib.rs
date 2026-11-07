@@ -30,13 +30,16 @@ pub mod mayoria;
 pub mod modulo;
 pub mod nit;
 pub mod organizacion;
+pub mod parqueadero;
 pub mod permisos;
 pub mod pregunta;
 pub mod proteccion_datos;
 pub mod quorum;
 pub mod registro;
+pub mod reserva;
 pub mod resultados;
 pub mod reunion;
+pub mod sorteo;
 pub mod titularidad;
 pub mod voto;
 
@@ -60,10 +63,11 @@ pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
 pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
-    AgrupacionId, ArchivoId, AsignacionRolId, AutorizacionId, BienPrivadoId, CambioCensoId,
-    ContratoServicioId, CuadroCoeficientesId, CuentaId, ImportacionId, InscripcionId, MascotaId,
-    OpcionId, OrganizacionId, ParticipacionId, PersonaId, PoliticaTratamientoId, PreguntaId,
-    PuntoAtencionId, ReclamacionId, ResidenciaId, ReunionId, RolId, SesionId, SolicitudTitularId,
+    AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AutorizacionId,
+    BienPrivadoId, CambioCensoId, CargoId, ContratoServicioId, CuadroCoeficientesId, CuentaId,
+    ImportacionId, InscripcionId, MascotaId, OpcionId, OrganizacionId, ParticipacionId, PersonaId,
+    PoliticaTratamientoId, PreguntaId, PuntoAtencionId, ReclamacionId, RecursoId, ReservaId,
+    ResidenciaId, RestriccionId, ReunionId, RolId, SesionId, SolicitudTitularId, SorteoId,
     TenantId, TitularidadId, UsoExclusivoId, VehiculoId, VotoId,
 };
 pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
@@ -74,11 +78,19 @@ pub use organizacion::{
     EstadoContrato, EstadoOrganizacion, EstadoReclamacion, NaturalezaOrganizacion, RolOrganizacion,
     TipoOrganizacion,
 };
+pub use parqueadero::{
+    EstadoSorteo, NaturalezaParqueadero, OrigenAsignacionParqueadero, TipoParqueadero,
+};
 pub use permisos::{Ambito, ConjuntoPermisos, OrigenAsignacion, Permiso, RolPlantilla};
 pub use pregunta::{EstadoPregunta, Pregunta, PreguntaAbierta, TipoVoto};
 pub use proteccion_datos::{FinalidadTratamiento, MedioAutorizacion, TipoSolicitudTitular};
 pub use quorum::{Convocatoria, Quorum};
 pub use registro::{MetodoRegistro, RolAsistente};
+pub use reserva::{
+    CanalReserva, CategoriaBienComun, CobroPor, ConceptoCargo, EstadoPago, EstadoRecurso,
+    EstadoReserva, Franja, MetodoEntrega, ModalidadCita, ModoAsignacion, PoliticaReserva,
+    QuienReserva, TipoEntrega, TipoRecurso, VinculoSolicitante,
+};
 pub use resultados::ProyeccionResultados;
 pub use reunion::{EstadoReunion, TipoReunion};
 pub use titularidad::{ConjuntoTitulares, Porcentaje, TipoPersona, TipoTitularidad, TitularNuevo};

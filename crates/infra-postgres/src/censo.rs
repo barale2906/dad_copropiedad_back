@@ -34,6 +34,7 @@ struct FilaResidencia {
     contrato_archivo_id: Option<Uuid>,
     vigente_desde: DateTime<Utc>,
     vigente_hasta: Option<DateTime<Utc>>,
+    reservas_autorizadas: bool,
 }
 
 impl TryFrom<FilaResidencia> for Residencia {
@@ -50,6 +51,7 @@ impl TryFrom<FilaResidencia> for Residencia {
             contrato_archivo_id: f.contrato_archivo_id.map(ArchivoId::from_uuid),
             vigente_desde: f.vigente_desde,
             vigente_hasta: f.vigente_hasta,
+            reservas_autorizadas: f.reservas_autorizadas,
         })
     }
 }
@@ -171,7 +173,7 @@ impl RepositorioCenso for TransaccionPg {
         sqlx::query_as!(
             FilaResidencia,
             "SELECT id, bien_privado_id, persona_id, calidad, es_responsable, autorizado_por,
-                    contrato_archivo_id, vigente_desde, vigente_hasta
+                    contrato_archivo_id, vigente_desde, vigente_hasta, reservas_autorizadas
              FROM residencias
              WHERE ($1::uuid IS NULL OR bien_privado_id = $1) AND ($2 OR vigente_hasta IS NULL)
              ORDER BY vigente_desde DESC, id",
@@ -190,7 +192,7 @@ impl RepositorioCenso for TransaccionPg {
         sqlx::query_as!(
             FilaResidencia,
             "SELECT id, bien_privado_id, persona_id, calidad, es_responsable, autorizado_por,
-                    contrato_archivo_id, vigente_desde, vigente_hasta
+                    contrato_archivo_id, vigente_desde, vigente_hasta, reservas_autorizadas
              FROM residencias WHERE id = $1",
             id.as_uuid(),
         )

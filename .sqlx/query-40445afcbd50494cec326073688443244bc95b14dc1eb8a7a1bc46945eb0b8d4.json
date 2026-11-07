@@ -1,0 +1,437 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT r.id, r.tipo, r.nombre, r.estado, r.ubicacion, r.descripcion,\n                      r.modo_asignacion, r.duracion_minima_min, r.duracion_maxima_min,\n                      r.granularidad_min, r.anticipacion_minima_horas, r.anticipacion_maxima_dias,\n                      r.max_reservas_mes, r.max_simultaneas, r.alistamiento_min, r.quien_reserva,\n                      r.tenedor_requiere_autorizacion, r.aforo, r.tarifa, r.cobro_por,\n                      r.tarifa_festivo, r.deposito, r.cancelacion_sin_penalidad_horas,\n                      r.penalidad_porcentaje, r.max_invitados, r.metodo_entrega,\n                      b.categoria AS \"categoria?\", b.area_m2 AS \"area_m2?\",\n                      b.es_esencial AS \"es_esencial?\", b.reglas AS \"reglas?\",\n                      b.reglas_archivo_id AS \"reglas_archivo_id?\",\n                      p.codigo AS \"codigo?\", p.tipo_vehiculo AS \"tipo_vehiculo?\",\n                      p.naturaleza AS \"naturaleza?\", p.bien_privado_id AS \"parqueadero_bien_id?\"\n               FROM recursos r\n               LEFT JOIN bienes_comunes b ON b.recurso_id = r.id\n               LEFT JOIN parqueaderos p   ON p.recurso_id = r.id\n               WHERE ($1::uuid IS NULL OR r.id = $1) AND ($2::text IS NULL OR r.tipo = $2)\n               ORDER BY normalizar(r.nombre), r.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "ubicacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "ubicacion"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "modo_asignacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "modo_asignacion"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "duracion_minima_min",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "duracion_minima_min"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "duracion_maxima_min",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "duracion_maxima_min"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "granularidad_min",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "granularidad_min"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "anticipacion_minima_horas",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "anticipacion_minima_horas"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "anticipacion_maxima_dias",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "anticipacion_maxima_dias"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "max_reservas_mes",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "max_reservas_mes"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "max_simultaneas",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "max_simultaneas"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "alistamiento_min",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "alistamiento_min"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "quien_reserva",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "quien_reserva"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "tenedor_requiere_autorizacion",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "tenedor_requiere_autorizacion"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "aforo",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "aforo"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "tarifa",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "tarifa"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "cobro_por",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "cobro_por"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "tarifa_festivo",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "tarifa_festivo"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "deposito",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "deposito"
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "cancelacion_sin_penalidad_horas",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "cancelacion_sin_penalidad_horas"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "penalidad_porcentaje",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "penalidad_porcentaje"
+          }
+        }
+      },
+      {
+        "ordinal": 24,
+        "name": "max_invitados",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "max_invitados"
+          }
+        }
+      },
+      {
+        "ordinal": 25,
+        "name": "metodo_entrega",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "metodo_entrega"
+          }
+        }
+      },
+      {
+        "ordinal": 26,
+        "name": "categoria?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_comunes",
+            "name": "categoria"
+          }
+        }
+      },
+      {
+        "ordinal": 27,
+        "name": "area_m2?",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "bienes_comunes",
+            "name": "area_m2"
+          }
+        }
+      },
+      {
+        "ordinal": 28,
+        "name": "es_esencial?",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "bienes_comunes",
+            "name": "es_esencial"
+          }
+        }
+      },
+      {
+        "ordinal": 29,
+        "name": "reglas?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_comunes",
+            "name": "reglas"
+          }
+        }
+      },
+      {
+        "ordinal": 30,
+        "name": "reglas_archivo_id?",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "bienes_comunes",
+            "name": "reglas_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 31,
+        "name": "codigo?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "parqueaderos",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 32,
+        "name": "tipo_vehiculo?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "parqueaderos",
+            "name": "tipo_vehiculo"
+          }
+        }
+      },
+      {
+        "ordinal": 33,
+        "name": "naturaleza?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "parqueaderos",
+            "name": "naturaleza"
+          }
+        }
+      },
+      {
+        "ordinal": 34,
+        "name": "parqueadero_bien_id?",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "parqueaderos",
+            "name": "bien_privado_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "40445afcbd50494cec326073688443244bc95b14dc1eb8a7a1bc46945eb0b8d4"
+}

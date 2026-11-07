@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO excepciones_recurso (tenant_id, recurso_id, fecha, hora_inicio, hora_fin, motivo)\n             SELECT $1, $2, f, i, x, m\n             FROM unnest($3::date[], $4::time[], $5::time[], $6::text[]) AS t (f, i, x, m)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "DateArray",
+        "TimeArray",
+        "TimeArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e001c9c40d14b0328b11b6c9458765a8035daa194d169c5749585be5191ff2cf"
+}

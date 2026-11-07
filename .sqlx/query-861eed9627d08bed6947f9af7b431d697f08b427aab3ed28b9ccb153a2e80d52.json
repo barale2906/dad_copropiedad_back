@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM franjas_recurso WHERE recurso_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "861eed9627d08bed6947f9af7b431d697f08b427aab3ed28b9ccb153a2e80d52"
+}

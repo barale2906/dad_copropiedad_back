@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sorteos SET estado = 'ejecutado', resultado = $2, ejecutado_en = $3 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "81246cc1efa6a2057f1b6dc969f6048082012ded3d5bf36c7adfeae4c13a6b35"
+}

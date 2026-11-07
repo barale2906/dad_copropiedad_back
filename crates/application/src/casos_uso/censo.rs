@@ -152,6 +152,7 @@ where
         contrato_archivo_id: nueva.contrato_archivo_id,
         vigente_desde: ahora,
         vigente_hasta: None,
+        reservas_autorizadas: false,
     };
     tx.insertar_residencia(&residencia).await?;
     if let (true, Some(cuenta)) = (residencia.calidad.recibe_rol_residente(), persona.cuenta_id) {

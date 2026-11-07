@@ -167,6 +167,7 @@ impl ApiError {
                 | DominioError::TitularesInvalidos(_)
                 | DominioError::PlantillaInvalida(_)
                 | DominioError::DatoInvalido { .. }
+                | DominioError::ReservaNoPermitida(_)
                 | DominioError::ValorDesconocido { .. } => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion)
                 }
