@@ -79,6 +79,11 @@ id_entidad!(
 );
 id_entidad!(ParticipacionId, Uuid::now_v7);
 id_entidad!(
+    /// Archivo subido a una copropiedad (`archivos`).
+    ArchivoId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

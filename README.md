@@ -34,6 +34,10 @@ curl localhost:8080/ready     # {"database":"ok","status":"ok"}
 Correos en desarrollo: `docker compose up -d` también levanta **Mailpit**; todo lo que envíe el
 gateway aparece en <http://localhost:8025> (no sale a internet).
 
+Archivos en desarrollo: se guardan en `./datos/archivos` (`ARCHIVOS_DIR`, ignorado por git). En
+producción, un directorio fuera del código incluido en la copia de seguridad del VPS y un
+`ARCHIVOS_SECRETO_ENLACES` propio (`openssl rand -hex 32`). Migrar luego a S3: ADR 0003.
+
 Con `API_DOCS_HABILITADA=true` (así viene en `.env.example`): documentación interactiva en
 <http://localhost:8080/docs> y contrato en <http://localhost:8080/api-docs/openapi.json>.
 
@@ -66,6 +70,7 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-whatsapp` | Adaptador | Cloud API de Meta: firma, webhook, envío |
 | `crates/infra-pdf` | Adaptador | Actas con Typst (pendiente) |
 | `crates/infra-correo` | Adaptador | Correo saliente por SMTP (lettre) |
+| `crates/infra-archivos` | Adaptador | Almacén de archivos en disco y enlaces de descarga firmados (S3 previsto, ADR 0003) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |
 | `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook, outbox, worker |

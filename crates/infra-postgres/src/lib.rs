@@ -7,10 +7,12 @@
 //!   [`verificar_rol_restringido`] impide arrancar con un rol privilegiado.
 //! - Los cambios de negocio y su auditoría se agrupan en una [`TransaccionPg`] abierta con
 //!   [`UnidadDeTrabajoPg`] (puerto `UnidadDeTrabajo`).
+//! - [`TransaccionPg`] también implementa el repositorio de archivos (`RepositorioArchivos`).
 //! - El worker de envíos consume el outbox con [`ColaSalidaPg`] (funciones `SECURITY DEFINER`).
 //! - Las migraciones se ejecutan con otra conexión (dueño del esquema): [`migrar`].
 //! - Preferir `sqlx::query!`/`query_as!` en los repositorios y versionar `.sqlx/`.
 
+mod archivos;
 mod cola_salida;
 mod error;
 mod pool;

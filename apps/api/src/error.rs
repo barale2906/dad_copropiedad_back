@@ -26,6 +26,7 @@ use utoipa::ToSchema;
 /// | `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |
 /// | `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |
 /// | `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |
+/// | `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |
 /// | `validacion` | 422 | Datos bien formados que violan una regla de negocio. |
 /// | `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |
 /// | `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |
@@ -42,6 +43,8 @@ pub enum CodigoError {
     YaVoto,
     /// 403 · La persona no está inscrita como representante del bien privado en la reunión.
     NoInscrito,
+    /// 403 · El enlace de descarga tiene una firma inválida o ya venció: hay que pedir otro.
+    EnlaceInvalido,
     /// 422 · Los datos son sintácticamente correctos pero violan una regla de negocio.
     Validacion,
     /// 500 · Error inesperado; el detalle queda en los logs con el `x-request-id`.
@@ -77,6 +80,10 @@ pub enum ApiError {
 
     #[error("ruta no encontrada")]
     RutaNoEncontrada,
+
+    /// Mismo mensaje para firma inválida y enlace vencido: no da pistas a quien lo manipula.
+    #[error("el enlace de descarga no es válido o ya venció; solicite uno nuevo")]
+    EnlaceInvalido,
 
     #[error("servicio no disponible: {0}")]
     NoDisponible(&'static str),
@@ -123,6 +130,11 @@ impl ApiError {
                 | DominioError::CoeficienteInvalido(_)
                 | DominioError::ClaveIdempotenciaInvalida(_)
                 | DominioError::CorreoInvalido
+                | DominioError::ArchivoVacio
+                | DominioError::TipoArchivoNoAdmitido
+                | DominioError::ArchivoDemasiadoGrande { .. }
+                | DominioError::NombreArchivoInvalido
+                | DominioError::ClaveArchivoInvalida
                 | DominioError::ValorDesconocido { .. } => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion)
                 }
@@ -133,6 +145,7 @@ impl ApiError {
             }
             Self::App(AppError::BienPrivadoYaVoto) => (StatusCode::CONFLICT, C::YaVoto),
             Self::App(AppError::NoInscrito) => (StatusCode::FORBIDDEN, C::NoInscrito),
+            Self::EnlaceInvalido => (StatusCode::FORBIDDEN, C::EnlaceInvalido),
             Self::PeticionInvalida(_) => (StatusCode::BAD_REQUEST, C::PeticionInvalida),
             Self::App(AppError::Infraestructura(_)) | Self::Interno(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, C::Interno)

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "DAD_COPROPIEDAD API",
-    "description": "API REST para la gestión de copropiedades sometidas al régimen de propiedad horizontal (Ley 675 de 2001).\n\n- Rutas de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/…`\n- Rutas de la cuenta autenticada: `/api/v1/yo/…`\n- Rutas globales de la plataforma: `/api/v1/plataforma/…`\n\nErrores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` (ver el esquema `CodigoError`). Listados: paginación por cursor con `?limite=&despues=`.",
+    "description": "API REST para la gestión de copropiedades sometidas al régimen de propiedad horizontal (Ley 675 de 2001).\n\n- Rutas de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/…`\n- Rutas de la cuenta autenticada: `/api/v1/yo/…`\n- Rutas globales de la plataforma: `/api/v1/plataforma/…`\n- Descarga con enlace firmado: `/api/v1/archivos/descarga`\n\nErrores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` (ver el esquema `CodigoError`). Listados: paginación por cursor con `?limite=&despues=`.",
     "contact": {
       "name": "DAD AI & SYSTEMS"
     },
@@ -64,19 +64,119 @@
           }
         }
       }
+    },
+    "/api/v1/archivos/descarga": {
+      "get": {
+        "tags": [
+          "archivos"
+        ],
+        "summary": "Descarga un archivo con un enlace firmado y vigente.",
+        "operationId": "descargar",
+        "parameters": [
+          {
+            "name": "clave",
+            "in": "query",
+            "description": "Clave lógica del archivo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "description": "Tipo MIME del archivo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "description": "Nombre con el que se descarga.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vence",
+            "in": "query",
+            "description": "Vencimiento del enlace (segundos Unix).",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firma",
+            "in": "query",
+            "description": "Firma HMAC-SHA256 del enlace.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenido del archivo",
+            "content": {
+              "application/pdf": {},
+              "image/jpeg": {},
+              "image/png": {},
+              "image/webp": {},
+              "image/heic": {}
+            }
+          },
+          "400": {
+            "description": "Faltan parámetros (`peticion_invalida`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Firma inválida o enlace vencido (`enlace_invalido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El archivo ya no está en el almacén (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
       "CodigoError": {
         "type": "string",
-        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
+        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
         "enum": [
           "peticion_invalida",
           "no_encontrado",
           "conflicto_estado",
           "ya_voto",
           "no_inscrito",
+          "enlace_invalido",
           "validacion",
           "interno",
           "no_disponible"
@@ -160,6 +260,10 @@
     {
       "name": "salud",
       "description": "Sondas de vida y disponibilidad del servicio"
+    },
+    {
+      "name": "archivos",
+      "description": "Archivos y adjuntos: descarga con enlaces firmados de vida corta"
     }
   ]
 }

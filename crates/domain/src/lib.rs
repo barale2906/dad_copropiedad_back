@@ -13,6 +13,7 @@
 #[macro_use]
 mod macros;
 
+pub mod archivo;
 pub mod calendario;
 pub mod coeficiente;
 pub mod correo;
@@ -26,12 +27,13 @@ pub mod resultados;
 pub mod reunion;
 pub mod voto;
 
+pub use archivo::{Almacen, ClasificacionArchivo, ClaveArchivo, NombreArchivo, TipoArchivo};
 pub use coeficiente::Coeficiente;
 pub use correo::DireccionCorreo;
 pub use error::DominioError;
 pub use ids::{
-    BienPrivadoId, InscripcionId, OpcionId, ParticipacionId, PersonaId, PreguntaId, ReunionId,
-    TenantId, VotoId,
+    ArchivoId, BienPrivadoId, InscripcionId, OpcionId, ParticipacionId, PersonaId, PreguntaId,
+    ReunionId, TenantId, VotoId,
 };
 pub use mayoria::ReglaMayoria;
 pub use pregunta::{EstadoPregunta, Pregunta, PreguntaAbierta, TipoVoto};

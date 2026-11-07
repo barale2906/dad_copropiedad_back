@@ -29,6 +29,22 @@ pub enum DominioError {
     #[error("dirección de correo inválida")]
     CorreoInvalido,
 
+    #[error("el archivo está vacío")]
+    ArchivoVacio,
+
+    #[error("tipo de archivo no admitido (se aceptan PDF, JPEG, PNG, WebP y HEIC)")]
+    TipoArchivoNoAdmitido,
+
+    #[error("el archivo supera el tamaño máximo de {maximo_bytes} bytes")]
+    ArchivoDemasiadoGrande { maximo_bytes: u64 },
+
+    /// No incluye el valor: un nombre de archivo puede contener datos personales.
+    #[error("nombre de archivo inválido")]
+    NombreArchivoInvalido,
+
+    #[error("clave de archivo inválida")]
+    ClaveArchivoInvalida,
+
     #[error("valor desconocido `{valor}` para {tipo}")]
     ValorDesconocido { tipo: &'static str, valor: String },
 }

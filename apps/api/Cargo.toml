@@ -16,6 +16,7 @@ path = "src/main.rs"
 # Raíz de composición: aquí se conectan los adaptadores (infra-*) con los casos de uso.
 application.workspace = true
 domain.workspace = true
+infra-archivos.workspace = true
 infra-postgres.workspace = true
 shared.workspace = true
 
@@ -34,6 +35,7 @@ utoipa-scalar.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
+chrono.workspace = true
 sqlx.workspace = true
 
 [lints]

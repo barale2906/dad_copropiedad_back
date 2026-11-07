@@ -19,6 +19,7 @@ infra-postgres = { path = "crates/infra-postgres" }
 infra-whatsapp = { path = "crates/infra-whatsapp" }
 infra-pdf = { path = "crates/infra-pdf" }
 infra-correo = { path = "crates/infra-correo" }
+infra-archivos = { path = "crates/infra-archivos" }
 
 # HTTP / async
 axum = { version = "0.8.9", features = ["macros", "ws"] }
@@ -63,7 +64,7 @@ dotenvy = "0.15.7"
 # Correo saliente por SMTP (sin OpenSSL: rustls + raíces webpki)
 lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls-tls"] }
 
-# Criptografía (verificación de firma de webhooks de Meta)
+# Criptografía (firma de webhooks de Meta, enlaces de descarga firmados, huellas SHA-256)
 hmac = "0.13.0"
 sha2 = "0.11.1"
 hex = "0.4.3"

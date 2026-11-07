@@ -14,6 +14,8 @@ use crate::error::{CodigoError, DetalleError, ErrorRespuesta};
 
 /// Etiqueta de las sondas de salud.
 pub const ETIQUETA_SALUD: &str = "salud";
+/// Etiqueta de archivos y adjuntos.
+pub const ETIQUETA_ARCHIVOS: &str = "archivos";
 
 /// Metadatos del documento. Las rutas las agrega [`crate::routes::openapi`] a partir del router.
 #[derive(OpenApi)]
@@ -24,13 +26,16 @@ pub const ETIQUETA_SALUD: &str = "salud";
                        propiedad horizontal (Ley 675 de 2001).\n\n\
                        - Rutas de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/…`\n\
                        - Rutas de la cuenta autenticada: `/api/v1/yo/…`\n\
-                       - Rutas globales de la plataforma: `/api/v1/plataforma/…`\n\n\
+                       - Rutas globales de la plataforma: `/api/v1/plataforma/…`\n\
+                       - Descarga con enlace firmado: `/api/v1/archivos/descarga`\n\n\
                        Errores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` \
                        (ver el esquema `CodigoError`). Listados: paginación por cursor con \
                        `?limite=&despues=`."
     ),
     tags(
         (name = ETIQUETA_SALUD, description = "Sondas de vida y disponibilidad del servicio"),
+        (name = ETIQUETA_ARCHIVOS, description = "Archivos y adjuntos: descarga con enlaces \
+                                                  firmados de vida corta"),
     ),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))
 )]

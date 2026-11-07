@@ -39,7 +39,9 @@ dependencies = [
  "anyhow",
  "application",
  "axum",
+ "chrono",
  "domain",
+ "infra-archivos",
  "infra-postgres",
  "serde",
  "serde_json",
@@ -62,9 +64,11 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "domain",
+ "hex",
  "rust_decimal",
  "serde",
  "serde_json",
+ "sha2 0.11.1",
  "thiserror",
  "tokio",
  "tracing",
@@ -989,6 +993,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "infra-archivos"
+version = "0.1.0"
+dependencies = [
+ "application",
+ "chrono",
+ "domain",
+ "hex",
+ "hmac",
+ "sha2 0.11.1",
+ "thiserror",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "infra-correo"
 version = "0.1.0"
 dependencies = [
@@ -1013,6 +1032,7 @@ name = "infra-postgres"
 version = "0.1.0"
 dependencies = [
  "application",
+ "chrono",
  "domain",
  "serde_json",
  "sqlx",

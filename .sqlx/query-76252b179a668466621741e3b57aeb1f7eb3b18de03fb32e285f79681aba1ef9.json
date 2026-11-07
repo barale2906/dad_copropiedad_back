@@ -1,0 +1,138 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, clave, almacen, nombre_original, tipo_mime, tamano_bytes, sha256,\n                    clasificacion, subido_por, creado_en\n             FROM archivos\n             WHERE tenant_id = $1 AND almacen = $2\n             ORDER BY id\n             LIMIT $3\n             FOR UPDATE SKIP LOCKED",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "clave",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "clave"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "almacen",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "almacen"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nombre_original",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "nombre_original"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "tipo_mime",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "tipo_mime"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "tamano_bytes",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "tamano_bytes"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "sha256",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "sha256"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "clasificacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "clasificacion"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "subido_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "subido_por"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "archivos",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "76252b179a668466621741e3b57aeb1f7eb3b18de03fb32e285f79681aba1ef9"
+}

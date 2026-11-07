@@ -54,9 +54,18 @@ pub(crate) mod memoria {
     //! Dobles en memoria de la unidad de trabajo, reutilizables por las pruebas de los casos
     //! de uso: los eventos solo quedan en [`UnidadEnMemoria::confirmados`] tras `confirmar`.
 
-    use std::sync::{Arc, Mutex};
+    use std::{
+        collections::BTreeMap,
+        sync::{Arc, Mutex},
+    };
+
+    use domain::{Almacen, ArchivoId};
 
     use super::*;
+    use crate::{
+        AppError,
+        puertos::archivos::{Archivo, RepositorioArchivos},
+    };
 
     /// Evento confirmado junto con el contexto de su transacción.
     pub type EventoConfirmado = (Contexto, EventoAuditoria);
@@ -65,9 +74,20 @@ pub(crate) mod memoria {
     pub struct UnidadEnMemoria {
         confirmados: Arc<Mutex<Vec<EventoConfirmado>>>,
         outbox: Arc<Mutex<Vec<(Contexto, EventoSaliente)>>>,
+        archivos: Arc<Mutex<BTreeMap<ArchivoId, Archivo>>>,
+        /// Si es `true`, `confirmar` falla (simula una caída de la BD al hacer COMMIT).
+        falla_al_confirmar: bool,
     }
 
     impl UnidadEnMemoria {
+        /// Unidad cuyas transacciones fallan al confirmar.
+        pub fn que_falla_al_confirmar() -> Self {
+            Self {
+                falla_al_confirmar: true,
+                ..Self::default()
+            }
+        }
+
         pub fn confirmados(&self) -> Vec<EventoConfirmado> {
             self.confirmados.lock().expect("mutex sano").clone()
         }
@@ -75,12 +95,23 @@ pub(crate) mod memoria {
         pub fn outbox(&self) -> Vec<(Contexto, EventoSaliente)> {
             self.outbox.lock().expect("mutex sano").clone()
         }
+
+        pub fn archivos(&self) -> Vec<Archivo> {
+            self.archivos
+                .lock()
+                .expect("mutex sano")
+                .values()
+                .cloned()
+                .collect()
+        }
     }
 
     pub struct TransaccionEnMemoria {
         ctx: Contexto,
         auditoria: Vec<EventoAuditoria>,
         salientes: Vec<EventoSaliente>,
+        /// Copia de los archivos confirmados; reemplaza al original solo al confirmar.
+        archivos: BTreeMap<ArchivoId, Archivo>,
         destino: UnidadEnMemoria,
     }
 
@@ -92,6 +123,7 @@ pub(crate) mod memoria {
                 ctx: ctx.clone(),
                 auditoria: Vec::new(),
                 salientes: Vec::new(),
+                archivos: self.archivos.lock().expect("mutex sano").clone(),
                 destino: self.clone(),
             })
         }
@@ -99,6 +131,10 @@ pub(crate) mod memoria {
 
     impl Transaccion for TransaccionEnMemoria {
         async fn confirmar(self) -> AppResult<()> {
+            if self.destino.falla_al_confirmar {
+                return Err(AppError::infra(std::io::Error::other("COMMIT fallido")));
+            }
+            *self.destino.archivos.lock().expect("mutex sano") = self.archivos;
             let ctx = self.ctx;
             self.destino
                 .confirmados
@@ -117,6 +153,36 @@ pub(crate) mod memoria {
     impl RegistroAuditoria for TransaccionEnMemoria {
         async fn registrar(&mut self, evento: EventoAuditoria) -> AppResult<()> {
             self.auditoria.push(evento);
+            Ok(())
+        }
+    }
+
+    impl RepositorioArchivos for TransaccionEnMemoria {
+        async fn insertar(&mut self, archivo: &Archivo) -> AppResult<()> {
+            self.archivos.insert(archivo.id, archivo.clone());
+            Ok(())
+        }
+
+        async fn buscar(&mut self, id: ArchivoId) -> AppResult<Option<Archivo>> {
+            Ok(self.archivos.get(&id).cloned())
+        }
+
+        async fn en_almacen(&mut self, almacen: Almacen, limite: u32) -> AppResult<Vec<Archivo>> {
+            Ok(self
+                .archivos
+                .values()
+                .filter(|a| a.almacen == almacen)
+                .take(limite as usize)
+                .cloned()
+                .collect())
+        }
+
+        async fn cambiar_almacen(&mut self, id: ArchivoId, almacen: Almacen) -> AppResult<()> {
+            let archivo = self
+                .archivos
+                .get_mut(&id)
+                .ok_or(AppError::NoEncontrado("archivo"))?;
+            archivo.almacen = almacen;
             Ok(())
         }
     }

@@ -27,8 +27,8 @@ impl UnidadDeTrabajoPg {
 /// Transacción abierta en el tenant del contexto. Soltarla sin confirmar hace ROLLBACK.
 #[derive(Debug)]
 pub struct TransaccionPg {
-    tx: sqlx::Transaction<'static, Postgres>,
-    ctx: Contexto,
+    pub(crate) tx: sqlx::Transaction<'static, Postgres>,
+    pub(crate) ctx: Contexto,
 }
 
 impl UnidadDeTrabajo for UnidadDeTrabajoPg {

@@ -223,6 +223,67 @@ impl SmtpConfig {
     }
 }
 
+/// Almacén de archivos configurado (`ARCHIVOS_ALMACEN`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TipoAlmacen {
+    /// Disco del servidor, bajo `ARCHIVOS_DIR`.
+    Local,
+}
+
+impl FromStr for TipoAlmacen {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "local" => Ok(Self::Local),
+            "s3" => Err("el almacén `s3` aún no está implementado (ADR 0003)".into()),
+            otro => Err(format!("se esperaba `local` o `s3`, se recibió `{otro}`")),
+        }
+    }
+}
+
+/// Archivos y adjuntos (ADR 0003).
+#[derive(Clone)]
+pub struct ArchivosConfig {
+    pub almacen: TipoAlmacen,
+    /// Directorio raíz del almacén local. Debe estar en la copia de seguridad del VPS.
+    pub dir: String,
+    /// Secreto HMAC de los enlaces de descarga (≥ 32 caracteres). Rotarlo invalida los enlaces
+    /// vigentes, que duran minutos.
+    pub secreto_enlaces: String,
+    /// URL pública de la API con la que se arman los enlaces (p. ej. `https://api.dominio.co`).
+    pub url_publica: String,
+}
+
+impl std::fmt::Debug for ArchivosConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ArchivosConfig")
+            .field("almacen", &self.almacen)
+            .field("dir", &self.dir)
+            .field("secreto_enlaces", &"<oculto>")
+            .field("url_publica", &self.url_publica)
+            .finish()
+    }
+}
+
+impl ArchivosConfig {
+    /// Lee `ARCHIVOS_*`.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si falta `ARCHIVOS_SECRETO_ENLACES` o `ARCHIVOS_URL_PUBLICA`, o si
+    /// `ARCHIVOS_ALMACEN` no es un almacén disponible.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        Ok(Self {
+            almacen: parse_or("ARCHIVOS_ALMACEN", TipoAlmacen::Local)?,
+            dir: optional("ARCHIVOS_DIR").unwrap_or_else(|| "./datos/archivos".into()),
+            secreto_enlaces: required("ARCHIVOS_SECRETO_ENLACES")?,
+            url_publica: required("ARCHIVOS_URL_PUBLICA")?,
+        })
+    }
+}
+
 fn optional(var: &'static str) -> Option<String> {
     env::var(var).ok().filter(|v| !v.trim().is_empty())
 }

@@ -4,10 +4,13 @@
 //! - `/api/v1/plataforma/…` — operaciones globales (módulo `plataforma`).
 //! - `/api/v1/yo/…` — la cuenta autenticada (módulo `yo`).
 //! - `/api/v1/copropiedades/{copropiedad_id}/…` — todo lo de una copropiedad (módulo `copropiedades`).
+//! - `/api/v1/archivos/descarga` — única excepción: descarga con enlace firmado, sin sesión
+//!   (módulo `archivos`).
 //!
 //! Cada handler se registra con `utoipa_axum::routes!` para que el contrato OpenAPI salga de
 //! las mismas rutas que se sirven.
 
+mod archivos;
 mod copropiedades;
 mod health;
 mod plataforma;
@@ -99,6 +102,7 @@ fn api_v1() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .nest("/plataforma", plataforma::rutas())
         .nest("/yo", yo::rutas())
+        .nest("/archivos", archivos::rutas())
         .nest(
             &format!("/copropiedades/{{{PARAMETRO_COPROPIEDAD}}}"),
             copropiedades::rutas(),
@@ -145,7 +149,15 @@ mod tests {
         let db = PgPoolOptions::new()
             .connect_lazy(&cfg.database_url)
             .expect("URL de prueba válida");
-        router(AppState { db }, &cfg)
+        let enlaces =
+            infra_archivos::FirmanteEnlaces::new(&[7; 32], "http://localhost").expect("válido");
+        let archivos = infra_archivos::AlmacenLocal::abrir(std::env::temp_dir(), enlaces)
+            .expect("directorio temporal");
+        let state = AppState {
+            db,
+            archivos: std::sync::Arc::new(archivos),
+        };
+        router(state, &cfg)
             .oneshot(
                 Request::get(uri)
                     .body(Body::empty())

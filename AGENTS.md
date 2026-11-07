@@ -47,6 +47,7 @@ crates/
   infra-whatsapp/  Cloud API: firma de Meta, webhook entrante, (próximo) cliente de envío
   infra-pdf/       actas con Typst (pendiente)
   infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
+  infra-archivos/  almacén de archivos (disco local; S3 previsto) y enlaces firmados: puerto AlmacenArchivos
   shared/          configuración (env), telemetría, apagado. Sin Axum ni SQL.
 apps/
   api/             binario `dad_copropiedad_api`: REST para el front + WebSocket de resultados
@@ -94,9 +95,10 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Caché / tiempo real | Redis 8 | Infra lista | Solo sesiones de conversación y pub/sub de resultados. La verdad vive en PostgreSQL. |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |
 | Decimales / fechas / IDs | rust_decimal · chrono · uuid (v7, v4 para votos) | En uso | |
-| Criptografía | hmac + sha2 + hex | En uso | Firma de webhooks de Meta. |
+| Criptografía | hmac + sha2 + hex | En uso | Firma de webhooks de Meta, enlaces de descarga firmados, SHA-256 de archivos. |
 | Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
 | Correo | lettre 0.11 (SMTP, rustls) · SMTP de HestiaCP en producción · Mailpit en desarrollo | En uso | Crate `infra-correo`, puerto `EnvioCorreo`; variables `SMTP_*`. Mailpit atrapa los correos locales (bandeja en `localhost:8025`). |
+| Archivos | Disco del VPS (`ARCHIVOS_DIR`) · S3 previsto | En uso | Crate `infra-archivos`, puerto `AlmacenArchivos`; clave lógica + columna `almacen`; descargas con enlace HMAC de 5 min. Metodología de migración en ADR 0003. |
 | Limitador | governor | Previsto | 80 mensajes/s por línea. |
 | OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
 | Actas | Typst | Previsto | En `infra-pdf`. |
@@ -179,6 +181,7 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Cada endpoint REST** se anota con `#[utoipa::path]`: método, ruta, parámetros, cuerpo, respuestas (incluidos errores con su `codigo`), seguridad y etiqueta del módulo. Cada DTO de entrada/salida deriva `ToSchema` con descripciones y ejemplos. Un endpoint sin documentación OpenAPI no está terminado.
 - DTOs de la API viven en `apps/api` (no se exponen entidades de dominio directamente); versionado en la ruta (`/api/v1`).
 - Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global). Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
+- Única excepción a esas rutas: `/api/v1/archivos/descarga`, sin sesión porque el enlace firmado es la credencial (ADR 0003).
 - Handlers con los extractores de `api::extractores` (`Json`, `Query`, `Path`), nunca los de `axum` directamente: así una petición mal formada también responde con el error uniforme (`peticion_invalida`).
 - Listados paginados por cursor: `ParametrosPagina` (`?limite=&despues=`) → `application::SolicitudPagina` → el repositorio consulta `filas_a_consultar()` → `Pagina::desde_filas` → `PaginaRespuesta<T>`. Nunca `OFFSET`.
 - Formato de error uniforme: `{ "error": { "codigo": "...", "mensaje": "..." } }` (`ErrorRespuesta`). Los códigos viven en `CodigoError` (`apps/api/src/error.rs`) con su tabla código → HTTP → significado; un código nuevo se agrega ahí y en la tabla.
@@ -194,6 +197,7 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - Consultas que cruzan tenants (enrutamiento del gateway, consumo del outbox) **solo** mediante funciones `SECURITY DEFINER` (`SET search_path`, `REVOKE … FROM PUBLIC`) que devuelven lo mínimo.
 - `lineas_whatsapp` es tabla de plataforma (sin tenant). Una línea o una por asamblea = configuración.
 - Toda modificación de esquema = nueva migración reversible (`make migracion NOMBRE=…`) probada con up → down → up. **Nunca editar una migración ya aplicada en otro entorno.**
+- **Archivos** (ADR 0003): nadie toca rutas de disco; todo pasa por `AlmacenArchivos` con una `ClaveArchivo`. La fila de `archivos` guarda la clave lógica y el `almacen`, nunca rutas absolutas. El tipo se valida por contenido (`TipoArchivo::validar`), nunca por extensión. El nombre original no va a logs ni a la auditoría. Casos de uso en `casos_uso::archivos` (`subir_archivo`, `enlace_descarga`, `migrar_lote`).
 - Enumeraciones como `TEXT` + `CHECK`; coeficientes `NUMERIC(10,8)`; fechas `TIMESTAMPTZ`; índices para cada consulta frecuente y cada FK usada en filtros.
 - Preferir `sqlx::query!`/`query_as!`; tras cambiar consultas: `make sqlx-prepare` y versionar `.sqlx/`. SQL dinámico solo con `AssertSqlSafe`, justificado, y con datos enlazados (`$1`), nunca interpolados desde la entrada del usuario. Prohibido `SELECT *`.
 
