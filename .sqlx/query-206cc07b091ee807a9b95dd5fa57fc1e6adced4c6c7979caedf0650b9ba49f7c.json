@@ -1,0 +1,160 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, nombre_mostrar, usuario, correo, correo_verificado_en, estado,\n                    hash_contrasena, intentos_fallidos, bloqueo_hasta, totp_secreto,\n                    totp_activado_en, creada_en\n             FROM cuentas WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre_mostrar",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "nombre_mostrar"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "usuario",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "usuario"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "correo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "correo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "correo_verificado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "correo_verificado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "hash_contrasena",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "hash_contrasena"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "intentos_fallidos",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "intentos_fallidos"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "bloqueo_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "bloqueo_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "totp_secreto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "totp_secreto"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "totp_activado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "totp_activado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuentas",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "206cc07b091ee807a9b95dd5fa57fc1e6adced4c6c7979caedf0650b9ba49f7c"
+}

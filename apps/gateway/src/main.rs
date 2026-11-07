@@ -5,15 +5,19 @@
 //! - Enrutamiento: sesión por (línea, teléfono) resuelta contra las reuniones activas.
 //! - Cola de salida (outbox) con prioridad y limitador de 80 mps por línea.
 //! - Al comienzo también hace de worker (envíos y actas); se separa solo si la carga lo pide.
+//!   Hoy despacha correo ([`worker_salida`]); WhatsApp se suma con su cliente de envío.
 
 mod routes;
 mod state;
+mod worker_salida;
 
 use std::sync::Arc;
 
 use anyhow::Context;
-use shared::{AppConfig, WhatsappConfig, telemetry};
-use tokio::net::TcpListener;
+use infra_correo::CorreoSmtp;
+use infra_postgres::ColaSalidaPg;
+use shared::{AppConfig, SmtpConfig, WhatsappConfig, telemetry};
+use tokio::{net::TcpListener, sync::watch};
 
 use crate::state::GatewayState;
 
@@ -35,6 +39,29 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("APP_DATABASE_URL debe usar el rol restringido `dad_app`")?;
 
+    // Una sola señal de apagado para el servidor HTTP y el worker.
+    let (avisar_apagado, apagado) = watch::channel(false);
+    tokio::spawn(async move {
+        shared::apagado::senal_apagado().await;
+        let _ = avisar_apagado.send(true);
+    });
+
+    let worker = match SmtpConfig::from_env().context("configuración SMTP inválida")? {
+        Some(smtp) => {
+            tracing::info!(?smtp, "envío de correo activado");
+            let correo = CorreoSmtp::desde_config(&smtp).context("cliente SMTP inválido")?;
+            Some(tokio::spawn(worker_salida::ejecutar(
+                ColaSalidaPg::new(db.clone()),
+                correo,
+                esperar_apagado(apagado.clone()),
+            )))
+        }
+        None => {
+            tracing::warn!("SMTP_HOST no está definido: el envío de correo queda desactivado");
+            None
+        }
+    };
+
     let state = GatewayState {
         db,
         whatsapp: Arc::new(whatsapp),
@@ -47,10 +74,21 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!(%addr, "gateway escuchando");
     axum::serve(listener, app)
-        .with_graceful_shutdown(shared::apagado::senal_apagado())
+        .with_graceful_shutdown(esperar_apagado(apagado))
         .await
         .context("error del servidor HTTP")?;
 
+    if let Some(worker) = worker
+        && let Err(e) = worker.await
+    {
+        tracing::error!(error = %e, "el worker de envíos terminó con error");
+    }
+
     tracing::info!("gateway detenido correctamente");
     Ok(())
+}
+
+/// Se resuelve cuando llega la señal de apagado (o si el emisor desaparece).
+async fn esperar_apagado(mut apagado: watch::Receiver<bool>) {
+    let _ = apagado.wait_for(|apagar| *apagar).await;
 }

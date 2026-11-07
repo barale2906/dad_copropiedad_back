@@ -1,0 +1,3391 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "DAD_COPROPIEDAD API",
+    "description": "API REST para la gestión de copropiedades sometidas al régimen de propiedad horizontal (Ley 675 de 2001).\n\n- Rutas de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/…`\n- Rutas de la cuenta autenticada: `/api/v1/yo/…`\n- Rutas globales de la plataforma: `/api/v1/plataforma/…`\n- Descarga con enlace firmado: `/api/v1/archivos/descarga`\n\nErrores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` (ver el esquema `CodigoError`). Listados: paginación por cursor con `?limite=&despues=`.",
+    "contact": {
+      "name": "DAD AI & SYSTEMS"
+    },
+    "license": {
+      "name": "LicenseRef-Proprietary",
+      "identifier": "LicenseRef-Proprietary"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "Liveness: el proceso está vivo. No toca dependencias externas.",
+        "operationId": "liveness",
+        "responses": {
+          "200": {
+            "description": "Proceso vivo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoVivo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "Readiness: el servicio puede atender tráfico (PostgreSQL responde).",
+        "operationId": "readiness",
+        "responses": {
+          "200": {
+            "description": "Listo para atender",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoListo"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Una dependencia no responde (`no_disponible`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/plataforma/copropiedades": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Todas las copropiedades de la plataforma.",
+        "operationId": "listar_copropiedades",
+        "responses": {
+          "200": {
+            "description": "Copropiedades",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CopropiedadRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso o sin segundo factor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Da de alta una copropiedad y le asigna su primer administrador.",
+        "operationId": "crear_copropiedad",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaCopropiedadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Copropiedad creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopropiedadRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.copropiedades.crear`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta del administrador no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/roles": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Roles de plataforma (plantillas y propios).",
+        "operationId": "listar_roles",
+        "responses": {
+          "200": {
+            "description": "Roles de plataforma",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RolRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Crea un rol de plataforma propio (solo permisos de plataforma).",
+        "operationId": "crear_rol",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoRolPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Rol creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código repetido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/roles/{rol_id}/permisos": {
+      "put": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Reemplaza los permisos de un rol de plataforma propio.",
+        "operationId": "editar_permisos_rol",
+        "parameters": [
+          {
+            "name": "rol_id",
+            "in": "path",
+            "description": "Rol",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermisosPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rol actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/asignaciones": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Asigna un rol de plataforma (soporte, comercial, superusuario…).",
+        "operationId": "asignar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignacionPlataformaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Asignado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsignacionPlataformaRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/asignaciones/{asignacion_id}": {
+      "delete": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Termina una asignación de plataforma (nunca el último superusuario).",
+        "operationId": "revocar",
+        "parameters": [
+          {
+            "name": "asignacion_id",
+            "in": "path",
+            "description": "Asignación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Terminada"
+          },
+          "409": {
+            "description": "Último superusuario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/cuentas/{cuenta_id}/bloquear": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Bloquea una cuenta y cierra sus sesiones.",
+        "operationId": "bloquear_cuenta",
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Bloqueada"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/reclamaciones": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Reclamaciones de organizaciones pendientes de revisión.",
+        "operationId": "reclamaciones_pendientes",
+        "responses": {
+          "200": {
+            "description": "Pendientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReclamacionRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/reclamaciones/{reclamacion_id}/resolver": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Aprueba (la cuenta queda como dueña de la ficha) o rechaza una reclamación.",
+        "operationId": "resolver_reclamacion",
+        "parameters": [
+          {
+            "name": "reclamacion_id",
+            "in": "path",
+            "description": "Reclamación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolucionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Resuelta"
+          },
+          "409": {
+            "description": "Ya estaba resuelta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo": {
+      "get": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Perfil de la cuenta autenticada.",
+        "operationId": "perfil",
+        "responses": {
+          "200": {
+            "description": "Perfil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/copropiedades": {
+      "get": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Copropiedades donde la cuenta tiene roles: el cliente elige en cuál entrar.",
+        "operationId": "mis_copropiedades",
+        "responses": {
+          "200": {
+            "description": "Copropiedades con roles vigentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MembresiaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/correo/verificar": {
+      "post": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Verifica el correo con el código que se envió.",
+        "operationId": "verificar_correo",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodigoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Correo verificado"
+          },
+          "422": {
+            "description": "Código inválido o vencido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/correo/reenviar": {
+      "post": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Vuelve a enviar el código de verificación del correo.",
+        "operationId": "reenviar_verificacion",
+        "responses": {
+          "202": {
+            "description": "Código enviado"
+          },
+          "422": {
+            "description": "Sin correo pendiente de verificar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/contrasena": {
+      "put": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Cambia la contraseña y cierra **todas** las sesiones (hay que volver a entrar).",
+        "operationId": "cambiar_contrasena",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambioContrasenaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Contraseña cambiada"
+          },
+          "401": {
+            "description": "Contraseña actual incorrecta (`credenciales_invalidas`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Contraseña nueva débil (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/sesiones": {
+      "delete": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Cierra la sesión en todos los dispositivos.",
+        "operationId": "cerrar_todas",
+        "responses": {
+          "200": {
+            "description": "Sesiones cerradas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionesCerradas"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/segundo-factor": {
+      "post": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Empieza a activar el segundo factor (TOTP). Se confirma con un código de la app.",
+        "operationId": "iniciar_segundo_factor",
+        "responses": {
+          "200": {
+            "description": "Secreto generado (pendiente de confirmar)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InscripcionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está activo (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/segundo-factor/confirmar": {
+      "post": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Confirma el segundo factor. Desde el próximo inicio de sesión se pedirá el código.",
+        "operationId": "confirmar_segundo_factor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodigoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Segundo factor activo"
+          },
+          "422": {
+            "description": "Código incorrecto (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/archivos/descarga": {
+      "get": {
+        "tags": [
+          "archivos"
+        ],
+        "summary": "Descarga un archivo con un enlace firmado y vigente.",
+        "operationId": "descargar",
+        "parameters": [
+          {
+            "name": "clave",
+            "in": "query",
+            "description": "Clave lógica del archivo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "description": "Tipo MIME del archivo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "description": "Nombre con el que se descarga.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vence",
+            "in": "query",
+            "description": "Vencimiento del enlace (segundos Unix).",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "firma",
+            "in": "query",
+            "description": "Firma HMAC-SHA256 del enlace.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contenido del archivo",
+            "content": {
+              "application/pdf": {},
+              "image/jpeg": {},
+              "image/png": {},
+              "image/webp": {},
+              "image/heic": {}
+            }
+          },
+          "400": {
+            "description": "Faltan parámetros (`peticion_invalida`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Firma inválida o enlace vencido (`enlace_invalido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El archivo ya no está en el almacén (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/registro": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Crea una cuenta. Si trae correo, envía un código para verificarlo.",
+        "operationId": "registrar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Cuenta creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuentaCreada"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Usuario o correo ya registrados (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sesion": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Inicia sesión con usuario o correo y contraseña. Tras 5 fallos seguidos la cuenta se bloquea\n15 minutos.",
+        "operationId": "iniciar_sesion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InicioPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión iniciada o segundo factor pendiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InicioRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales incorrectas (`credenciales_invalidas`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Cuenta bloqueada temporalmente (`demasiados_intentos`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Cierra la sesión actual.",
+        "operationId": "cerrar_sesion",
+        "responses": {
+          "204": {
+            "description": "Sesión cerrada"
+          },
+          "401": {
+            "description": "Sin sesión (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/sesion/segundo-factor": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Completa el inicio de sesión con el código de la app autenticadora.",
+        "operationId": "completar_segundo_factor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SegundoFactorPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Sesión iniciada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokensRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Desafío vencido o código incorrecto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sesion/renovar": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Cambia el token de renovación por tokens nuevos. Si llega uno ya usado, se cierra la sesión\n(alguien lo copió).",
+        "operationId": "renovar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenovarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens nuevos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokensRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token inválido, vencido o reutilizado (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/contrasena/recuperar": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Envía un código para restablecer la contraseña. Responde igual exista o no la cuenta.",
+        "operationId": "solicitar_recuperacion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecuperarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Si la cuenta existe, se envió el código"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/contrasena/restablecer": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Restablece la contraseña con el código del correo y cierra todas las sesiones.",
+        "operationId": "restablecer_contrasena",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestablecerPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Contraseña cambiada"
+          },
+          "422": {
+            "description": "Código inválido o contraseña débil (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizaciones/{organizacion_id}": {
+      "patch": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Edita la ficha global: soporte; sin reclamar, quien la creó; reclamada, dueños y gestores.",
+        "operationId": "editar_ficha",
+        "parameters": [
+          {
+            "name": "organizacion_id",
+            "in": "path",
+            "description": "Organización",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosFichaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Ficha actualizada"
+          },
+          "403": {
+            "description": "No puede editarla (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/organizaciones/{organizacion_id}/miembros": {
+      "post": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Agrega una cuenta a la organización o cambia su papel.",
+        "operationId": "guardar_miembro",
+        "parameters": [
+          {
+            "name": "organizacion_id",
+            "in": "path",
+            "description": "Organización",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MiembroPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Guardado"
+          },
+          "403": {
+            "description": "Sin permiso (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/organizaciones/{organizacion_id}/reclamaciones": {
+      "post": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Pide manejar la ficha de la organización; la revisa soporte.",
+        "operationId": "reclamar",
+        "parameters": [
+          {
+            "name": "organizacion_id",
+            "in": "path",
+            "description": "Organización",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReclamacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Reclamación pendiente de revisión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReclamacionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya reclamada o con una pendiente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/permisos": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Catálogo completo de permisos. Requiere sesión.",
+        "operationId": "catalogo",
+        "responses": {
+          "200": {
+            "description": "Permisos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PermisoRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/roles": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Roles de la copropiedad: plantillas del sistema y propios.",
+        "operationId": "listar_roles",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Roles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RolRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `roles.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Crea un rol propio. Nunca con permisos que quien lo crea no tiene.",
+        "operationId": "crear_rol",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoRolPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Rol creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `roles.gestionar` o permisos que no tiene (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código repetido (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/roles/{rol_id}/permisos": {
+      "put": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Reemplaza los permisos de un rol propio (las plantillas no se editan).",
+        "operationId": "editar_permisos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "rol_id",
+            "in": "path",
+            "description": "Rol",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermisosPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rol actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe en la copropiedad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Es una plantilla (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asignaciones": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Historial de asignaciones (quién tuvo qué rol y cuándo), más recientes primero.",
+        "operationId": "listar_asignaciones",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "query",
+            "description": "Solo las de esta cuenta.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asignaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AsignacionRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Asigna un rol a una cuenta. Nunca un rol con permisos que quien asigna no tiene.",
+        "operationId": "asignar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Asignado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsignacionRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `roles.asignar` o rol con más permisos (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Rol o cuenta inexistentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asignaciones/{asignacion_id}": {
+      "delete": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Termina una asignación desde ahora. La copropiedad no se queda sin administrador.",
+        "operationId": "revocar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "asignacion_id",
+            "in": "path",
+            "description": "Asignación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Terminada"
+          },
+          "409": {
+            "description": "Es el último administrador (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cuentas": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Busca una cuenta por usuario o correo exactos para asignarle un rol (nunca listados).",
+        "operationId": "buscar_cuenta",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "identificador",
+            "in": "query",
+            "description": "Usuario o correo exactos.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuentaEncontrada"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No hay una cuenta activa con ese identificador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/organizaciones": {
+      "get": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Busca una organización por NIT exacto, antes de crearla (para reutilizarla).",
+        "operationId": "buscar_por_nit",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "nit",
+            "in": "query",
+            "description": "Con o sin puntos y dígito de verificación (`900.123.456-8`).",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "900123456-8"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ficha pública",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe: se puede crear",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Crea la organización (o devuelve la existente con ese NIT).",
+        "operationId": "crear",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaOrganizacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Creada o reutilizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizacionCreada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "NIT o datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/contratos-servicio": {
+      "get": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Contratos de la copropiedad.",
+        "operationId": "listar_contratos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contratos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContratoRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Vincula una organización con la copropiedad mediante un contrato de servicio.",
+        "operationId": "vincular",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContratoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Contrato creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContratoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La organización no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/contratos-servicio/{contrato_id}/terminar": {
+      "post": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Termina el contrato: vencen los roles del personal derivados de él.",
+        "operationId": "terminar_contrato",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "contrato_id",
+            "in": "path",
+            "description": "Contrato",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Terminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContratoTerminado"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/contratos-servicio/{contrato_id}/asignaciones": {
+      "post": {
+        "tags": [
+          "organizaciones"
+        ],
+        "summary": "Asigna un rol al personal de la organización, derivado del contrato (vence con él).",
+        "operationId": "asignar_por_contrato",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "contrato_id",
+            "in": "path",
+            "description": "Contrato",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignacionContratoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Asignado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsignacionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Contrato no vigente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/archivos": {
+      "post": {
+        "tags": [
+          "archivos"
+        ],
+        "summary": "Sube un archivo (PDF, JPEG, PNG, WebP o HEIC). El tipo se verifica por el contenido.",
+        "operationId": "subir",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "description": "Nombre original, para mostrarlo y descargarlo.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Reglamento de propiedad horizontal.pdf"
+          },
+          {
+            "name": "clasificacion",
+            "in": "query",
+            "description": "`publico`, `interno`, `personal` o `sensible`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "interno"
+          }
+        ],
+        "requestBody": {
+          "description": "Contenido del archivo",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Archivo guardado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchivoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `archivos.subir` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Tipo no admitido, vacío o muy grande (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/archivos/{archivo_id}/enlace": {
+      "get": {
+        "tags": [
+          "archivos"
+        ],
+        "summary": "Enlace de descarga de un archivo (vence en 5 minutos). Los personales o sensibles exigen\nademás `archivos.personales.ver`.",
+        "operationId": "enlace",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "archivo_id",
+            "in": "path",
+            "description": "Archivo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enlace firmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnlaceRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe en la copropiedad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ArchivoRespuesta": {
+        "type": "object",
+        "description": "Archivo guardado.",
+        "required": [
+          "id",
+          "nombre",
+          "tipo",
+          "tamano_bytes",
+          "sha256",
+          "clasificacion",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "Detectado por el contenido.",
+            "example": "application/pdf"
+          },
+          "tamano_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "clasificacion": {
+            "type": "string"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AsignacionContratoPeticion": {
+        "type": "object",
+        "description": "Rol para una persona del personal de la organización.",
+        "required": [
+          "cuenta_id",
+          "rol_id"
+        ],
+        "properties": {
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rol_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AsignacionPeticion": {
+        "type": "object",
+        "description": "Asignación manual de un rol.",
+        "required": [
+          "cuenta_id",
+          "rol_id"
+        ],
+        "properties": {
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rol_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Por defecto, desde ahora."
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Por defecto, sin fecha de fin."
+          }
+        }
+      },
+      "AsignacionPlataformaPeticion": {
+        "type": "object",
+        "description": "Asignación de un rol de plataforma.",
+        "required": [
+          "cuenta_id",
+          "rol_id"
+        ],
+        "properties": {
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rol_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AsignacionPlataformaRespuesta": {
+        "type": "object",
+        "description": "Asignación creada.",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "AsignacionRespuesta": {
+        "type": "object",
+        "description": "Asignación de un rol con su vigencia.",
+        "required": [
+          "id",
+          "cuenta_id",
+          "rol_id",
+          "vigente_desde",
+          "origen"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rol_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "`null` = sin fecha de fin."
+          },
+          "origen": {
+            "type": "string",
+            "description": "`manual`, `contrato_servicio`, `propiedad`, `residencia` o `asamblea`."
+          },
+          "origen_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "asignado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "CambioContrasenaPeticion": {
+        "type": "object",
+        "description": "Cambio de contraseña.",
+        "required": [
+          "contrasena_actual",
+          "contrasena_nueva"
+        ],
+        "properties": {
+          "contrasena_actual": {
+            "type": "string"
+          },
+          "contrasena_nueva": {
+            "type": "string"
+          }
+        }
+      },
+      "CambiosFichaPeticion": {
+        "type": "object",
+        "description": "Cambios a la ficha global (lo que no venga no cambia).",
+        "properties": {
+          "razon_social": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tipos": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "correo_contacto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "telefono_contacto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "CodigoError": {
+        "type": "string",
+        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_autenticado` | 401 | Falta la sesión o venció (`Authorization: Bearer …`). |\n| `credenciales_invalidas` | 401 | Usuario/correo o contraseña (o código) incorrectos. |\n| `sin_permiso` | 403 | La cuenta no tiene el permiso necesario en esta copropiedad o en la plataforma. |\n| `segundo_factor_requerido` | 403 | La operación de plataforma exige una sesión con segundo factor. |\n| `conflicto` | 409 | Ya existe (usuario, correo, código de rol) o rompe una regla (último administrador). |\n| `demasiados_intentos` | 429 | Demasiados intentos fallidos; esperar unos minutos. |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |\n| `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
+        "enum": [
+          "peticion_invalida",
+          "no_autenticado",
+          "credenciales_invalidas",
+          "sin_permiso",
+          "segundo_factor_requerido",
+          "conflicto",
+          "demasiados_intentos",
+          "no_encontrado",
+          "conflicto_estado",
+          "ya_voto",
+          "no_inscrito",
+          "enlace_invalido",
+          "modulo_no_habilitado",
+          "validacion",
+          "interno",
+          "no_disponible"
+        ]
+      },
+      "CodigoPeticion": {
+        "type": "object",
+        "description": "Código de 6 dígitos.",
+        "required": [
+          "codigo"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "123456"
+          }
+        }
+      },
+      "ContratoPeticion": {
+        "type": "object",
+        "description": "Contrato nuevo.",
+        "required": [
+          "organizacion_id",
+          "tipo_servicio"
+        ],
+        "properties": {
+          "organizacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo_servicio": {
+            "type": "string",
+            "example": "seguridad"
+          },
+          "vigente_desde": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "valor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "2500000.00"
+          }
+        }
+      },
+      "ContratoRespuesta": {
+        "type": "object",
+        "description": "Contrato de servicio.",
+        "required": [
+          "id",
+          "organizacion_id",
+          "tipo_servicio",
+          "vigente_desde",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo_servicio": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`vigente` o `terminado`."
+          },
+          "valor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "2500000.00"
+          }
+        }
+      },
+      "ContratoTerminado": {
+        "type": "object",
+        "description": "Roles que vencieron al terminar el contrato.",
+        "required": [
+          "roles_vencidos"
+        ],
+        "properties": {
+          "roles_vencidos": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "CopropiedadRespuesta": {
+        "type": "object",
+        "description": "Copropiedad registrada.",
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        }
+      },
+      "CuentaCreada": {
+        "type": "object",
+        "description": "Cuenta creada.",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "CuentaEncontrada": {
+        "type": "object",
+        "description": "Cuenta encontrada.",
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        }
+      },
+      "DetalleError": {
+        "type": "object",
+        "description": "Código estable y mensaje legible del error.",
+        "required": [
+          "codigo",
+          "mensaje"
+        ],
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/CodigoError"
+          },
+          "mensaje": {
+            "type": "string",
+            "description": "Mensaje para mostrar o registrar; nunca incluye detalles internos."
+          }
+        }
+      },
+      "EnlaceRespuesta": {
+        "type": "object",
+        "description": "Enlace temporal de descarga.",
+        "required": [
+          "url"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "URL firmada; vence en 5 minutos."
+          }
+        }
+      },
+      "ErrorRespuesta": {
+        "type": "object",
+        "description": "Cuerpo de toda respuesta de error.",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/DetalleError"
+          }
+        },
+        "example": {
+          "error": {
+            "codigo": "no_encontrado",
+            "mensaje": "ruta no encontrada"
+          }
+        }
+      },
+      "EstadoListo": {
+        "type": "object",
+        "description": "El servicio puede atender tráfico.",
+        "required": [
+          "status",
+          "database"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "database": {
+            "type": "string",
+            "example": "ok"
+          }
+        }
+      },
+      "EstadoVivo": {
+        "type": "object",
+        "description": "El proceso está vivo.",
+        "required": [
+          "status",
+          "version"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "ok"
+          },
+          "version": {
+            "type": "string",
+            "description": "Versión del binario desplegado.",
+            "example": "0.1.0"
+          }
+        }
+      },
+      "FichaRespuesta": {
+        "type": "object",
+        "description": "Ficha pública de una organización.",
+        "required": [
+          "id",
+          "razon_social",
+          "naturaleza",
+          "tipos",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "razon_social": {
+            "type": "string",
+            "example": "Seguridad Andina S.A.S."
+          },
+          "naturaleza": {
+            "type": "string",
+            "description": "`juridica` o `natural_con_rut`."
+          },
+          "tipos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "seguridad"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "description": "`sin_reclamar`, `reclamada` o `suspendida`."
+          }
+        }
+      },
+      "InicioPeticion": {
+        "type": "object",
+        "description": "Inicio de sesión.",
+        "required": [
+          "identificador",
+          "contrasena"
+        ],
+        "properties": {
+          "identificador": {
+            "type": "string",
+            "description": "Nombre de usuario o correo.",
+            "example": "ana.perez"
+          },
+          "contrasena": {
+            "type": "string"
+          },
+          "equipo_compartido": {
+            "type": "boolean",
+            "description": "Equipo compartido (portería): la sesión dura un turno (12 h)."
+          }
+        }
+      },
+      "InicioRespuesta": {
+        "type": "object",
+        "description": "Resultado del inicio de sesión: los tokens, o un desafío si la cuenta tiene segundo factor.",
+        "required": [
+          "resultado"
+        ],
+        "properties": {
+          "resultado": {
+            "type": "string",
+            "description": "`sesion` o `segundo_factor`.",
+            "example": "sesion"
+          },
+          "tokens": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TokensRespuesta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "desafio": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Con `segundo_factor`: enviarlo con el código TOTP a `POST /auth/sesion/segundo-factor`."
+          },
+          "desafio_expira_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "InscripcionRespuesta": {
+        "type": "object",
+        "description": "Secreto para la app autenticadora.",
+        "required": [
+          "secreto",
+          "uri"
+        ],
+        "properties": {
+          "secreto": {
+            "type": "string",
+            "description": "Para escribirlo a mano en la app."
+          },
+          "uri": {
+            "type": "string",
+            "description": "Para mostrarlo como código QR."
+          }
+        }
+      },
+      "MembresiaRespuesta": {
+        "type": "object",
+        "description": "Copropiedad donde la cuenta tiene roles vigentes.",
+        "required": [
+          "copropiedad_id",
+          "nombre",
+          "roles"
+        ],
+        "properties": {
+          "copropiedad_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Va en las rutas `/api/v1/copropiedades/{copropiedad_id}/…`."
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Conjunto Residencial Alameda"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos de los roles vigentes (p. ej. `administrador`, `propietario`)."
+          }
+        }
+      },
+      "MiembroPeticion": {
+        "type": "object",
+        "description": "Miembro de la organización.",
+        "required": [
+          "cuenta_id",
+          "rol"
+        ],
+        "properties": {
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rol": {
+            "type": "string",
+            "description": "`dueno`, `gestor` u `operario`.",
+            "example": "operario"
+          }
+        }
+      },
+      "NuevaCopropiedadPeticion": {
+        "type": "object",
+        "description": "Alta de una copropiedad.",
+        "required": [
+          "nombre",
+          "administrador_cuenta_id"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Conjunto Residencial Alameda"
+          },
+          "administrador_cuenta_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cuenta que será su primer administrador."
+          }
+        }
+      },
+      "NuevaOrganizacionPeticion": {
+        "type": "object",
+        "description": "Organización nueva.",
+        "required": [
+          "nit",
+          "razon_social",
+          "naturaleza",
+          "tipos"
+        ],
+        "properties": {
+          "nit": {
+            "type": "string",
+            "example": "900.123.456-8"
+          },
+          "razon_social": {
+            "type": "string"
+          },
+          "naturaleza": {
+            "type": "string",
+            "description": "`juridica` o `natural_con_rut`.",
+            "example": "juridica"
+          },
+          "tipos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "seguridad"
+            ]
+          },
+          "correo_contacto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "telefono_contacto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "NuevoRolPeticion": {
+        "type": "object",
+        "description": "Rol propio nuevo.",
+        "required": [
+          "codigo",
+          "nombre",
+          "permisos"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "description": "2 a 60 caracteres `a-z`, `0-9`, `_`.",
+            "example": "auxiliar_cartera"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Auxiliar de cartera"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "permisos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "contabilidad.ver"
+            ]
+          }
+        }
+      },
+      "OrganizacionCreada": {
+        "type": "object",
+        "description": "Organización creada o reutilizada.",
+        "required": [
+          "id",
+          "creada"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "creada": {
+            "type": "boolean",
+            "description": "`false` si ya existía con ese NIT (se reutiliza)."
+          }
+        }
+      },
+      "PerfilRespuesta": {
+        "type": "object",
+        "description": "Perfil de la cuenta.",
+        "required": [
+          "id",
+          "nombre",
+          "correo_verificado",
+          "segundo_factor_activo",
+          "es_superusuario",
+          "permisos_plataforma"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "usuario": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correo_verificado": {
+            "type": "boolean"
+          },
+          "segundo_factor_activo": {
+            "type": "boolean"
+          },
+          "es_superusuario": {
+            "type": "boolean",
+            "description": "Acceso total a la plataforma y a todas las copropiedades."
+          },
+          "permisos_plataforma": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Permisos de plataforma (vacío para la mayoría de las cuentas)."
+          }
+        }
+      },
+      "PermisoRespuesta": {
+        "type": "object",
+        "description": "Permiso del catálogo.",
+        "required": [
+          "codigo",
+          "ambito"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "roles.asignar"
+          },
+          "ambito": {
+            "type": "string",
+            "description": "`plataforma` o `copropiedad`."
+          }
+        }
+      },
+      "PermisosPeticion": {
+        "type": "object",
+        "description": "Permisos nuevos de un rol (reemplazan a los anteriores).",
+        "required": [
+          "permisos"
+        ],
+        "properties": {
+          "permisos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ReclamacionPeticion": {
+        "type": "object",
+        "description": "Solicitud para manejar la ficha de una organización.",
+        "required": [
+          "mensaje"
+        ],
+        "properties": {
+          "mensaje": {
+            "type": "string",
+            "description": "Por qué representa a la organización (cargo, soporte que enviará…)."
+          }
+        }
+      },
+      "ReclamacionRespuesta": {
+        "type": "object",
+        "description": "Reclamación creada.",
+        "required": [
+          "id",
+          "organizacion_id",
+          "cuenta_id",
+          "mensaje",
+          "estado",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mensaje": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`pendiente`, `aprobada` o `rechazada`."
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RecuperarPeticion": {
+        "type": "object",
+        "description": "Correo de la cuenta que olvidó la contraseña.",
+        "required": [
+          "correo"
+        ],
+        "properties": {
+          "correo": {
+            "type": "string",
+            "example": "ana@correo.co"
+          }
+        }
+      },
+      "RegistroPeticion": {
+        "type": "object",
+        "description": "Datos para crear una cuenta. Se inicia sesión luego con el usuario o el correo.",
+        "required": [
+          "nombre",
+          "contrasena"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Ana María Pérez"
+          },
+          "usuario": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "3 a 30 caracteres `a-z`, `0-9`, `.`, `_`, `-`; opcional si hay correo.",
+            "example": "ana.perez"
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Opcional si hay usuario; necesario para recuperar la contraseña.",
+            "example": "ana@correo.co"
+          },
+          "contrasena": {
+            "type": "string",
+            "description": "De 10 a 128 caracteres."
+          }
+        }
+      },
+      "RenovarPeticion": {
+        "type": "object",
+        "description": "Token de renovación.",
+        "required": [
+          "token_renovacion"
+        ],
+        "properties": {
+          "token_renovacion": {
+            "type": "string"
+          }
+        }
+      },
+      "ResolucionPeticion": {
+        "type": "object",
+        "description": "Decisión sobre una reclamación.",
+        "required": [
+          "aprobar"
+        ],
+        "properties": {
+          "aprobar": {
+            "type": "boolean"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "RestablecerPeticion": {
+        "type": "object",
+        "description": "Código recibido y contraseña nueva.",
+        "required": [
+          "correo",
+          "codigo",
+          "contrasena_nueva"
+        ],
+        "properties": {
+          "correo": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "123456"
+          },
+          "contrasena_nueva": {
+            "type": "string"
+          }
+        }
+      },
+      "RolRespuesta": {
+        "type": "object",
+        "description": "Rol con sus permisos.",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "ambito",
+          "es_plantilla",
+          "permisos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "administrador"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Administrador"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ambito": {
+            "type": "string",
+            "description": "`plataforma` o `copropiedad`."
+          },
+          "es_plantilla": {
+            "type": "boolean",
+            "description": "Rol del sistema: no se edita."
+          },
+          "permisos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "roles.ver",
+              "roles.asignar"
+            ]
+          }
+        }
+      },
+      "SegundoFactorPeticion": {
+        "type": "object",
+        "description": "Código TOTP para completar el inicio de sesión.",
+        "required": [
+          "desafio",
+          "codigo"
+        ],
+        "properties": {
+          "desafio": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "123456"
+          }
+        }
+      },
+      "SesionesCerradas": {
+        "type": "object",
+        "description": "Sesiones cerradas.",
+        "required": [
+          "cerradas"
+        ],
+        "properties": {
+          "cerradas": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "TokensRespuesta": {
+        "type": "object",
+        "description": "Tokens de una sesión. Se muestran **una sola vez**: el servidor solo guarda su hash.",
+        "required": [
+          "sesion_id",
+          "token_acceso",
+          "acceso_expira_en",
+          "token_renovacion",
+          "expira_maximo_en"
+        ],
+        "properties": {
+          "sesion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "token_acceso": {
+            "type": "string",
+            "description": "Va en `Authorization: Bearer …`; dura 30 minutos."
+          },
+          "acceso_expira_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "token_renovacion": {
+            "type": "string",
+            "description": "Se cambia por tokens nuevos en `POST /auth/sesion/renovar`; cada uso lo reemplaza."
+          },
+          "expira_maximo_en": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Después de esto hay que volver a iniciar sesión (30 días; 12 h en equipo compartido)."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Token de acceso de `POST /api/v1/auth/sesion` (opaco, 30 minutos)"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "salud",
+      "description": "Sondas de vida y disponibilidad del servicio"
+    },
+    {
+      "name": "archivos",
+      "description": "Archivos y adjuntos: descarga con enlaces firmados de vida corta"
+    },
+    {
+      "name": "autenticacion",
+      "description": "Registro, inicio y cierre de sesión"
+    },
+    {
+      "name": "cuenta",
+      "description": "La cuenta autenticada"
+    },
+    {
+      "name": "roles",
+      "description": "Roles, permisos y asignaciones"
+    },
+    {
+      "name": "organizaciones",
+      "description": "Organizaciones compartidas y contratos de servicio"
+    },
+    {
+      "name": "plataforma",
+      "description": "Operación de la plataforma (exige segundo factor)"
+    }
+  ]
+}

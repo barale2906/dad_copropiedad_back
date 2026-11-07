@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO archivos (id, tenant_id, clave, almacen, nombre_original, tipo_mime,\n                                   tamano_bytes, sha256, clasificacion, subido_por, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bd93f72400a9ce5404569a7f9a29b46f3873644e6ace4bf1791107d19e6c4cbf"
+}

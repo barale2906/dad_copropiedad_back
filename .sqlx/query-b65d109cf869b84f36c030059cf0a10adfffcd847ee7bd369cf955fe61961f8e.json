@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cuentas SET totp_secreto = $2, totp_activado_en = $3 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b65d109cf869b84f36c030059cf0a10adfffcd847ee7bd369cf955fe61961f8e"
+}

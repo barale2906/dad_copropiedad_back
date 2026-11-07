@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT finalidad FROM autorizaciones_tratamiento\n             WHERE persona_id = $1 AND revocada_en IS NULL\n             ORDER BY finalidad",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "finalidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_tratamiento",
+            "name": "finalidad"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a115553b01f9c756af57e9d496c38cf165e389e590fc2945b899db92d66e4087"
+}

@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO autorizaciones_tratamiento\n                 (id, tenant_id, persona_id, politica_id, finalidad, medio,\n                  evidencia_archivo_id, otorgada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n             ON CONFLICT (tenant_id, persona_id, finalidad) WHERE revocada_en IS NULL\n             DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dd666d178a83ffabca2903ef5db566a3f2e9893d36b507a3c7f7722fe7c2d316"
+}

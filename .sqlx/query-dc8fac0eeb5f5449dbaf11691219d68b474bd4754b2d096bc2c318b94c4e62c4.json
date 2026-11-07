@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE organizaciones SET\n                 razon_social = coalesce($2, razon_social),\n                 tipos = coalesce($3, tipos),\n                 correo_contacto = coalesce($4, correo_contacto),\n                 telefono_contacto = coalesce($5, telefono_contacto),\n                 actualizada_en = $6\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "TextArray",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dc8fac0eeb5f5449dbaf11691219d68b474bd4754b2d096bc2c318b94c4e62c4"
+}

@@ -47,6 +47,9 @@ pub struct AppConfig {
     pub run_migrations: bool,
     pub request_timeout: Duration,
     pub log_format: LogFormat,
+    /// Publica la documentación interactiva (`/docs`) y el contrato (`/api-docs/openapi.json`).
+    /// Desactivada por defecto: en producción solo se activa si el acceso está protegido.
+    pub docs_api_habilitada: bool,
 }
 
 // `Debug` manual para no imprimir credenciales de la base de datos en los logs.
@@ -64,6 +67,7 @@ impl std::fmt::Debug for AppConfig {
             .field("run_migrations", &self.run_migrations)
             .field("request_timeout", &self.request_timeout)
             .field("log_format", &self.log_format)
+            .field("docs_api_habilitada", &self.docs_api_habilitada)
             .finish()
     }
 }
@@ -89,6 +93,7 @@ impl AppConfig {
             run_migrations: parse_or("RUN_MIGRATIONS", false)?,
             request_timeout: Duration::from_secs(parse_or("REQUEST_TIMEOUT_SECS", 30)?),
             log_format: parse_or("LOG_FORMAT", LogFormat::Pretty)?,
+            docs_api_habilitada: parse_or("API_DOCS_HABILITADA", false)?,
         };
         if config.run_migrations && config.migrations_database_url.is_none() {
             return Err(ConfigError::Missing("DATABASE_URL"));
@@ -130,6 +135,171 @@ impl WhatsappConfig {
         Ok(Self {
             verify_token: required("WHATSAPP_VERIFY_TOKEN")?,
             app_secret: required("WHATSAPP_APP_SECRET")?,
+        })
+    }
+}
+
+/// Cifrado de la conexión SMTP.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SeguridadSmtp {
+    /// Conexión en claro que se cifra con STARTTLS (puerto 587). Recomendado.
+    Starttls,
+    /// TLS desde el inicio (puerto 465).
+    Tls,
+    /// Sin cifrado: **solo desarrollo** (Mailpit en `localhost:1025`).
+    Ninguna,
+}
+
+impl FromStr for SeguridadSmtp {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "starttls" => Ok(Self::Starttls),
+            "tls" => Ok(Self::Tls),
+            "ninguna" => Ok(Self::Ninguna),
+            otro => Err(format!(
+                "se esperaba `starttls`, `tls` o `ninguna`, se recibió `{otro}`"
+            )),
+        }
+    }
+}
+
+/// Servidor de correo saliente (en producción, el SMTP de HestiaCP del VPS).
+#[derive(Clone)]
+pub struct SmtpConfig {
+    pub host: String,
+    pub puerto: u16,
+    pub seguridad: SeguridadSmtp,
+    /// Usuario y contraseña; ambos vacíos = sin autenticación (Mailpit).
+    pub usuario: Option<String>,
+    pub contrasena: Option<String>,
+    /// Remitente de todos los correos, p. ej. `DAD Copropiedad <no-responder@dominio.co>`.
+    pub remitente: String,
+}
+
+impl std::fmt::Debug for SmtpConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SmtpConfig")
+            .field("host", &self.host)
+            .field("puerto", &self.puerto)
+            .field("seguridad", &self.seguridad)
+            .field("usuario", &self.usuario.as_ref().map(|_| "<oculto>"))
+            .field("contrasena", &self.contrasena.as_ref().map(|_| "<oculto>"))
+            .field("remitente", &self.remitente)
+            .finish()
+    }
+}
+
+impl SmtpConfig {
+    /// Lee `SMTP_*`. Devuelve `None` si `SMTP_HOST` no está definido: el envío de correo queda
+    /// desactivado (el gateway lo advierte al arrancar).
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si `SMTP_HOST` existe pero falta `SMTP_REMITENTE`, si un valor es
+    /// inválido o si se define solo uno de usuario y contraseña.
+    pub fn from_env() -> Result<Option<Self>, ConfigError> {
+        let _ = dotenvy::dotenv();
+        let Some(host) = optional("SMTP_HOST") else {
+            return Ok(None);
+        };
+        let usuario = optional("SMTP_USUARIO");
+        let contrasena = optional("SMTP_CONTRASENA");
+        if usuario.is_some() != contrasena.is_some() {
+            return Err(ConfigError::Invalid {
+                var: "SMTP_USUARIO/SMTP_CONTRASENA",
+                detail: "defina ambos o ninguno".into(),
+            });
+        }
+        Ok(Some(Self {
+            host,
+            puerto: parse_or("SMTP_PUERTO", 587)?,
+            seguridad: parse_or("SMTP_SEGURIDAD", SeguridadSmtp::Starttls)?,
+            usuario,
+            contrasena,
+            remitente: required("SMTP_REMITENTE")?,
+        }))
+    }
+}
+
+/// Almacén de archivos configurado (`ARCHIVOS_ALMACEN`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TipoAlmacen {
+    /// Disco del servidor, bajo `ARCHIVOS_DIR`.
+    Local,
+}
+
+impl FromStr for TipoAlmacen {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "local" => Ok(Self::Local),
+            "s3" => Err("el almacén `s3` aún no está implementado (ADR 0003)".into()),
+            otro => Err(format!("se esperaba `local` o `s3`, se recibió `{otro}`")),
+        }
+    }
+}
+
+/// Archivos y adjuntos (ADR 0003).
+#[derive(Clone)]
+pub struct ArchivosConfig {
+    pub almacen: TipoAlmacen,
+    /// Directorio raíz del almacén local. Debe estar en la copia de seguridad del VPS.
+    pub dir: String,
+    /// Secreto HMAC de los enlaces de descarga (≥ 32 caracteres). Rotarlo invalida los enlaces
+    /// vigentes, que duran minutos.
+    pub secreto_enlaces: String,
+    /// URL pública de la API con la que se arman los enlaces (p. ej. `https://api.dominio.co`).
+    pub url_publica: String,
+}
+
+impl std::fmt::Debug for ArchivosConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ArchivosConfig")
+            .field("almacen", &self.almacen)
+            .field("dir", &self.dir)
+            .field("secreto_enlaces", &"<oculto>")
+            .field("url_publica", &self.url_publica)
+            .finish()
+    }
+}
+
+impl ArchivosConfig {
+    /// Lee `ARCHIVOS_*`.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si falta `ARCHIVOS_SECRETO_ENLACES` o `ARCHIVOS_URL_PUBLICA`, o si
+    /// `ARCHIVOS_ALMACEN` no es un almacén disponible.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        Ok(Self {
+            almacen: parse_or("ARCHIVOS_ALMACEN", TipoAlmacen::Local)?,
+            dir: optional("ARCHIVOS_DIR").unwrap_or_else(|| "./datos/archivos".into()),
+            secreto_enlaces: required("ARCHIVOS_SECRETO_ENLACES")?,
+            url_publica: required("ARCHIVOS_URL_PUBLICA")?,
+        })
+    }
+}
+
+/// Seguridad de las cuentas.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SeguridadConfig {
+    /// Operar en el ámbito de plataforma exige una sesión con segundo factor (TOTP)
+    /// (`PLATAFORMA_EXIGE_SEGUNDO_FACTOR`, `true` por defecto). Solo se apaga en desarrollo.
+    pub plataforma_exige_segundo_factor: bool,
+}
+
+impl SeguridadConfig {
+    /// # Errors
+    ///
+    /// [`ConfigError::Invalid`] si el valor no es un booleano.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        Ok(Self {
+            plataforma_exige_segundo_factor: parse_or("PLATAFORMA_EXIGE_SEGUNDO_FACTOR", true)?,
         })
     }
 }

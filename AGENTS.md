@@ -46,6 +46,9 @@ crates/
   infra-postgres/  SQLx: pool, migraciones, transacción por tenant (RLS), repositorios
   infra-whatsapp/  Cloud API: firma de Meta, webhook entrante, (próximo) cliente de envío
   infra-pdf/       actas con Typst (pendiente)
+  infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
+  infra-archivos/  almacén de archivos (disco local; S3 previsto) y enlaces firmados: puerto AlmacenArchivos
+  infra-seguridad/ contraseñas Argon2id y segundo factor TOTP: puertos HashContrasenas y SegundoFactor
   shared/          configuración (env), telemetría, apagado. Sin Axum ni SQL.
 apps/
   api/             binario `dad_copropiedad_api`: REST para el front + WebSocket de resultados
@@ -89,14 +92,17 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 |---|---|---|---|
 | Lenguaje backend | Rust 1.99, edición 2024 | En uso | Fijado en `rust-toolchain.toml`. |
 | HTTP / WebSocket | Axum 0.8 + Tokio + tower-http | En uso | Middlewares: request-id, trace, timeout, límite de cuerpo. |
-| Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. |
+| Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. Extensiones `unaccent` y `pg_trgm` (búsqueda normalizada). |
 | Caché / tiempo real | Redis 8 | Infra lista | Solo sesiones de conversación y pub/sub de resultados. La verdad vive en PostgreSQL. |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |
 | Decimales / fechas / IDs | rust_decimal · chrono · uuid (v7, v4 para votos) | En uso | |
-| Criptografía | hmac + sha2 + hex | En uso | Firma de webhooks de Meta. |
+| Criptografía | hmac + sha2 + sha1 + hex · argon2 · getrandom | En uso | Firma de webhooks de Meta, enlaces firmados, SHA-256 de archivos y tokens; Argon2id para contraseñas; TOTP (HMAC-SHA1, RFC 6238) en `infra-seguridad`. |
+| Autenticación | Tokens opacos propios + TOTP | En uso | Usuario o correo + contraseña; acceso 30 min, renovación rotativa con detección de reutilización (ADR 0005). Sin JWT. |
 | Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
+| Correo | lettre 0.11 (SMTP, rustls) · SMTP de HestiaCP en producción · Mailpit en desarrollo | En uso | Crate `infra-correo`, puerto `EnvioCorreo`; variables `SMTP_*`. Mailpit atrapa los correos locales (bandeja en `localhost:8025`). |
+| Archivos | Disco del VPS (`ARCHIVOS_DIR`) · S3 previsto | En uso | Crate `infra-archivos`, puerto `AlmacenArchivos`; clave lógica + columna `almacen`; descargas con enlace HMAC de 5 min. Metodología de migración en ADR 0003. |
 | Limitador | governor | Previsto | 80 mensajes/s por línea. |
-| OpenAPI | utoipa (+ utoipa-swagger-ui / utoipa-scalar) | Previsto | Contrato de la API REST (§7). |
+| OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
 | Actas | Typst | Previsto | En `infra-pdf`. |
 | Contenedores | Docker Compose (dev) | En uso | Imagen de producción construida en CI. |
 | CI/CD | GitHub Actions | En uso | `.github/workflows/ci.yml`: fmt, clippy, pruebas con PostgreSQL, rustdoc, cargo-deny. Pendiente: build de imagen y despliegue. |
@@ -112,6 +118,9 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 - Errores: `DominioError` (domain) → `AppError` (application) → `ApiError` (`apps/api/src/error.rs`, único mapeo a HTTP). `anyhow` solo en `main`/arranque. Mensajes de error al cliente sin detalles internos.
 - Puertos asíncronos: `fn x(&self, …) -> impl Future<Output = AppResult<T>> + Send` (sin `async-trait`); en la implementación basta `async fn`.
 - Casos de uso genéricos sobre sus puertos; se prueban con dobles en memoria (ver `casos_uso/emitir_voto.rs`).
+- **Unidad de trabajo y auditoría**: un caso de uso que modifica datos abre una transacción con el puerto `UnidadDeTrabajo` (implementación `infra_postgres::UnidadDeTrabajoPg`, que fija el tenant), hace el cambio con los puertos que implementa la transacción, registra un `EventoAuditoria` con `RegistroAuditoria` y llama a `confirmar()`; sin `confirmar` todo se revierte. Acciones como constantes `AccionAuditoria::new("modulo.recurso.verbo")` (un formato inválido no compila). `DetalleAuditoria` rechaza claves de datos personales o del contenido de un voto. Dobles en memoria: `puertos::unidad_trabajo::memoria`.
+- **Permisos**: todo caso de uso que lee o modifica datos de negocio llama a `ctx.exigir(Permiso::…)` (`AppError::SinPermiso` → 403 `sin_permiso`). `Contexto::new(tenant)` es el contexto del **sistema** (todos los permisos de copropiedad); las peticiones usan `Contexto::de_cuenta`. Un permiso nuevo = variante en `domain::Permiso` + migración que lo inserte en `permisos` (y en las plantillas que correspondan); la prueba `catalogo_de_permisos_y_plantillas_coinciden_con_el_codigo` lo exige. Nadie otorga lo que no tiene (no escalamiento).
+- **Dos ámbitos de transacción**: `UnidadDeTrabajo` (copropiedad, `app.tenant_id`) y `UnidadDeTrabajoPlataforma` (cuentas, sesiones, roles de plataforma, organizaciones; `app.plataforma = on`). Nunca leer cuentas o sesiones desde una transacción de copropiedad: lo que cruce ámbitos va por una función `SECURITY DEFINER`.
 - **Estados como tipos**: transiciones solo en `EstadoReunion::transicionar` / `EstadoPregunta::transicionar`; votar exige una `PreguntaAbierta` (solo la construye `Pregunta::para_votar`).
 - IDs tipados (`TenantId`, `PreguntaId`, …): UUID v7, **excepto `VotoId` (UUID v4)**.
 - Enums persistidos con `enum_texto!` (`as_str` / `TryFrom<&str>`); el texto es contrato con la BD.
@@ -143,7 +152,7 @@ dos familias complementarias:
 | Adaptadores externos | Firma, parseo y normalización de payloads | `crates/infra-*` con fixtures reales (JSON de ejemplo de Meta) |
 | Funcionales de API | Endpoint completo: petición → respuesta y efectos | `tower::ServiceExt::oneshot` sobre el `router` de cada app (`apps/*/src/routes`); con BD real vía `#[sqlx::test]` cuando aplique |
 | Concurrencia | Emisiones simultáneas del mismo bien privado → un único voto | `tokio::spawn` + `#[sqlx::test]` |
-| Contrato | El OpenAPI generado coincide con lo publicado | Prueba que serializa el documento OpenAPI (cuando exista utoipa) |
+| Contrato | El OpenAPI generado coincide con `apps/api/openapi.json` | `apps/api/tests/contrato_openapi.rs`; regenerar a propósito con `make openapi` |
 
 Reglas:
 - Cada regla de negocio tiene al menos un caso positivo y uno negativo; cada invariante de §9 tiene una prueba que fallaría si se rompe.
@@ -175,7 +184,12 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - Enlaces internos con `[`Tipo`]` (intra-doc links); `make doc` debe pasar sin advertencias.
 - **Cada endpoint REST** se anota con `#[utoipa::path]`: método, ruta, parámetros, cuerpo, respuestas (incluidos errores con su `codigo`), seguridad y etiqueta del módulo. Cada DTO de entrada/salida deriva `ToSchema` con descripciones y ejemplos. Un endpoint sin documentación OpenAPI no está terminado.
 - DTOs de la API viven en `apps/api` (no se exponen entidades de dominio directamente); versionado en la ruta (`/api/v1`).
-- Formato de error uniforme: `{ "error": { "codigo": "...", "mensaje": "..." } }`; documentar cada `codigo` posible.
+- Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global). Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
+- Otras rutas: `/api/v1/auth/…` (sin sesión: registro, inicio de sesión), `/api/v1/organizaciones/{organizacion_id}/…`, `/api/v1/permisos` y `/api/v1/archivos/descarga` (sin sesión: el enlace firmado es la credencial, ADR 0003).
+- Autorización en los handlers con los extractores de `api::sesion`: `CuentaAutenticada` (`/yo`, `/organizaciones`), `OperadorPlataforma` (`/plataforma`, exige segundo factor) y `EnCopropiedad` (`/copropiedades/{copropiedad_id}`, carga los permisos; 404 si la cuenta no tiene roles allí). Cada endpoint protegido declara `security(("bearer" = []))`.
+- Handlers con los extractores de `api::extractores` (`Json`, `Query`, `Path`), nunca los de `axum` directamente: así una petición mal formada también responde con el error uniforme (`peticion_invalida`).
+- Listados paginados por cursor: `ParametrosPagina` (`?limite=&despues=`) → `application::SolicitudPagina` → el repositorio consulta `filas_a_consultar()` → `Pagina::desde_filas` → `PaginaRespuesta<T>`. Nunca `OFFSET`.
+- Formato de error uniforme: `{ "error": { "codigo": "...", "mensaje": "..." } }` (`ErrorRespuesta`). Los códigos viven en `CodigoError` (`apps/api/src/error.rs`) con su tabla código → HTTP → significado; un código nuevo se agrega ahí y en la tabla.
 - Comentarios de línea solo para explicar el *porqué* (decisiones, normas legales, riesgos), no el *qué*.
 - Decisiones de arquitectura relevantes: registrar un ADR breve en `docs/adr/NNNN-titulo.md` (contexto, decisión, consecuencias).
 - `README.md`: cómo arrancar y operar. `AGENTS.md`: estándares. Mantener ambos al día.
@@ -188,6 +202,10 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - Consultas que cruzan tenants (enrutamiento del gateway, consumo del outbox) **solo** mediante funciones `SECURITY DEFINER` (`SET search_path`, `REVOKE … FROM PUBLIC`) que devuelven lo mínimo.
 - `lineas_whatsapp` es tabla de plataforma (sin tenant). Una línea o una por asamblea = configuración.
 - Toda modificación de esquema = nueva migración reversible (`make migracion NOMBRE=…`) probada con up → down → up. **Nunca editar una migración ya aplicada en otro entorno.**
+- **Archivos** (ADR 0003): nadie toca rutas de disco; todo pasa por `AlmacenArchivos` con una `ClaveArchivo`. La fila de `archivos` guarda la clave lógica y el `almacen`, nunca rutas absolutas. El tipo se valida por contenido (`TipoArchivo::validar`), nunca por extensión. El nombre original no va a logs ni a la auditoría. Casos de uso en `casos_uso::archivos` (`subir_archivo`, `enlace_descarga`, `migrar_lote`).
+- **Datos personales** (ADR 0004): toda columna con datos personales lleva `COMMENT ON COLUMN … IS 'dato_personal: …'` (o `dato_sensible:`) en su migración y se agrega a la prueba `columnas_personales_estan_clasificadas`. Antes de tratar datos para comunicaciones o publicidad se consulta `casos_uso::proteccion_datos::esta_autorizado`.
+- **Búsqueda**: por texto con `normalizar(columna)` (sin tildes ni mayúsculas) y un índice GIN `gin_trgm_ops` sobre esa expresión; nunca `ILIKE` sobre la columna cruda. Ordenar listados por nombre con `normalizar(...)`.
+- **Módulos contratados**: los casos de uso o routers de un módulo vendible (`domain::Modulo`) exigen `casos_uso::modulos::exigir_modulo`; si no está habilitado → `modulo_no_habilitado` (403).
 - Enumeraciones como `TEXT` + `CHECK`; coeficientes `NUMERIC(10,8)`; fechas `TIMESTAMPTZ`; índices para cada consulta frecuente y cada FK usada en filtros.
 - Preferir `sqlx::query!`/`query_as!`; tras cambiar consultas: `make sqlx-prepare` y versionar `.sqlx/`. SQL dinámico solo con `AssertSqlSafe`, justificado, y con datos enlazados (`$1`), nunca interpolados desde la entrada del usuario. Prohibido `SELECT *`.
 
@@ -207,7 +225,7 @@ Riesgo residual conocido: el orden físico de inserción en `votos` podría corr
 - Webhook: verificar `X-Hub-Signature-256` sobre el cuerpo **crudo** antes de deserializar; responder rápido.
 - Sesión por **(línea, teléfono)** (`wa:sesion:{linea}:{telefono}`), resuelta contra las reuniones activas en que el teléfono está inscrito; si hay varias, se pregunta con una lista (`casos_uso::resolver_reunion`).
 - Votos con botones (≤ 3 opciones) o listas (≤ 10) — `ContenidoSaliente::elecciones`.
-- **Outbox** en lugar de colas externas: consumo con `outbox_reclamar` (`FOR UPDATE SKIP LOCKED`) y marcado con `outbox_marcar_enviado` / `outbox_marcar_fallido`. Prioridad: confirmaciones de voto → preguntas nuevas → recordatorios, dentro de 80 mps por línea.
+- **Outbox multicanal** (`canal`: whatsapp, correo, push) en lugar de colas externas: se encola con `RegistroOutbox` dentro de la transacción del hecho; el worker del gateway (`worker_salida`, caso de uso `despachar_lote`) reclama **solo los canales que sabe enviar** con `outbox_reclamar(canales, límite)` (`FOR UPDATE SKIP LOCKED`) y marca con `outbox_marcar_enviado` / `outbox_marcar_fallido` (reintentos con espera exponencial, `PoliticaReintentos`). Prioridad: confirmaciones → eventos → recordatorios → publicidad (9), dentro de 80 mps por línea en WhatsApp. El texto de error de un envío puede contener el destino: va a la fila del outbox, nunca a los logs.
 - Resultados en vivo: proyección en memoria (`ProyeccionResultados`) emitida cada ~500 ms por reunión; nunca un mensaje por voto.
 - Registro: enlace prellenado con botones, prerregistro y QR en puerta (`inscripciones.metodo`); los tokens se guardan como hash.
 
@@ -241,9 +259,11 @@ Una tarea está terminada solo si:
 | Primer arranque | `make herramientas` · `make setup` | `cp .env.example .env && docker compose up -d --wait && sqlx migrate run` |
 | Contenedores | `make up` · `make down` · `make reiniciar-bd` | `docker compose …` |
 | Ejecutar | `make api` · `make gateway` · `make dev` | `cargo api` · `cargo gateway` · `bacon` |
+| Primer superusuario | `make superusuario USUARIO=admin CORREO=a@b.co` | `DAD_ADMIN_CONTRASENA=… cargo run --bin dad_admin -- crear-superusuario --usuario admin` |
 | Verificación completa | `make verificar` | `cargo fmt --all --check && cargo lint && cargo pruebas` |
-| Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) |
+| Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) + `cargo test --workspace --doc` (doctests) |
 | Documentación | `make doc` | `cargo doc --workspace --no-deps` |
+| Contrato OpenAPI | `make openapi` | `ACTUALIZAR_OPENAPI=1 cargo nextest run -p api --test contrato_openapi` |
 | Migraciones | `make migracion NOMBRE=x` · `make migrar` · `make revertir` | `sqlx migrate add -r x` … |
 | Dependencias | `make deny` · `make audit` | `cargo deny check` · `cargo audit` |
 

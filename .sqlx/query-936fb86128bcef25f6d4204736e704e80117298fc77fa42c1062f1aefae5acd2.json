@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cuentas SET intentos_fallidos = 0, bloqueo_hasta = NULL, ultimo_acceso_en = $2\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "936fb86128bcef25f6d4204736e704e80117298fc77fa42c1062f1aefae5acd2"
+}

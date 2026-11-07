@@ -18,12 +18,20 @@ application = { path = "crates/application" }
 infra-postgres = { path = "crates/infra-postgres" }
 infra-whatsapp = { path = "crates/infra-whatsapp" }
 infra-pdf = { path = "crates/infra-pdf" }
+infra-correo = { path = "crates/infra-correo" }
+infra-archivos = { path = "crates/infra-archivos" }
+infra-seguridad = { path = "crates/infra-seguridad" }
 
 # HTTP / async
 axum = { version = "0.8.9", features = ["macros", "ws"] }
 tokio = { version = "1.54.1", features = ["full"] }
 tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.7.1", features = ["trace", "cors", "request-id", "timeout", "util", "limit"] }
+
+# Contrato OpenAPI de la API REST (AGENTS.md §7)
+utoipa = { version = "6.0.0", features = ["axum_extras", "uuid", "chrono", "decimal", "preserve_order", "preserve_path_order"] }
+utoipa-axum = "0.3.0"
+utoipa-scalar = { version = "0.4.0", features = ["axum"] }
 
 # Serialización
 serde = { version = "1.0.229", features = ["derive"] }
@@ -54,8 +62,15 @@ thiserror = "2.0.21"
 anyhow = "1.0.104"
 dotenvy = "0.15.7"
 
-# Criptografía (verificación de firma de webhooks de Meta)
+# Correo saliente por SMTP (sin OpenSSL: rustls + raíces webpki)
+lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls-tls"] }
+
+# Criptografía (firma de webhooks de Meta, enlaces de descarga firmados, huellas SHA-256)
 hmac = "0.13.0"
+sha1 = "0.11.0"
+# Contraseñas (Argon2id) y aleatoriedad del sistema operativo (tokens de sesión, códigos)
+argon2 = { version = "0.6.0", features = ["getrandom"] }
+getrandom = "0.4.3"
 sha2 = "0.11.1"
 hex = "0.4.3"
 

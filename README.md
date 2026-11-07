@@ -24,13 +24,29 @@ make verificar      # fmt + clippy + pruebas, antes de terminar una tarea
 Equivalente sin Make:
 ```bash
 cp .env.example .env          # variables locales
-docker compose up -d --wait   # PostgreSQL 18 (+ rol dad_app) y Redis 8
+docker compose up -d --wait   # PostgreSQL 18 (+ rol dad_app), Redis 8 y Mailpit
 cargo api                     # aplica migraciones y levanta la API en :8080
 cargo gateway                 # webhook de WhatsApp en :8081
 
 curl localhost:8080/health    # {"status":"ok",...}
 curl localhost:8080/ready     # {"database":"ok","status":"ok"}
 ```
+Correos en desarrollo: `docker compose up -d` también levanta **Mailpit**; todo lo que envíe el
+gateway aparece en <http://localhost:8025> (no sale a internet).
+
+Primer acceso: cree el superusuario con `make superusuario USUARIO=admin CORREO=admin@dominio.co`
+(pide la contraseña), inicie sesión en `POST /api/v1/auth/sesion` desde `/docs` y use el token
+con el botón *Authorize*. Con él se dan de alta copropiedades (`POST /api/v1/plataforma/copropiedades`)
+y se asignan sus administradores. En desarrollo `PLATAFORMA_EXIGE_SEGUNDO_FACTOR=false`; en
+producción la plataforma exige segundo factor (`/api/v1/yo/segundo-factor`).
+
+Archivos en desarrollo: se guardan en `./datos/archivos` (`ARCHIVOS_DIR`, ignorado por git). En
+producción, un directorio fuera del código incluido en la copia de seguridad del VPS y un
+`ARCHIVOS_SECRETO_ENLACES` propio (`openssl rand -hex 32`). Migrar luego a S3: ADR 0003.
+
+Con `API_DOCS_HABILITADA=true` (así viene en `.env.example`): documentación interactiva en
+<http://localhost:8080/docs> y contrato en <http://localhost:8080/api-docs/openapi.json>.
+
 > El rol `dad_app` se crea con login la **primera vez** que se crea el volumen de PostgreSQL
 > (`docker/postgres/init`). Si ya tenías el volumen: `docker compose down -v && docker compose up -d --wait`.
 
@@ -59,6 +75,9 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-postgres` | Adaptador | SQLx, RLS por tenant, repositorios |
 | `crates/infra-whatsapp` | Adaptador | Cloud API de Meta: firma, webhook, envío |
 | `crates/infra-pdf` | Adaptador | Actas con Typst (pendiente) |
+| `crates/infra-correo` | Adaptador | Correo saliente por SMTP (lettre) |
+| `crates/infra-seguridad` | Adaptador | Contraseñas Argon2id y segundo factor TOTP |
+| `crates/infra-archivos` | Adaptador | Almacén de archivos en disco y enlaces de descarga firmados (S3 previsto, ADR 0003) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |
 | `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook, outbox, worker |
@@ -66,5 +85,6 @@ sqlx migrate revert            # revertir la última
 
 ## Estándares y documentación
 - [`AGENTS.md`](AGENTS.md): **estándares obligatorios** (arquitectura, reutilización, pruebas, documentación, invariantes). Lo leen todas las herramientas: Claude Code (`CLAUDE.md`), Cursor (`.cursor/rules`), VS Code Copilot (`.github/copilot-instructions.md`), opencode y Codex.
-- `make doc`: documentación del código con rustdoc (`target/doc`). La documentación OpenAPI/Swagger de la API REST se generará con utoipa.
+- `make doc`: documentación del código con rustdoc (`target/doc`).
+- Contrato de la API REST: [`apps/api/openapi.json`](apps/api/openapi.json), generado con utoipa desde las rutas. Si cambias rutas o DTOs, `make openapi` lo regenera (una prueba falla si queda desactualizado).
 - [`docs/adr/`](docs/adr/): decisiones de arquitectura.

@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, organizacion_id, cuenta_id, mensaje, estado, creada_en\n             FROM reclamaciones_organizacion WHERE estado = 'pendiente' ORDER BY creada_en",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reclamaciones_organizacion",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reclamaciones_organizacion",
+            "name": "organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reclamaciones_organizacion",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "mensaje",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reclamaciones_organizacion",
+            "name": "mensaje"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reclamaciones_organizacion",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reclamaciones_organizacion",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7bdb86973875c4dc28e4513a45de30848ca525458b4036c673350885a5101261"
+}

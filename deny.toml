@@ -20,6 +20,9 @@ allow = [
     "Unicode-3.0",
     "Zlib",
     "CDLA-Permissive-2.0",
+    # Equivalente a dominio público (ni siquiera exige conservar el aviso). La usa
+    # quoted_printable, dependencia de lettre (correo).
+    "0BSD",
 ]
 confidence-threshold = 0.8
 

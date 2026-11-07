@@ -1,0 +1,505 @@
+//! Permisos y roles (estilo *spatie/laravel-permission* con *teams*: el "team" es la
+//! copropiedad).
+//!
+//! - Hay dos **ámbitos**: permisos de **plataforma** (operar la plataforma: altas de PH,
+//!   soporte, moderación) y de **copropiedad** (operar dentro de una PH). Un rol tiene permisos de
+//!   un solo ámbito.
+//! - El catálogo de permisos vive **en el código** ([`Permiso`]) y se sincroniza con la tabla
+//!   `permisos` por migración (una prueba compara ambos).
+//! - Los **roles plantilla** ([`ROLES_PLANTILLA`]) vienen con el sistema y no se editan; cada
+//!   copropiedad puede crear roles propios con permisos de copropiedad, y el superusuario roles
+//!   de plataforma propios.
+//! - El **superusuario** tiene todos los permisos de ambos ámbitos en todas las copropiedades.
+
+use std::collections::BTreeSet;
+
+use serde::{Deserialize, Serialize};
+
+use crate::DominioError;
+
+/// Ámbito de un permiso o de un rol.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Ambito {
+    Plataforma,
+    Copropiedad,
+}
+
+enum_texto!(Ambito {
+    Plataforma => "plataforma",
+    Copropiedad => "copropiedad",
+});
+
+macro_rules! catalogo_permisos {
+    ($( $(#[$meta:meta])* $variante:ident => $texto:literal, $ambito:ident; )+) => {
+        /// Permiso del catálogo. El texto (`modulo.recurso.accion`) es contrato con la BD y con
+        /// los clientes: no se renombra sin migración.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        #[serde(try_from = "String", into = "&'static str")]
+        pub enum Permiso {
+            $( $(#[$meta])* $variante, )+
+        }
+
+        enum_texto!(Permiso { $( $variante => $texto, )+ });
+
+        impl Permiso {
+            /// Ámbito al que pertenece el permiso.
+            pub const fn ambito(self) -> Ambito {
+                match self {
+                    $( Self::$variante => Ambito::$ambito, )+
+                }
+            }
+        }
+    };
+}
+
+catalogo_permisos! {
+    // --- Plataforma ---
+    /// Dar de alta copropiedades y asignar su primer administrador.
+    PlataformaCopropiedadesCrear => "plataforma.copropiedades.crear", Plataforma;
+    PlataformaCopropiedadesVer => "plataforma.copropiedades.ver", Plataforma;
+    PlataformaCuentasVer => "plataforma.cuentas.ver", Plataforma;
+    PlataformaCuentasBloquear => "plataforma.cuentas.bloquear", Plataforma;
+    /// Crear y editar roles de plataforma propios.
+    PlataformaRolesGestionar => "plataforma.roles.gestionar", Plataforma;
+    PlataformaRolesAsignar => "plataforma.roles.asignar", Plataforma;
+    /// Revisar reclamaciones de organizaciones y corregir fichas.
+    PlataformaOrganizacionesRevisar => "plataforma.organizaciones.revisar", Plataforma;
+    PlataformaModulosGestionar => "plataforma.modulos.gestionar", Plataforma;
+    PlataformaAuditoriaVer => "plataforma.auditoria.ver", Plataforma;
+    PlataformaPublicidadModerar => "plataforma.publicidad.moderar", Plataforma;
+    PlataformaFacturacionVer => "plataforma.facturacion.ver", Plataforma;
+
+    // --- Copropiedad ---
+    CopropiedadDatosVer => "copropiedad.datos.ver", Copropiedad;
+    CopropiedadDatosEditar => "copropiedad.datos.editar", Copropiedad;
+    RolesVer => "roles.ver", Copropiedad;
+    /// Crear y editar los roles propios de la copropiedad.
+    RolesGestionar => "roles.gestionar", Copropiedad;
+    RolesAsignar => "roles.asignar", Copropiedad;
+    AuditoriaVer => "auditoria.ver", Copropiedad;
+    ArchivosSubir => "archivos.subir", Copropiedad;
+    /// Ver archivos públicos e internos.
+    ArchivosVer => "archivos.ver", Copropiedad;
+    /// Ver archivos con datos personales o sensibles.
+    ArchivosPersonalesVer => "archivos.personales.ver", Copropiedad;
+    PersonasVer => "personas.ver", Copropiedad;
+    PersonasEditar => "personas.editar", Copropiedad;
+    PersonasDatosSensiblesVer => "personas.datos_sensibles.ver", Copropiedad;
+    /// Políticas de tratamiento, autorizaciones de terceros y solicitudes de titulares.
+    ProteccionDatosGestionar => "proteccion_datos.gestionar", Copropiedad;
+    OrganizacionesCrear => "organizaciones.crear", Copropiedad;
+    OrganizacionesVincular => "organizaciones.vincular", Copropiedad;
+    ContratosGestionar => "contratos.gestionar", Copropiedad;
+    BienesPrivadosVer => "bienes_privados.ver", Copropiedad;
+    BienesPrivadosEditar => "bienes_privados.editar", Copropiedad;
+    BienesPrivadosCoeficientesEditar => "bienes_privados.coeficientes.editar", Copropiedad;
+    BienesComunesVer => "bienes_comunes.ver", Copropiedad;
+    BienesComunesEditar => "bienes_comunes.editar", Copropiedad;
+    ReservasCrear => "reservas.crear", Copropiedad;
+    ReservasAprobar => "reservas.aprobar", Copropiedad;
+    TicketsCrear => "tickets.crear", Copropiedad;
+    TicketsAsignar => "tickets.asignar", Copropiedad;
+    TicketsAtender => "tickets.atender", Copropiedad;
+    AsambleasVer => "asambleas.ver", Copropiedad;
+    AsambleasConvocar => "asambleas.convocar", Copropiedad;
+    AsambleasConducir => "asambleas.conducir", Copropiedad;
+    /// Ver qué votó cada bien privado (votaciones no secretas o reservadas, plan 06).
+    AsambleasVotosVerDetalle => "asambleas.votos.ver_detalle", Copropiedad;
+    AccesoRegistrar => "acceso.registrar", Copropiedad;
+    AccesoVisitantesAutorizar => "acceso.visitantes.autorizar", Copropiedad;
+    AccesoBitacoraVer => "acceso.bitacora.ver", Copropiedad;
+    ContabilidadVer => "contabilidad.ver", Copropiedad;
+}
+
+impl TryFrom<String> for Permiso {
+    type Error = DominioError;
+
+    fn try_from(valor: String) -> Result<Self, Self::Error> {
+        Self::try_from(valor.as_str())
+    }
+}
+
+impl From<Permiso> for &'static str {
+    fn from(p: Permiso) -> Self {
+        p.as_str()
+    }
+}
+
+/// Conjunto de permisos efectivos (unión de los roles vigentes). Inmutable una vez armado.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ConjuntoPermisos(BTreeSet<Permiso>);
+
+impl ConjuntoPermisos {
+    /// Conjunto vacío: no puede nada.
+    pub fn vacio() -> Self {
+        Self::default()
+    }
+
+    /// Todos los permisos de un ámbito.
+    pub fn todos(ambito: Ambito) -> Self {
+        Self(
+            Permiso::TODOS
+                .iter()
+                .copied()
+                .filter(|p| p.ambito() == ambito)
+                .collect(),
+        )
+    }
+
+    pub fn contiene(&self, permiso: Permiso) -> bool {
+        self.0.contains(&permiso)
+    }
+
+    /// ¿Todos los permisos de `otro` están aquí? (Regla de no escalamiento: nadie otorga lo que
+    /// no tiene.)
+    pub fn incluye(&self, otro: &Self) -> bool {
+        otro.0.is_subset(&self.0)
+    }
+
+    pub fn es_vacio(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = Permiso> + '_ {
+        self.0.iter().copied()
+    }
+
+    /// Valida que todos los permisos sean del ámbito.
+    ///
+    /// # Errors
+    ///
+    /// [`DominioError::PermisoDeOtroAmbito`] con el primer permiso que no corresponde.
+    pub fn exigir_ambito(&self, ambito: Ambito) -> Result<(), DominioError> {
+        match self.0.iter().find(|p| p.ambito() != ambito) {
+            Some(p) => Err(DominioError::PermisoDeOtroAmbito(*p)),
+            None => Ok(()),
+        }
+    }
+}
+
+impl FromIterator<Permiso> for ConjuntoPermisos {
+    fn from_iter<I: IntoIterator<Item = Permiso>>(iter: I) -> Self {
+        Self(iter.into_iter().collect())
+    }
+}
+
+/// Código del rol plantilla con acceso total.
+pub const CODIGO_SUPERUSUARIO: &str = "superusuario";
+/// Código del rol plantilla del representante legal de la copropiedad (Ley 675, art. 50).
+pub const CODIGO_ADMINISTRADOR: &str = "administrador";
+
+/// Rol que viene con el sistema.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RolPlantilla {
+    pub codigo: &'static str,
+    pub nombre: &'static str,
+    pub ambito: Ambito,
+    /// `None` = todos los permisos del ámbito.
+    pub permisos: Option<&'static [Permiso]>,
+}
+
+impl RolPlantilla {
+    /// Permisos efectivos del rol.
+    pub fn conjunto(&self) -> ConjuntoPermisos {
+        match self.permisos {
+            None => ConjuntoPermisos::todos(self.ambito),
+            Some(p) => p.iter().copied().collect(),
+        }
+    }
+}
+
+use Permiso as P;
+
+/// Roles plantilla. **Contrato con la migración** `identidad` (prueba
+/// `roles_plantilla_coinciden_con_el_codigo`): cambiar uno exige una migración.
+pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
+    RolPlantilla {
+        codigo: CODIGO_SUPERUSUARIO,
+        nombre: "Superusuario",
+        ambito: Ambito::Plataforma,
+        permisos: None,
+    },
+    RolPlantilla {
+        codigo: "soporte",
+        nombre: "Soporte",
+        ambito: Ambito::Plataforma,
+        permisos: Some(&[
+            P::PlataformaCopropiedadesVer,
+            P::PlataformaCuentasVer,
+            P::PlataformaCuentasBloquear,
+            P::PlataformaOrganizacionesRevisar,
+            P::PlataformaAuditoriaVer,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "comercial",
+        nombre: "Comercial",
+        ambito: Ambito::Plataforma,
+        permisos: Some(&[
+            P::PlataformaCopropiedadesCrear,
+            P::PlataformaCopropiedadesVer,
+            P::PlataformaModulosGestionar,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "moderador_publicidad",
+        nombre: "Moderador de publicidad",
+        ambito: Ambito::Plataforma,
+        permisos: Some(&[P::PlataformaPublicidadModerar]),
+    },
+    RolPlantilla {
+        codigo: "facturacion",
+        nombre: "Facturación",
+        ambito: Ambito::Plataforma,
+        permisos: Some(&[P::PlataformaCopropiedadesVer, P::PlataformaFacturacionVer]),
+    },
+    RolPlantilla {
+        codigo: CODIGO_ADMINISTRADOR,
+        nombre: "Administrador",
+        ambito: Ambito::Copropiedad,
+        permisos: None,
+    },
+    RolPlantilla {
+        codigo: "asistente_administrativo",
+        nombre: "Asistente administrativo",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::RolesVer,
+            P::ArchivosSubir,
+            P::ArchivosVer,
+            P::PersonasVer,
+            P::PersonasEditar,
+            P::OrganizacionesCrear,
+            P::OrganizacionesVincular,
+            P::BienesPrivadosVer,
+            P::BienesComunesVer,
+            P::ReservasAprobar,
+            P::TicketsCrear,
+            P::TicketsAsignar,
+            P::AsambleasVer,
+            P::AccesoBitacoraVer,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "contador",
+        nombre: "Contador",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::ArchivosVer,
+            P::ArchivosSubir,
+            P::BienesPrivadosVer,
+            P::ContabilidadVer,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "revisor_fiscal",
+        nombre: "Revisor fiscal",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::ArchivosVer,
+            P::AuditoriaVer,
+            P::BienesPrivadosVer,
+            P::ContabilidadVer,
+            P::AsambleasVer,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "consejero",
+        nombre: "Consejero",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::ArchivosVer,
+            P::BienesPrivadosVer,
+            P::BienesComunesVer,
+            P::AsambleasVer,
+            P::ContabilidadVer,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "presidente_consejo",
+        nombre: "Presidente del consejo",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::ArchivosVer,
+            P::BienesPrivadosVer,
+            P::BienesComunesVer,
+            P::AsambleasVer,
+            P::AsambleasConvocar,
+            P::ContabilidadVer,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "comite_convivencia",
+        nombre: "Comité de convivencia",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[P::CopropiedadDatosVer, P::TicketsAtender, P::ArchivosVer]),
+    },
+    RolPlantilla {
+        codigo: "propietario",
+        nombre: "Propietario",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::ArchivosVer,
+            P::BienesComunesVer,
+            P::ReservasCrear,
+            P::TicketsCrear,
+            P::AsambleasVer,
+            P::AccesoVisitantesAutorizar,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "residente",
+        nombre: "Residente",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::ArchivosVer,
+            P::BienesComunesVer,
+            P::ReservasCrear,
+            P::TicketsCrear,
+            P::AccesoVisitantesAutorizar,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "vigilante",
+        nombre: "Vigilante / portero",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[P::AccesoRegistrar, P::AccesoBitacoraVer, P::TicketsCrear]),
+    },
+    RolPlantilla {
+        codigo: "supervisor_seguridad",
+        nombre: "Supervisor de seguridad",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::AccesoRegistrar,
+            P::AccesoBitacoraVer,
+            P::AccesoVisitantesAutorizar,
+            P::TicketsCrear,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "aseo",
+        nombre: "Personal de aseo",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[P::TicketsAtender]),
+    },
+    RolPlantilla {
+        codigo: "mantenimiento",
+        nombre: "Mantenimiento",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[P::TicketsAtender, P::BienesComunesVer]),
+    },
+    RolPlantilla {
+        codigo: "proveedor_tecnico",
+        nombre: "Proveedor técnico",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[P::TicketsAtender]),
+    },
+];
+
+/// Origen de una asignación de rol. Las derivadas no se asignan a mano: nacen y vencen con el
+/// hecho que las origina (vender el bien privado retira el acceso del vendedor).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OrigenAsignacion {
+    Manual,
+    /// Personal de una organización con contrato de servicio vigente.
+    ContratoServicio,
+    /// Titularidad de un bien privado (plan 03).
+    Propiedad,
+    /// Residencia registrada en el censo (plan 07).
+    Residencia,
+    /// Elección en asamblea (consejo, revisor fiscal; plan 06).
+    Asamblea,
+}
+
+enum_texto!(OrigenAsignacion {
+    Manual => "manual",
+    ContratoServicio => "contrato_servicio",
+    Propiedad => "propiedad",
+    Residencia => "residencia",
+    Asamblea => "asamblea",
+});
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use super::*;
+
+    #[test]
+    fn textos_unicos_y_con_formato() {
+        let mut vistos = HashSet::new();
+        for p in Permiso::TODOS {
+            assert!(vistos.insert(p.as_str()), "duplicado: {p}");
+            assert!(
+                p.as_str()
+                    .split('.')
+                    .all(|s| !s.is_empty() && s.chars().all(|c| c.is_ascii_lowercase() || c == '_')),
+                "{p}"
+            );
+            assert_eq!(Permiso::try_from(p.as_str()), Ok(*p));
+            let es_plataforma = p.as_str().starts_with("plataforma.");
+            assert_eq!(es_plataforma, p.ambito() == Ambito::Plataforma, "{p}");
+        }
+    }
+
+    #[test]
+    fn todos_separa_por_ambito() {
+        let plataforma = ConjuntoPermisos::todos(Ambito::Plataforma);
+        let copropiedad = ConjuntoPermisos::todos(Ambito::Copropiedad);
+        assert!(plataforma.contiene(Permiso::PlataformaCopropiedadesCrear));
+        assert!(!plataforma.contiene(Permiso::RolesAsignar));
+        assert!(copropiedad.contiene(Permiso::AsambleasVotosVerDetalle));
+        assert!(copropiedad.exigir_ambito(Ambito::Copropiedad).is_ok());
+        assert_eq!(
+            plataforma.exigir_ambito(Ambito::Copropiedad),
+            Err(DominioError::PermisoDeOtroAmbito(
+                Permiso::PlataformaCopropiedadesCrear
+            ))
+        );
+    }
+
+    #[test]
+    fn no_escalamiento_por_inclusion() {
+        let asistente = ROLES_PLANTILLA
+            .iter()
+            .find(|r| r.codigo == "asistente_administrativo")
+            .expect("existe")
+            .conjunto();
+        let admin = ConjuntoPermisos::todos(Ambito::Copropiedad);
+
+        assert!(admin.incluye(&asistente));
+        assert!(!asistente.incluye(&admin));
+        assert!(asistente.incluye(&ConjuntoPermisos::vacio()));
+    }
+
+    #[test]
+    fn plantillas_unicas_y_con_permisos_de_su_ambito() {
+        let mut codigos = HashSet::new();
+        for rol in ROLES_PLANTILLA {
+            assert!(codigos.insert(rol.codigo), "duplicado: {}", rol.codigo);
+            assert!(
+                rol.conjunto().exigir_ambito(rol.ambito).is_ok(),
+                "{}",
+                rol.codigo
+            );
+            assert!(!rol.conjunto().es_vacio(), "{}", rol.codigo);
+        }
+        assert!(codigos.contains(CODIGO_SUPERUSUARIO) && codigos.contains(CODIGO_ADMINISTRADOR));
+    }
+
+    #[test]
+    fn serde_usa_el_texto_del_permiso() {
+        let json = serde_json::to_string(&Permiso::RolesAsignar).expect("serializa");
+        assert_eq!(json, "\"roles.asignar\"");
+        assert!(serde_json::from_str::<Permiso>("\"no.existe\"").is_err());
+    }
+}

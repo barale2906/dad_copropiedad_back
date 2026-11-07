@@ -12,11 +12,12 @@ NOMBRE        ?=
 COMPOSE := docker compose
 CARGO   := cargo
 
+SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: help herramientas env setup \
 	    up down reiniciar-bd ps logs psql redis \
-	    api gateway dev \
-	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir \
+	    api gateway dev superusuario \
+	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir openapi \
 	    migrar migracion revertir migraciones sqlx-prepare \
 	    deny audit build release limpiar
 
@@ -74,6 +75,12 @@ api: ## Ejecuta la API REST/WebSocket (:8080; migra si RUN_MIGRATIONS=true)
 gateway: ## Ejecuta el gateway de WhatsApp (:8081)
 	$(CARGO) gateway
 
+superusuario: ## Crea el primer superusuario: make superusuario USUARIO=admin CORREO=a@b.co (pide la contraseña)
+	@[ -n "$(USUARIO)" ] || { echo "Uso: make superusuario USUARIO=<usuario> CORREO=<correo> [NOMBRE=...]"; exit 1; }
+	@read -s -p "Contraseña del superusuario (mín. 10 caracteres): " clave; echo; \
+	DAD_ADMIN_CONTRASENA="$$clave" $(CARGO) run -q --bin dad_admin -- crear-superusuario \
+	    --usuario "$(USUARIO)" $(if $(CORREO),--correo "$(CORREO)") --nombre "$(or $(NOMBRE),$(USUARIO))"
+
 dev: ## Revisión continua al guardar (bacon)
 	bacon
 
@@ -90,8 +97,9 @@ fmt-check: ## Verifica el formato sin modificar archivos
 lint: ## Clippy estricto (-D warnings)
 	$(CARGO) lint
 
-test: ## Todas las pruebas (las de esquema requieren 'make up')
+test: ## Todas las pruebas, incluidos los ejemplos de la documentación (las de esquema requieren 'make up')
 	$(CARGO) pruebas
+	$(CARGO) test --workspace --doc
 
 test-rapido: ## Solo pruebas sin base de datos (dominio y aplicación)
 	$(CARGO) nextest run -p domain -p application
@@ -107,6 +115,9 @@ doc: ## Genera la documentación del código (rustdoc) sin advertencias → targ
 
 doc-abrir: ## Genera y abre la documentación en el navegador
 	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --workspace --no-deps --open
+
+openapi: ## Regenera el contrato apps/api/openapi.json tras cambiar rutas o DTOs (revisar el diff)
+	ACTUALIZAR_OPENAPI=1 $(CARGO) nextest run -p api --test contrato_openapi
 
 ##@ Base de datos (migraciones con DATABASE_URL = dueño del esquema)
 migrar: ## Aplica las migraciones pendientes

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE modulos_habilitados SET hasta = $2\n             WHERE modulo = $1 AND desde < $2 AND (hasta IS NULL OR hasta > $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8ef1cb1ea0878c8c5cacecdb80d3bbf17f983515dcb2aae688cedab82b466ece"
+}

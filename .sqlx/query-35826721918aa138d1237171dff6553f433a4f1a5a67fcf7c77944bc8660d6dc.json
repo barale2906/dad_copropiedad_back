@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO roles_permisos (rol_id, ambito, permiso, tenant_id)\n             SELECT $1, 'copropiedad', p, $3 FROM unnest($2::text[]) AS p",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "TextArray",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "35826721918aa138d1237171dff6553f433a4f1a5a67fcf7c77944bc8660d6dc"
+}

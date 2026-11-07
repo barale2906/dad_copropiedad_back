@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT coalesce(array_agg(DISTINCT rp.permiso) FILTER (WHERE rp.permiso IS NOT NULL), '{}')\n                          AS \"permisos!\",\n                      coalesce(bool_or(r.es_plantilla AND r.codigo = $3), FALSE) AS \"superusuario!\"\n               FROM asignaciones_plataforma a\n               JOIN roles r ON r.id = a.rol_id\n               LEFT JOIN roles_permisos rp ON rp.rol_id = r.id\n               WHERE a.cuenta_id = $1 AND a.vigente_desde <= $2\n                 AND (a.vigente_hasta IS NULL OR a.vigente_hasta > $2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "permisos!",
+        "type_info": "TextArray",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "superusuario!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "1b5c99ee70b38cd71ff5f688006059556cd2d9a9e788669c9fa2b2130c27e910"
+}

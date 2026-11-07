@@ -6,6 +6,9 @@
 .env.*
 !.env.example
 
+# Almacén local de archivos en desarrollo (ARCHIVOS_DIR)
+/datos/
+
 # Cobertura / perfiles
 *.profraw
 *.profdata

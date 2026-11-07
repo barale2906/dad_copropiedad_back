@@ -13,25 +13,46 @@
 #[macro_use]
 mod macros;
 
+pub mod archivo;
+pub mod calendario;
 pub mod coeficiente;
+pub mod correo;
+pub mod cuenta;
 pub mod error;
 pub mod ids;
 pub mod mayoria;
+pub mod modulo;
+pub mod nit;
+pub mod organizacion;
+pub mod permisos;
 pub mod pregunta;
+pub mod proteccion_datos;
 pub mod quorum;
 pub mod registro;
 pub mod resultados;
 pub mod reunion;
 pub mod voto;
 
+pub use archivo::{Almacen, ClasificacionArchivo, ClaveArchivo, NombreArchivo, TipoArchivo};
 pub use coeficiente::Coeficiente;
+pub use correo::DireccionCorreo;
+pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
 pub use error::DominioError;
 pub use ids::{
-    BienPrivadoId, InscripcionId, OpcionId, ParticipacionId, PersonaId, PreguntaId, ReunionId,
-    TenantId, VotoId,
+    ArchivoId, AsignacionRolId, AutorizacionId, BienPrivadoId, ContratoServicioId, CuentaId,
+    InscripcionId, OpcionId, OrganizacionId, ParticipacionId, PersonaId, PoliticaTratamientoId,
+    PreguntaId, ReclamacionId, ReunionId, RolId, SesionId, SolicitudTitularId, TenantId, VotoId,
 };
 pub use mayoria::ReglaMayoria;
+pub use modulo::Modulo;
+pub use nit::Nit;
+pub use organizacion::{
+    EstadoContrato, EstadoOrganizacion, EstadoReclamacion, NaturalezaOrganizacion, RolOrganizacion,
+    TipoOrganizacion,
+};
+pub use permisos::{Ambito, ConjuntoPermisos, OrigenAsignacion, Permiso, RolPlantilla};
 pub use pregunta::{EstadoPregunta, Pregunta, PreguntaAbierta, TipoVoto};
+pub use proteccion_datos::{FinalidadTratamiento, MedioAutorizacion, TipoSolicitudTitular};
 pub use quorum::{Convocatoria, Quorum};
 pub use registro::{MetodoRegistro, RolAsistente};
 pub use resultados::ProyeccionResultados;

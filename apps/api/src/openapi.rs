@@ -1,0 +1,79 @@
+//! Contrato OpenAPI de la API REST.
+//!
+//! Las rutas se registran con `utoipa_axum::routes!` en [`crate::routes`], así que el documento
+//! se genera desde los mismos handlers que atienden las peticiones: no puede haber una ruta
+//! servida y no documentada. Aquí solo se declaran los metadatos, las etiquetas por módulo y los
+//! esquemas comunes.
+//!
+//! El documento generado se versiona en `apps/api/openapi.json`; la prueba
+//! `tests/contrato_openapi.rs` falla si cambia sin regenerarlo (`make openapi`).
+
+use utoipa::OpenApi;
+
+use crate::error::{CodigoError, DetalleError, ErrorRespuesta};
+
+/// Etiqueta de las sondas de salud.
+pub const ETIQUETA_SALUD: &str = "salud";
+/// Etiqueta de archivos y adjuntos.
+pub const ETIQUETA_ARCHIVOS: &str = "archivos";
+/// Etiqueta de autenticación.
+pub const ETIQUETA_AUTH: &str = "autenticacion";
+/// Etiqueta de la cuenta autenticada.
+pub const ETIQUETA_CUENTA: &str = "cuenta";
+/// Etiqueta de roles y permisos.
+pub const ETIQUETA_ROLES: &str = "roles";
+/// Etiqueta de organizaciones y contratos.
+pub const ETIQUETA_ORGANIZACIONES: &str = "organizaciones";
+/// Etiqueta de la operación de la plataforma.
+pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
+
+/// Registra el esquema de seguridad `bearer` (token de acceso opaco).
+struct EsquemaBearer;
+
+impl utoipa::Modify for EsquemaBearer {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        use utoipa::openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme};
+        let componentes = openapi.components.get_or_insert_with(Default::default);
+        componentes.add_security_scheme(
+            "bearer",
+            SecurityScheme::Http(
+                HttpBuilder::new()
+                    .scheme(HttpAuthScheme::Bearer)
+                    .description(Some(
+                        "Token de acceso de `POST /api/v1/auth/sesion` (opaco, 30 minutos)",
+                    ))
+                    .build(),
+            ),
+        );
+    }
+}
+
+/// Metadatos del documento. Las rutas las agrega [`crate::routes::openapi`] a partir del router.
+#[derive(OpenApi)]
+#[openapi(
+    info(
+        title = "DAD_COPROPIEDAD API",
+        description = "API REST para la gestión de copropiedades sometidas al régimen de \
+                       propiedad horizontal (Ley 675 de 2001).\n\n\
+                       - Rutas de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/…`\n\
+                       - Rutas de la cuenta autenticada: `/api/v1/yo/…`\n\
+                       - Rutas globales de la plataforma: `/api/v1/plataforma/…`\n\
+                       - Descarga con enlace firmado: `/api/v1/archivos/descarga`\n\n\
+                       Errores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` \
+                       (ver el esquema `CodigoError`). Listados: paginación por cursor con \
+                       `?limite=&despues=`."
+    ),
+    tags(
+        (name = ETIQUETA_SALUD, description = "Sondas de vida y disponibilidad del servicio"),
+        (name = ETIQUETA_ARCHIVOS, description = "Archivos y adjuntos: descarga con enlaces \
+                                                  firmados de vida corta"),
+        (name = ETIQUETA_AUTH, description = "Registro, inicio y cierre de sesión"),
+        (name = ETIQUETA_CUENTA, description = "La cuenta autenticada"),
+        (name = ETIQUETA_ROLES, description = "Roles, permisos y asignaciones"),
+        (name = ETIQUETA_ORGANIZACIONES, description = "Organizaciones compartidas y contratos de servicio"),
+        (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
+    ),
+    modifiers(&EsquemaBearer),
+    components(schemas(ErrorRespuesta, DetalleError, CodigoError))
+)]
+pub struct ApiDoc;

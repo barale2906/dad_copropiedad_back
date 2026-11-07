@@ -41,6 +41,21 @@ services:
       timeout: 3s
       retries: 10
 
+  # Servidor SMTP falso para desarrollo: atrapa todos los correos (no salen a internet).
+  # Bandeja web: http://localhost:8025 · SMTP: localhost:1025 sin cifrado ni autenticación.
+  mailpit:
+    image: axllent/mailpit:v1.31.0
+    container_name: dad_copropiedad_mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   pg_data:
   redis_data:
