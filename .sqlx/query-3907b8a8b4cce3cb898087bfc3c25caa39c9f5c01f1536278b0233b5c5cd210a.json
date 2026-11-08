@@ -1,0 +1,172 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, activo_id, ubicacion, actividad, frecuencia, intervalo, inicio,\n                    anticipacion_dias, responsable_cuenta_id, responsable_organizacion_id,\n                    duracion_estimada_min, checklist, activo\n             FROM planes_mantenimiento WHERE (NOT $1 OR activo) ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "activo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "activo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "ubicacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "ubicacion"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "actividad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "actividad"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "frecuencia",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "frecuencia"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "intervalo",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "intervalo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "inicio",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "inicio"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "anticipacion_dias",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "anticipacion_dias"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "responsable_cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "responsable_cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "responsable_organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "responsable_organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "duracion_estimada_min",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "duracion_estimada_min"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "checklist",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "checklist"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "activo",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "planes_mantenimiento",
+            "name": "activo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "3907b8a8b4cce3cb898087bfc3c25caa39c9f5c01f1536278b0233b5c5cd210a"
+}

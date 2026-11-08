@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE ordenes_trabajo SET asignado_cuenta_id = $2, asignado_organizacion_id = $3,\n                    programada_para = $4, estado = $5, checklist = $6, costo_mano_obra = $7,\n                    costo_repuestos = $8, observaciones = $9, recibido_por = $10,\n                    firma_archivo_id = $11, iniciada_en = $12, ejecutada_en = $13,\n                    verificada_en = $14, verificada_por = $15, actualizado_en = $16\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Text",
+        "Jsonb",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7a846e6490094f8ce2a29b5d8c4eac6da87eaf6df39dc83bb21fe1b2f29e91ec"
+}

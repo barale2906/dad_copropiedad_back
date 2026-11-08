@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE conversaciones SET estado = $2, atendida_por = $3, ultimo_entrante_en = $4,\n                    cerrada_en = $5\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "69e1315261f594d700c6d5be67d21f74e029a71fd5b47a4b9a112668702375a5"
+}

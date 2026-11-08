@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM sesiones_chat WHERE linea = $1 AND telefono = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "753187181cd221586e412ef343bb191a1befe64af9ac73c398d2a40e1051551e"
+}

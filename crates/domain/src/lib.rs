@@ -26,6 +26,7 @@ pub mod error;
 pub mod horario;
 pub mod ids;
 pub mod importacion;
+pub mod mantenimiento;
 pub mod mayoria;
 pub mod modulo;
 pub mod nit;
@@ -40,6 +41,7 @@ pub mod reserva;
 pub mod resultados;
 pub mod reunion;
 pub mod sorteo;
+pub mod ticket;
 pub mod titularidad;
 pub mod voto;
 
@@ -63,14 +65,21 @@ pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
 pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
-    AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AutorizacionId,
-    BienPrivadoId, CambioCensoId, CargoId, ContratoServicioId, CuadroCoeficientesId, CuentaId,
-    ImportacionId, InscripcionId, MascotaId, OpcionId, OrganizacionId, ParticipacionId, PersonaId,
-    PoliticaTratamientoId, PreguntaId, PuntoAtencionId, ReclamacionId, RecursoId, ReservaId,
-    ResidenciaId, RestriccionId, ReunionId, RolId, SesionId, SolicitudTitularId, SorteoId,
-    TenantId, TitularidadId, UsoExclusivoId, VehiculoId, VotoId,
+    ActivoId, AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AutorizacionId,
+    BienPrivadoId, CambioCensoId, CargoId, CategoriaTicketId, ContratoServicioId, ConversacionId,
+    CuadroCoeficientesId, CuentaId, ImportacionId, InscripcionId, MascotaId, MensajeTicketId,
+    MovimientoInventarioId, ObligacionId, OpcionId, OrdenTrabajoId, OrganizacionId,
+    ParticipacionId, PersonaId, PlanMantenimientoId, PoliticaTratamientoId, PreguntaFrecuenteId,
+    PreguntaId, PuntoAtencionId, ReclamacionId, RecursoId, ReservaId, ResidenciaId, RestriccionId,
+    ReunionId, RolId, SesionId, SolicitudTitularId, SorteoId, TenantId, TicketId, TitularidadId,
+    UsoExclusivoId, VehiculoId, VotoId,
 };
 pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
+pub use mantenimiento::{
+    ClaseActivo, CodigoActivo, EstadoActivo, EstadoOrden, Frecuencia, MomentoEvidencia,
+    NumeroOrden, OrigenOrden, PuntoChecklist, Recurrencia, TipoArchivoActivo, TipoMovimiento,
+    TipoOrden,
+};
 pub use mayoria::ReglaMayoria;
 pub use modulo::Modulo;
 pub use nit::Nit;
@@ -93,6 +102,10 @@ pub use reserva::{
 };
 pub use resultados::ProyeccionResultados;
 pub use reunion::{EstadoReunion, TipoReunion};
+pub use ticket::{
+    Calificacion, CanalTicket, EstadoTicket, JornadaHabil, NumeroTicket, Plazo, PlazosTicket,
+    PrioridadTicket, TipoTicket, UnidadPlazo,
+};
 pub use titularidad::{ConjuntoTitulares, Porcentaje, TipoPersona, TipoTitularidad, TitularNuevo};
 pub use voto::{
     Canal, ClaveIdempotencia, Papeleta, ParticipacionNueva, VinculoNominal, VotoEmitido, VotoNuevo,

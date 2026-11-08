@@ -11,6 +11,7 @@ publish.workspace = true
 [dependencies]
 application.workspace = true
 domain.workspace = true
+shared.workspace = true
 
 chrono.workspace = true
 hex.workspace = true

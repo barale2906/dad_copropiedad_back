@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT realizada_el, soporte_archivo_id, observacion, registrado_por, registrado_en\n             FROM cumplimientos_obligacion WHERE obligacion_id = $1\n             ORDER BY realizada_el DESC, id DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "realizada_el",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cumplimientos_obligacion",
+            "name": "realizada_el"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "soporte_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cumplimientos_obligacion",
+            "name": "soporte_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "observacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cumplimientos_obligacion",
+            "name": "observacion"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "registrado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cumplimientos_obligacion",
+            "name": "registrado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "registrado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cumplimientos_obligacion",
+            "name": "registrado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "0807ddaa7bfb3bdb23f1fd31e704cd23342f0eec6e4851ffc48fddf679abd345"
+}

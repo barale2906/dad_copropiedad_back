@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE activos SET nombre = $2, marca = $3, modelo = $4, serie = $5, ubicacion = $6,\n                    recurso_id = $7, estado = $8, valor = $9, garantia_vence = $10,\n                    proveedor_organizacion_id = $11, actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Date",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "95ba2d857fdd5fce1f3dc8c539c74b605ae1178b56429fe3f8aa0baf881421e3"
+}

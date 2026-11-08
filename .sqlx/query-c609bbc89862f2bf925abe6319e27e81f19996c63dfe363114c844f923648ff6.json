@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO mensajes_entrantes (wamid) VALUES ($1) ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c609bbc89862f2bf925abe6319e27e81f19996c63dfe363114c844f923648ff6"
+}

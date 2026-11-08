@@ -1,0 +1,45 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT a.id, a.nombre,\n                      sum(o.costo_mano_obra + o.costo_repuestos) AS \"costo!\"\n               FROM ordenes_trabajo o JOIN activos a ON a.id = o.activo_id\n               WHERE o.estado <> 'cancelada'\n               GROUP BY a.id, a.nombre\n               HAVING sum(o.costo_mano_obra + o.costo_repuestos) > 0\n               ORDER BY 3 DESC, a.id\n               LIMIT 20",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "activos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "activos",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "costo!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "20f5e8c45d34499f323790c25eaa5a842a8af17313835de06a97c5d81b735905"
+}

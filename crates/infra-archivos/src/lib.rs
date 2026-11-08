@@ -26,6 +26,15 @@ pub use firma::{
     ParametrosDescarga, RUTA_DESCARGA, codificar_porcentual,
 };
 
+/// Error al abrir el almacén configurado.
+#[derive(Debug, thiserror::Error)]
+pub enum ErrorAbrir {
+    #[error("ARCHIVOS_SECRETO_ENLACES / ARCHIVOS_URL_PUBLICA inválidos: {0}")]
+    Enlaces(#[from] ErrorFirmante),
+    #[error("no se pudo abrir ARCHIVOS_DIR=`{dir}`: {error}")]
+    Directorio { dir: String, error: io::Error },
+}
+
 /// Archivos en un directorio del servidor.
 #[derive(Debug, Clone)]
 pub struct AlmacenLocal {
@@ -43,6 +52,26 @@ impl AlmacenLocal {
         let raiz = raiz.into();
         std::fs::create_dir_all(&raiz)?;
         Ok(Self { raiz, enlaces })
+    }
+
+    /// Abre el almacén que indica la configuración (`ARCHIVOS_*`). La comparten la API y el
+    /// gateway (fotos que llegan por WhatsApp).
+    ///
+    /// # Errors
+    ///
+    /// [`ErrorAbrir`] si el secreto o la URL de los enlaces son inválidos o no se puede crear
+    /// el directorio.
+    pub fn desde_config(config: &shared::ArchivosConfig) -> Result<Self, ErrorAbrir> {
+        match config.almacen {
+            shared::TipoAlmacen::Local => {
+                let enlaces =
+                    FirmanteEnlaces::new(config.secreto_enlaces.as_bytes(), &config.url_publica)?;
+                Self::abrir(&config.dir, enlaces).map_err(|e| ErrorAbrir::Directorio {
+                    dir: config.dir.clone(),
+                    error: e,
+                })
+            }
+        }
     }
 
     /// Firmante de los enlaces (el endpoint de descarga lo usa para verificarlos).

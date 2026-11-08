@@ -32,6 +32,12 @@ pub const ETIQUETA_BIENES_PRIVADOS: &str = "bienes_privados";
 pub const ETIQUETA_CENSO: &str = "censo";
 /// Etiqueta de bienes comunes, reservas, citas, parqueaderos y sorteos.
 pub const ETIQUETA_RESERVAS: &str = "reservas";
+/// Etiqueta de los tickets (PQRS y solicitudes).
+pub const ETIQUETA_TICKETS: &str = "tickets";
+/// Etiqueta del chat de WhatsApp: preguntas frecuentes y bandeja de conversaciones.
+pub const ETIQUETA_CONVERSACIONES: &str = "conversaciones";
+/// Etiqueta del inventario y el mantenimiento.
+pub const ETIQUETA_MANTENIMIENTO: &str = "mantenimiento";
 /// Etiqueta de los cuadros de coeficientes.
 pub const ETIQUETA_COEFICIENTES: &str = "coeficientes";
 /// Etiqueta de las importaciones masivas.
@@ -94,6 +100,17 @@ impl utoipa::Modify for EsquemaBearer {
         (name = ETIQUETA_RESERVAS, description = "Bienes comunes, reservas, citas con la \
                                                   administración, parqueaderos y sorteos \
                                                   (módulo `bienes_comunes`)"),
+        (name = ETIQUETA_TICKETS, description = "Tickets: peticiones, quejas, reclamos y solicitudes \
+                                                con plazos en días u horas hábiles, notas internas, \
+                                                reportes de convivencia confidenciales y encuesta \
+                                                (módulo `gestion_administrativa`)"),
+        (name = ETIQUETA_CONVERSACIONES, description = "Chat de WhatsApp: preguntas frecuentes y \
+                                                        bandeja de conversaciones escaladas a la \
+                                                        administración (módulo `gestion_administrativa`)"),
+        (name = ETIQUETA_MANTENIMIENTO, description = "Inventario de activos con hoja de vida, planes \
+                                                       preventivos, órdenes de trabajo y \
+                                                       obligaciones periódicas (módulo \
+                                                       `gestion_administrativa`)"),
         (name = ETIQUETA_IMPORTACIONES, description = "Importación masiva desde CSV/XLSX con vista \
                                                        previa"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),

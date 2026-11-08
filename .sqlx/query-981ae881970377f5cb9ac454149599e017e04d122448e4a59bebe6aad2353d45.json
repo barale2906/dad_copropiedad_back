@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n                 count(*) FILTER (WHERE tipo = 'preventivo' AND estado <> 'cancelada'\n                                    AND programada_para BETWEEN $1 AND $2) AS \"programadas!\",\n                 count(*) FILTER (WHERE tipo = 'preventivo'\n                                    AND estado IN ('ejecutada', 'verificada')\n                                    AND programada_para BETWEEN $1 AND $2) AS \"cumplidas!\",\n                 count(*) FILTER (WHERE estado IN ('programada', 'en_ejecucion')\n                                    AND programada_para < $2) AS \"vencidas!\"\n               FROM ordenes_trabajo",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "programadas!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "cumplidas!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "vencidas!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "981ae881970377f5cb9ac454149599e017e04d122448e4a59bebe6aad2353d45"
+}

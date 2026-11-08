@@ -18,10 +18,12 @@
 mod archivos;
 mod bienes_privados;
 mod censo;
+mod chat;
 mod coeficientes;
 mod cola_salida;
 mod copropiedades;
 mod error;
+mod mantenimiento;
 mod modulos;
 mod personas;
 mod plataforma;
@@ -30,9 +32,11 @@ mod proteccion_datos;
 mod reservas;
 mod roles;
 mod tenant;
+mod tickets;
 mod titulares;
 mod unidad_trabajo;
 
+pub use chat::{DirectorioGestionPg, DirectorioTelefonosPg, SesionesChatPg};
 pub use cola_salida::{ColaSalidaPg, LoteSalidaPg};
 pub use error::InfraPgError;
 pub use plataforma::{TransaccionPlataformaPg, UnidadDeTrabajoPlataformaPg};

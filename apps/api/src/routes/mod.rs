@@ -17,15 +17,18 @@ mod auth;
 mod bienes_privados;
 mod censo;
 mod coeficientes;
+mod conversaciones;
 mod copropiedades;
 mod ficha;
 mod health;
 mod importaciones;
+mod mantenimiento;
 mod organizaciones;
 mod parqueaderos;
 mod plataforma;
 mod reservas;
 mod roles;
+mod tickets;
 mod yo;
 
 use axum::{

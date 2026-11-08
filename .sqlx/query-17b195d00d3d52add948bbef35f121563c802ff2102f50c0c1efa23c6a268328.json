@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM plazos_ticket",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "17b195d00d3d52add948bbef35f121563c802ff2102f50c0c1efa23c6a268328"
+}

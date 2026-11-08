@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO activos (id, tenant_id, codigo, nombre, clase, marca, modelo, serie,\n                                  ubicacion, agrupacion_id, recurso_id, estado, fecha_compra,\n                                  valor, garantia_vence, proveedor_organizacion_id, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Date",
+        "Numeric",
+        "Date",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ae879a9e969dd6798bbb3ea79e4a96bf671a26f890ad3e8ae931ab5313965fae"
+}

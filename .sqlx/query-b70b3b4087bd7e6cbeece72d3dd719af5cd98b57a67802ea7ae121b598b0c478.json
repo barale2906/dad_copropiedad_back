@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tipo, prioridad, cantidad, unidad FROM plazos_ticket",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "plazos_ticket",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "prioridad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "plazos_ticket",
+            "name": "prioridad"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "cantidad",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "plazos_ticket",
+            "name": "cantidad"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "unidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "plazos_ticket",
+            "name": "unidad"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "b70b3b4087bd7e6cbeece72d3dd719af5cd98b57a67802ea7ae121b598b0c478"
+}

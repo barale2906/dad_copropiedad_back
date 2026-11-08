@@ -1,17 +1,34 @@
 //! Caso de uso: despachar un lote del outbox (lo ejecuta en bucle el worker del gateway).
 //!
-//! Hoy despacha el canal **correo**. WhatsApp se agregará cuando exista su cliente de envío
-//! (porción vertical de votaciones); mientras tanto sus mensajes siguen pendientes y este
-//! worker no los toca, porque solo reclama los canales que sabe enviar.
+//! Despacha los canales **correo** y **WhatsApp** que estén configurados: solo reclama los
+//! canales que sabe enviar, así los mensajes de un canal sin configurar siguen pendientes.
 
 use crate::{
     AppResult,
     outbox::{Canal, MensajeOutbox, PoliticaReintentos},
-    puertos::{ColaSalida, EnvioCorreo, LoteSalida, MensajePendiente},
+    puertos::{ColaSalida, EnvioCorreo, LoteSalida, MensajePendiente, Mensajeria},
 };
 
-/// Canales que este despachador sabe enviar.
-pub const CANALES: &[Canal] = &[Canal::Correo];
+/// Adaptadores de envío configurados (`None` = canal desactivado).
+#[derive(Debug)]
+pub struct Despachadores<'a, E, M> {
+    pub correo: Option<&'a E>,
+    pub whatsapp: Option<&'a M>,
+}
+
+impl<E, M> Despachadores<'_, E, M> {
+    /// Canales que se pueden enviar.
+    pub fn canales(&self) -> Vec<Canal> {
+        let mut c = Vec::new();
+        if self.correo.is_some() {
+            c.push(Canal::Correo);
+        }
+        if self.whatsapp.is_some() {
+            c.push(Canal::WhatsApp);
+        }
+        c
+    }
+}
 
 /// Resultado de un lote.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -37,17 +54,22 @@ impl ResumenDespacho {
 ///
 /// Solo errores de la cola (base de datos); en ese caso el lote se revierte y los mensajes
 /// vuelven a quedar pendientes.
-pub async fn despachar_lote<C, E>(
+pub async fn despachar_lote<C, E, M>(
     cola: &C,
-    correo: &E,
+    envios: &Despachadores<'_, E, M>,
     politica: PoliticaReintentos,
     limite: u32,
 ) -> AppResult<ResumenDespacho>
 where
     C: ColaSalida,
     E: EnvioCorreo,
+    M: Mensajeria,
 {
-    let mut lote = cola.reclamar(CANALES, limite).await?;
+    let canales = envios.canales();
+    if canales.is_empty() {
+        return Ok(ResumenDespacho::default());
+    }
+    let mut lote = cola.reclamar(&canales, limite).await?;
     let mut resumen = ResumenDespacho::default();
 
     for pendiente in lote.tomar_mensajes() {
@@ -58,10 +80,15 @@ where
             mensaje,
         } = pendiente;
 
-        let envio = match mensaje {
-            Ok(MensajeOutbox::Correo(c)) => correo.enviar(&c).await.map_err(|e| e.to_string()),
-            Ok(otro) => Err(format!("canal {} sin despachador", otro.canal().as_str())),
-            Err(e) => {
+        let envio = match (mensaje, envios.correo, envios.whatsapp) {
+            (Ok(MensajeOutbox::Correo(c)), Some(correo), _) => {
+                correo.enviar(&c).await.map_err(|e| e.to_string())
+            }
+            (Ok(MensajeOutbox::WhatsApp(m)), _, Some(wa)) => {
+                wa.enviar(&m).await.map(Some).map_err(|e| e.to_string())
+            }
+            (Ok(otro), ..) => Err(format!("canal {} sin despachador", otro.canal().as_str())),
+            (Err(e), ..) => {
                 // Payload ilegible: reintentar no lo arreglará.
                 lote.marcar_fallido(id, format!("payload inválido: {e}"), politica.espera(0), 1)
                     .await?;
@@ -195,6 +222,21 @@ mod tests {
         }
     }
 
+    struct WhatsappFalso;
+
+    impl Mensajeria for WhatsappFalso {
+        async fn enviar(&self, m: &MensajeSaliente) -> AppResult<String> {
+            Ok(format!("wamid.{}", m.telefono))
+        }
+
+        async fn descargar_media(
+            &self,
+            _media_id: &str,
+        ) -> AppResult<crate::puertos::mensajeria::MediaDescargada> {
+            Err(AppError::Validacion("sin media".into()))
+        }
+    }
+
     fn correo(id: i64, para: &str, intentos: u32) -> MensajePendiente {
         MensajePendiente {
             id,
@@ -215,7 +257,11 @@ mod tests {
             mensajes: Mutex::new(mensajes),
             registro: registro.clone(),
         };
-        let resumen = despachar_lote(&cola, &CorreoFalso, PoliticaReintentos::default(), 10)
+        let envios = Despachadores {
+            correo: Some(&CorreoFalso),
+            whatsapp: None::<&WhatsappFalso>,
+        };
+        let resumen = despachar_lote(&cola, &envios, PoliticaReintentos::default(), 10)
             .await
             .expect("el lote se procesa");
         (resumen, registro)
@@ -287,6 +333,42 @@ mod tests {
             registro.marcas.lock().expect("mutex")[0],
             Marca::Fallido(7, _, 1)
         ));
+    }
+
+    #[tokio::test]
+    async fn con_whatsapp_reclama_ambos_canales_y_envia() {
+        let registro = Registro::default();
+        let cola = ColaFalsa {
+            mensajes: Mutex::new(vec![MensajePendiente {
+                id: 4,
+                tenant_id: None,
+                intentos: 0,
+                mensaje: Ok(MensajeOutbox::WhatsApp(MensajeSaliente {
+                    linea: "1".into(),
+                    telefono: "573001112233".into(),
+                    contenido: ContenidoSaliente::Texto { cuerpo: "x".into() },
+                })),
+            }]),
+            registro: registro.clone(),
+        };
+        let envios = Despachadores {
+            correo: Some(&CorreoFalso),
+            whatsapp: Some(&WhatsappFalso),
+        };
+
+        let resumen = despachar_lote(&cola, &envios, PoliticaReintentos::default(), 10)
+            .await
+            .expect("lote");
+
+        assert_eq!(resumen.enviados, 1);
+        assert_eq!(
+            *registro.canales.lock().expect("mutex"),
+            vec![Canal::Correo, Canal::WhatsApp]
+        );
+        assert_eq!(
+            *registro.marcas.lock().expect("mutex"),
+            vec![Marca::Enviado(4, Some("wamid.573001112233".into()))]
+        );
     }
 
     #[tokio::test]

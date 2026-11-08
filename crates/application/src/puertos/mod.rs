@@ -6,10 +6,12 @@
 pub mod actas;
 pub mod archivos;
 pub mod censo;
+pub mod chat;
 pub mod cola_salida;
 pub mod copropiedades;
 pub mod correo;
 pub mod identidad;
+pub mod mantenimiento;
 pub mod mensajeria;
 pub mod modulos;
 pub mod proteccion_datos;
@@ -17,11 +19,13 @@ pub mod reloj;
 pub mod repositorios;
 pub mod reservas;
 pub mod sesiones;
+pub mod tickets;
 pub mod unidad_trabajo;
 
 pub use actas::GeneradorActas;
 pub use archivos::{AlmacenArchivos, RepositorioArchivos};
 pub use censo::RepositorioCenso;
+pub use chat::{DirectorioTelefonos, RepositorioChat};
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
 pub use copropiedades::{
     LectorPlanillas, RepositorioBienesPrivados, RepositorioCoeficientes, RepositorioCopropiedad,
@@ -33,6 +37,7 @@ pub use identidad::{
     RepositorioPlataforma, RepositorioRoles, RepositorioSesiones, SegundoFactor,
     UnidadDeTrabajoPlataforma,
 };
+pub use mantenimiento::RepositorioMantenimiento;
 pub use mensajeria::Mensajeria;
 pub use modulos::RepositorioModulos;
 pub use proteccion_datos::RepositorioProteccionDatos;
@@ -42,4 +47,5 @@ pub use repositorios::{
 };
 pub use reservas::{DirectorioRecordatorios, RepositorioReservas};
 pub use sesiones::SesionesConversacion;
+pub use tickets::{DirectorioGestion, RepositorioTickets};
 pub use unidad_trabajo::{RegistroAuditoria, RegistroOutbox, Transaccion, UnidadDeTrabajo};

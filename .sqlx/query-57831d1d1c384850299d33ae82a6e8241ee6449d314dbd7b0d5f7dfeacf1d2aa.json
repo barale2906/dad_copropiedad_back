@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT cuenta_id AS \"cuenta_id!\", correo, telefono\n               FROM destinatarios_con_permiso($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cuenta_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "correo",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "telefono",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "57831d1d1c384850299d33ae82a6e8241ee6449d314dbd7b0d5f7dfeacf1d2aa"
+}

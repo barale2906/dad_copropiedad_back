@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT archivo_id, tipo FROM activo_archivos WHERE activo_id = $1 ORDER BY creado_en",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "activo_archivos",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "activo_archivos",
+            "name": "tipo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "fbb77a1eeadb226263c6139497cd7473f4a4cb14683a205aa6c1382d7e28bafd"
+}

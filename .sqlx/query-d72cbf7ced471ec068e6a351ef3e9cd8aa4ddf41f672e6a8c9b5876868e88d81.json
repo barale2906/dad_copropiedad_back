@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT archivo_id, mensaje_id, interno FROM ticket_adjuntos\n             WHERE ticket_id = $1 AND ($2 OR NOT interno)\n             ORDER BY creado_en, archivo_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ticket_adjuntos",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "mensaje_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ticket_adjuntos",
+            "name": "mensaje_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "interno",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "ticket_adjuntos",
+            "name": "interno"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "d72cbf7ced471ec068e6a351ef3e9cd8aa4ddf41f672e6a8c9b5876868e88d81"
+}

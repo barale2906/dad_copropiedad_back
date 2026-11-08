@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cumplimientos_obligacion (id, tenant_id, obligacion_id, realizada_el,\n                                                   soporte_archivo_id, observacion,\n                                                   registrado_por, registrado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "80113d7599a0044bc7af68ee5024dd93c05390f77ff957e6f1c36e748038544a"
+}

@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, pregunta, respuesta, orden, activa, archivo_id FROM preguntas_frecuentes\n             WHERE (NOT $1 OR activa) ORDER BY orden, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "preguntas_frecuentes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "pregunta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas_frecuentes",
+            "name": "pregunta"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "respuesta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas_frecuentes",
+            "name": "respuesta"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "preguntas_frecuentes",
+            "name": "orden"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "activa",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "preguntas_frecuentes",
+            "name": "activa"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "preguntas_frecuentes",
+            "name": "archivo_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "a009b7424c530c0ac72861f4069b18b8793019136c6fb1a2a87f9e266fbcadad"
+}

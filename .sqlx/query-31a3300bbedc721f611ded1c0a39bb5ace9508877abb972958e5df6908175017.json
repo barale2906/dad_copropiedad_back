@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO conversacion_mensajes (id, tenant_id, conversacion_id, direccion, texto,\n                                                autor_cuenta_id, wamid, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)\n             ON CONFLICT (wamid) WHERE wamid IS NOT NULL DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "31a3300bbedc721f611ded1c0a39bb5ace9508877abb972958e5df6908175017"
+}

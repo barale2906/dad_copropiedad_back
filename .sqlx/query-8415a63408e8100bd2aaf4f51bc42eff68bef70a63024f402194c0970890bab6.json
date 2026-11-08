@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO orden_evidencias (tenant_id, orden_id, archivo_id, momento) VALUES ($1, $2, $3, $4)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8415a63408e8100bd2aaf4f51bc42eff68bef70a63024f402194c0970890bab6"
+}

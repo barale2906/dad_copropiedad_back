@@ -214,6 +214,56 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Ticket (PQRS o solicitud).
+    TicketId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Mensaje de un ticket (público o nota interna).
+    MensajeTicketId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Categoría de tickets configurable por copropiedad.
+    CategoriaTicketId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Conversación de WhatsApp escalada a la administración.
+    ConversacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Pregunta frecuente que responde el chat.
+    PreguntaFrecuenteId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Activo del inventario (equipo, herramienta, mobiliario, dotación).
+    ActivoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Movimiento de inventario de un activo.
+    MovimientoInventarioId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Plan de mantenimiento preventivo.
+    PlanMantenimientoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Orden de trabajo de mantenimiento.
+    OrdenTrabajoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Obligación periódica (certificaciones, renovaciones, inspecciones).
+    ObligacionId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

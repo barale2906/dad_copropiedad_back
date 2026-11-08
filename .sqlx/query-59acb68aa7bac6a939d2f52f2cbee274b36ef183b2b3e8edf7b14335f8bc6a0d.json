@@ -1,0 +1,400 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, anio, consecutivo, tipo, categoria_id, prioridad, canal, estado, asunto,\n                    descripcion, solicitante_persona_id, solicitante_cuenta_id, bien_privado_id,\n                    ubicacion, recurso_id, activo_id, asignado_cuenta_id,\n                    asignado_organizacion_id, plazo_cantidad, plazo_unidad, vence_en,\n                    alerta_vencimiento_en, resuelto_en, reabrible_hasta, cerrado_en,\n                    duplicado_de, confidencial, idempotency_key, calificacion,\n                    comentario_encuesta, creado_en, actualizado_en\n             FROM tickets WHERE idempotency_key = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "anio",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "anio"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "consecutivo",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "consecutivo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "categoria_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "categoria_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "prioridad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "prioridad"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "canal",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "canal"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "asunto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "asunto"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "solicitante_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "solicitante_persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "solicitante_cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "solicitante_cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "ubicacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "ubicacion"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "recurso_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "recurso_id"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "activo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "activo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "asignado_cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "asignado_cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "asignado_organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "asignado_organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "plazo_cantidad",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "plazo_cantidad"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "plazo_unidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "plazo_unidad"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "vence_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "vence_en"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "alerta_vencimiento_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "alerta_vencimiento_en"
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "resuelto_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "resuelto_en"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "reabrible_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "reabrible_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 24,
+        "name": "cerrado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "cerrado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 25,
+        "name": "duplicado_de",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "duplicado_de"
+          }
+        }
+      },
+      {
+        "ordinal": 26,
+        "name": "confidencial",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "confidencial"
+          }
+        }
+      },
+      {
+        "ordinal": 27,
+        "name": "idempotency_key",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "idempotency_key"
+          }
+        }
+      },
+      {
+        "ordinal": 28,
+        "name": "calificacion",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "calificacion"
+          }
+        }
+      },
+      {
+        "ordinal": 29,
+        "name": "comentario_encuesta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "comentario_encuesta"
+          }
+        }
+      },
+      {
+        "ordinal": 30,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 31,
+        "name": "actualizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tickets",
+            "name": "actualizado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "59acb68aa7bac6a939d2f52f2cbee274b36ef183b2b3e8edf7b14335f8bc6a0d"
+}

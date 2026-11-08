@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (SELECT 1 FROM ordenes_trabajo\n                              WHERE plan_id = $1 AND programada_para = $2) AS \"existe!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "existe!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "7be6a0eac73c84cc89285599536ecb971c7cb5afde41652c258a0a91274e496d"
+}

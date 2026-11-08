@@ -198,7 +198,11 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('bienes_privados', 'cedula_catastral'), ('personas', 'fecha_nacimiento'),
                ('personas', 'contacto_emergencia_nombre'),
                ('personas', 'contacto_emergencia_telefono'), ('personas', 'movilidad_reducida'),
-               ('vehiculos', 'placa'), ('cambios_censo', 'datos'))
+               ('vehiculos', 'placa'), ('cambios_censo', 'datos'),
+               ('tickets', 'descripcion'), ('tickets', 'comentario_encuesta'),
+               ('ticket_mensajes', 'texto'), ('conversaciones', 'telefono'),
+               ('conversacion_mensajes', 'texto'), ('sesiones_chat', 'telefono'),
+               ('sesiones_chat', 'estado'), ('ordenes_trabajo', 'recibido_por'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

@@ -32,7 +32,12 @@ pub enum ContenidoEntrante {
         id: String,
         titulo: String,
     },
-    /// Imagen, audio, ubicación… se ignoran con una respuesta de ayuda.
+    /// Foto (p. ej. de un daño). `media_id` se descarga con [`Mensajeria::descargar_media`].
+    Imagen {
+        media_id: String,
+        leyenda: Option<String>,
+    },
+    /// Audio, ubicación, documento… se ignoran con una respuesta de ayuda.
     NoSoportado {
         tipo_original: String,
     },
@@ -42,7 +47,28 @@ pub enum ContenidoEntrante {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Eleccion {
     pub id: String,
+    /// Título corto (WhatsApp admite 20 caracteres en botones y 24 en filas de lista).
     pub titulo: String,
+    /// Texto secundario de una fila de lista (hasta 72 caracteres).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub descripcion: Option<String>,
+}
+
+impl Eleccion {
+    /// Elección sin descripción.
+    pub fn new(id: impl Into<String>, titulo: impl Into<String>) -> Self {
+        Self {
+            id: id.into(),
+            titulo: titulo.into(),
+            descripcion: None,
+        }
+    }
+
+    /// Agrega la descripción (filas de lista).
+    pub fn con_descripcion(mut self, descripcion: impl Into<String>) -> Self {
+        self.descripcion = Some(descripcion.into());
+        self
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -61,6 +87,13 @@ pub enum ContenidoSaliente {
         cuerpo: String,
         boton: String,
         filas: Vec<Eleccion>,
+    },
+    /// Plantilla aprobada por Meta: lo único que se puede enviar fuera de la ventana de 24 h
+    /// desde el último mensaje del usuario (avisos de tickets, urgencias).
+    Plantilla {
+        nombre: String,
+        idioma: String,
+        parametros: Vec<String>,
     },
 }
 
@@ -94,9 +127,23 @@ pub struct MensajeSaliente {
     pub contenido: ContenidoSaliente,
 }
 
+/// Archivo multimedia descargado del proveedor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MediaDescargada {
+    pub contenido: Vec<u8>,
+    /// Tipo MIME que declara el proveedor (el tipo real se valida por contenido).
+    pub mime: Option<String>,
+}
+
 pub trait Mensajeria: Send + Sync {
     /// Envía el mensaje y devuelve el `wamid` asignado por el proveedor.
     fn enviar(&self, mensaje: &MensajeSaliente) -> impl Future<Output = AppResult<String>> + Send;
+
+    /// Descarga un archivo recibido (`media_id` de [`ContenidoEntrante::Imagen`]).
+    fn descargar_media(
+        &self,
+        media_id: &str,
+    ) -> impl Future<Output = AppResult<MediaDescargada>> + Send;
 }
 
 #[cfg(test)]
@@ -105,10 +152,7 @@ mod tests {
 
     fn opciones(n: usize) -> Vec<Eleccion> {
         (0..n)
-            .map(|i| Eleccion {
-                id: i.to_string(),
-                titulo: format!("Opción {i}"),
-            })
+            .map(|i| Eleccion::new(i.to_string(), format!("Opción {i}")))
             .collect()
     }
 

@@ -34,6 +34,14 @@ curl localhost:8080/ready     # {"database":"ok","status":"ok"}
 Correos en desarrollo: `docker compose up -d` también levanta **Mailpit**; todo lo que envíe el
 gateway aparece en <http://localhost:8025> (no sale a internet).
 
+WhatsApp: el gateway recibe el webhook en `/webhook/whatsapp` y atiende el chat de la
+copropiedad (menú, reportes con foto, reservas, bandeja humana). Para **enviar** necesita
+`WHATSAPP_ACCESS_TOKEN`; sin él recibe y deja las respuestas pendientes en el outbox. Las
+plantillas `ticket_actualizado` y `reporte_urgente` deben estar aprobadas en Meta (ADR 0009). El
+gateway usa las mismas variables `ARCHIVOS_*` de la API para guardar las fotos recibidas, y su
+worker de gestión cierra tickets resueltos, alerta los vencidos y genera las órdenes preventivas
+cada 10 minutos.
+
 Primer acceso: cree el superusuario con `make superusuario USUARIO=admin CORREO=admin@dominio.co`
 (pide la contraseña), inicie sesión en `POST /api/v1/auth/sesion` desde `/docs` y use el token
 con el botón *Authorize*. Con él se dan de alta copropiedades (`POST /api/v1/plataforma/copropiedades`)
@@ -81,7 +89,7 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-planillas` | Adaptador | Lectura de planillas CSV/XLSX para importaciones masivas (ADR 0006) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |
-| `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook, outbox, worker |
+| `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook y chat de WhatsApp, outbox (correo y WhatsApp), workers de recordatorios y de gestión |
 | `migrations/` | — | Esquema PostgreSQL versionado |
 
 ## Estándares y documentación

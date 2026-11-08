@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM mensajes_entrantes WHERE recibido_en <= $1::timestamptz - interval '30 days'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "af8ee8c0e2cae730eac4f95b32e68b02e3bccfbf6e780949bdcd666c997005f4"
+}
