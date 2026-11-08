@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO preguntas_frecuentes (id, tenant_id, pregunta, respuesta, orden, activa,\n                                                   archivo_id)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Int2",
+        "Bool",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e8501f8001ec9b8364ecc4571d4b9a97891d6864614aa2658f729d71dd62f26c"
+}

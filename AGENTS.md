@@ -44,7 +44,7 @@ crates/
   domain/          entidades, máquinas de estado, quórum, coeficientes. Rust puro, SIN IO.
   application/     casos de uso + puertos (traits): RepositorioVotos, Mensajeria, Reloj, Sesiones…
   infra-postgres/  SQLx: pool, migraciones, transacción por tenant (RLS), repositorios
-  infra-whatsapp/  Cloud API: firma de Meta, webhook entrante, (próximo) cliente de envío
+  infra-whatsapp/  Cloud API: firma de Meta, webhook entrante, cliente de envío y descarga de fotos
   infra-pdf/       actas con Typst (pendiente)
   infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
   infra-archivos/  almacén de archivos (disco local; S3 previsto) y enlaces firmados: puerto AlmacenArchivos
@@ -94,16 +94,17 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Lenguaje backend | Rust 1.99, edición 2024 | En uso | Fijado en `rust-toolchain.toml`. |
 | HTTP / WebSocket | Axum 0.8 + Tokio + tower-http | En uso | Middlewares: request-id, trace, timeout, límite de cuerpo. |
 | Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. Extensiones `unaccent` y `pg_trgm` (búsqueda normalizada) y `btree_gist` (reservas y asignaciones sin solapes con `EXCLUDE`). |
-| Caché / tiempo real | Redis 8 | Infra lista | Solo sesiones de conversación y pub/sub de resultados. La verdad vive en PostgreSQL. |
+| Caché / tiempo real | Redis 8 | Infra lista | Solo pub/sub de resultados de asambleas (plan 06). Las sesiones del chat viven en PostgreSQL (`sesiones_chat`, ADR 0009). |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |
 | Decimales / fechas / IDs | rust_decimal · chrono · chrono-tz · uuid (v7, v4 para votos) | En uso | `chrono-tz`: los horarios de cada PH se evalúan en su zona IANA (`copropiedades.zona_horaria`). |
 | Criptografía | hmac + sha2 + sha1 + hex · argon2 · getrandom | En uso | Firma de webhooks de Meta, enlaces firmados, SHA-256 de archivos y tokens; Argon2id para contraseñas; TOTP (HMAC-SHA1, RFC 6238) en `infra-seguridad`. |
 | Autenticación | Tokens opacos propios + TOTP | En uso | Usuario o correo + contraseña; acceso 30 min, renovación rotativa con detección de reutilización (ADR 0005). Sin JWT. |
-| Mensajería | WhatsApp Cloud API (Meta) | En curso | Detrás del puerto `Mensajeria`; BSP intercambiable. |
+| Mensajería | WhatsApp Cloud API (Meta) | En uso | Detrás del puerto `Mensajeria`; BSP intercambiable. Envío con plantillas aprobadas fuera de la ventana de 24 h (`ticket_actualizado`, `reporte_urgente`). Variables `WHATSAPP_*`. |
+| Cliente HTTP saliente | reqwest 0.13 · rustls (ring) · webpki-roots | En uso | Solo en `infra-whatsapp` (Graph API). TLS sin OpenSSL ni aws-lc; el proveedor de criptografía se fija al construir el cliente. |
 | Correo | lettre 0.11 (SMTP, rustls) · SMTP de HestiaCP en producción · Mailpit en desarrollo | En uso | Crate `infra-correo`, puerto `EnvioCorreo`; variables `SMTP_*`. Mailpit atrapa los correos locales (bandeja en `localhost:8025`). |
 | Archivos | Disco del VPS (`ARCHIVOS_DIR`) · S3 previsto | En uso | Crate `infra-archivos`, puerto `AlmacenArchivos`; clave lógica + columna `almacen`; descargas con enlace HMAC de 5 min. Metodología de migración en ADR 0003. |
 | Planillas | csv 1.4 · calamine 0.38 | En uso | Crate `infra-planillas`, puerto `LectorPlanillas` (solo lectura, Rust puro). Importación con vista previa (ADR 0006). |
-| Limitador | governor | Previsto | 80 mensajes/s por línea. |
+| Limitador | Ritmo por línea propio (`apps/gateway/src/mensajeria.rs`) | En uso | 80 mensajes/s por línea de WhatsApp; `governor` solo si hace falta limitar endpoints públicos. |
 | OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
 | Actas | Typst | Previsto | En `infra-pdf`. |
 | Contenedores | Docker Compose (dev) | En uso | Imagen de producción construida en CI. |
@@ -211,6 +212,8 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Titulares**: los vigentes de un bien suman 100 % por clase de derecho y tienen un representante (`ConjuntoTitulares` + trigger diferido). Cambiar de dueño = `transferir_titularidad` (cierra y abre en una transacción); el rol `propietario` se deriva de la titularidad (origen `propiedad`), nunca se asigna a mano.
 - **Censo** (ADR 0007): residencias con calidad y un responsable vigente por bien; el rol `residente` se deriva de la residencia (origen `residencia`) y vence al terminarla en la misma transacción. Placas normalizadas (`domain::Placa`) y únicas entre las vigentes. Fecha de nacimiento y movilidad reducida son `dato_sensible`: se ocultan sin `personas.datos_sensibles.ver`. Lo que proponen residentes y propietarios entra a `cambios_censo` y solo cambia el censo al aprobarlo.
 - **Reservas** (ADR 0008): todo recurso reservable (bien común, parqueadero, agenda, herramienta) usa el mismo motor (`casos_uso::reservas`) y su `PoliticaReserva`. Horarios en la hora local de la PH. Exclusivos: `EXCLUDE` en la BD; con aforo: bloquear el recurso y contar personas. Solicitar es idempotente. Montos liquidados en `Decimal`; penalidades y daños como `cargos_pendientes`. Los casos de uso del módulo exigen `exigir_modulo_en(.., Modulo::BienesComunes)` dentro de su transacción.
+- **Tickets** (ADR 0009): estados solo por `EstadoTicket::transicionar` con evento en `ticket_eventos`; número `PQR-AAAA-NNNNN` por PH y año desde `consecutivos`; plazos con `domain::ticket::vencimiento` (Ley 1755 por defecto, configurables); radicar es idempotente por clave (el `wamid` en WhatsApp). El solicitante nunca ve las notas internas; en `reporte_convivencia` la identidad solo con `tickets.convivencia.ver`. Avisos internos con `casos_uso::avisos` (destinatarios por permiso), nunca a direcciones fijas.
+- **Mantenimiento** (ADR 0009): una orden preventiva por (plan, fecha) (`ux_orden_por_periodo`); la baja de un activo exige soporte y es definitiva; quien ejecuta una orden no la verifica. Los historiales (`ticket_mensajes`, `ticket_eventos`, `movimientos_inventario`, `cumplimientos_obligacion`, `conversacion_mensajes`) son append-only.
 - **Importaciones** (`casos_uso::importaciones`): archivo → validación fila por fila → vista previa → confirmar → aplicar en una transacción. Una importación nueva reutiliza ese flujo; los errores no repiten el valor de la celda.
 - **Módulos contratados**: los casos de uso o routers de un módulo vendible (`domain::Modulo`) exigen `casos_uso::modulos::exigir_modulo`; si no está habilitado → `modulo_no_habilitado` (403).
 - Enumeraciones como `TEXT` + `CHECK`; coeficientes `NUMERIC(10,8)`; fechas `TIMESTAMPTZ`; índices para cada consulta frecuente y cada FK usada en filtros.
@@ -230,7 +233,8 @@ Riesgo residual conocido: el orden físico de inserción en `votos` podría corr
 
 ### Mensajería (gateway)
 - Webhook: verificar `X-Hub-Signature-256` sobre el cuerpo **crudo** antes de deserializar; responder rápido.
-- Sesión por **(línea, teléfono)** (`wa:sesion:{linea}:{telefono}`), resuelta contra las reuniones activas en que el teléfono está inscrito; si hay varias, se pregunta con una lista (`casos_uso::resolver_reunion`).
+- Sesión por **(línea, teléfono)** en PostgreSQL (`sesiones_chat`, ámbito de plataforma). Cualquier línea atiende cualquier PH: la PH se resuelve por el teléfono (`vinculos_por_telefono`); si hay varios vínculos se pregunta con una lista. Cada turno se cierra en una transacción (`SesionesConversacion::cerrar_turno`: sesión + respuestas al outbox + `wamid` procesado); lo que crea datos es idempotente por `wamid`.
+- El chat (`casos_uso::chat`) es una máquina de estados en `application`; el webhook responde 200 de inmediato y atiende el turno aparte. Fuera de la ventana de 24 h solo plantillas aprobadas. En asambleas, la sesión se resolverá contra las reuniones activas (`casos_uso::resolver_reunion`, plan 06).
 - Votos con botones (≤ 3 opciones) o listas (≤ 10) — `ContenidoSaliente::elecciones`.
 - **Outbox multicanal** (`canal`: whatsapp, correo, push) en lugar de colas externas: se encola con `RegistroOutbox` dentro de la transacción del hecho; el worker del gateway (`worker_salida`, caso de uso `despachar_lote`) reclama **solo los canales que sabe enviar** con `outbox_reclamar(canales, límite)` (`FOR UPDATE SKIP LOCKED`) y marca con `outbox_marcar_enviado` / `outbox_marcar_fallido` (reintentos con espera exponencial, `PoliticaReintentos`). Prioridad: confirmaciones → eventos → recordatorios → publicidad (9), dentro de 80 mps por línea en WhatsApp. El texto de error de un envío puede contener el destino: va a la fila del outbox, nunca a los logs.
 - Resultados en vivo: proyección en memoria (`ProyeccionResultados`) emitida cada ~500 ms por reunión; nunca un mensaje por voto.

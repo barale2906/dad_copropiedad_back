@@ -118,13 +118,26 @@ pub struct WhatsappConfig {
     pub verify_token: String,
     /// *App secret* de Meta: clave HMAC de `X-Hub-Signature-256`.
     pub app_secret: String,
+    /// Token de acceso (usuario del sistema) para enviar mensajes. `None` = el gateway recibe
+    /// pero no envía por WhatsApp (los mensajes quedan pendientes en el outbox).
+    pub access_token: Option<String>,
+    /// Base de la Graph API con versión (`WHATSAPP_API_URL`).
+    pub api_url: String,
 }
+
+/// Graph API por defecto (se fija la versión para que un cambio de Meta no cambie el contrato).
+pub const WHATSAPP_API_URL_PREDETERMINADA: &str = "https://graph.facebook.com/v23.0";
 
 impl std::fmt::Debug for WhatsappConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("WhatsappConfig")
             .field("verify_token", &"<oculto>")
             .field("app_secret", &"<oculto>")
+            .field(
+                "access_token",
+                &self.access_token.as_ref().map(|_| "<oculto>"),
+            )
+            .field("api_url", &self.api_url)
             .finish()
     }
 }
@@ -135,6 +148,9 @@ impl WhatsappConfig {
         Ok(Self {
             verify_token: required("WHATSAPP_VERIFY_TOKEN")?,
             app_secret: required("WHATSAPP_APP_SECRET")?,
+            access_token: optional("WHATSAPP_ACCESS_TOKEN"),
+            api_url: optional("WHATSAPP_API_URL")
+                .unwrap_or_else(|| WHATSAPP_API_URL_PREDETERMINADA.into()),
         })
     }
 }

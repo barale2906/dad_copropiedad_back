@@ -1,0 +1,45 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n                 (SELECT count(*) FROM tickets WHERE vence_en <= $1 AND estado <> ALL($2))\n                     AS \"vencidos!\",\n                 (SELECT avg(EXTRACT(EPOCH FROM (e.primero - t.creado_en)))::float8 / 3600\n                  FROM tickets t\n                  JOIN LATERAL (SELECT min(ocurrido_en) AS primero FROM ticket_eventos e\n                                WHERE e.ticket_id = t.id AND e.desde IS NOT NULL) e ON TRUE\n                  WHERE e.primero IS NOT NULL) AS respuesta,\n                 (SELECT avg(EXTRACT(EPOCH FROM (resuelto_en - creado_en)))::float8 / 3600\n                  FROM tickets WHERE resuelto_en IS NOT NULL) AS solucion,\n                 (SELECT avg(calificacion)::float8 FROM tickets WHERE calificacion IS NOT NULL)\n                     AS satisfaccion",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "vencidos!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "respuesta",
+        "type_info": "Float8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "solucion",
+        "type_info": "Float8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "satisfaccion",
+        "type_info": "Float8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "fad91908e472d4b251d5d53a583ad198d48aa2e3949d9b04c07c38461f88a4da"
+}

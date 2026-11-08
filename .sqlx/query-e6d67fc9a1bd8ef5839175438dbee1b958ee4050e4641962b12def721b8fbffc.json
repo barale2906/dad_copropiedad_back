@@ -1,0 +1,328 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, anio, consecutivo, origen, tipo, plan_id, ticket_id, activo_id, ubicacion,\n                    descripcion, asignado_cuenta_id, asignado_organizacion_id, programada_para,\n                    estado, checklist, costo_mano_obra, costo_repuestos, observaciones,\n                    recibido_por, firma_archivo_id, iniciada_en, ejecutada_en, verificada_en,\n                    verificada_por, creado_en, actualizado_en\n             FROM ordenes_trabajo WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "anio",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "anio"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "consecutivo",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "consecutivo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "origen",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "origen"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "plan_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "plan_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "ticket_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "ticket_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "activo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "activo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "ubicacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "ubicacion"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "asignado_cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "asignado_cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "asignado_organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "asignado_organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "programada_para",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "programada_para"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "checklist",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "checklist"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "costo_mano_obra",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "costo_mano_obra"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "costo_repuestos",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "costo_repuestos"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "observaciones",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "observaciones"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "recibido_por",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "recibido_por"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "firma_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "firma_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "iniciada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "iniciada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "ejecutada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "ejecutada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "verificada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "verificada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "verificada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "verificada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 24,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 25,
+        "name": "actualizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "actualizado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "e6d67fc9a1bd8ef5839175438dbee1b958ee4050e4641962b12def721b8fbffc"
+}

@@ -1,0 +1,136 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, codigo_sugerido, nombre, descripcion, periodicidad_meses, proxima,\n                    dias_alerta, activo_id, responsable_organizacion_id, activa\n             FROM obligaciones_periodicas WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo_sugerido",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "codigo_sugerido"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "periodicidad_meses",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "periodicidad_meses"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "proxima",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "proxima"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "dias_alerta",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "dias_alerta"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "activo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "activo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "responsable_organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "responsable_organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "activa",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "obligaciones_periodicas",
+            "name": "activa"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "a0838e16e8b3f888aa17adb691de69589e7e60885ccb7310813870aa89ee23e0"
+}

@@ -130,9 +130,33 @@ catalogo_permisos! {
     ParqueaderosAsignar => "parqueaderos.asignar", Copropiedad;
     /// Crear y ejecutar sorteos.
     SorteosGestionar => "sorteos.gestionar", Copropiedad;
+    /// Radicar tickets propios y ver los que uno radicó.
     TicketsCrear => "tickets.crear", Copropiedad;
+    /// Clasificar, asignar, rechazar, marcar duplicados y cerrar tickets.
     TicketsAsignar => "tickets.asignar", Copropiedad;
+    /// Trabajar los tickets asignados (a la cuenta o a su organización) y escribir notas internas.
     TicketsAtender => "tickets.atender", Copropiedad;
+    /// Ver todos los tickets de la copropiedad (sin la identidad de quien reporta convivencia).
+    TicketsVerTodos => "tickets.ver_todos", Copropiedad;
+    /// Categorías, jornada hábil y plazos de respuesta.
+    TicketsConfigurar => "tickets.configurar", Copropiedad;
+    /// Ver y gestionar los reportes de convivencia con la identidad del denunciante (art. 58).
+    TicketsConvivenciaVer => "tickets.convivencia.ver", Copropiedad;
+    /// Recibir de inmediato los reportes urgentes (fugas, ascensor atrapado…).
+    TicketsUrgenciasRecibir => "tickets.urgencias.recibir", Copropiedad;
+    /// Atender en la web las conversaciones de WhatsApp escaladas a la administración.
+    ConversacionesAtender => "conversaciones.atender", Copropiedad;
+    /// Editar las preguntas frecuentes que responde el chat.
+    PreguntasFrecuentesEditar => "preguntas_frecuentes.editar", Copropiedad;
+    InventarioVer => "inventario.ver", Copropiedad;
+    /// Registrar activos, movimientos y bajas.
+    InventarioEditar => "inventario.editar", Copropiedad;
+    /// Planes preventivos, órdenes de trabajo y obligaciones periódicas.
+    MantenimientoPlanificar => "mantenimiento.planificar", Copropiedad;
+    /// Ejecutar las órdenes asignadas (checklist, evidencias, costos).
+    MantenimientoEjecutar => "mantenimiento.ejecutar", Copropiedad;
+    /// Verificar (o devolver) las órdenes ejecutadas.
+    MantenimientoVerificar => "mantenimiento.verificar", Copropiedad;
     AsambleasVer => "asambleas.ver", Copropiedad;
     AsambleasConvocar => "asambleas.convocar", Copropiedad;
     AsambleasConducir => "asambleas.conducir", Copropiedad;
@@ -318,6 +342,14 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::ParqueaderosVer,
             P::TicketsCrear,
             P::TicketsAsignar,
+            P::TicketsVerTodos,
+            P::TicketsAtender,
+            P::ConversacionesAtender,
+            P::PreguntasFrecuentesEditar,
+            P::InventarioVer,
+            P::InventarioEditar,
+            P::MantenimientoPlanificar,
+            P::MantenimientoVerificar,
             P::AsambleasVer,
             P::AccesoBitacoraVer,
         ]),
@@ -346,6 +378,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TitularesVer,
             P::ContabilidadVer,
             P::AsambleasVer,
+            P::InventarioVer,
         ]),
     },
     RolPlantilla {
@@ -373,13 +406,19 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AsambleasVer,
             P::AsambleasConvocar,
             P::ContabilidadVer,
+            P::TicketsVerTodos,
         ]),
     },
     RolPlantilla {
         codigo: "comite_convivencia",
         nombre: "Comité de convivencia",
         ambito: Ambito::Copropiedad,
-        permisos: Some(&[P::CopropiedadDatosVer, P::TicketsAtender, P::ArchivosVer]),
+        permisos: Some(&[
+            P::CopropiedadDatosVer,
+            P::TicketsAtender,
+            P::TicketsConvivenciaVer,
+            P::ArchivosVer,
+        ]),
     },
     RolPlantilla {
         codigo: "propietario",
@@ -431,6 +470,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TicketsCrear,
             P::ReservasEntregasRegistrar,
             P::ParqueaderosVer,
+            P::TicketsUrgenciasRecibir,
         ]),
     },
     RolPlantilla {
@@ -443,13 +483,19 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
         codigo: "mantenimiento",
         nombre: "Mantenimiento",
         ambito: Ambito::Copropiedad,
-        permisos: Some(&[P::TicketsAtender, P::BienesComunesVer]),
+        permisos: Some(&[
+            P::TicketsAtender,
+            P::BienesComunesVer,
+            P::TicketsUrgenciasRecibir,
+            P::MantenimientoEjecutar,
+            P::InventarioVer,
+        ]),
     },
     RolPlantilla {
         codigo: "proveedor_tecnico",
         nombre: "Proveedor técnico",
         ambito: Ambito::Copropiedad,
-        permisos: Some(&[P::TicketsAtender]),
+        permisos: Some(&[P::TicketsAtender, P::MantenimientoEjecutar]),
     },
 ];
 

@@ -1,0 +1,126 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, linea, telefono, persona_id, estado, atendida_por, abierta_en,\n                    ultimo_entrante_en, cerrada_en\n             FROM conversaciones\n             WHERE ($1::text IS NULL OR estado = $1) AND ($2::uuid IS NULL OR id < $2)\n             ORDER BY id DESC LIMIT $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "linea",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "linea"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "telefono",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "telefono"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "atendida_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "atendida_por"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "abierta_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "abierta_en"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "ultimo_entrante_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "ultimo_entrante_en"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "cerrada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "conversaciones",
+            "name": "cerrada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "0621dedc9cc12a1a0915632ef16b883f90ba6a2c257c630fb8e83ef342e7275f"
+}

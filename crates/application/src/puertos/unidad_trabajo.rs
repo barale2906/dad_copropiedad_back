@@ -81,6 +81,7 @@ pub(crate) mod memoria {
 
     mod censo;
     mod copropiedades;
+    pub mod gestion;
     mod reservas;
 
     /// Datos de negocio en memoria. La transacción trabaja sobre una copia y la reemplaza
@@ -120,6 +121,8 @@ pub(crate) mod memoria {
         /// Roles propios de copropiedades (las plantillas salen de `ROLES_PLANTILLA`).
         pub roles: Vec<Rol>,
         pub asignaciones: Vec<(TenantId, Asignacion)>,
+        /// Tickets, mantenimiento y chat (planes 07b y 07c).
+        pub gestion: gestion::DatosGestion,
     }
 
     /// Plantillas con ids fijos (en la BD se derivan del código).
@@ -189,6 +192,11 @@ pub(crate) mod memoria {
                     desde: DateTime::<Utc>::MIN_UTC,
                     hasta: None,
                 });
+        }
+
+        /// Modifica los datos confirmados (preparar escenarios de prueba).
+        pub fn con_datos(&self, f: impl FnOnce(&mut Datos)) {
+            f(&mut self.datos.lock().expect("mutex sano"));
         }
 
         /// Simula reuniones instaladas en la copropiedad.

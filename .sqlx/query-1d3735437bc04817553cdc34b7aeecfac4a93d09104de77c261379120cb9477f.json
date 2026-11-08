@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT estado, ultimo_entrante_en FROM sesiones_chat\n             WHERE linea = $1 AND telefono = $2 AND expira_en > $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "estado",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "sesiones_chat",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "ultimo_entrante_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "sesiones_chat",
+            "name": "ultimo_entrante_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "1d3735437bc04817553cdc34b7aeecfac4a93d09104de77c261379120cb9477f"
+}

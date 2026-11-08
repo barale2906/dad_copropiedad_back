@@ -48,6 +48,13 @@ pub struct Mensaje {
     pub interactive: Option<Interactivo>,
     /// Respuesta rápida de una plantilla.
     pub button: Option<BotonPlantilla>,
+    pub image: Option<Imagen>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Imagen {
+    pub id: String,
+    pub caption: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -103,9 +110,13 @@ fn normalizar(linea: &str, m: Mensaje) -> MensajeEntrante {
         .and_then(|s| DateTime::from_timestamp(s, 0))
         .unwrap_or_else(Utc::now);
 
-    let contenido = match (m.tipo.as_str(), m.text, m.interactive, m.button) {
-        ("text", Some(t), _, _) => ContenidoEntrante::Texto { cuerpo: t.body },
-        ("interactive", _, Some(i), _) => match i.button_reply.or(i.list_reply) {
+    let contenido = match (m.tipo.as_str(), m.text, m.interactive, m.button, m.image) {
+        ("image", .., Some(i)) => ContenidoEntrante::Imagen {
+            media_id: i.id,
+            leyenda: i.caption,
+        },
+        ("text", Some(t), ..) => ContenidoEntrante::Texto { cuerpo: t.body },
+        ("interactive", _, Some(i), ..) => match i.button_reply.or(i.list_reply) {
             Some(r) => ContenidoEntrante::Respuesta {
                 id: r.id,
                 titulo: r.title,
@@ -114,7 +125,7 @@ fn normalizar(linea: &str, m: Mensaje) -> MensajeEntrante {
                 tipo_original: "interactive".into(),
             },
         },
-        ("button", _, _, Some(b)) => ContenidoEntrante::Respuesta {
+        ("button", _, _, Some(b), _) => ContenidoEntrante::Respuesta {
             id: b.payload,
             titulo: b.text,
         },
@@ -156,7 +167,9 @@ mod tests {
               { "from": "573001112233", "id": "wamid.C", "timestamp": "1798000002",
                 "type": "text", "text": { "body": "hola" } },
               { "from": "573001112233", "id": "wamid.D", "timestamp": "1798000003",
-                "type": "image", "image": { "id": "img" } }
+                "type": "image", "image": { "id": "img", "caption": "fuga" } },
+              { "from": "573001112233", "id": "wamid.E", "timestamp": "1798000004",
+                "type": "audio", "audio": { "id": "aud" } }
             ]
           }
         }]
@@ -168,7 +181,7 @@ mod tests {
         let msgs = Notificacion::desde_json(EJEMPLO.as_bytes())
             .unwrap()
             .mensajes();
-        assert_eq!(msgs.len(), 4);
+        assert_eq!(msgs.len(), 5);
         assert!(msgs.iter().all(|m| m.linea == "PNID-1"));
         assert_eq!(msgs[0].wamid, "wamid.A");
         assert_eq!(
@@ -187,9 +200,16 @@ mod tests {
                 cuerpo: "hola".into()
             }
         );
+        assert_eq!(
+            msgs[3].contenido,
+            ContenidoEntrante::Imagen {
+                media_id: "img".into(),
+                leyenda: Some("fuga".into())
+            }
+        );
         assert!(matches!(
-            &msgs[3].contenido,
-            ContenidoEntrante::NoSoportado { tipo_original } if tipo_original == "image"
+            &msgs[4].contenido,
+            ContenidoEntrante::NoSoportado { tipo_original } if tipo_original == "audio"
         ));
         assert_eq!(msgs[0].recibido_en.timestamp(), 1_798_000_000);
     }

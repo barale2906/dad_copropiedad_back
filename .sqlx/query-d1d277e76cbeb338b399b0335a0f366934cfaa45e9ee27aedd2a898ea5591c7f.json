@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE planes_mantenimiento SET activo_id = $2, ubicacion = $3, actividad = $4,\n                    frecuencia = $5, intervalo = $6, inicio = $7, anticipacion_dias = $8,\n                    responsable_cuenta_id = $9, responsable_organizacion_id = $10,\n                    duracion_estimada_min = $11, checklist = $12, activo = $13,\n                    actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Int2",
+        "Date",
+        "Int2",
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Jsonb",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d1d277e76cbeb338b399b0335a0f366934cfaa45e9ee27aedd2a898ea5591c7f"
+}

@@ -1,0 +1,31 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO ordenes_trabajo (id, tenant_id, anio, consecutivo, origen, tipo, plan_id,\n                                          ticket_id, activo_id, ubicacion, descripcion,\n                                          asignado_cuenta_id, asignado_organizacion_id,\n                                          programada_para, estado, checklist, creado_en,\n                                          actualizado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Int4",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Text",
+        "Jsonb",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0c0dcd522c6047c8eab961873d41273b99b2abf4686f4b79d517d45dffdfe80b"
+}

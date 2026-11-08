@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO ticket_adjuntos (tenant_id, ticket_id, mensaje_id, archivo_id, interno)\n             VALUES ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "442a09ccea32cbec7199650070e4087e50aea45eba1d50d4a02435872cee77aa"
+}

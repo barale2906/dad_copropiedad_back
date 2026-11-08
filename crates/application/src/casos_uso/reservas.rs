@@ -61,7 +61,7 @@ pub const ACCION_AUTORIZAR_TENEDOR: AccionAuditoria =
 /// Anticipación de los recordatorios.
 pub const HORAS_RECORDATORIO: i64 = 24;
 
-async fn zona<T: RepositorioCopropiedad>(tx: &mut T) -> AppResult<Tz> {
+pub(crate) async fn zona<T: RepositorioCopropiedad>(tx: &mut T) -> AppResult<Tz> {
     let ficha = tx
         .ficha()
         .await?

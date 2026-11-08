@@ -14,3 +14,4 @@ Los ADR no se reescriben: si una decisión cambia, se crea uno nuevo que reempla
 | [0006](0006-copropiedades-coeficientes-y-titulares.md) | Coeficientes versionados, titulares e importación masiva | Aceptada |
 | [0007](0007-censo-residentes-vehiculos-mascotas.md) | Censo: residentes, vehículos, mascotas y autoservicio | Aceptada |
 | [0008](0008-bienes-comunes-reservas-y-sorteos.md) | Bienes comunes, motor de reservas, parqueaderos y sorteos verificables | Aceptada |
+| [0009](0009-gestion-administrativa-tickets-chat-y-mantenimiento.md) | Tickets con plazos hábiles, chat de WhatsApp con sesiones en PostgreSQL, inventario y mantenimiento | Aceptada |

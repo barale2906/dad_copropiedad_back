@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (\n                 SELECT 1 FROM contratos_servicio\n                 WHERE organizacion_id = $1 AND estado = 'vigente' AND vigente_desde <= $2\n                   AND (vigente_hasta IS NULL OR vigente_hasta > $2)) AS \"existe!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "existe!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "acc5a27d5881d4ee47d71a8d13aa952442c3e72a51af23270a6447d5c0f1f895"
+}

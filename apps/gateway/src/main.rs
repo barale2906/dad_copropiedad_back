@@ -4,24 +4,37 @@
 //! - Webhook de Meta: verificación de suscripción y de firma `X-Hub-Signature-256`.
 //! - Enrutamiento: sesión por (línea, teléfono) resuelta contra las reuniones activas.
 //! - Cola de salida (outbox) con prioridad y limitador de 80 mps por línea.
+//! - Chat de WhatsApp de la copropiedad (`casos_uso::chat`): menú, reportes, reservas y bandeja
+//!   humana; las respuestas salen por el outbox.
 //! - Al comienzo también hace de worker (envíos y actas); se separa solo si la carga lo pide.
-//!   Hoy despacha correo ([`worker_salida`]); WhatsApp se suma con su cliente de envío.
-//! - Encola los recordatorios de reservas ([`worker_recordatorios`]).
+//!   Despacha correo y WhatsApp ([`worker_salida`]) con el ritmo por línea de [`mensajeria`].
+//! - Encola los recordatorios de reservas ([`worker_recordatorios`]) y ejecuta las tareas de
+//!   tickets y mantenimiento ([`worker_gestion`]).
 
+mod mensajeria;
 mod routes;
 mod state;
+mod worker_gestion;
 mod worker_recordatorios;
 mod worker_salida;
 
 use std::sync::Arc;
 
 use anyhow::Context;
+use infra_archivos::AlmacenLocal;
 use infra_correo::CorreoSmtp;
-use infra_postgres::{ColaSalidaPg, DirectorioRecordatoriosPg, UnidadDeTrabajoPg};
-use shared::{AppConfig, SmtpConfig, WhatsappConfig, telemetry};
-use tokio::{net::TcpListener, sync::watch};
+use infra_postgres::{
+    ColaSalidaPg, DirectorioGestionPg, DirectorioRecordatoriosPg, DirectorioTelefonosPg,
+    SesionesChatPg, UnidadDeTrabajoPg,
+};
+use infra_whatsapp::ClienteWhatsapp;
+use shared::{AppConfig, ArchivosConfig, SmtpConfig, WhatsappConfig, telemetry};
+use tokio::{
+    net::TcpListener,
+    sync::{Notify, watch},
+};
 
-use crate::state::GatewayState;
+use crate::{mensajeria::MensajeriaGateway, state::GatewayState};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -48,21 +61,44 @@ async fn main() -> anyhow::Result<()> {
         let _ = avisar_apagado.send(true);
     });
 
-    let worker = match SmtpConfig::from_env().context("configuración SMTP inválida")? {
+    let correo = match SmtpConfig::from_env().context("configuración SMTP inválida")? {
         Some(smtp) => {
             tracing::info!(?smtp, "envío de correo activado");
-            let correo = CorreoSmtp::desde_config(&smtp).context("cliente SMTP inválido")?;
-            Some(tokio::spawn(worker_salida::ejecutar(
-                ColaSalidaPg::new(db.clone()),
-                correo,
-                esperar_apagado(apagado.clone()),
-            )))
+            Some(CorreoSmtp::desde_config(&smtp).context("cliente SMTP inválido")?)
         }
         None => {
             tracing::warn!("SMTP_HOST no está definido: el envío de correo queda desactivado");
             None
         }
     };
+    let cliente_whatsapp = match &whatsapp.access_token {
+        Some(token) => Some(
+            ClienteWhatsapp::new(&whatsapp.api_url, token)
+                .context("cliente de WhatsApp Cloud API inválido")?,
+        ),
+        None => {
+            tracing::warn!(
+                "WHATSAPP_ACCESS_TOKEN no está definido: no se envían mensajes de WhatsApp"
+            );
+            None
+        }
+    };
+    let mensajeria = MensajeriaGateway::new(cliente_whatsapp);
+    let archivos = AlmacenLocal::desde_config(
+        &ArchivosConfig::from_env().context("configuración de archivos inválida")?,
+    )
+    .context("almacén de archivos inválido")?;
+    let hay_salida = Arc::new(Notify::new());
+
+    let worker = (correo.is_some() || mensajeria.activa()).then(|| {
+        let cola = ColaSalidaPg::new(db.clone());
+        let whatsapp = mensajeria.activa().then(|| mensajeria.clone());
+        let aviso = Arc::clone(&hay_salida);
+        let apagado = esperar_apagado(apagado.clone());
+        tokio::spawn(async move {
+            worker_salida::ejecutar(cola, correo, whatsapp, &aviso, apagado).await;
+        })
+    });
 
     let recordatorios = tokio::spawn(worker_recordatorios::ejecutar(
         DirectorioRecordatoriosPg::new(db.clone()),
@@ -70,7 +106,20 @@ async fn main() -> anyhow::Result<()> {
         esperar_apagado(apagado.clone()),
     ));
 
+    let gestion = tokio::spawn(worker_gestion::ejecutar(
+        DirectorioGestionPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        SesionesChatPg::new(db.clone()),
+        esperar_apagado(apagado.clone()),
+    ));
+
     let state = GatewayState {
+        unidad: UnidadDeTrabajoPg::new(db.clone()),
+        sesiones: SesionesChatPg::new(db.clone()),
+        directorio: DirectorioTelefonosPg::new(db.clone()),
+        mensajeria,
+        archivos: Arc::new(archivos),
+        hay_salida,
         db,
         whatsapp: Arc::new(whatsapp),
     };
@@ -94,6 +143,10 @@ async fn main() -> anyhow::Result<()> {
 
     if let Err(e) = recordatorios.await {
         tracing::error!(error = %e, "el worker de recordatorios terminó con error");
+    }
+
+    if let Err(e) = gestion.await {
+        tracing::error!(error = %e, "el worker de gestión terminó con error");
     }
 
     tracing::info!("gateway detenido correctamente");

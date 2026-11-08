@@ -1,0 +1,39 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tickets (id, tenant_id, anio, consecutivo, tipo, categoria_id, prioridad,\n                                  canal, estado, asunto, descripcion, solicitante_persona_id,\n                                  solicitante_cuenta_id, bien_privado_id, ubicacion, recurso_id,\n                                  activo_id, asignado_cuenta_id, asignado_organizacion_id,\n                                  plazo_cantidad, plazo_unidad, vence_en, confidencial,\n                                  idempotency_key, creado_en, actualizado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19, $20, $21, $22, $23, $24, $25, $26)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Int4",
+        "Text",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Text",
+        "Timestamptz",
+        "Bool",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c9f3b1dbe57aeda7c311875011e6c87d9fdaa9ae31a4b07ee8d0a50eb7ce5f67"
+}

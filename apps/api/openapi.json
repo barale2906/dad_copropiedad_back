@@ -6301,6 +6301,2949 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/configuracion": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Configuración de tickets de la copropiedad.",
+        "operationId": "ver_configuracion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuración",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.configurar` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Reemplaza la configuración (jornada, reapertura y todas las reglas de plazo).",
+        "operationId": "guardar_configuracion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfiguracionDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Configuración guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.configurar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Jornada o plazos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/categorias": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Categorías de tickets (las inactivas solo para quien configura).",
+        "operationId": "listar_categorias",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categorías",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoriaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.crear` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Crea una categoría.",
+        "operationId": "crear_categoria",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoriaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Categoría creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.configurar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre repetido (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/categorias/{categoria_id}": {
+      "put": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Renombra, activa o inactiva una categoría.",
+        "operationId": "editar_categoria",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "categoria_id",
+            "in": "path",
+            "description": "Categoría",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoriaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Categoría",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Tickets visibles para la cuenta, más recientes primero: todos con `tickets.ver_todos`; los\nde convivencia con `tickets.convivencia.ver`; los asignados con `tickets.atender`; y los\npropios.",
+        "operationId": "listar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "abierto"
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "queja"
+          },
+          {
+            "name": "prioridad",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "urgente"
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "vencidos",
+            "in": "query",
+            "description": "Solo los vencidos.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "mios",
+            "in": "query",
+            "description": "Solo los que radicó la cuenta.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tickets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_TicketRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos de tickets (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Radica un ticket. Si es urgente avisa de inmediato a quienes tienen\n`tickets.urgencias.recibir`.",
+        "operationId": "radicar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RadicarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Ticket radicado (o el original si se reintenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.crear` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Persona, categoría o adjunto inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos o sin vínculo con el bien privado (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/tablero": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Tablero: pendientes por estado, vencidos, tiempos promedio y satisfacción.",
+        "operationId": "tablero",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Indicadores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableroRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.ver_todos` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/{ticket_id}": {
+      "get": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Un ticket (sin notas internas para el solicitante).",
+        "operationId": "ver",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "description": "Ticket",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalleRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es visible para la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Reclasifica un ticket; si cambia el tipo o la prioridad se recalcula el vencimiento.",
+        "operationId": "clasificar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "description": "Ticket",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClasificarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.asignar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya no está pendiente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/{ticket_id}/asignacion": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Asigna el ticket a una cuenta (con `tickets.atender`) o a una organización con contrato.",
+        "operationId": "asignar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "description": "Ticket",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponsableDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket asignado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tickets.asignar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El estado no admite asignación (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El responsable no puede atender (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/{ticket_id}/transiciones": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Cambia el estado según el diagrama y el papel de la cuenta (gestiona, atiende o es el\nsolicitante, que puede cerrar o reabrir dentro del plazo).",
+        "operationId": "transicionar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "description": "Ticket",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransicionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Su papel no permite ese cambio (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición no permitida (`conflicto_estado`) o venció la reapertura (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Falta el motivo o el original (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/{ticket_id}/mensajes": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Agrega un mensaje público o una nota interna. Si el ticket esperaba al solicitante y él\nresponde, vuelve a `en_progreso`.",
+        "operationId": "comentar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "description": "Ticket",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MensajePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Mensaje",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensajeRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No es el solicitante ni atiende el ticket (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El ticket terminó (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/tickets/{ticket_id}/encuesta": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "El solicitante califica la atención (una vez, con el ticket resuelto o cerrado).",
+        "operationId": "calificar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "path",
+            "description": "Ticket",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EncuestaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ticket calificado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No es el solicitante (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Aún no está resuelto o ya calificó (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/preguntas-frecuentes": {
+      "get": {
+        "tags": [
+          "conversaciones"
+        ],
+        "summary": "Preguntas frecuentes (las inactivas solo para quien las edita).",
+        "operationId": "listar_preguntas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preguntas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PreguntaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "conversaciones"
+        ],
+        "summary": "Crea una pregunta frecuente.",
+        "operationId": "crear_pregunta",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreguntaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Pregunta creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreguntaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `preguntas_frecuentes.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Textos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/preguntas-frecuentes/{pregunta_id}": {
+      "put": {
+        "tags": [
+          "conversaciones"
+        ],
+        "summary": "Reemplaza una pregunta frecuente.",
+        "operationId": "editar_pregunta",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreguntaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Pregunta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreguntaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/conversaciones": {
+      "get": {
+        "tags": [
+          "conversaciones"
+        ],
+        "summary": "Bandeja de conversaciones, más recientes primero.",
+        "operationId": "listar_conversaciones",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "description": "`abierta` o `cerrada`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "abierta"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_ConversacionRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `conversaciones.atender` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/conversaciones/{conversacion_id}": {
+      "get": {
+        "tags": [
+          "conversaciones"
+        ],
+        "summary": "Una conversación con sus mensajes.",
+        "operationId": "ver_conversacion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "conversacion_id",
+            "in": "path",
+            "description": "Conversación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalleConversacionRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/conversaciones/{conversacion_id}/mensajes": {
+      "post": {
+        "tags": [
+          "conversaciones"
+        ],
+        "summary": "Responde por WhatsApp (dentro de la ventana de 24 h desde el último mensaje del residente).",
+        "operationId": "responder",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "conversacion_id",
+            "in": "path",
+            "description": "Conversación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespuestaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Respuesta encolada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensajeConversacionRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `conversaciones.atender` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conversación cerrada o ventana de 24 h vencida (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/conversaciones/{conversacion_id}/cierre": {
+      "post": {
+        "tags": [
+          "conversaciones"
+        ],
+        "summary": "Cierra la conversación (el chat vuelve al menú en el siguiente mensaje del residente).",
+        "operationId": "cerrar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "conversacion_id",
+            "in": "path",
+            "description": "Conversación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversación cerrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversacionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya estaba cerrada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/activos": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Inventario de activos (paginado).",
+        "operationId": "listar_activos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "clase",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "equipo"
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "con_falla"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Fragmento del nombre o del código.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_ActivoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `inventario.ver` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Registra un activo (queda `operativo`, con un movimiento de entrada).",
+        "operationId": "registrar_activo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Activo registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `inventario.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código repetido (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/activos/{activo_id}": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Hoja de vida: el activo con sus archivos, movimientos y órdenes de trabajo.",
+        "operationId": "hoja_de_vida",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "activo_id",
+            "in": "path",
+            "description": "Activo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hoja de vida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HojaDeVidaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Edita los datos o el estado operativo de un activo.",
+        "operationId": "editar_activo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "activo_id",
+            "in": "path",
+            "description": "Activo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosActivoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Activo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivoRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Dado de baja (`conflicto`) o estado no permitido (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/activos/{activo_id}/archivos": {
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Agrega un archivo (manual, foto, factura, garantía) a la hoja de vida.",
+        "operationId": "adjuntar_archivo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "activo_id",
+            "in": "path",
+            "description": "Activo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchivoActivoDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Archivo agregado"
+          },
+          "404": {
+            "description": "Activo o archivo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya estaba (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/activos/{activo_id}/movimientos": {
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Registra un movimiento (el traslado cambia la ubicación; la baja es definitiva).",
+        "operationId": "registrar_movimiento",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "activo_id",
+            "in": "path",
+            "description": "Activo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovimientoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Movimiento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientoRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Activo dado de baja (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Falta el destino o el soporte (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/planes-mantenimiento": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Planes preventivos.",
+        "operationId": "listar_planes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "activos",
+            "in": "query",
+            "description": "Solo los activos.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Planes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlanRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `mantenimiento.planificar` ni `inventario.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Crea un plan preventivo; el worker genera sus órdenes con la anticipación indicada.",
+        "operationId": "crear_plan",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `mantenimiento.planificar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/planes-mantenimiento/{plan_id}": {
+      "put": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Reemplaza un plan preventivo (las órdenes ya generadas no cambian).",
+        "operationId": "editar_plan",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "plan_id",
+            "in": "path",
+            "description": "Plan",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Plan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/ordenes-trabajo": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Órdenes de trabajo, más recientes primero (quien solo ejecuta ve las asignadas).",
+        "operationId": "listar_ordenes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "programada"
+          },
+          {
+            "name": "activo_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticket_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "vencidas",
+            "in": "query",
+            "description": "Solo las pendientes con fecha ya pasada.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Órdenes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_OrdenRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permisos de mantenimiento (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Crea una orden; si nace de un ticket, el ticket avanza y el solicitante recibe un mensaje.",
+        "operationId": "crear_orden",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrdenPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Orden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdenRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `mantenimiento.planificar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Activo dado de baja o ticket terminado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/ordenes-trabajo/{orden_id}": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Una orden de trabajo con sus evidencias.",
+        "operationId": "ver_orden",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "orden_id",
+            "in": "path",
+            "description": "Orden",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalleOrdenRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es visible",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/ordenes-trabajo/{orden_id}/avance": {
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Avanza una orden: iniciar y ejecutar (quien la tiene asignada o planifica), verificar\n(`mantenimiento.verificar`) o cancelar (`mantenimiento.planificar`).",
+        "operationId": "avanzar_orden",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "orden_id",
+            "in": "path",
+            "description": "Orden",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvancePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Orden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrdenRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el permiso de esa acción (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición no permitida (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Checklist incompleto o costos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/ordenes-trabajo/{orden_id}/evidencias": {
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Agrega una evidencia (foto antes/después o soporte).",
+        "operationId": "agregar_evidencia",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "orden_id",
+            "in": "path",
+            "description": "Orden",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenciaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Evidencia agregada"
+          },
+          "409": {
+            "description": "La orden terminó (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/obligaciones/sugeridas": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Catálogo sugerido de obligaciones periódicas (editable al activarlas: la periodicidad\nexacta depende de la norma local).",
+        "operationId": "obligaciones_sugeridas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catálogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SugeridaRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/obligaciones": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Obligaciones periódicas, por próxima fecha.",
+        "operationId": "listar_obligaciones",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "activas",
+            "in": "query",
+            "description": "Solo las activas.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Obligaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ObligacionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `mantenimiento.planificar` ni `inventario.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Crea una obligación (propia o del catálogo sugerido).",
+        "operationId": "crear_obligacion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObligacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Obligación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObligacionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La sugerida ya está activa (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Faltan datos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/obligaciones/{obligacion_id}": {
+      "patch": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Edita una obligación (los campos omitidos no cambian).",
+        "operationId": "editar_obligacion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "obligacion_id",
+            "in": "path",
+            "description": "Obligación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObligacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Obligación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObligacionRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/obligaciones/{obligacion_id}/cumplimientos": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Historial de cumplimientos, más recientes primero.",
+        "operationId": "listar_cumplimientos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "obligacion_id",
+            "in": "path",
+            "description": "Obligación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cumplimientos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CumplimientoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Registra que se cumplió; la próxima fecha se calcula desde la realización.",
+        "operationId": "registrar_cumplimiento",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "obligacion_id",
+            "in": "path",
+            "description": "Obligación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CumplimientoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Obligación con la próxima fecha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObligacionRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Fecha futura (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mantenimiento/alertas": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Alertas: obligaciones por vencer, garantías y órdenes vencidas.",
+        "operationId": "alertas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Alertas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertasRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `mantenimiento.planificar` ni `inventario.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mantenimiento/tablero": {
+      "get": {
+        "tags": [
+          "mantenimiento"
+        ],
+        "summary": "Tablero: cumplimiento del plan preventivo, órdenes vencidas y costo por activo.",
+        "operationId": "tablero",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Indicadores",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableroMantenimientoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `mantenimiento.planificar` ni `inventario.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/importaciones/bienes-privados": {
       "post": {
         "tags": [
@@ -7460,6 +10403,223 @@
   },
   "components": {
     "schemas": {
+      "ActivoPeticion": {
+        "type": "object",
+        "description": "Activo nuevo.",
+        "required": [
+          "codigo",
+          "nombre",
+          "clase"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "BOMBA-01"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Bomba de agua potable 1"
+          },
+          "clase": {
+            "type": "string",
+            "example": "equipo"
+          },
+          "marca": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modelo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "serie": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "agrupacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "recurso_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Bien común donde está o herramienta prestable (recurso del motor de reservas)."
+          },
+          "fecha_compra": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "valor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "12500000"
+          },
+          "garantia_vence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "proveedor_organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "ActivoRespuesta": {
+        "type": "object",
+        "description": "Activo del inventario.",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "clase",
+          "estado",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "BOMBA-01"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "clase": {
+            "type": "string",
+            "example": "equipo"
+          },
+          "marca": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modelo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "serie": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "agrupacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "recurso_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "example": "operativo"
+          },
+          "fecha_compra": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "valor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "12500000.00"
+          },
+          "garantia_vence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "proveedor_organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdjuntoRespuesta": {
+        "type": "object",
+        "description": "Adjunto de un ticket (descargar con `POST /archivos/{archivo_id}/enlace`).",
+        "required": [
+          "archivo_id",
+          "interno"
+        ],
+        "properties": {
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mensaje_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "interno": {
+            "type": "boolean"
+          }
+        }
+      },
       "AgrupacionRespuesta": {
         "type": "object",
         "description": "Agrupación (edificio, etapa, bloque…).",
@@ -7566,6 +10726,25 @@
               "$ref": "#/components/schemas/BienPrivadoRespuesta"
             },
             "description": "Bienes privados sin agrupación (casas, lotes…)."
+          }
+        }
+      },
+      "ArchivoActivoDto": {
+        "type": "object",
+        "description": "Archivo de la hoja de vida.",
+        "required": [
+          "archivo_id",
+          "tipo"
+        ],
+        "properties": {
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "`manual`, `foto`, `factura`, `garantia` u `otro`.",
+            "example": "manual"
           }
         }
       },
@@ -7766,6 +10945,123 @@
             "type": "boolean"
           }
         }
+      },
+      "AvancePeticion": {
+        "oneOf": [
+          {
+            "type": "object",
+            "description": "`programada → en_ejecucion`.",
+            "required": [
+              "accion"
+            ],
+            "properties": {
+              "accion": {
+                "type": "string",
+                "enum": [
+                  "iniciar"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "`en_ejecucion → ejecutada`.",
+            "required": [
+              "accion"
+            ],
+            "properties": {
+              "checklist": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PuntoChecklistDto"
+                }
+              },
+              "costo_mano_obra": {
+                "type": "string",
+                "example": "150000"
+              },
+              "costo_repuestos": {
+                "type": "string",
+                "example": "80000"
+              },
+              "observaciones": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "recibido_por": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Nombre de quien recibe el trabajo."
+              },
+              "firma_archivo_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid"
+              },
+              "accion": {
+                "type": "string",
+                "enum": [
+                  "ejecutar"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "`ejecutada → verificada` (o devuelta a `en_ejecucion` si `aprobada` es falso).",
+            "required": [
+              "aprobada",
+              "accion"
+            ],
+            "properties": {
+              "aprobada": {
+                "type": "boolean"
+              },
+              "observacion": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "resolver_ticket": {
+                "type": "boolean",
+                "description": "Resolver el ticket que originó la orden."
+              },
+              "accion": {
+                "type": "string",
+                "enum": [
+                  "verificar"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "description": "`programada | en_ejecucion → cancelada`.",
+            "required": [
+              "motivo",
+              "accion"
+            ],
+            "properties": {
+              "motivo": {
+                "type": "string"
+              },
+              "accion": {
+                "type": "string",
+                "enum": [
+                  "cancelar"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Avance de una orden."
       },
       "BienComunDto": {
         "type": "object",
@@ -7976,6 +11272,71 @@
             ],
             "format": "uuid",
             "description": "Residencia, vehículo o mascota creados al aprobar."
+          }
+        }
+      },
+      "CambiosActivoPeticion": {
+        "type": "object",
+        "description": "Cambios a un activo (los omitidos no cambian; la ubicación cambia con un traslado).",
+        "properties": {
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "marca": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modelo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "serie": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recurso_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "valor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "garantia_vence": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "proveedor_organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`operativo`, `con_falla`, `en_reparacion` o `fuera_de_servicio` (la baja va por movimiento).",
+            "example": "en_reparacion"
           }
         }
       },
@@ -8473,6 +11834,44 @@
           }
         }
       },
+      "CategoriaPeticion": {
+        "type": "object",
+        "description": "Datos de una categoría.",
+        "required": [
+          "nombre"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Plomería"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CategoriaRespuesta": {
+        "type": "object",
+        "description": "Categoría de tickets.",
+        "required": [
+          "id",
+          "nombre",
+          "activa"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Plomería"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
       "ChecklistDto": {
         "type": "object",
         "description": "Elemento del checklist.",
@@ -8498,6 +11897,33 @@
               "null"
             ],
             "example": "bueno"
+          }
+        }
+      },
+      "ClasificarPeticion": {
+        "type": "object",
+        "description": "Cambios de clasificación (los omitidos no cambian).",
+        "properties": {
+          "tipo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "reclamo"
+          },
+          "categoria_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "prioridad": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "alta"
           }
         }
       },
@@ -8568,6 +11994,62 @@
             "items": {
               "$ref": "#/components/schemas/FilaCoeficientePeticion"
             }
+          }
+        }
+      },
+      "ConfiguracionDto": {
+        "type": "object",
+        "description": "Configuración de tickets. Los tipos sin regla usan los plazos por defecto (Ley 1755: 15 días\nhábiles para peticiones, 10 para documentos; mantenimiento según la prioridad).",
+        "required": [
+          "jornada_inicio",
+          "jornada_fin",
+          "incluye_sabado",
+          "dias_reapertura",
+          "plazos"
+        ],
+        "properties": {
+          "jornada_inicio": {
+            "type": "string",
+            "example": "08:00:00"
+          },
+          "jornada_fin": {
+            "type": "string",
+            "example": "17:00:00"
+          },
+          "incluye_sabado": {
+            "type": "boolean"
+          },
+          "dias_reapertura": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Días hábiles para reabrir un ticket resuelto.",
+            "example": 5,
+            "minimum": 0
+          },
+          "plazos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReglaPlazoDto"
+            }
+          }
+        }
+      },
+      "ConteoEstado": {
+        "type": "object",
+        "description": "Pendientes por estado.",
+        "required": [
+          "estado",
+          "cantidad"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "example": "en_progreso"
+          },
+          "cantidad": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
           }
         }
       },
@@ -8670,6 +12152,65 @@
           }
         }
       },
+      "ConversacionRespuesta": {
+        "type": "object",
+        "description": "Conversación de la bandeja.",
+        "required": [
+          "id",
+          "telefono",
+          "estado",
+          "abierta_en",
+          "ultimo_entrante_en",
+          "ventana_abierta"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "telefono": {
+            "type": "string",
+            "description": "Teléfono del residente (dato personal)."
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "example": "abierta"
+          },
+          "atendida_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "abierta_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ultimo_entrante_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ventana_abierta": {
+            "type": "boolean",
+            "description": "Se puede responder con texto libre (ventana de 24 h de WhatsApp)."
+          },
+          "cerrada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "CopropiedadRespuesta": {
         "type": "object",
         "description": "Copropiedad registrada.",
@@ -8684,6 +12225,28 @@
           },
           "nombre": {
             "type": "string"
+          }
+        }
+      },
+      "CostoActivo": {
+        "type": "object",
+        "description": "Costo acumulado de un activo.",
+        "required": [
+          "activo_id",
+          "nombre",
+          "costo"
+        ],
+        "properties": {
+          "activo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "costo": {
+            "type": "string",
+            "example": "350000.00"
           }
         }
       },
@@ -8794,6 +12357,71 @@
           },
           "nombre": {
             "type": "string"
+          }
+        }
+      },
+      "CumplimientoPeticion": {
+        "type": "object",
+        "description": "Cumplimiento nuevo.",
+        "required": [
+          "realizada_el"
+        ],
+        "properties": {
+          "realizada_el": {
+            "type": "string",
+            "format": "date"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Certificado o informe."
+          },
+          "observacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "CumplimientoRespuesta": {
+        "type": "object",
+        "description": "Cumplimiento registrado.",
+        "required": [
+          "realizada_el",
+          "registrado_en"
+        ],
+        "properties": {
+          "realizada_el": {
+            "type": "string",
+            "format": "date"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "observacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registrado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "registrado_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -8956,6 +12584,25 @@
           }
         }
       },
+      "DetalleConversacionRespuesta": {
+        "type": "object",
+        "description": "Conversación con sus mensajes.",
+        "required": [
+          "conversacion",
+          "mensajes"
+        ],
+        "properties": {
+          "conversacion": {
+            "$ref": "#/components/schemas/ConversacionRespuesta"
+          },
+          "mensajes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MensajeConversacionRespuesta"
+            }
+          }
+        }
+      },
       "DetalleCuadroRespuesta": {
         "type": "object",
         "description": "Cuadro con sus coeficientes y su revisión.",
@@ -8996,6 +12643,25 @@
           }
         }
       },
+      "DetalleOrdenRespuesta": {
+        "type": "object",
+        "description": "Orden con sus evidencias.",
+        "required": [
+          "orden",
+          "evidencias"
+        ],
+        "properties": {
+          "orden": {
+            "$ref": "#/components/schemas/OrdenRespuesta"
+          },
+          "evidencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenciaDto"
+            }
+          }
+        }
+      },
       "DetalleReservaRespuesta": {
         "type": "object",
         "description": "Reserva con su entrega y su recibo.",
@@ -9012,6 +12678,82 @@
             "items": {
               "$ref": "#/components/schemas/EntregaRespuesta"
             }
+          }
+        }
+      },
+      "DetalleRespuesta": {
+        "type": "object",
+        "description": "Ticket con su conversación, adjuntos e historial.",
+        "required": [
+          "ticket",
+          "mensajes",
+          "adjuntos",
+          "eventos"
+        ],
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/TicketRespuesta"
+          },
+          "mensajes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MensajeRespuesta"
+            }
+          },
+          "adjuntos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdjuntoRespuesta"
+            }
+          },
+          "eventos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoRespuesta"
+            }
+          }
+        }
+      },
+      "EncuestaDto": {
+        "type": "object",
+        "description": "Encuesta de satisfacción.",
+        "required": [
+          "calificacion"
+        ],
+        "properties": {
+          "calificacion": {
+            "type": "integer",
+            "format": "int32",
+            "example": 5,
+            "minimum": 0
+          },
+          "comentario": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "EncuestaPeticion": {
+        "type": "object",
+        "description": "Encuesta de satisfacción.",
+        "required": [
+          "calificacion"
+        ],
+        "properties": {
+          "calificacion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "De 1 a 5.",
+            "example": 5,
+            "minimum": 0
+          },
+          "comentario": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -9243,6 +12985,64 @@
             "type": "string",
             "description": "Versión del binario desplegado.",
             "example": "0.1.0"
+          }
+        }
+      },
+      "EventoRespuesta": {
+        "type": "object",
+        "description": "Cambio de estado del historial.",
+        "required": [
+          "hacia",
+          "ocurrido_en"
+        ],
+        "properties": {
+          "desde": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`null` = radicación.",
+            "example": "abierto"
+          },
+          "hacia": {
+            "type": "string",
+            "example": "asignado"
+          },
+          "actor_cuenta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ocurrido_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EvidenciaDto": {
+        "type": "object",
+        "description": "Evidencia de una orden.",
+        "required": [
+          "archivo_id",
+          "momento"
+        ],
+        "properties": {
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "momento": {
+            "type": "string",
+            "description": "`antes`, `despues` o `soporte`.",
+            "example": "despues"
           }
         }
       },
@@ -9541,6 +13341,45 @@
           "aplica_festivos": {
             "type": "boolean",
             "description": "¿También atiende los festivos?"
+          }
+        }
+      },
+      "HojaDeVidaRespuesta": {
+        "type": "object",
+        "description": "Hoja de vida de un activo.",
+        "required": [
+          "activo",
+          "archivos",
+          "movimientos",
+          "ordenes",
+          "costo_total"
+        ],
+        "properties": {
+          "activo": {
+            "$ref": "#/components/schemas/ActivoRespuesta"
+          },
+          "archivos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArchivoActivoDto"
+            }
+          },
+          "movimientos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovimientoRespuesta"
+            }
+          },
+          "ordenes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrdenRespuesta"
+            }
+          },
+          "costo_total": {
+            "type": "string",
+            "description": "Costo acumulado de las órdenes.",
+            "example": "350000.00"
           }
         }
       },
@@ -9917,6 +13756,117 @@
           }
         }
       },
+      "MensajeConversacionRespuesta": {
+        "type": "object",
+        "description": "Mensaje de una conversación.",
+        "required": [
+          "entrante",
+          "texto",
+          "creado_en"
+        ],
+        "properties": {
+          "entrante": {
+            "type": "boolean",
+            "description": "Lo escribió el residente."
+          },
+          "texto": {
+            "type": "string"
+          },
+          "autor_cuenta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MensajePeticion": {
+        "type": "object",
+        "description": "Mensaje nuevo.",
+        "required": [
+          "texto"
+        ],
+        "properties": {
+          "texto": {
+            "type": "string"
+          },
+          "interno": {
+            "type": "boolean",
+            "description": "Nota interna (solo la administración y quien atiende)."
+          },
+          "adjuntos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "MensajeRespuesta": {
+        "type": "object",
+        "description": "Mensaje de un ticket.",
+        "required": [
+          "id",
+          "del_solicitante",
+          "canal",
+          "interno",
+          "texto",
+          "adjuntos",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "autor_cuenta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "autor_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "del_solicitante": {
+            "type": "boolean",
+            "description": "Lo escribió el solicitante."
+          },
+          "canal": {
+            "type": "string",
+            "example": "web"
+          },
+          "interno": {
+            "type": "boolean",
+            "description": "Nota interna (el solicitante no la ve)."
+          },
+          "texto": {
+            "type": "string"
+          },
+          "adjuntos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "MiembroPeticion": {
         "type": "object",
         "description": "Miembro de la organización.",
@@ -9945,6 +13895,105 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "MovimientoPeticion": {
+        "type": "object",
+        "description": "Movimiento nuevo.",
+        "required": [
+          "tipo"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "description": "`entrada`, `salida`, `traslado`, `prestamo`, `devolucion` o `baja`.",
+            "example": "traslado"
+          },
+          "ubicacion_destino": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatoria en los traslados."
+          },
+          "reserva_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Reserva de la herramienta prestada."
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Obligatorio en las bajas (acta o documento)."
+          },
+          "observacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "MovimientoRespuesta": {
+        "type": "object",
+        "description": "Movimiento de inventario.",
+        "required": [
+          "id",
+          "tipo",
+          "ocurrido_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "traslado"
+          },
+          "ubicacion_destino": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reserva_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "observacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registrado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ocurrido_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -10494,6 +14543,346 @@
         ],
         "description": "Vehículo nuevo."
       },
+      "ObligacionPeticion": {
+        "type": "object",
+        "description": "Datos de una obligación. Con `codigo_sugerido` los campos omitidos salen del catálogo.",
+        "properties": {
+          "codigo_sugerido": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "lavado_tanques"
+          },
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "periodicidad_meses": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "proxima": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "dias_alerta": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "responsable_organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "activa": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      },
+      "ObligacionRespuesta": {
+        "type": "object",
+        "description": "Obligación periódica.",
+        "required": [
+          "id",
+          "nombre",
+          "periodicidad_meses",
+          "proxima",
+          "dias_alerta",
+          "activa"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo_sugerido": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "periodicidad_meses": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "proxima": {
+            "type": "string",
+            "format": "date"
+          },
+          "dias_alerta": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "responsable_organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OrdenPeticion": {
+        "type": "object",
+        "description": "Orden correctiva, urgente o de inspección.",
+        "required": [
+          "tipo",
+          "descripcion",
+          "programada_para"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "description": "`correctivo` o `urgente` (las preventivas las generan los planes; `preventivo` vale para\nuna inspección).",
+            "example": "correctivo"
+          },
+          "ticket_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Ticket que la origina."
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "asignado": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ResponsableDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "programada_para": {
+            "type": "string",
+            "format": "date"
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "OrdenRespuesta": {
+        "type": "object",
+        "description": "Orden de trabajo.",
+        "required": [
+          "id",
+          "numero",
+          "origen",
+          "tipo",
+          "descripcion",
+          "programada_para",
+          "estado",
+          "checklist",
+          "costo_mano_obra",
+          "costo_repuestos",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "numero": {
+            "type": "string",
+            "example": "OT-2026-00007"
+          },
+          "origen": {
+            "type": "string",
+            "example": "plan_preventivo"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "preventivo"
+          },
+          "plan_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ticket_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "asignado": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ResponsableDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "programada_para": {
+            "type": "string",
+            "format": "date"
+          },
+          "estado": {
+            "type": "string",
+            "example": "programada"
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PuntoChecklistDto"
+            }
+          },
+          "costo_mano_obra": {
+            "type": "string",
+            "example": "0.00"
+          },
+          "costo_repuestos": {
+            "type": "string",
+            "example": "0.00"
+          },
+          "observaciones": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recibido_por": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "firma_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "iniciada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "ejecutada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "verificada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "verificada_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "OrganizacionCreada": {
         "type": "object",
         "description": "Organización creada o reutilizada.",
@@ -10509,6 +14898,130 @@
           "creada": {
             "type": "boolean",
             "description": "`false` si ya existía con ese NIT (se reutiliza)."
+          }
+        }
+      },
+      "PaginaRespuesta_ActivoRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Activo del inventario.",
+              "required": [
+                "id",
+                "codigo",
+                "nombre",
+                "clase",
+                "estado",
+                "creado_en"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "codigo": {
+                  "type": "string",
+                  "example": "BOMBA-01"
+                },
+                "nombre": {
+                  "type": "string"
+                },
+                "clase": {
+                  "type": "string",
+                  "example": "equipo"
+                },
+                "marca": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "modelo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "serie": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "ubicacion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "agrupacion_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "recurso_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "estado": {
+                  "type": "string",
+                  "example": "operativo"
+                },
+                "fecha_compra": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date"
+                },
+                "valor": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "12500000.00"
+                },
+                "garantia_vence": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date"
+                },
+                "proveedor_organizacion_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "creado_en": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
           }
         }
       },
@@ -10622,6 +15135,255 @@
           }
         }
       },
+      "PaginaRespuesta_ConversacionRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Conversación de la bandeja.",
+              "required": [
+                "id",
+                "telefono",
+                "estado",
+                "abierta_en",
+                "ultimo_entrante_en",
+                "ventana_abierta"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "telefono": {
+                  "type": "string",
+                  "description": "Teléfono del residente (dato personal)."
+                },
+                "persona_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "estado": {
+                  "type": "string",
+                  "example": "abierta"
+                },
+                "atendida_por": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "abierta_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ultimo_entrante_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ventana_abierta": {
+                  "type": "boolean",
+                  "description": "Se puede responder con texto libre (ventana de 24 h de WhatsApp)."
+                },
+                "cerrada_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_OrdenRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Orden de trabajo.",
+              "required": [
+                "id",
+                "numero",
+                "origen",
+                "tipo",
+                "descripcion",
+                "programada_para",
+                "estado",
+                "checklist",
+                "costo_mano_obra",
+                "costo_repuestos",
+                "creado_en"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "numero": {
+                  "type": "string",
+                  "example": "OT-2026-00007"
+                },
+                "origen": {
+                  "type": "string",
+                  "example": "plan_preventivo"
+                },
+                "tipo": {
+                  "type": "string",
+                  "example": "preventivo"
+                },
+                "plan_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "ticket_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "activo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "ubicacion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "descripcion": {
+                  "type": "string"
+                },
+                "asignado": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ResponsableDto"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "programada_para": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "estado": {
+                  "type": "string",
+                  "example": "programada"
+                },
+                "checklist": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PuntoChecklistDto"
+                  }
+                },
+                "costo_mano_obra": {
+                  "type": "string",
+                  "example": "0.00"
+                },
+                "costo_repuestos": {
+                  "type": "string",
+                  "example": "0.00"
+                },
+                "observaciones": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "recibido_por": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "firma_archivo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "iniciada_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "ejecutada_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "verificada_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "verificada_por": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "creado_en": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_PersonaRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -10717,6 +15479,210 @@
                 "datos_sensibles_ocultos": {
                   "type": "boolean",
                   "description": "Se ocultaron los datos sensibles por falta de permiso."
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_TicketRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Ticket. Si es un reporte de convivencia y la cuenta no tiene `tickets.convivencia.ver`, la\nidentidad del solicitante y su bien privado vienen vacíos (`identidad_oculta`).",
+              "required": [
+                "id",
+                "numero",
+                "tipo",
+                "prioridad",
+                "canal",
+                "estado",
+                "asunto",
+                "descripcion",
+                "vencido",
+                "confidencial",
+                "identidad_oculta",
+                "creado_en",
+                "actualizado_en"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "numero": {
+                  "type": "string",
+                  "description": "Número legible por copropiedad y año.",
+                  "example": "PQR-2026-00042"
+                },
+                "tipo": {
+                  "type": "string",
+                  "example": "solicitud_mantenimiento"
+                },
+                "categoria_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "prioridad": {
+                  "type": "string",
+                  "example": "media"
+                },
+                "canal": {
+                  "type": "string",
+                  "example": "web"
+                },
+                "estado": {
+                  "type": "string",
+                  "example": "abierto"
+                },
+                "asunto": {
+                  "type": "string"
+                },
+                "descripcion": {
+                  "type": "string"
+                },
+                "solicitante_persona_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "solicitante_cuenta_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "bien_privado_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "ubicacion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "recurso_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "activo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "asignado": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ResponsableDto"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "plazo": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PlazoDto"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "vence_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "vencido": {
+                  "type": "boolean"
+                },
+                "resuelto_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "reabrible_hasta": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time",
+                  "description": "Hasta cuándo el solicitante puede reabrirlo; luego se cierra solo."
+                },
+                "cerrado_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "duplicado_de": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "confidencial": {
+                  "type": "boolean"
+                },
+                "identidad_oculta": {
+                  "type": "boolean"
+                },
+                "encuesta": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/EncuestaDto"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "creado_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "actualizado_en": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               }
             },
@@ -11020,6 +15986,159 @@
           }
         }
       },
+      "PlanPeticion": {
+        "type": "object",
+        "description": "Datos de un plan preventivo.",
+        "required": [
+          "actividad",
+          "recurrencia"
+        ],
+        "properties": {
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actividad": {
+            "type": "string",
+            "example": "Mantenimiento preventivo de la bomba"
+          },
+          "recurrencia": {
+            "$ref": "#/components/schemas/RecurrenciaDto"
+          },
+          "anticipacion_dias": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Días antes de la fecha en que se genera la orden (7 si se omite).",
+            "minimum": 0
+          },
+          "responsable": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ResponsableDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duracion_estimada_min": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PlanRespuesta": {
+        "type": "object",
+        "description": "Plan preventivo.",
+        "required": [
+          "id",
+          "actividad",
+          "recurrencia",
+          "anticipacion_dias",
+          "checklist",
+          "activo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "actividad": {
+            "type": "string"
+          },
+          "recurrencia": {
+            "$ref": "#/components/schemas/RecurrenciaDto"
+          },
+          "anticipacion_dias": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "responsable": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ResponsableDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duracion_estimada_min": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PlazoDto": {
+        "type": "object",
+        "description": "Plazo de respuesta.",
+        "required": [
+          "cantidad",
+          "unidad"
+        ],
+        "properties": {
+          "cantidad": {
+            "type": "integer",
+            "format": "int32",
+            "example": 15,
+            "minimum": 0
+          },
+          "unidad": {
+            "type": "string",
+            "description": "`horas`, `horas_habiles` o `dias_habiles`.",
+            "example": "dias_habiles"
+          }
+        }
+      },
       "PoliticaDto": {
         "type": "object",
         "description": "Política de reserva de un recurso. Montos en pesos (texto decimal).",
@@ -11155,6 +16274,77 @@
           }
         }
       },
+      "PreguntaPeticion": {
+        "type": "object",
+        "description": "Datos de una pregunta frecuente.",
+        "required": [
+          "pregunta",
+          "respuesta"
+        ],
+        "properties": {
+          "pregunta": {
+            "type": "string",
+            "description": "Hasta 72 caracteres (se muestra en la lista de WhatsApp)."
+          },
+          "respuesta": {
+            "type": "string",
+            "description": "Hasta 4000 caracteres; admite saltos de línea."
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "activa": {
+            "type": "boolean"
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Documento enlazable (reglamento, manual de convivencia)."
+          }
+        }
+      },
+      "PreguntaRespuesta": {
+        "type": "object",
+        "description": "Pregunta frecuente.",
+        "required": [
+          "id",
+          "pregunta",
+          "respuesta",
+          "orden",
+          "activa"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pregunta": {
+            "type": "string",
+            "example": "Horario de la piscina"
+          },
+          "respuesta": {
+            "type": "string"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "activa": {
+            "type": "boolean"
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "PropuestaPeticion": {
         "type": "object",
         "description": "Propuesta de cambio: `tipo` y los `datos` del registro (los mismos campos que en\n`POST /residencias`, `/vehiculos` o `/mascotas`, sin `bien_privado_id`).",
@@ -11213,6 +16403,122 @@
           },
           "horario": {
             "$ref": "#/components/schemas/HorarioDto"
+          }
+        }
+      },
+      "PuntoChecklistDto": {
+        "type": "object",
+        "description": "Punto del checklist.",
+        "required": [
+          "descripcion",
+          "cumplido"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": "string"
+          },
+          "cumplido": {
+            "type": "boolean"
+          },
+          "observacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "RadicarPeticion": {
+        "type": "object",
+        "description": "Ticket nuevo.",
+        "required": [
+          "tipo",
+          "asunto",
+          "descripcion",
+          "idempotency_key"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "example": "solicitud_mantenimiento"
+          },
+          "categoria_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "prioridad": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`media` si se omite.",
+            "example": "alta"
+          },
+          "canal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`web` si se omite; `presencial` o `correo` cuando la administración registra un caso.",
+            "example": "web"
+          },
+          "asunto": {
+            "type": "string",
+            "example": "Fuga en el baño comunal del piso 3"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "bien_privado_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recurso_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Bien común afectado."
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "adjuntos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Archivos ya subidos (`POST /archivos`)."
+          },
+          "idempotency_key": {
+            "type": "string",
+            "description": "La genera el cliente; un reintento con la misma clave devuelve el ticket original."
+          },
+          "solicitante_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Persona por la que radica la administración (casos presenciales o por correo); exige\n`tickets.asignar`."
           }
         }
       },
@@ -11289,6 +16595,32 @@
           "correo": {
             "type": "string",
             "example": "ana@correo.co"
+          }
+        }
+      },
+      "RecurrenciaDto": {
+        "type": "object",
+        "description": "Recurrencia: «cada `intervalo` `frecuencia` desde `inicio`».",
+        "required": [
+          "frecuencia",
+          "intervalo",
+          "inicio"
+        ],
+        "properties": {
+          "frecuencia": {
+            "type": "string",
+            "description": "`dias`, `semanas` o `meses` (anual = 12 meses).",
+            "example": "meses"
+          },
+          "intervalo": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1,
+            "minimum": 0
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -11392,6 +16724,31 @@
           "contrasena": {
             "type": "string",
             "description": "De 10 a 128 caracteres."
+          }
+        }
+      },
+      "ReglaPlazoDto": {
+        "type": "object",
+        "description": "Regla de plazo: por tipo y, opcionalmente, por prioridad.",
+        "required": [
+          "tipo",
+          "plazo"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "example": "queja"
+          },
+          "prioridad": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`null` = cualquier prioridad.",
+            "example": "urgente"
+          },
+          "plazo": {
+            "$ref": "#/components/schemas/PlazoDto"
           }
         }
       },
@@ -11650,6 +17007,38 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "ResponsableDto": {
+        "type": "object",
+        "description": "Responsable: una cuenta **o** una organización con contrato de servicio.",
+        "properties": {
+          "cuenta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "RespuestaPeticion": {
+        "type": "object",
+        "description": "Respuesta de la administración.",
+        "required": [
+          "texto"
+        ],
+        "properties": {
+          "texto": {
+            "type": "string"
           }
         }
       },
@@ -12090,6 +17479,303 @@
           }
         }
       },
+      "SugeridaRespuesta": {
+        "type": "object",
+        "description": "Obligación del catálogo sugerido.",
+        "required": [
+          "codigo",
+          "nombre",
+          "descripcion",
+          "periodicidad_meses"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "lavado_tanques"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "periodicidad_meses": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "TableroMantenimientoRespuesta": {
+        "type": "object",
+        "description": "Indicadores del tablero de mantenimiento.",
+        "required": [
+          "preventivas_programadas",
+          "preventivas_cumplidas",
+          "ordenes_vencidas",
+          "costo_por_activo"
+        ],
+        "properties": {
+          "preventivas_programadas": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Preventivas programadas en los últimos 12 meses.",
+            "minimum": 0
+          },
+          "preventivas_cumplidas": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "cumplimiento_porcentaje": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Porcentaje de cumplimiento del plan preventivo (`null` si no hubo programadas).",
+            "example": "87.50"
+          },
+          "ordenes_vencidas": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "costo_por_activo": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CostoActivo"
+            }
+          }
+        }
+      },
+      "TableroRespuesta": {
+        "type": "object",
+        "description": "Indicadores del tablero.",
+        "required": [
+          "pendientes_por_estado",
+          "vencidos"
+        ],
+        "properties": {
+          "pendientes_por_estado": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConteoEstado"
+            }
+          },
+          "vencidos": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "horas_promedio_respuesta": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Horas promedio hasta la primera atención."
+          },
+          "horas_promedio_solucion": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Horas promedio hasta la resolución."
+          },
+          "satisfaccion_promedio": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Promedio de la encuesta (1 a 5)."
+          }
+        }
+      },
+      "TicketRespuesta": {
+        "type": "object",
+        "description": "Ticket. Si es un reporte de convivencia y la cuenta no tiene `tickets.convivencia.ver`, la\nidentidad del solicitante y su bien privado vienen vacíos (`identidad_oculta`).",
+        "required": [
+          "id",
+          "numero",
+          "tipo",
+          "prioridad",
+          "canal",
+          "estado",
+          "asunto",
+          "descripcion",
+          "vencido",
+          "confidencial",
+          "identidad_oculta",
+          "creado_en",
+          "actualizado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "numero": {
+            "type": "string",
+            "description": "Número legible por copropiedad y año.",
+            "example": "PQR-2026-00042"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "solicitud_mantenimiento"
+          },
+          "categoria_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "prioridad": {
+            "type": "string",
+            "example": "media"
+          },
+          "canal": {
+            "type": "string",
+            "example": "web"
+          },
+          "estado": {
+            "type": "string",
+            "example": "abierto"
+          },
+          "asunto": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "solicitante_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "solicitante_cuenta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ubicacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recurso_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "asignado": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ResponsableDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plazo": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PlazoDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vence_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "vencido": {
+            "type": "boolean"
+          },
+          "resuelto_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reabrible_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Hasta cuándo el solicitante puede reabrirlo; luego se cierra solo."
+          },
+          "cerrado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "duplicado_de": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "confidencial": {
+            "type": "boolean"
+          },
+          "identidad_oculta": {
+            "type": "boolean"
+          },
+          "encuesta": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/EncuestaDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualizado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "TitularPeticion": {
         "type": "object",
         "description": "Titular solicitado: `persona_id` de una persona registrada o `persona` nueva.",
@@ -12277,6 +17963,34 @@
             "type": "string",
             "format": "date-time",
             "description": "Después de esto hay que volver a iniciar sesión (30 días; 12 h en equipo compartido)."
+          }
+        }
+      },
+      "TransicionPeticion": {
+        "type": "object",
+        "description": "Cambio de estado.",
+        "required": [
+          "hacia"
+        ],
+        "properties": {
+          "hacia": {
+            "type": "string",
+            "example": "resuelto"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorio al resolver (es la respuesta al solicitante), rechazar o pedir información."
+          },
+          "duplicado_de": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Obligatorio al marcar `duplicado`."
           }
         }
       },
@@ -12521,6 +18235,18 @@
     {
       "name": "reservas",
       "description": "Bienes comunes, reservas, citas con la administración, parqueaderos y sorteos (módulo `bienes_comunes`)"
+    },
+    {
+      "name": "tickets",
+      "description": "Tickets: peticiones, quejas, reclamos y solicitudes con plazos en días u horas hábiles, notas internas, reportes de convivencia confidenciales y encuesta (módulo `gestion_administrativa`)"
+    },
+    {
+      "name": "conversaciones",
+      "description": "Chat de WhatsApp: preguntas frecuentes y bandeja de conversaciones escaladas a la administración (módulo `gestion_administrativa`)"
+    },
+    {
+      "name": "mantenimiento",
+      "description": "Inventario de activos con hoja de vida, planes preventivos, órdenes de trabajo y obligaciones periódicas (módulo `gestion_administrativa`)"
     },
     {
       "name": "importaciones",

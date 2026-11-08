@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sesiones_chat (linea, telefono, estado, ultimo_entrante_en, expira_en)\n                     VALUES ($1, $2, $3, $4, $5)\n                     ON CONFLICT (linea, telefono) DO UPDATE SET\n                         estado = EXCLUDED.estado,\n                         ultimo_entrante_en = EXCLUDED.ultimo_entrante_en,\n                         expira_en = EXCLUDED.expira_en",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Jsonb",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aa2fdf11ba3fca86e140055c2a22a0120593ece3aa8065341aa5f04c189128fc"
+}

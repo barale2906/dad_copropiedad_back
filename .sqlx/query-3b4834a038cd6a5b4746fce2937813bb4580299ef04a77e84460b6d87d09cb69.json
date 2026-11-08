@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM sesiones_chat WHERE expira_en <= $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3b4834a038cd6a5b4746fce2937813bb4580299ef04a77e84460b6d87d09cb69"
+}

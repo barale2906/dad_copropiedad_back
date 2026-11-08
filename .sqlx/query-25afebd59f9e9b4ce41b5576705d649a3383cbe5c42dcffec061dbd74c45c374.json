@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT jornada_inicio, jornada_fin, incluye_sabado, dias_reapertura\n             FROM configuracion_tickets",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "jornada_inicio",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "configuracion_tickets",
+            "name": "jornada_inicio"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "jornada_fin",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "configuracion_tickets",
+            "name": "jornada_fin"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "incluye_sabado",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "configuracion_tickets",
+            "name": "incluye_sabado"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "dias_reapertura",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "configuracion_tickets",
+            "name": "dias_reapertura"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "25afebd59f9e9b4ce41b5576705d649a3383cbe5c42dcffec061dbd74c45c374"
+}

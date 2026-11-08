@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO consecutivos (tenant_id, serie, anio, ultimo) VALUES ($1, $2, $3, 1)\n             ON CONFLICT (tenant_id, serie, anio) DO UPDATE SET ultimo = consecutivos.ultimo + 1\n             RETURNING ultimo",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "ultimo",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "consecutivos",
+            "name": "ultimo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "cef701f31af33809d9cac25b4208dea769b25355983690deb9060b8a9a446292"
+}

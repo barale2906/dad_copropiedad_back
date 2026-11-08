@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE preguntas_frecuentes SET pregunta = $2, respuesta = $3, orden = $4,\n                        activa = $5, archivo_id = $6, actualizado_en = now()\n                 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Int2",
+        "Bool",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "88ed1552e8afd39378e2121c36a7bab4578c355462de30f794260437db3cbfb5"
+}

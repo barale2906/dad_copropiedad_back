@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO obligaciones_periodicas (id, tenant_id, codigo_sugerido, nombre,\n                                                  descripcion, periodicidad_meses, proxima,\n                                                  dias_alerta, activo_id,\n                                                  responsable_organizacion_id, activa)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Int2",
+        "Date",
+        "Int2",
+        "Uuid",
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b276abbe229f137e08bd8fbcca546cfb91a2d651e22efb120107ed612502bcd4"
+}

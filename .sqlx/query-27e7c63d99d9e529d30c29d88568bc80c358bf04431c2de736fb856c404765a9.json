@@ -1,0 +1,31 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE tickets SET\n                 tipo = $2, categoria_id = $3, prioridad = $4, estado = $5,\n                 asignado_cuenta_id = $6, asignado_organizacion_id = $7, plazo_cantidad = $8,\n                 plazo_unidad = $9, vence_en = $10, alerta_vencimiento_en = $11,\n                 resuelto_en = $12, reabrible_hasta = $13, cerrado_en = $14, duplicado_de = $15,\n                 calificacion = $16, comentario_encuesta = $17, actualizado_en = $18\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid",
+        "Int2",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "27e7c63d99d9e529d30c29d88568bc80c358bf04431c2de736fb856c404765a9"
+}

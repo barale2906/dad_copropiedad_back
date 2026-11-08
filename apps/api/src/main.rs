@@ -1,8 +1,8 @@
 //! Punto de entrada del servicio HTTP de DAD_COPROPIEDAD.
 
 use anyhow::Context;
-use infra_archivos::{AlmacenLocal, FirmanteEnlaces};
-use shared::{AppConfig, ArchivosConfig, SeguridadConfig, TipoAlmacen, telemetry};
+use infra_archivos::AlmacenLocal;
+use shared::{AppConfig, ArchivosConfig, SeguridadConfig, telemetry};
 use tokio::net::TcpListener;
 
 use api::{routes, state::AppState};
@@ -36,18 +36,8 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("APP_DATABASE_URL debe usar el rol restringido `dad_app`")?;
 
-    let archivos = match config_archivos.almacen {
-        TipoAlmacen::Local => {
-            let enlaces = FirmanteEnlaces::new(
-                config_archivos.secreto_enlaces.as_bytes(),
-                &config_archivos.url_publica,
-            )
-            .context("ARCHIVOS_SECRETO_ENLACES / ARCHIVOS_URL_PUBLICA inválidos")?;
-            AlmacenLocal::abrir(&config_archivos.dir, enlaces).with_context(|| {
-                format!("no se pudo abrir ARCHIVOS_DIR=`{}`", config_archivos.dir)
-            })?
-        }
-    };
+    let archivos =
+        AlmacenLocal::desde_config(&config_archivos).context("almacén de archivos inválido")?;
 
     let seguridad = SeguridadConfig::from_env().context("configuración de seguridad inválida")?;
     if !seguridad.plataforma_exige_segundo_factor {

@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT c.organizacion_id FROM asignaciones_rol a\n             JOIN contratos_servicio c ON c.id = a.origen_id\n             WHERE a.cuenta_id = $1 AND a.origen = 'contrato_servicio'\n               AND a.vigente_desde <= $2 AND (a.vigente_hasta IS NULL OR a.vigente_hasta > $2)\n               AND c.estado = 'vigente' AND c.vigente_desde <= $2\n               AND (c.vigente_hasta IS NULL OR c.vigente_hasta > $2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "contratos_servicio",
+            "name": "organizacion_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "4e5fce5b7e3b2e1ff98cf71a2d594e09e9c784ec729d9874daeb07a9128bb9d7"
+}
