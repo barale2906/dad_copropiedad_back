@@ -301,7 +301,7 @@ fn textos_outbox(e: &Entorno) -> Vec<String> {
                 ContenidoSaliente::Texto { cuerpo } => Some(cuerpo),
                 _ => None,
             },
-            MensajeOutbox::Correo(_) => None,
+            MensajeOutbox::Correo(_) | MensajeOutbox::Push(_) => None,
         })
         .collect()
 }
@@ -510,7 +510,7 @@ async fn registro_en_mesa_envia_la_plantilla_de_confirmacion_y_entrega_la_papele
                 } if nombre == "confirmar_asistencia" => Some(botones),
                 _ => None,
             },
-            MensajeOutbox::Correo(_) => None,
+            MensajeOutbox::Correo(_) | MensajeOutbox::Push(_) => None,
         });
     assert_eq!(
         plantilla,

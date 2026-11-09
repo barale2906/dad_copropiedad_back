@@ -56,7 +56,7 @@ fn texto_valor<T: Copy>(v: &[T], f: fn(T) -> &'static str) -> Vec<String> {
 
 /// Ficha pública de una organización.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct FichaRespuesta {
+pub struct FichaOrganizacionRespuesta {
     pub id: Uuid,
     #[schema(example = "Seguridad Andina S.A.S.")]
     pub razon_social: String,
@@ -68,7 +68,7 @@ pub struct FichaRespuesta {
     pub estado: String,
 }
 
-impl From<FichaOrganizacion> for FichaRespuesta {
+impl From<FichaOrganizacion> for FichaOrganizacionRespuesta {
     fn from(f: FichaOrganizacion) -> Self {
         Self {
             id: f.id.as_uuid(),
@@ -97,7 +97,7 @@ pub struct BusquedaNit {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), BusquedaNit),
     responses(
-        (status = OK, description = "Ficha pública", body = FichaRespuesta),
+        (status = OK, description = "Ficha pública", body = FichaOrganizacionRespuesta),
         (status = NOT_FOUND, description = "No existe: se puede crear", body = ErrorRespuesta),
     )
 )]
@@ -105,7 +105,7 @@ pub async fn buscar_por_nit(
     State(state): State<AppState>,
     en: EnCopropiedad,
     Query(b): Query<BusquedaNit>,
-) -> ApiResult<Json<FichaRespuesta>> {
+) -> ApiResult<Json<FichaOrganizacionRespuesta>> {
     let nit = Nit::new(&b.nit)?;
     let ficha = uc::buscar_por_nit(&state.unidad, &en.ctx, &nit)
         .await?

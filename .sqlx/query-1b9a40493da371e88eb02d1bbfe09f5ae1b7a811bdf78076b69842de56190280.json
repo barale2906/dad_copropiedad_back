@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE puentes SET nombre = $2, estado = $3, credencial_hash = $4, version = $5,\n                                ultimo_latido_en = $6\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1b9a40493da371e88eb02d1bbfe09f5ae1b7a811bdf78076b69842de56190280"
+}

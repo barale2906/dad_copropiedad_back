@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT cuenta_id AS \"cuenta_id!\", token AS \"token!\" FROM tokens_push_de_cuentas($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cuenta_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "token!",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "8b7ac3d6885cae1ef234e4fae54f3312b30daf87588a09c7e6d598a6b6bf7dd8"
+}

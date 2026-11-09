@@ -1,0 +1,30 @@
+[package]
+name = "infra-push"
+description = "Notificaciones push de las apps Flutter (Android e iOS) con Firebase Cloud Messaging HTTP v1: puerto EnvioPush"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+application.workspace = true
+
+base64.workspace = true
+chrono.workspace = true
+reqwest.workspace = true
+ring.workspace = true
+rustls.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+webpki-roots.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+
+[lints]
+workspace = true

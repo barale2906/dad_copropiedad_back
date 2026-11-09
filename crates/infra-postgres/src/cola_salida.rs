@@ -7,7 +7,7 @@ use std::time::Duration;
 use application::{
     AppError, AppResult,
     outbox::{Canal, MensajeOutbox},
-    puertos::{ColaSalida, LoteSalida, MensajePendiente},
+    puertos::{ColaSalida, LoteSalida, MensajePendiente, mensajeria::MensajeSaliente},
 };
 use domain::TenantId;
 use sqlx::{PgPool, Postgres, postgres::types::PgInterval};
@@ -93,6 +93,31 @@ impl LoteSalida for LoteSalidaPg {
             error,
             espera,
             max_intentos,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
+    async fn desviar_push(&mut self, id: i64, respaldo: Option<MensajeSaliente>) -> AppResult<()> {
+        let (linea, destino, payload) = match respaldo {
+            Some(m) => {
+                let mensaje = MensajeOutbox::WhatsApp(m);
+                (
+                    mensaje.linea().map(str::to_owned),
+                    Some(mensaje.destino().to_owned()),
+                    Some(serde_json::to_value(&mensaje).map_err(AppError::infra)?),
+                )
+            }
+            None => (None, None, None),
+        };
+        sqlx::query!(
+            "SELECT outbox_desviar_push($1, $2, $3, $4)",
+            id,
+            linea,
+            destino,
+            payload,
         )
         .execute(&mut *self.tx)
         .await

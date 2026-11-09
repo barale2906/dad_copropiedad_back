@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO entregas_correspondencia (tenant_id, correspondencia_id, persona_id,\n                 tercero_nombre, tercero_documento, firma_archivo_id, foto_archivo_id,\n                 entregada_por, entregada_en, soportes_hasta)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f8acdc6ac3e05d82ea97f13b6b65892aa85732f03dd3887837d78de8bce7cc80"
+}

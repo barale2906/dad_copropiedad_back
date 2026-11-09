@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE autorizaciones_acceso SET revocada_en = $2 WHERE id = $1 AND revocada_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "67ff3dfb75450e1e9d452eebdafbe9715a09c4d0b0ff07c1153bdaa188ce9e08"
+}

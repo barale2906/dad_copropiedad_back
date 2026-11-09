@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO autorizaciones_acceso (id, tenant_id, persona_id, vehiculo_id, origen,\n                 puntos, horario, vigente_desde, vigente_hasta, motivo, revocada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "UuidArray",
+        "Jsonb",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d2284507e773c233aea2c4a6ddc65fc7da297638f292cc1e227194ffb44ca9fc"
+}

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO purgas_soportes_entrega (tenant_id, correspondencia_id, purgado_en)\n             VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "400070f42de028ab2f5f2c1044dbd4123a48ce9f7cebde813ebe73eaa1d64f80"
+}

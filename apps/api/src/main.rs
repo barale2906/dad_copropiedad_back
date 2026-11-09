@@ -2,7 +2,7 @@
 
 use anyhow::Context;
 use infra_archivos::AlmacenLocal;
-use shared::{AppConfig, ArchivosConfig, SeguridadConfig, telemetry};
+use shared::{AccesoConfig, AppConfig, ArchivosConfig, SeguridadConfig, telemetry};
 use tokio::net::TcpListener;
 
 use api::{en_vivo, routes, state::AppState};
@@ -43,7 +43,15 @@ async fn main() -> anyhow::Result<()> {
     if !seguridad.plataforma_exige_segundo_factor {
         tracing::warn!("PLATAFORMA_EXIGE_SEGUNDO_FACTOR=false: solo aceptable en desarrollo");
     }
-    let state = AppState::new(db, archivos, seguridad.plataforma_exige_segundo_factor);
+    let acceso = AccesoConfig::from_env().context("configuración de control de acceso inválida")?;
+    let firma_qr = infra_seguridad::FirmaQrEd25519::new(acceso.qr_secreto.as_bytes())
+        .context("ACCESO_QR_SECRETO inválido")?;
+    let state = AppState::new(
+        db,
+        archivos,
+        seguridad.plataforma_exige_segundo_factor,
+        firma_qr,
+    );
     // Tablero en vivo: oyente de `pg_notify` y emisor cada ~500 ms, hasta el apagado.
     let (avisar_apagado, apagado) = tokio::sync::watch::channel(false);
     let esperar = |mut rx: tokio::sync::watch::Receiver<bool>| async move {

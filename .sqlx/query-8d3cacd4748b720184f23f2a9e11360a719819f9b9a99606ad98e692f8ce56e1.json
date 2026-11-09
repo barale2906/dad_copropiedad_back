@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT retencion_soportes_dias, dias_avisos_correspondencia, silencio_inicio,\n                    silencio_fin, retencion_eventos_dias, retencion_fotos_placas_dias\n             FROM configuracion_acceso",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "retencion_soportes_dias",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "configuracion_acceso",
+            "name": "retencion_soportes_dias"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "dias_avisos_correspondencia",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "configuracion_acceso",
+            "name": "dias_avisos_correspondencia"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "silencio_inicio",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "configuracion_acceso",
+            "name": "silencio_inicio"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "silencio_fin",
+        "type_info": "Time",
+        "origin": {
+          "Table": {
+            "table": "configuracion_acceso",
+            "name": "silencio_fin"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "retencion_eventos_dias",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "configuracion_acceso",
+            "name": "retencion_eventos_dias"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "retencion_fotos_placas_dias",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "configuracion_acceso",
+            "name": "retencion_fotos_placas_dias"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "8d3cacd4748b720184f23f2a9e11360a719819f9b9a99606ad98e692f8ce56e1"
+}

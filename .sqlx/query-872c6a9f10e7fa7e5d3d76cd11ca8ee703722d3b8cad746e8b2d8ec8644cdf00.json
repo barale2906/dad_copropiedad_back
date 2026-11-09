@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, nombre, ultimo_latido_en FROM puentes\n             WHERE estado = 'activo' AND (ultimo_latido_en IS NULL OR ultimo_latido_en < $1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "puentes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "puentes",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "ultimo_latido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "puentes",
+            "name": "ultimo_latido_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "872c6a9f10e7fa7e5d3d76cd11ca8ee703722d3b8cad746e8b2d8ec8644cdf00"
+}

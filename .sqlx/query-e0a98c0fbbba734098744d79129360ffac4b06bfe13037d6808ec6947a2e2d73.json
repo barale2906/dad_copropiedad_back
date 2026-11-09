@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE fotos_eventos_acceso SET purgada_en = $2 WHERE evento_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e0a98c0fbbba734098744d79129360ffac4b06bfe13037d6808ec6947a2e2d73"
+}

@@ -482,12 +482,12 @@ pub struct RangoFechas {
 
 /// Franja libre.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct FranjaDto {
+pub struct FranjaReservaDto {
     pub inicio: DateTime<Utc>,
     pub fin: DateTime<Utc>,
 }
 
-impl From<Franja> for FranjaDto {
+impl From<Franja> for FranjaReservaDto {
     fn from(f: Franja) -> Self {
         Self {
             inicio: f.inicio(),
@@ -508,7 +508,7 @@ impl From<Franja> for FranjaDto {
         RangoFechas,
     ),
     responses(
-        (status = OK, description = "Franjas libres", body = Vec<FranjaDto>),
+        (status = OK, description = "Franjas libres", body = Vec<FranjaReservaDto>),
         (status = UNPROCESSABLE_ENTITY, description = "Rango inválido (`validacion`)", body = ErrorRespuesta),
     )
 )]
@@ -517,7 +517,7 @@ pub async fn disponibilidad(
     en: EnCopropiedad,
     Path(ruta): Path<(Uuid, Uuid)>,
     Query(r): Query<RangoFechas>,
-) -> ApiResult<Json<Vec<FranjaDto>>> {
+) -> ApiResult<Json<Vec<FranjaReservaDto>>> {
     let libres = uc::disponibilidad(
         &state.unidad,
         &RelojSistema,

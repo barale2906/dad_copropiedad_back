@@ -1,0 +1,286 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bien_privado_id, origen, tipo, estado, visitante_nombre,\n                    visitante_documento, placa, observacion, decidida_por_persona_id,\n                    canal_decision, ventana_desde, ventana_hasta, usos_permitidos, usos,\n                    avisos_enviados, siguiente_paso_en, registrada_por, creada_en, decidida_en,\n                    ingreso_en, salida_en\n             FROM visitas\n             WHERE ($1::text IS NULL OR estado = $1)\n               AND ($2::uuid IS NULL OR bien_privado_id = $2)\n               AND ($3::uuid[] IS NULL OR bien_privado_id = ANY($3))\n               AND ($4::timestamptz IS NULL OR creada_en >= $4)\n               AND (NOT $5 OR estado = 'ingresada')\n               AND ($6::uuid IS NULL OR id < $6)\n             ORDER BY id DESC LIMIT $7",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "origen",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "origen"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "visitante_nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "visitante_nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "visitante_documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "visitante_documento"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "placa",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "placa"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "observacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "observacion"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "decidida_por_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "decidida_por_persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "canal_decision",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "canal_decision"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "ventana_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "ventana_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "ventana_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "ventana_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "usos_permitidos",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "usos_permitidos"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "usos",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "usos"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "avisos_enviados",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "avisos_enviados"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "siguiente_paso_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "siguiente_paso_en"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "registrada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "registrada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "decidida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "decidida_en"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "ingreso_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "ingreso_en"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "salida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "salida_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "UuidArray",
+        "Timestamptz",
+        "Bool",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "3f9809b36e9c42c6828e52ff35e521020581cc8e1913f07155e03526b931ec4b"
+}

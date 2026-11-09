@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO configuracion_acceso (tenant_id, retencion_soportes_dias,\n                 dias_avisos_correspondencia, silencio_inicio, silencio_fin,\n                 retencion_eventos_dias, retencion_fotos_placas_dias)\n             VALUES ($1, $2, $3, $4, $5, $6, $7)\n             ON CONFLICT (tenant_id) DO UPDATE SET\n                 retencion_soportes_dias = EXCLUDED.retencion_soportes_dias,\n                 dias_avisos_correspondencia = EXCLUDED.dias_avisos_correspondencia,\n                 silencio_inicio = EXCLUDED.silencio_inicio, silencio_fin = EXCLUDED.silencio_fin,\n                 retencion_eventos_dias = EXCLUDED.retencion_eventos_dias,\n                 retencion_fotos_placas_dias = EXCLUDED.retencion_fotos_placas_dias,\n                 actualizado_en = now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int2",
+        "Int2",
+        "Time",
+        "Time",
+        "Int2",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "46b31182b96ea5199f4d15bb4db5f861ed908a42b26f36d2084f2e24479bbf25"
+}

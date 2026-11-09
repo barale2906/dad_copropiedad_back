@@ -1,6 +1,7 @@
 //! Worker de envíos: despacha el outbox en bucle mientras el gateway esté vivo.
 //!
-//! - Despacha los canales configurados: correo (si hay SMTP) y WhatsApp (si hay token).
+//! - Despacha los canales configurados: correo (si hay SMTP), WhatsApp (si hay token) y push
+//!   (si hay cuenta de servicio de Firebase). Un push con token inválido se desvía a WhatsApp.
 //! - Con trabajo, encadena lotes sin pausa; sin trabajo, espera [`ESPERA_INACTIVO`] o a que el
 //!   chat avise que encoló respuestas.
 //! - Un error de la cola (BD caída) no tumba el proceso: se registra y se reintenta tras
@@ -13,7 +14,7 @@ use std::{future::Future, time::Duration};
 use application::{
     casos_uso::{Despachadores, despachar_lote},
     outbox::PoliticaReintentos,
-    puertos::{ColaSalida, EnvioCorreo, Mensajeria},
+    puertos::{ColaSalida, EnvioCorreo, EnvioPush, Mensajeria},
 };
 use tokio::sync::Notify;
 
@@ -25,21 +26,24 @@ pub const ESPERA_INACTIVO: Duration = Duration::from_secs(2);
 pub const ESPERA_ERROR: Duration = Duration::from_secs(10);
 
 /// Ejecuta el worker hasta que `apagado` se resuelva.
-pub async fn ejecutar<C, E, M>(
+pub async fn ejecutar<C, E, M, P>(
     cola: C,
     correo: Option<E>,
     whatsapp: Option<M>,
+    push: Option<P>,
     hay_salida: &Notify,
     apagado: impl Future<Output = ()>,
 ) where
     C: ColaSalida,
     E: EnvioCorreo,
     M: Mensajeria,
+    P: EnvioPush,
 {
     tokio::pin!(apagado);
     let envios = Despachadores {
         correo: correo.as_ref(),
         whatsapp: whatsapp.as_ref(),
+        push: push.as_ref(),
     };
     tracing::info!(canales = ?envios.canales(), "worker de envíos iniciado");
     loop {
@@ -56,6 +60,7 @@ pub async fn ejecutar<C, E, M>(
                 tracing::info!(
                     enviados = resumen.enviados,
                     fallidos = resumen.fallidos,
+                    desviados = resumen.desviados,
                     "lote del outbox despachado"
                 );
                 Duration::ZERO
@@ -128,12 +133,31 @@ mod tests {
             Ok(())
         }
 
+        async fn desviar_push(
+            &mut self,
+            _id: i64,
+            _respaldo: Option<application::puertos::mensajeria::MensajeSaliente>,
+        ) -> AppResult<()> {
+            Ok(())
+        }
+
         async fn confirmar(self) -> AppResult<()> {
             Ok(())
         }
     }
 
     struct SinCorreo;
+
+    struct SinPush;
+
+    impl EnvioPush for SinPush {
+        async fn enviar(
+            &self,
+            _n: &application::puertos::acceso::NotificacionPush,
+        ) -> Result<String, application::puertos::acceso::ErrorPush> {
+            Ok(String::new())
+        }
+    }
 
     impl EnvioCorreo for SinCorreo {
         async fn enviar(&self, _correo: &CorreoSaliente) -> AppResult<Option<String>> {
@@ -171,6 +195,7 @@ mod tests {
             cola,
             Some(SinCorreo),
             None::<SinWhatsapp>,
+            None::<SinPush>,
             &aviso,
             tokio::time::sleep(Duration::from_millis(1500)),
         )
@@ -189,6 +214,7 @@ mod tests {
             cola,
             Some(SinCorreo),
             None::<SinWhatsapp>,
+            None::<SinPush>,
             &Notify::new(),
             tokio::time::sleep(Duration::from_secs(5)),
         )
@@ -206,6 +232,7 @@ mod tests {
             cola,
             Some(SinCorreo),
             None::<SinWhatsapp>,
+            None::<SinPush>,
             &Notify::new(),
             async {},
         )

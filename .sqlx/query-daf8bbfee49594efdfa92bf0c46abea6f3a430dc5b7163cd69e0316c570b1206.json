@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE credenciales SET estado = $2, vigente_hasta = $3, borrado_confirmado_en = $4\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "daf8bbfee49594efdfa92bf0c46abea6f3a430dc5b7163cd69e0316c570b1206"
+}

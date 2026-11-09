@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO credenciales (id, tenant_id, persona_id, vehiculo_id, tipo, huella, estado,\n                                       vigente_desde, vigente_hasta, borrado_confirmado_en, creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9f0743c1776ba73cb9c521915a258296b25bc0e34a2fc4894bc85a801ceed616"
+}

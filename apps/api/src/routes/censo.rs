@@ -1234,13 +1234,13 @@ pub struct AlertaMascotaRespuesta {
 
 /// Alertas del censo.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct AlertasRespuesta {
+pub struct AlertasCensoRespuesta {
     pub mascotas: Vec<AlertaMascotaRespuesta>,
     /// Residentes sin autorización de tratamiento de datos para administración (Ley 1581).
     pub residentes_sin_autorizacion: Vec<Uuid>,
 }
 
-impl From<AlertasCenso> for AlertasRespuesta {
+impl From<AlertasCenso> for AlertasCensoRespuesta {
     fn from(a: AlertasCenso) -> Self {
         Self {
             mascotas: a
@@ -1268,14 +1268,14 @@ impl From<AlertasCenso> for AlertasRespuesta {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
-        (status = OK, description = "Alertas", body = AlertasRespuesta),
+        (status = OK, description = "Alertas", body = AlertasCensoRespuesta),
         (status = FORBIDDEN, description = "Sin `censo.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn alertas(
     State(state): State<AppState>,
     en: EnCopropiedad,
-) -> ApiResult<Json<AlertasRespuesta>> {
+) -> ApiResult<Json<AlertasCensoRespuesta>> {
     Ok(Json(
         uc::alertas_censo(&state.unidad, &RelojSistema, &en.ctx)
             .await?

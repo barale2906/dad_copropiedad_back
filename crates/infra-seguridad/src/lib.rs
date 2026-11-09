@@ -1,7 +1,9 @@
 //! Criptografía de cuentas: implementa los puertos [`HashContrasenas`] (Argon2id) y
 //! [`SegundoFactor`] (TOTP, RFC 6238, compatible con Google Authenticator, Microsoft
-//! Authenticator, Authy, 1Password…).
+//! Authenticator, Authy, 1Password…). También firma los QR temporales de visitas con Ed25519
+//! ([`FirmaQrEd25519`], puerto `FirmaQr`).
 
+mod firma_qr;
 mod totp;
 
 use application::{
@@ -15,6 +17,7 @@ use argon2::{
 use chrono::{DateTime, Utc};
 use domain::ContrasenaNueva;
 
+pub use firma_qr::{FirmaQrEd25519, LARGO_MINIMO_SECRETO, SecretoQrCorto, verificar_con_clave};
 pub use totp::{base32, codigo_totp};
 
 /// Argon2id con los parámetros por defecto de la librería (19 MiB, 2 iteraciones: la

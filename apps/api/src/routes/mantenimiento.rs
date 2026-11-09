@@ -1343,7 +1343,7 @@ pub async fn registrar_cumplimiento(
 
 /// Alertas de mantenimiento a hoy (hora local de la copropiedad).
 #[derive(Debug, Serialize, ToSchema)]
-pub struct AlertasRespuesta {
+pub struct AlertasMantenimientoRespuesta {
     /// Obligaciones vencidas o dentro de su ventana de alerta.
     pub obligaciones: Vec<ObligacionRespuesta>,
     /// Garantías vencidas hace poco o por vencer (30 días).
@@ -1351,7 +1351,7 @@ pub struct AlertasRespuesta {
     pub ordenes_vencidas: Vec<OrdenRespuesta>,
 }
 
-impl From<AlertasMantenimiento> for AlertasRespuesta {
+impl From<AlertasMantenimiento> for AlertasMantenimientoRespuesta {
     fn from(a: AlertasMantenimiento) -> Self {
         Self {
             obligaciones: a.obligaciones.into_iter().map(Into::into).collect(),
@@ -1369,14 +1369,14 @@ impl From<AlertasMantenimiento> for AlertasRespuesta {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
-        (status = OK, description = "Alertas", body = AlertasRespuesta),
+        (status = OK, description = "Alertas", body = AlertasMantenimientoRespuesta),
         (status = FORBIDDEN, description = "Sin `mantenimiento.planificar` ni `inventario.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn alertas(
     State(state): State<AppState>,
     en: EnCopropiedad,
-) -> ApiResult<Json<AlertasRespuesta>> {
+) -> ApiResult<Json<AlertasMantenimientoRespuesta>> {
     let a = uc::alertas_mantenimiento(&state.unidad, &RelojSistema, &en.ctx).await?;
     Ok(Json(a.into()))
 }

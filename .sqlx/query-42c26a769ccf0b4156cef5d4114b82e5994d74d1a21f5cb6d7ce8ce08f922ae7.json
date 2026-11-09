@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tipo, canal, persona_id, cuenta_id, nivel, destinatarios, ocurrido_en\n             FROM visita_eventos WHERE visita_id = $1 ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visita_eventos",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "canal",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visita_eventos",
+            "name": "canal"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "visita_eventos",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "visita_eventos",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "nivel",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "visita_eventos",
+            "name": "nivel"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "destinatarios",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "visita_eventos",
+            "name": "destinatarios"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "ocurrido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "visita_eventos",
+            "name": "ocurrido_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "42c26a769ccf0b4156cef5d4114b82e5994d74d1a21f5cb6d7ce8ce08f922ae7"
+}

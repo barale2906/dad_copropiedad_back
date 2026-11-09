@@ -54,6 +54,22 @@ con un botón «Votar»). La API emite el tablero en vivo por WebSocket
 necesita Redis. Las líneas de WhatsApp y las tarifas de Meta se gestionan en
 `/api/v1/plataforma/whatsapp/…`.
 
+Control de acceso (plan 05, ADR 0011, módulo `control_acceso`): la portería anuncia visitas y
+registra correspondencia en `/api/v1/copropiedades/{id}/visitas` y `/correspondencia`. Los avisos
+van **por la app (push) si el residente la tiene** y si no por WhatsApp; el worker de acceso del
+gateway (cada 15 s) escala las visitas a los 2 y 5 minutos y repite los avisos de correspondencia
+cada 24 h fuera del horario de silencio. La API necesita `ACCESO_QR_SECRETO` (≥ 32 caracteres)
+para firmar los QR de las visitas pre-autorizadas; el gateway envía push si `FCM_CREDENCIALES`
+apunta al JSON de la cuenta de servicio de Firebase. Deben aprobarse en Meta las plantillas
+`visita_anunciada` (botones «Autorizar» y «Rechazar»), `correspondencia_recibida` y
+`correspondencia_entregada`. El puente en sitio se prueba con el controlador simulado:
+
+```bash
+# Registre el puente en POST /api/v1/copropiedades/{id}/puentes y use el token que devuelve.
+PUENTE_API_URL=http://localhost:8080/api/v1 PUENTE_TOKEN=<token> cargo puente
+# Cada línea de la entrada estándar es una lectura: <punto> <entrada|salida> <tipo|qr> <valor>
+```
+
 Primer acceso: cree el superusuario con `make superusuario USUARIO=admin CORREO=admin@dominio.co`
 (pide la contraseña), inicie sesión en `POST /api/v1/auth/sesion` desde `/docs` y use el token
 con el botón *Authorize*. Con él se dan de alta copropiedades (`POST /api/v1/plataforma/copropiedades`)
@@ -99,9 +115,11 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-seguridad` | Adaptador | Contraseñas Argon2id y segundo factor TOTP |
 | `crates/infra-archivos` | Adaptador | Almacén de archivos en disco y enlaces de descarga firmados (S3 previsto, ADR 0003) |
 | `crates/infra-planillas` | Adaptador | Lectura de planillas CSV/XLSX para importaciones masivas (ADR 0006) |
+| `crates/infra-push` | Adaptador | Notificaciones push de las apps Flutter con Firebase Cloud Messaging (ADR 0011) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |
-| `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook y chat de WhatsApp, outbox (correo y WhatsApp), workers de recordatorios y de gestión |
+| `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook y chat de WhatsApp, outbox (correo, WhatsApp y push), workers de recordatorios, gestión, asambleas y control de acceso |
+| `apps/puente-acceso` | Entrada | `dad_puente_acceso`: puente de acceso en sitio (cache local, QR sin internet, cola de eventos) |
 | `migrations/` | — | Esquema PostgreSQL versionado |
 
 ## Estándares y documentación

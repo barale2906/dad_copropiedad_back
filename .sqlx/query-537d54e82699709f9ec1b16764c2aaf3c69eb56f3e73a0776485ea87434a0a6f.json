@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, nombre, tipo, sentido, recurso_id, activo FROM puntos_acceso\n             ORDER BY normalizar(nombre)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "puntos_acceso",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "puntos_acceso",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "puntos_acceso",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "sentido",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "puntos_acceso",
+            "name": "sentido"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "recurso_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "puntos_acceso",
+            "name": "recurso_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "activo",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "puntos_acceso",
+            "name": "activo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "537d54e82699709f9ec1b16764c2aaf3c69eb56f3e73a0776485ea87434a0a6f"
+}

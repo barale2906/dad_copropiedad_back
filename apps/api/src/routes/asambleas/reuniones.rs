@@ -30,8 +30,8 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use super::dto::{
-    ConfiguracionDto, ConstanciaRespuesta, DetalleReunionRespuesta, DocumentoDto, PuntoRespuesta,
-    QuorumRespuesta, ReunionRespuesta, TableroRespuesta,
+    ConfiguracionAsambleaDto, ConstanciaRespuesta, DetalleReunionRespuesta, DocumentoDto,
+    PuntoRespuesta, QuorumRespuesta, ReunionRespuesta, TableroRespuesta,
 };
 use crate::{
     en_vivo::tablero_json,
@@ -81,7 +81,7 @@ pub struct ReunionPeticion {
     /// Solo en consultas por escrito: hasta un mes después de `fecha_programada`.
     pub plazo_respuesta: Option<DateTime<Utc>>,
     #[serde(default)]
-    pub configuracion: ConfiguracionDto,
+    pub configuracion: ConfiguracionAsambleaDto,
 }
 
 impl From<ReunionPeticion> for NuevaReunion {
@@ -196,7 +196,7 @@ pub async fn ver(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EditarReunionPeticion {
     pub datos: Option<ReunionPeticion>,
-    pub configuracion: Option<ConfiguracionDto>,
+    pub configuracion: Option<ConfiguracionAsambleaDto>,
 }
 
 /// Edita la reunión (la elección de la mora queda auditada).

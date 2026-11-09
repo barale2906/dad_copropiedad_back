@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO dispositivos_acceso (id, tenant_id, puente_id, punto_acceso_id, tipo,\n                                                  fabricante, modelo, config, activo)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "907dd7a34d0e597c7f7753100eedac7513788556ce2d12bf82f3a5533a97af6c"
+}

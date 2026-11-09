@@ -294,6 +294,61 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Visita anunciada o pre-autorizada en la portería (plan 05).
+    VisitaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Paquete, sobre o recibo recibido en la portería.
+    CorrespondenciaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Novedad de la minuta digital de portería.
+    NovedadMinutaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Dispositivo de la app móvil registrado para notificaciones push.
+    DispositivoPushId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Punto de acceso (portería peatonal, vehicular, gimnasio…).
+    PuntoAccesoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Puente de acceso instalado en la copropiedad (equipo en sitio).
+    PuenteId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Dispositivo de acceso conectado a un puente (torniquete, lector, cámara…).
+    DispositivoAccesoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Credencial de acceso (tarjeta, PIN, QR, placa, referencia biométrica).
+    CredencialId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Autorización de acceso (quién, dónde y cuándo).
+    AutorizacionAccesoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Evento de acceso reportado por la portería o un puente.
+    EventoAccesoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Consentimiento biométrico de una persona (Ley 1581 de 2012).
+    ConsentimientoBiometricoId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

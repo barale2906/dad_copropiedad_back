@@ -129,7 +129,7 @@ impl From<PoderPeticion> for PoderRecibido {
 
 /// Registro de un asistente.
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct RegistroPeticion {
+pub struct RegistroAsistentePeticion {
     /// Persona existente (representante del censo) …
     pub persona_id: Option<Uuid>,
     /// … o una persona nueva (apoderado externo).
@@ -161,7 +161,7 @@ pub struct RegistroPeticion {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    request_body = RegistroPeticion,
+    request_body = RegistroAsistentePeticion,
     responses(
         (status = CREATED, description = "Asistente registrado", body = RegistroRespuesta),
         (status = CONFLICT, description = "Bien en otro asistente, cargo prohibido o máximo de poderes (`conflicto`)", body = ErrorRespuesta),
@@ -172,7 +172,7 @@ pub async fn registrar(
     State(state): State<AppState>,
     en: EnCopropiedad,
     Path(ruta): Path<(Uuid, Uuid)>,
-    Json(p): Json<RegistroPeticion>,
+    Json(p): Json<RegistroAsistentePeticion>,
 ) -> ApiResult<(StatusCode, Json<RegistroRespuesta>)> {
     let id = ruta.1;
     let persona = match (p.persona_id, p.nombre) {

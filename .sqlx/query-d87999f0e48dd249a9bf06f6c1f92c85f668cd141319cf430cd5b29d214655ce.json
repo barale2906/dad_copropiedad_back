@@ -1,0 +1,138 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, persona_id, vehiculo_id, origen, puntos, horario, vigente_desde,\n                    vigente_hasta, motivo, revocada_en\n             FROM autorizaciones_acceso\n             WHERE (persona_id = $1 OR vehiculo_id = $2) AND ($3 OR revocada_en IS NULL)\n             ORDER BY creada_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vehiculo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "vehiculo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "origen",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "origen"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "puntos",
+        "type_info": "UuidArray",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "puntos"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "horario",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "horario"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "vigente_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "vigente_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "revocada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "autorizaciones_acceso",
+            "name": "revocada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "d87999f0e48dd249a9bf06f6c1f92c85f668cd141319cf430cd5b29d214655ce"
+}

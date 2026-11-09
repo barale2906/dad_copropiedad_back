@@ -1,0 +1,149 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, persona_id, vehiculo_id, tipo, huella, estado, vigente_desde, vigente_hasta,\n                    borrado_confirmado_en, creada_en, version\n             FROM credenciales WHERE version > $1 ORDER BY version LIMIT $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vehiculo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "vehiculo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "huella",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "huella"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "vigente_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "vigente_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "borrado_confirmado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "borrado_confirmado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "version",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "credenciales",
+            "name": "version"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "0056ac08a13e9c369879a3deeff8c6921b1f8e4feeea07997a986412bedbaea2"
+}

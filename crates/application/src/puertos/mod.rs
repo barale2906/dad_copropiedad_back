@@ -3,6 +3,7 @@
 //! Los métodos asíncronos devuelven `impl Future + Send` para poder usarse desde Tokio sin
 //! `async-trait`. En la implementación basta con escribir `async fn`.
 
+pub mod acceso;
 pub mod actas;
 pub mod archivos;
 pub mod asambleas;
@@ -22,6 +23,9 @@ pub mod sesiones;
 pub mod tickets;
 pub mod unidad_trabajo;
 
+pub use acceso::{
+    DirectorioAcceso, EnvioPush, FirmaQr, RepositorioAcceso, RepositorioDispositivosPush,
+};
 pub use actas::GeneradorActas;
 pub use archivos::{AlmacenArchivos, RepositorioArchivos};
 pub use asambleas::{DirectorioAsambleas, RepositorioAsambleas, RepositorioLineasWhatsapp};

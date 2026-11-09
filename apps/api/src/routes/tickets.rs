@@ -237,7 +237,7 @@ pub struct ReglaPlazoDto {
 /// Configuración de tickets. Los tipos sin regla usan los plazos por defecto (Ley 1755: 15 días
 /// hábiles para peticiones, 10 para documentos; mantenimiento según la prioridad).
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
-pub struct ConfiguracionDto {
+pub struct ConfiguracionTicketsDto {
     #[schema(value_type = String, example = "08:00:00")]
     pub jornada_inicio: NaiveTime,
     #[schema(value_type = String, example = "17:00:00")]
@@ -249,7 +249,7 @@ pub struct ConfiguracionDto {
     pub plazos: Vec<ReglaPlazoDto>,
 }
 
-impl From<ConfiguracionTickets> for ConfiguracionDto {
+impl From<ConfiguracionTickets> for ConfiguracionTicketsDto {
     fn from(c: ConfiguracionTickets) -> Self {
         Self {
             jornada_inicio: c.jornada.inicio,
@@ -278,14 +278,14 @@ impl From<ConfiguracionTickets> for ConfiguracionDto {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
-        (status = OK, description = "Configuración", body = ConfiguracionDto),
+        (status = OK, description = "Configuración", body = ConfiguracionTicketsDto),
         (status = FORBIDDEN, description = "Sin `tickets.configurar` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_configuracion(
     State(state): State<AppState>,
     en: EnCopropiedad,
-) -> ApiResult<Json<ConfiguracionDto>> {
+) -> ApiResult<Json<ConfiguracionTicketsDto>> {
     let c = uc::ver_configuracion(&state.unidad, &RelojSistema, &en.ctx).await?;
     Ok(Json(c.into()))
 }
@@ -297,9 +297,9 @@ pub async fn ver_configuracion(
     tag = ETIQUETA_TICKETS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    request_body = ConfiguracionDto,
+    request_body = ConfiguracionTicketsDto,
     responses(
-        (status = OK, description = "Configuración guardada", body = ConfiguracionDto),
+        (status = OK, description = "Configuración guardada", body = ConfiguracionTicketsDto),
         (status = FORBIDDEN, description = "Sin `tickets.configurar` (`sin_permiso`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Jornada o plazos inválidos (`validacion`)", body = ErrorRespuesta),
     )
@@ -307,8 +307,8 @@ pub async fn ver_configuracion(
 pub async fn guardar_configuracion(
     State(state): State<AppState>,
     en: EnCopropiedad,
-    Json(p): Json<ConfiguracionDto>,
-) -> ApiResult<Json<ConfiguracionDto>> {
+    Json(p): Json<ConfiguracionTicketsDto>,
+) -> ApiResult<Json<ConfiguracionTicketsDto>> {
     let reglas = p
         .plazos
         .into_iter()
@@ -605,7 +605,7 @@ pub struct ConteoEstado {
 
 /// Indicadores del tablero.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct TableroRespuesta {
+pub struct TableroTicketsRespuesta {
     pub pendientes_por_estado: Vec<ConteoEstado>,
     pub vencidos: u64,
     /// Horas promedio hasta la primera atención.
@@ -616,7 +616,7 @@ pub struct TableroRespuesta {
     pub satisfaccion_promedio: Option<f64>,
 }
 
-impl From<TableroTickets> for TableroRespuesta {
+impl From<TableroTickets> for TableroTicketsRespuesta {
     fn from(t: TableroTickets) -> Self {
         Self {
             pendientes_por_estado: t
@@ -640,14 +640,14 @@ impl From<TableroTickets> for TableroRespuesta {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
-        (status = OK, description = "Indicadores", body = TableroRespuesta),
+        (status = OK, description = "Indicadores", body = TableroTicketsRespuesta),
         (status = FORBIDDEN, description = "Sin `tickets.ver_todos` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn tablero(
     State(state): State<AppState>,
     en: EnCopropiedad,
-) -> ApiResult<Json<TableroRespuesta>> {
+) -> ApiResult<Json<TableroTicketsRespuesta>> {
     let t = uc::tablero_tickets(&state.unidad, &RelojSistema, &en.ctx).await?;
     Ok(Json(t.into()))
 }
@@ -868,7 +868,7 @@ pub async fn asignar(
 
 /// Cambio de estado.
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct TransicionPeticion {
+pub struct TransicionTicketPeticion {
     #[schema(value_type = String, example = "resuelto")]
     pub hacia: EstadoTicket,
     /// Obligatorio al resolver (es la respuesta al solicitante), rechazar o pedir información.
@@ -888,7 +888,7 @@ pub struct TransicionPeticion {
         ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
         ("ticket_id" = Uuid, Path, description = "Ticket"),
     ),
-    request_body = TransicionPeticion,
+    request_body = TransicionTicketPeticion,
     responses(
         (status = OK, description = "Ticket", body = TicketRespuesta),
         (status = FORBIDDEN, description = "Su papel no permite ese cambio (`sin_permiso`)", body = ErrorRespuesta),
@@ -900,7 +900,7 @@ pub async fn transicionar(
     State(state): State<AppState>,
     en: EnCopropiedad,
     Path(ruta): Path<(Uuid, Uuid)>,
-    Json(p): Json<TransicionPeticion>,
+    Json(p): Json<TransicionTicketPeticion>,
 ) -> ApiResult<Json<TicketRespuesta>> {
     let t = uc::transicionar_ticket(
         &state.unidad,

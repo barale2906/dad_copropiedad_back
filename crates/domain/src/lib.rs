@@ -16,6 +16,7 @@
 #[macro_use]
 mod macros;
 
+pub mod acceso;
 pub mod archivo;
 pub mod asistente;
 pub mod bien_privado;
@@ -49,6 +50,14 @@ pub mod ticket;
 pub mod titularidad;
 pub mod voto;
 
+pub use acceso::{
+    CanalAviso, CanalRespuestaVisita, CargaQr, ConfiguracionAcceso, EstadoCorrespondencia,
+    EstadoCredencial, EstadoPuente, EstadoVisita, HorarioSilencio, NivelAviso,
+    OrigenAutorizacionAcceso, OrigenVisita, PasoVisita, PlataformaPush, QuienRecoge,
+    ResidenteAviso, ResultadoAcceso, ResultadoLlamada, SentidoAcceso, SoporteEntrega,
+    TipoCorrespondencia, TipoCredencial, TipoDispositivoAcceso, TipoEventoVisita,
+    TipoNovedadMinuta, TipoPuntoAcceso, TipoVisita, TitularAviso, VentanaAcceso,
+};
 pub use archivo::{Almacen, ClasificacionArchivo, ClaveArchivo, NombreArchivo, TipoArchivo};
 pub use asistente::{
     CalidadRepresentacion, CodigoRotulo, EstadoPoder, MetodoRegistro, MomentoQuorum, MotivoSalida,
@@ -73,14 +82,16 @@ pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
     ActivoId, AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AsistenteBienId,
-    AsistenteId, AutorizacionId, BienPrivadoId, CambioCensoId, CargoId, CategoriaTicketId,
-    ContratoServicioId, ConversacionId, CuadroCoeficientesId, CuentaId, FotoQuorumId,
-    ImportacionId, MascotaId, MensajeTicketId, MovimientoInventarioId, ObligacionId, OpcionId,
-    OrdenTrabajoId, OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId,
-    PoliticaTratamientoId, PreguntaFrecuenteId, PreguntaId, PresenciaId, PuntoAtencionId,
-    PuntoOrdenId, ReclamacionId, RecursoId, ReservaId, ResidenciaId, RestriccionId, ReunionId,
-    RolId, RotuloId, SesionId, SolicitudTitularId, SorteoId, TenantId, TicketId, TitularidadId,
-    UsoExclusivoId, VehiculoId, VotoId,
+    AsistenteId, AutorizacionAccesoId, AutorizacionId, BienPrivadoId, CambioCensoId, CargoId,
+    CategoriaTicketId, ConsentimientoBiometricoId, ContratoServicioId, ConversacionId,
+    CorrespondenciaId, CredencialId, CuadroCoeficientesId, CuentaId, DispositivoAccesoId,
+    DispositivoPushId, EventoAccesoId, FotoQuorumId, ImportacionId, MascotaId, MensajeTicketId,
+    MovimientoInventarioId, NovedadMinutaId, ObligacionId, OpcionId, OrdenTrabajoId,
+    OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId,
+    PoliticaTratamientoId, PreguntaFrecuenteId, PreguntaId, PresenciaId, PuenteId, PuntoAccesoId,
+    PuntoAtencionId, PuntoOrdenId, ReclamacionId, RecursoId, ReservaId, ResidenciaId,
+    RestriccionId, ReunionId, RolId, RotuloId, SesionId, SolicitudTitularId, SorteoId, TenantId,
+    TicketId, TitularidadId, UsoExclusivoId, VehiculoId, VisitaId, VotoId,
 };
 pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
 pub use mantenimiento::{
