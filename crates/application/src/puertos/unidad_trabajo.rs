@@ -79,6 +79,7 @@ pub(crate) mod memoria {
         },
     };
 
+    pub mod asambleas;
     mod censo;
     mod copropiedades;
     pub mod gestion;
@@ -123,6 +124,8 @@ pub(crate) mod memoria {
         pub asignaciones: Vec<(TenantId, Asignacion)>,
         /// Tickets, mantenimiento y chat (planes 07b y 07c).
         pub gestion: gestion::DatosGestion,
+        /// Asambleas y votaciones (plan 06).
+        pub asambleas: asambleas::DatosAsambleas,
     }
 
     /// Plantillas con ids fijos (en la BD se derivan del código).

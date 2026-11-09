@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT ab.bien_privado_id, pr.coeficiente, ab.asistente_id,\n                      (m.bien_privado_id IS NOT NULL) AS \"moroso!\"\n               FROM asistente_bienes ab\n               JOIN asistente_presencias x ON x.asistente_id = ab.asistente_id AND x.salida_en IS NULL\n               JOIN padron_reunion pr ON pr.reunion_id = ab.reunion_id\n                                     AND pr.bien_privado_id = ab.bien_privado_id\n               LEFT JOIN morosos_reunion m ON m.reunion_id = ab.reunion_id\n                                          AND m.bien_privado_id = ab.bien_privado_id\n               WHERE ab.reunion_id = $1 AND ab.hasta IS NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "coeficiente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "padron_reunion",
+            "name": "coeficiente"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "asistente_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "asistente_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "moroso!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "b143770f20be7a5ea214f68d128ea43d798282a89f23b37973cc28be9bb1c6ba"
+}

@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO padron_reunion (tenant_id, reunion_id, bien_privado_id, coeficiente,\n                 representante_persona_id)\n             SELECT $1, $2, b, c, r FROM UNNEST($3::uuid[], $4::numeric[], $5::uuid[]) AS x (b, c, r)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray",
+        "NumericArray",
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fa3bfc86dd769ce848e1222eaa52b0ad8fbe2885e6cea59eb5da3ea2e33ca16e"
+}

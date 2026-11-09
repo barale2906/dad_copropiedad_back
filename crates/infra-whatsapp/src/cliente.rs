@@ -248,13 +248,27 @@ pub fn payload(m: &MensajeSaliente) -> Value {
             nombre,
             idioma,
             parametros,
+            botones,
         } => {
             let mut plantilla = json!({ "name": nombre, "language": { "code": idioma } });
+            let mut componentes = Vec::new();
             if !parametros.is_empty() {
-                plantilla["components"] = json!([{
+                componentes.push(json!({
                     "type": "body",
                     "parameters": parametros.iter().map(|p| json!({ "type": "text", "text": p })).collect::<Vec<_>>()
-                }]);
+                }));
+            }
+            // Botones de respuesta rápida: el `payload` vuelve en el webhook al tocarlos.
+            for (i, payload) in botones.iter().enumerate() {
+                componentes.push(json!({
+                    "type": "button",
+                    "sub_type": "quick_reply",
+                    "index": i.to_string(),
+                    "parameters": [{ "type": "payload", "payload": payload }]
+                }));
+            }
+            if !componentes.is_empty() {
+                plantilla["components"] = Value::Array(componentes);
             }
             base("template", plantilla)
         }
@@ -322,12 +336,18 @@ mod tests {
             nombre: "ticket_actualizado".into(),
             idioma: "es".into(),
             parametros: vec!["PQR-2026-00001".into(), "resuelto".into()],
+            botones: vec!["asis:x".into()],
         }));
         assert_eq!(t["type"], "template");
         assert_eq!(t["template"]["language"]["code"], "es");
         assert_eq!(
             t["template"]["components"][0]["parameters"][0]["text"],
             "PQR-2026-00001"
+        );
+        assert_eq!(t["template"]["components"][1]["sub_type"], "quick_reply");
+        assert_eq!(
+            t["template"]["components"][1]["parameters"][0]["payload"],
+            "asis:x"
         );
         assert_eq!(t["to"], "573001112233");
     }

@@ -69,6 +69,8 @@ catalogo_permisos! {
     PlataformaAuditoriaVer => "plataforma.auditoria.ver", Plataforma;
     PlataformaPublicidadModerar => "plataforma.publicidad.moderar", Plataforma;
     PlataformaFacturacionVer => "plataforma.facturacion.ver", Plataforma;
+    /// Líneas de WhatsApp (estado, franquicia) y tarifas de Meta.
+    PlataformaWhatsappGestionar => "plataforma.whatsapp.gestionar", Plataforma;
 
     // --- Copropiedad ---
     CopropiedadDatosVer => "copropiedad.datos.ver", Copropiedad;
@@ -160,7 +162,11 @@ catalogo_permisos! {
     AsambleasVer => "asambleas.ver", Copropiedad;
     AsambleasConvocar => "asambleas.convocar", Copropiedad;
     AsambleasConducir => "asambleas.conducir", Copropiedad;
-    /// Ver qué votó cada bien privado (votaciones no secretas o reservadas, plan 06).
+    /// Mesa de registro: asistentes, poderes, rótulos, salidas y reingresos.
+    AsambleasRegistrar => "asambleas.registrar", Copropiedad;
+    /// Registrar votos asistidos (operador) y desde los puestos de escaneo de rótulos.
+    AsambleasVotosRegistrar => "asambleas.votos.registrar", Copropiedad;
+    /// Ver qué votó cada bien privado en las votaciones reservadas (plan 06, ADR 0010).
     AsambleasVotosVerDetalle => "asambleas.votos.ver_detalle", Copropiedad;
     AccesoRegistrar => "acceso.registrar", Copropiedad;
     AccesoVisitantesAutorizar => "acceso.visitantes.autorizar", Copropiedad;
@@ -351,6 +357,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::MantenimientoPlanificar,
             P::MantenimientoVerificar,
             P::AsambleasVer,
+            P::AsambleasRegistrar,
             P::AccesoBitacoraVer,
         ]),
     },
@@ -489,6 +496,16 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TicketsUrgenciasRecibir,
             P::MantenimientoEjecutar,
             P::InventarioVer,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "operador_asamblea",
+        nombre: "Operador de asamblea",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::AsambleasVer,
+            P::AsambleasRegistrar,
+            P::AsambleasVotosRegistrar,
         ]),
     },
     RolPlantilla {

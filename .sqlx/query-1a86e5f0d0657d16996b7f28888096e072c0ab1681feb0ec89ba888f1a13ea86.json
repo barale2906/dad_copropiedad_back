@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, asistente_id, entrada_en, salida_en, motivo_salida, detalle_salida, registrada_por\n             FROM asistente_presencias WHERE reunion_id = $1 ORDER BY entrada_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_presencias",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "asistente_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_presencias",
+            "name": "asistente_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "entrada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asistente_presencias",
+            "name": "entrada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "salida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asistente_presencias",
+            "name": "salida_en"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "motivo_salida",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asistente_presencias",
+            "name": "motivo_salida"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "detalle_salida",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asistente_presencias",
+            "name": "detalle_salida"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "registrada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_presencias",
+            "name": "registrada_por"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "1a86e5f0d0657d16996b7f28888096e072c0ab1681feb0ec89ba888f1a13ea86"
+}

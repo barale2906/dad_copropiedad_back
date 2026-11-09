@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, orden, titulo, descripcion, estado, iniciado_en, terminado_en\n             FROM puntos_orden_dia WHERE reunion_id = $1 ORDER BY orden",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "puntos_orden_dia",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "puntos_orden_dia",
+            "name": "orden"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "titulo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "puntos_orden_dia",
+            "name": "titulo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "puntos_orden_dia",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "puntos_orden_dia",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "iniciado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "puntos_orden_dia",
+            "name": "iniciado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "terminado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "puntos_orden_dia",
+            "name": "terminado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "89d2045bc5d5594bf2b6029ac46f51cef03d7dcf8765f9e5b1828f9c2234dc00"
+}

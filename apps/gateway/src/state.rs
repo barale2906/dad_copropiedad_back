@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use infra_archivos::AlmacenLocal;
-use infra_postgres::{DirectorioTelefonosPg, PgPool, SesionesChatPg, UnidadDeTrabajoPg};
+use infra_postgres::{
+    DirectorioAsambleasPg, DirectorioTelefonosPg, PgPool, SesionesChatPg, UnidadDeTrabajoPg,
+};
 use shared::WhatsappConfig;
 use tokio::sync::Notify;
 
@@ -16,6 +18,8 @@ pub struct GatewayState {
     pub unidad: UnidadDeTrabajoPg,
     pub sesiones: SesionesChatPg,
     pub directorio: DirectorioTelefonosPg,
+    /// Asistencias por teléfono y acuses de entrega (asambleas, cruza copropiedades).
+    pub asambleas: DirectorioAsambleasPg,
     pub mensajeria: MensajeriaGateway,
     pub archivos: Arc<AlmacenLocal>,
     /// Despierta al worker de salida apenas el chat encola respuestas.

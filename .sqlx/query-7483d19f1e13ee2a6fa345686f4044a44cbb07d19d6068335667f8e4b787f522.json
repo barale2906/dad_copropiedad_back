@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE asistentes SET telefono = $2, linea_whatsapp = $3, whatsapp_confirmado_en = $4,\n                 confirmacion_outbox_id = $5\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7483d19f1e13ee2a6fa345686f4044a44cbb07d19d6068335667f8e4b787f522"
+}

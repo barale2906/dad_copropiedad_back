@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT ab.asistente_id, ab.bien_privado_id, b.codigo, pr.coeficiente, ab.calidad,\n                      ab.poder_id,\n                      EXISTS (SELECT 1 FROM morosos_reunion m\n                              WHERE m.reunion_id = ab.reunion_id\n                                AND m.bien_privado_id = ab.bien_privado_id) AS \"moroso!\"\n               FROM asistente_bienes ab\n               JOIN bienes_privados b ON b.tenant_id = ab.tenant_id AND b.id = ab.bien_privado_id\n               JOIN padron_reunion pr ON pr.reunion_id = ab.reunion_id\n                                     AND pr.bien_privado_id = ab.bien_privado_id\n               WHERE ab.asistente_id = ANY($1) AND ab.hasta IS NULL\n               ORDER BY normalizar(b.codigo), ab.bien_privado_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "asistente_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "asistente_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "coeficiente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "padron_reunion",
+            "name": "coeficiente"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "calidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "calidad"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "poder_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "poder_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "moroso!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      null
+    ]
+  },
+  "hash": "330e4c76f3ca91c7b60a875d14d43b101e2ea77134f39fdb82284eae12baab8e"
+}

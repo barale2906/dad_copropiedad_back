@@ -6,7 +6,23 @@ all-features = false
 
 [advisories]
 # Vulnerabilidades conocidas (RustSec). Toda excepción debe documentarse con motivo.
-ignore = []
+#
+# Excepciones transitivas de Typst (infra-pdf: actas y rótulos en PDF; ADR 0010), aprobadas por
+# el dueño del producto el 2026-11-08. Revisarlas al actualizar Typst y retirar las que ya no
+# apliquen.
+ignore = [
+    # quick-xml (vía hayagriva/citationberg): DoS al analizar XML hostil. Solo se alcanza si una
+    # plantilla lee XML o estilos CSL; las nuestras no lo hacen y los datos son JSON propio.
+    { id = "RUSTSEC-2026-0194", reason = "Typst: las plantillas no analizan XML; entrada propia y confiable" },
+    { id = "RUSTSEC-2026-0195", reason = "Typst: las plantillas no analizan XML; entrada propia y confiable" },
+    # Crates sin mantenimiento (no son vulnerabilidades) que arrastra Typst 0.15.
+    { id = "RUSTSEC-2025-0141", reason = "bincode vía syntect (resaltado de código de Typst, sin uso)" },
+    { id = "RUSTSEC-2024-0436", reason = "paste vía hayagriva (bibliografías de Typst, sin uso)" },
+    { id = "RUSTSEC-2026-0206", reason = "rustybuzz: motor de texto de Typst" },
+    { id = "RUSTSEC-2026-0192", reason = "ttf-parser: lectura de fuentes de Typst (fuentes embebidas y confiables)" },
+    { id = "RUSTSEC-2024-0449", reason = "unsafe-libyaml vía serde_yaml (bibliografías de Typst, sin uso)" },
+    { id = "RUSTSEC-2024-0320", reason = "yaml-rust vía syntect (resaltado de código de Typst, sin uso)" },
+]
 
 [licenses]
 # Licencias permisivas compatibles con software propietario. Agregar con criterio.

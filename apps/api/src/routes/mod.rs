@@ -13,6 +13,7 @@
 //! las mismas rutas que se sirven.
 
 mod archivos;
+pub(crate) mod asambleas;
 mod auth;
 mod bienes_privados;
 mod censo;

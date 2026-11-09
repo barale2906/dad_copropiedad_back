@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE preguntas SET estado = $2, abierta_en = $3, cierra_en = $4, cerrada_en = $5,\n                 resultado = $6, roles_aplicados_en = $7\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "71b802eb5492063800e5b5a5689474a5024d66859c422cf53670d5fc29f0b92e"
+}

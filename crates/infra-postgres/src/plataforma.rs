@@ -40,7 +40,7 @@ impl UnidadDeTrabajoPlataformaPg {
 /// Transacción de plataforma. Soltarla sin confirmar hace ROLLBACK.
 #[derive(Debug)]
 pub struct TransaccionPlataformaPg {
-    tx: sqlx::Transaction<'static, Postgres>,
+    pub(crate) tx: sqlx::Transaction<'static, Postgres>,
     ctx: ContextoPlataforma,
 }
 

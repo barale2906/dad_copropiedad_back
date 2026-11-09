@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, pregunta_id, orden, texto, en_blanco FROM opciones\n             WHERE pregunta_id = ANY($1) ORDER BY pregunta_id, orden",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "opciones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "pregunta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "opciones",
+            "name": "pregunta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "opciones",
+            "name": "orden"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "texto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "opciones",
+            "name": "texto"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "en_blanco",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "opciones",
+            "name": "en_blanco"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f1bd27efd425254fd22c24b1e3d1f78a23fc10feb0dc322b5ba902531772daf6"
+}

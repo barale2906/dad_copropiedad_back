@@ -6,7 +6,7 @@ terminal. Los demás archivos de reglas (`CLAUDE.md`, `.cursor/rules/*.mdc`,
 `.github/copilot-instructions.md`) solo **remiten a este documento**; no duplican reglas.
 
 Backend de **DAD_COPROPIEDAD**, software de gestión de propiedad horizontal (Colombia, Ley 675 de 2001).
-Primer módulo: **votaciones** en asambleas. **Multi-PH desde el inicio** (cada copropiedad es un tenant).
+Módulos: identidad, copropiedad y bienes privados, censo, bienes comunes y reservas, gestión administrativa y **asambleas y votaciones**. **Multi-PH desde el inicio** (cada copropiedad es un tenant).
 
 > ### Premisa de mantenimiento (obligatoria)
 > Este documento se actualiza **en el mismo commit/PR** cada vez que se incorpore al proyecto una
@@ -45,7 +45,7 @@ crates/
   application/     casos de uso + puertos (traits): RepositorioVotos, Mensajeria, Reloj, Sesiones…
   infra-postgres/  SQLx: pool, migraciones, transacción por tenant (RLS), repositorios
   infra-whatsapp/  Cloud API: firma de Meta, webhook entrante, cliente de envío y descarga de fotos
-  infra-pdf/       actas con Typst (pendiente)
+  infra-pdf/       actas y hoja de rótulos en PDF con Typst (librería): puerto GeneradorActas
   infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
   infra-archivos/  almacén de archivos (disco local; S3 previsto) y enlaces firmados: puerto AlmacenArchivos
   infra-seguridad/ contraseñas Argon2id y segundo factor TOTP: puertos HashContrasenas y SegundoFactor
@@ -53,7 +53,7 @@ crates/
   shared/          configuración (env), telemetría, apagado. Sin Axum ni SQL.
 apps/
   api/             binario `dad_copropiedad_api`: REST para el front + WebSocket de resultados
-  gateway/         binario `dad_copropiedad_gateway`: webhook WhatsApp, enrutamiento, outbox, limitador 80 mps
+  gateway/         binario `dad_copropiedad_gateway`: webhook WhatsApp (asamblea y chat), acuses, outbox, limitador 80 mps, workers
 migrations/        migraciones SQLx reversibles (*.up.sql / *.down.sql)
 docker/            scripts de inicialización de PostgreSQL para desarrollo
 ```
@@ -94,19 +94,19 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Lenguaje backend | Rust 1.99, edición 2024 | En uso | Fijado en `rust-toolchain.toml`. |
 | HTTP / WebSocket | Axum 0.8 + Tokio + tower-http | En uso | Middlewares: request-id, trace, timeout, límite de cuerpo. |
 | Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. Extensiones `unaccent` y `pg_trgm` (búsqueda normalizada) y `btree_gist` (reservas y asignaciones sin solapes con `EXCLUDE`). |
-| Caché / tiempo real | Redis 8 | Infra lista | Solo pub/sub de resultados de asambleas (plan 06). Las sesiones del chat viven en PostgreSQL (`sesiones_chat`, ADR 0009). |
+| Tiempo real | PostgreSQL `LISTEN/NOTIFY` + WebSocket de Axum | En uso | Tablero en vivo de las asambleas (`api::en_vivo`, ADR 0010): `pg_notify` en la transacción del cambio, recálculo desde la BD cada ~500 ms. Redis se retiró (sin uso); las sesiones del chat viven en PostgreSQL (`sesiones_chat`, ADR 0009). |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |
 | Decimales / fechas / IDs | rust_decimal · chrono · chrono-tz · uuid (v7, v4 para votos) | En uso | `chrono-tz`: los horarios de cada PH se evalúan en su zona IANA (`copropiedades.zona_horaria`). |
 | Criptografía | hmac + sha2 + sha1 + hex · argon2 · getrandom | En uso | Firma de webhooks de Meta, enlaces firmados, SHA-256 de archivos y tokens; Argon2id para contraseñas; TOTP (HMAC-SHA1, RFC 6238) en `infra-seguridad`. |
 | Autenticación | Tokens opacos propios + TOTP | En uso | Usuario o correo + contraseña; acceso 30 min, renovación rotativa con detección de reutilización (ADR 0005). Sin JWT. |
-| Mensajería | WhatsApp Cloud API (Meta) | En uso | Detrás del puerto `Mensajeria`; BSP intercambiable. Envío con plantillas aprobadas fuera de la ventana de 24 h (`ticket_actualizado`, `reporte_urgente`). Variables `WHATSAPP_*`. |
+| Mensajería | WhatsApp Cloud API (Meta) | En uso | Detrás del puerto `Mensajeria`; BSP intercambiable. Envío con plantillas aprobadas fuera de la ventana de 24 h (`ticket_actualizado`, `reporte_urgente`, `confirmar_asistencia`, `convocatoria_asamblea`). Varias líneas (`lineas_whatsapp`) de una misma WABA con una app y un token: cualquiera atiende cualquier PH; las conversaciones nuevas (asambleas y avisos) salen por la de más franquicia de servicio libre (las plantillas no la consumen). Variables `WHATSAPP_*`. |
 | Cliente HTTP saliente | reqwest 0.13 · rustls (ring) · webpki-roots | En uso | Solo en `infra-whatsapp` (Graph API). TLS sin OpenSSL ni aws-lc; el proveedor de criptografía se fija al construir el cliente. |
 | Correo | lettre 0.11 (SMTP, rustls) · SMTP de HestiaCP en producción · Mailpit en desarrollo | En uso | Crate `infra-correo`, puerto `EnvioCorreo`; variables `SMTP_*`. Mailpit atrapa los correos locales (bandeja en `localhost:8025`). |
 | Archivos | Disco del VPS (`ARCHIVOS_DIR`) · S3 previsto | En uso | Crate `infra-archivos`, puerto `AlmacenArchivos`; clave lógica + columna `almacen`; descargas con enlace HMAC de 5 min. Metodología de migración en ADR 0003. |
 | Planillas | csv 1.4 · calamine 0.38 | En uso | Crate `infra-planillas`, puerto `LectorPlanillas` (solo lectura, Rust puro). Importación con vista previa (ADR 0006). |
 | Limitador | Ritmo por línea propio (`apps/gateway/src/mensajeria.rs`) | En uso | 80 mensajes/s por línea de WhatsApp; `governor` solo si hace falta limitar endpoints públicos. |
 | OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
-| Actas | Typst | Previsto | En `infra-pdf`. |
+| Actas y rótulos | Typst 0.15 (`typst`, `typst-pdf`, `typst-layout`, `typst-assets` con fuentes embebidas) | En uso | Crate `infra-pdf`, puerto `GeneradorActas`: plantillas en `crates/infra-pdf/plantillas/`, datos ya calculados como `datos.json`; Code 128 propio para los rótulos. Arrastra avisos RustSec transitivos: excepciones documentadas en `deny.toml` (revisar al actualizar Typst). |
 | Contenedores | Docker Compose (dev) | En uso | Imagen de producción construida en CI. |
 | CI/CD | GitHub Actions | En uso | `.github/workflows/ci.yml`: fmt, clippy, pruebas con PostgreSQL, rustdoc, cargo-deny. Pendiente: build de imagen y despliegue. |
 | Despliegue | VPS Ubuntu + Nginx (HestiaCP) | Previsto | Binarios nativos/contenedor detrás de Nginx con TLS. |
@@ -188,7 +188,7 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Cada endpoint REST** se anota con `#[utoipa::path]`: método, ruta, parámetros, cuerpo, respuestas (incluidos errores con su `codigo`), seguridad y etiqueta del módulo. Cada DTO de entrada/salida deriva `ToSchema` con descripciones y ejemplos. Un endpoint sin documentación OpenAPI no está terminado.
 - DTOs de la API viven en `apps/api` (no se exponen entidades de dominio directamente); versionado en la ruta (`/api/v1`).
 - Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global). Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
-- Otras rutas: `/api/v1/auth/…` (sin sesión: registro, inicio de sesión), `/api/v1/organizaciones/{organizacion_id}/…`, `/api/v1/permisos` y `/api/v1/archivos/descarga` (sin sesión: el enlace firmado es la credencial, ADR 0003).
+- Otras rutas: `/api/v1/auth/…` (sin sesión: registro, inicio de sesión), `/api/v1/organizaciones/{organizacion_id}/…`, `/api/v1/permisos` y `/api/v1/archivos/descarga` (sin sesión: el enlace firmado es la credencial, ADR 0003), y `/api/v1/copropiedades/{copropiedad_id}/papeleta` (sin sesión: el token del enlace personal en `X-Papeleta` es la credencial, ADR 0010). El WebSocket del tablero en vivo acepta el token como subprotocolo (`EnCopropiedadWs`), nunca en la URL.
 - Autorización en los handlers con los extractores de `api::sesion`: `CuentaAutenticada` (`/yo`, `/organizaciones`), `OperadorPlataforma` (`/plataforma`, exige segundo factor) y `EnCopropiedad` (`/copropiedades/{copropiedad_id}`, carga los permisos; 404 si la cuenta no tiene roles allí). Cada endpoint protegido declara `security(("bearer" = []))`.
 - Handlers con los extractores de `api::extractores` (`Json`, `Query`, `Path`), nunca los de `axum` directamente: así una petición mal formada también responde con el error uniforme (`peticion_invalida`).
 - Listados paginados por cursor: `ParametrosPagina` (`?limite=&despues=`) → `application::SolicitudPagina` → el repositorio consulta `filas_a_consultar()` → `Pagina::desde_filas` → `PaginaRespuesta<T>`. Nunca `OFFSET`.
@@ -203,7 +203,7 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - Todo acceso de negocio dentro de `infra_postgres::transaccion_tenant` (fija `app.tenant_id` con alcance de transacción).
 - FK compuestas `(tenant_id, id)`: una fila no puede apuntar a otro tenant.
 - Consultas que cruzan tenants (enrutamiento del gateway, consumo del outbox) **solo** mediante funciones `SECURITY DEFINER` (`SET search_path`, `REVOKE … FROM PUBLIC`) que devuelven lo mínimo.
-- `lineas_whatsapp` es tabla de plataforma (sin tenant). Una línea o una por asamblea = configuración.
+- `lineas_whatsapp` es tabla de plataforma (sin tenant), con `estado` (`activa`, `degradada`, `pausada`) y franquicia mensual; `elegir_linea_whatsapp()` reparte las conversaciones nuevas. Acuses (`whatsapp_estados`) y tarifas (`tarifas_whatsapp`) también son de plataforma.
 - Toda modificación de esquema = nueva migración reversible (`make migracion NOMBRE=…`) probada con up → down → up. **Nunca editar una migración ya aplicada en otro entorno.**
 - **Archivos** (ADR 0003): nadie toca rutas de disco; todo pasa por `AlmacenArchivos` con una `ClaveArchivo`. La fila de `archivos` guarda la clave lógica y el `almacen`, nunca rutas absolutas. El tipo se valida por contenido (`TipoArchivo::validar`), nunca por extensión. El nombre original no va a logs ni a la auditoría. Casos de uso en `casos_uso::archivos` (`subir_archivo`, `enlace_descarga`, `migrar_lote`).
 - **Datos personales** (ADR 0004): toda columna con datos personales lleva `COMMENT ON COLUMN … IS 'dato_personal: …'` (o `dato_sensible:`) en su migración y se agrega a la prueba `columnas_personales_estan_clasificadas`. Antes de tratar datos para comunicaciones o publicidad se consulta `casos_uso::proteccion_datos::esta_autorizado`.
@@ -214,31 +214,31 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Reservas** (ADR 0008): todo recurso reservable (bien común, parqueadero, agenda, herramienta) usa el mismo motor (`casos_uso::reservas`) y su `PoliticaReserva`. Horarios en la hora local de la PH. Exclusivos: `EXCLUDE` en la BD; con aforo: bloquear el recurso y contar personas. Solicitar es idempotente. Montos liquidados en `Decimal`; penalidades y daños como `cargos_pendientes`. Los casos de uso del módulo exigen `exigir_modulo_en(.., Modulo::BienesComunes)` dentro de su transacción.
 - **Tickets** (ADR 0009): estados solo por `EstadoTicket::transicionar` con evento en `ticket_eventos`; número `PQR-AAAA-NNNNN` por PH y año desde `consecutivos`; plazos con `domain::ticket::vencimiento` (Ley 1755 por defecto, configurables); radicar es idempotente por clave (el `wamid` en WhatsApp). El solicitante nunca ve las notas internas; en `reporte_convivencia` la identidad solo con `tickets.convivencia.ver`. Avisos internos con `casos_uso::avisos` (destinatarios por permiso), nunca a direcciones fijas.
 - **Mantenimiento** (ADR 0009): una orden preventiva por (plan, fecha) (`ux_orden_por_periodo`); la baja de un activo exige soporte y es definitiva; quien ejecuta una orden no la verifica. Los historiales (`ticket_mensajes`, `ticket_eventos`, `movimientos_inventario`, `cumplimientos_obligacion`, `conversacion_mensajes`) son append-only.
+- **Asambleas** (ADR 0010, `casos_uso::asambleas`, módulo `Modulo::Asambleas`): estados solo por `EstadoReunion::transicionar` (borrador → convocada → en_registro → instalada ⇄ suspendida → cerrada, o cancelada); el **padrón** se fija al convocar (cuadro vigente + representante) y no se toca después. El **asistente** representa uno o varios bienes (`asistente_bienes`, un bien en un solo asistente vigente) y vota **una vez por todos**. La asistencia la certifica la mesa (cuenta para el quórum al registrar); las salidas abren/cierran `asistente_presencias`. Las preguntas se habilitan con los bienes presentes al abrirlas (`pregunta_habilitados`; los que entran mientras está abierta se agregan); morosos según `efecto_mora` de la reunión. Configuración por asamblea (poderes, mora, base de cómputo, temporizador) auditada. Mensajes de la asamblea con `encolar_de_reunion` (costo por asamblea). Cambios que ven las pantallas: `avisar_en_vivo` en la misma transacción.
 - **Importaciones** (`casos_uso::importaciones`): archivo → validación fila por fila → vista previa → confirmar → aplicar en una transacción. Una importación nueva reutiliza ese flujo; los errores no repiten el valor de la celda.
 - **Módulos contratados**: los casos de uso o routers de un módulo vendible (`domain::Modulo`) exigen `casos_uso::modulos::exigir_modulo`; si no está habilitado → `modulo_no_habilitado` (403).
 - Enumeraciones como `TEXT` + `CHECK`; coeficientes `NUMERIC(10,8)`; fechas `TIMESTAMPTZ`; índices para cada consulta frecuente y cada FK usada en filtros.
 - Preferir `sqlx::query!`/`query_as!`; tras cambiar consultas: `make sqlx-prepare` y versionar `.sqlx/`. SQL dinámico solo con `AssertSqlSafe`, justificado, y con datos enlazados (`$1`), nunca interpolados desde la entrada del usuario. Prohibido `SELECT *`.
 
 ## 9. Invariantes críticos de votaciones (no romper)
-1. **Unicidad:** un bien privado vota una vez por pregunta → `UNIQUE (pregunta_id, bien_privado_id)` en `participaciones`.
-2. **Idempotencia:** `UNIQUE (pregunta_id, idempotency_key)` y `UNIQUE (wamid)` (Meta reintenta webhooks); inserción con `ON CONFLICT DO NOTHING`; un reintento devuelve el resultado original.
-3. **Atomicidad:** verificar estado + insertar participación + voto + evento outbox + auditoría en **una sola transacción**. El trigger `validar_participacion` vuelve a exigir `abierta` con `FOR SHARE`.
-4. **Secreto del voto** (`tipo_voto = 'secreto'`): `votos` sin `bien_privado_id`, sin `participacion_id`, sin marca de tiempo, id UUID v4 (CHECK + trigger). Ni la auditoría ni el outbox (confirmaciones) guardan la opción elegida. No exponer endpoints que crucen participaciones con votos.
-5. **Peso por coeficiente:** resultados y quórum suman coeficientes copiados en la fila al votar, no cuentan votos.
-6. **Append-only:** `participaciones`, `votos` y `auditoria` rechazan UPDATE/DELETE/TRUNCATE (triggers + permisos).
-7. Solo preguntas `abierta` de reuniones `instalada` reciben votos.
-8. **Acta:** cada participación guarda hora, canal (`web`/`whatsapp`/`presencial`) y apoderado.
-
-Riesgo residual conocido: el orden físico de inserción en `votos` podría correlacionarse con `participaciones.registrado_en`; evaluar mitigación (lotes/mezcla) antes de producción.
+1. **Unicidad:** un bien privado vota una vez por pregunta → `UNIQUE (pregunta_id, bien_privado_id)` en `participaciones`. El asistente vota **una vez por todos sus bienes**: una emisión = una participación por bien, en una transacción.
+2. **Idempotencia:** un reintento se reconoce por (`pregunta_id`, `asistente_id`, `idempotency_key`) — en WhatsApp la clave es el `wamid` (Meta reintenta webhooks); la participación se inserta con `ON CONFLICT (pregunta_id, bien_privado_id) DO NOTHING` y solo las insertadas llevan votos; un reintento devuelve el resultado original sin filas nuevas.
+3. **Atomicidad:** verificar estado + insertar participaciones + votos + outbox + auditoría en **una sola transacción**. El trigger `validar_participacion` vuelve a exigir `abierta` con `FOR SHARE` y que el bien esté en `pregunta_habilitados` con el mismo coeficiente.
+4. **Visibilidad del voto** (ADR 0010; no existe el secreto absoluto): `nominal` (el detalle lo ve la asamblea y va en el acta) o `reservado` (el vínculo bien → opción se guarda, pero el detalle solo con `asambleas.votos.ver_detalle` y **cada consulta se audita**; los resultados públicos son totales). `votos.id` sigue en UUID v4 y sin marca de tiempo. Ni la auditoría ni el outbox (confirmaciones) guardan la opción elegida.
+5. **Peso por coeficiente:** resultados y quórum suman lo copiado en la fila al votar (coeficiente del padrón); el escrutinio muestra coeficiente **y** unidades, decide la `base_computo` de la pregunta (`unidades` se advierte en el acta).
+6. **Append-only:** `participaciones`, `votos`, `fotos_quorum`, `envios_convocatoria` y `auditoria` rechazan UPDATE/DELETE/TRUNCATE (triggers + permisos).
+7. Solo preguntas `abierta` de reuniones `instalada` reciben votos, y solo de bienes habilitados de asistentes **presentes**.
+8. **Acta:** cada participación guarda hora, canal (`web`/`whatsapp`/`presencial`/`rotulo`), asistente, apoderado y quién la registró (operador o puesto).
+9. **Asambleas simultáneas:** cada botón o fila de WhatsApp lleva `vt:{tenant}:{pregunta}:{opcion}`; el voto se aplica a esa pregunta y se verifica que el teléfono sea de un asistente de su reunión. El texto libre solo vota si hay **una** pregunta pendiente para ese teléfono.
 
 ### Mensajería (gateway)
 - Webhook: verificar `X-Hub-Signature-256` sobre el cuerpo **crudo** antes de deserializar; responder rápido.
 - Sesión por **(línea, teléfono)** en PostgreSQL (`sesiones_chat`, ámbito de plataforma). Cualquier línea atiende cualquier PH: la PH se resuelve por el teléfono (`vinculos_por_telefono`); si hay varios vínculos se pregunta con una lista. Cada turno se cierra en una transacción (`SesionesConversacion::cerrar_turno`: sesión + respuestas al outbox + `wamid` procesado); lo que crea datos es idempotente por `wamid`.
-- El chat (`casos_uso::chat`) es una máquina de estados en `application`; el webhook responde 200 de inmediato y atiende el turno aparte. Fuera de la ventana de 24 h solo plantillas aprobadas. En asambleas, la sesión se resolverá contra las reuniones activas (`casos_uso::resolver_reunion`, plan 06).
+- El chat (`casos_uso::chat`) es una máquina de estados en `application`; el webhook responde 200 de inmediato y atiende el turno aparte. Fuera de la ventana de 24 h solo plantillas aprobadas. Antes del chat va la asamblea (`casos_uso::asambleas::whatsapp`): «Confirmar» de la plantilla (`asis:{tenant}:{asistente}`), botones de voto y texto libre; «menú» pasa al chat. Los `statuses` del webhook se guardan como acuses (`whatsapp_estados`) y `phone_number_quality_update` degrada la línea.
 - Votos con botones (≤ 3 opciones) o listas (≤ 10) — `ContenidoSaliente::elecciones`.
 - **Outbox multicanal** (`canal`: whatsapp, correo, push) en lugar de colas externas: se encola con `RegistroOutbox` dentro de la transacción del hecho; el worker del gateway (`worker_salida`, caso de uso `despachar_lote`) reclama **solo los canales que sabe enviar** con `outbox_reclamar(canales, límite)` (`FOR UPDATE SKIP LOCKED`) y marca con `outbox_marcar_enviado` / `outbox_marcar_fallido` (reintentos con espera exponencial, `PoliticaReintentos`). Prioridad: confirmaciones → eventos → recordatorios → publicidad (9), dentro de 80 mps por línea en WhatsApp. El texto de error de un envío puede contener el destino: va a la fila del outbox, nunca a los logs.
-- Resultados en vivo: proyección en memoria (`ProyeccionResultados`) emitida cada ~500 ms por reunión; nunca un mensaje por voto.
-- Registro: enlace prellenado con botones, prerregistro y QR en puerta (`inscripciones.metodo`); los tokens se guardan como hash.
+- Resultados en vivo: tablero recalculado desde la BD (`tablero_en_vivo`) tras `pg_notify` y emitido por WebSocket a lo sumo cada ~500 ms por reunión; nunca un mensaje por voto.
+- Registro: mesa asistida (busca por código o documento, agrega bienes y poderes en un toque, rótulos Code 128 genéricos), prerregistro y papeleta virtual (`X-Papeleta`, el token es la credencial; se guarda como hash).
 
 ## 10. Seguridad, infraestructura y operación
 - **Secretos:** nunca en el código ni en git (`.env` está ignorado); en producción, variables de entorno del servidor/CI. Rotables.

@@ -5,7 +5,7 @@ use infra_archivos::AlmacenLocal;
 use shared::{AppConfig, ArchivosConfig, SeguridadConfig, telemetry};
 use tokio::net::TcpListener;
 
-use api::{routes, state::AppState};
+use api::{en_vivo, routes, state::AppState};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -44,6 +44,21 @@ async fn main() -> anyhow::Result<()> {
         tracing::warn!("PLATAFORMA_EXIGE_SEGUNDO_FACTOR=false: solo aceptable en desarrollo");
     }
     let state = AppState::new(db, archivos, seguridad.plataforma_exige_segundo_factor);
+    // Tablero en vivo: oyente de `pg_notify` y emisor cada ~500 ms, hasta el apagado.
+    let (avisar_apagado, apagado) = tokio::sync::watch::channel(false);
+    let esperar = |mut rx: tokio::sync::watch::Receiver<bool>| async move {
+        let _ = rx.wait_for(|a| *a).await;
+    };
+    let oyente = tokio::spawn(en_vivo::escuchar(
+        state.db.clone(),
+        std::sync::Arc::clone(&state.en_vivo),
+        esperar(apagado.clone()),
+    ));
+    let emisor = tokio::spawn(en_vivo::emitir(
+        std::sync::Arc::clone(&state.en_vivo),
+        state.unidad.clone(),
+        esperar(apagado.clone()),
+    ));
     let app = routes::router(state, &config);
     let addr = config.socket_addr()?;
     let listener = TcpListener::bind(addr)
@@ -55,6 +70,12 @@ async fn main() -> anyhow::Result<()> {
         .with_graceful_shutdown(shared::apagado::senal_apagado())
         .await
         .context("error del servidor HTTP")?;
+    let _ = avisar_apagado.send(true);
+    for t in [oyente, emisor] {
+        if let Err(e) = t.await {
+            tracing::error!(error = %e, "una tarea del tablero en vivo terminó con error");
+        }
+    }
 
     tracing::info!("servidor detenido correctamente");
     Ok(())

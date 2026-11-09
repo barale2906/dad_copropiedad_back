@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE poderes SET estado = $2, motivo = $3, revisado_por = $4, revisado_en = $5\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a5493d580d8531e45172016a6898bc7ec65c674dd722d7ba98273918f25c5e12"
+}

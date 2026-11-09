@@ -10,10 +10,14 @@
 //!   Despacha correo y WhatsApp ([`worker_salida`]) con el ritmo por línea de [`mensajeria`].
 //! - Encola los recordatorios de reservas ([`worker_recordatorios`]) y ejecuta las tareas de
 //!   tickets y mantenimiento ([`worker_gestion`]).
+//! - Asambleas por WhatsApp (`casos_uso::asambleas::whatsapp`) antes del chat: confirmar
+//!   asistencia y votar con botones cuyo id lleva la pregunta; registra los acuses de entrega y
+//!   la calidad de las líneas; cierra las preguntas con temporizador ([`worker_asambleas`]).
 
 mod mensajeria;
 mod routes;
 mod state;
+mod worker_asambleas;
 mod worker_gestion;
 mod worker_recordatorios;
 mod worker_salida;
@@ -24,8 +28,8 @@ use anyhow::Context;
 use infra_archivos::AlmacenLocal;
 use infra_correo::CorreoSmtp;
 use infra_postgres::{
-    ColaSalidaPg, DirectorioGestionPg, DirectorioRecordatoriosPg, DirectorioTelefonosPg,
-    SesionesChatPg, UnidadDeTrabajoPg,
+    ColaSalidaPg, DirectorioAsambleasPg, DirectorioGestionPg, DirectorioRecordatoriosPg,
+    DirectorioTelefonosPg, SesionesChatPg, UnidadDeTrabajoPg,
 };
 use infra_whatsapp::ClienteWhatsapp;
 use shared::{AppConfig, ArchivosConfig, SmtpConfig, WhatsappConfig, telemetry};
@@ -113,10 +117,18 @@ async fn main() -> anyhow::Result<()> {
         esperar_apagado(apagado.clone()),
     ));
 
+    let asambleas = tokio::spawn(worker_asambleas::ejecutar(
+        DirectorioAsambleasPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        Arc::clone(&hay_salida),
+        esperar_apagado(apagado.clone()),
+    ));
+
     let state = GatewayState {
         unidad: UnidadDeTrabajoPg::new(db.clone()),
         sesiones: SesionesChatPg::new(db.clone()),
         directorio: DirectorioTelefonosPg::new(db.clone()),
+        asambleas: DirectorioAsambleasPg::new(db.clone()),
         mensajeria,
         archivos: Arc::new(archivos),
         hay_salida,
@@ -147,6 +159,10 @@ async fn main() -> anyhow::Result<()> {
 
     if let Err(e) = gestion.await {
         tracing::error!(error = %e, "el worker de gestión terminó con error");
+    }
+
+    if let Err(e) = asambleas.await {
+        tracing::error!(error = %e, "el worker de asambleas terminó con error");
     }
 
     tracing::info!("gateway detenido correctamente");

@@ -73,8 +73,38 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
-    /// Inscripción de un bien privado a una reunión (enlace, prerregistro o QR en puerta).
-    InscripcionId,
+    /// Asistente de una reunión: la persona que representa uno o varios bienes privados.
+    AsistenteId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Poder con el que un apoderado representa un bien privado en una reunión.
+    PoderId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Punto del orden del día de una reunión.
+    PuntoOrdenId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Periodo de presencia de un asistente (entrada y salida).
+    PresenciaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Vínculo vigente entre un asistente y un bien privado que representa.
+    AsistenteBienId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Asignación de un rótulo preimpreso a un asistente.
+    RotuloId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Foto del quórum en un momento de la reunión.
+    FotoQuorumId,
     Uuid::now_v7
 );
 id_entidad!(ParticipacionId, Uuid::now_v7);

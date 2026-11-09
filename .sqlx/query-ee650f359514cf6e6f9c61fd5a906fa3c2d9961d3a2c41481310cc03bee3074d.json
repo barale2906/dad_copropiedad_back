@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT h.bien_privado_id, h.coeficiente\n             FROM pregunta_habilitados h\n             WHERE h.pregunta_id = $1 AND h.bien_privado_id = ANY($2)\n               AND NOT EXISTS (SELECT 1 FROM participaciones p\n                               WHERE p.pregunta_id = h.pregunta_id\n                                 AND p.bien_privado_id = h.bien_privado_id)\n             ORDER BY h.bien_privado_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "pregunta_habilitados",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "coeficiente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "pregunta_habilitados",
+            "name": "coeficiente"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "ee650f359514cf6e6f9c61fd5a906fa3c2d9961d3a2c41481310cc03bee3074d"
+}

@@ -3,8 +3,11 @@
 use std::collections::HashMap;
 
 use application::{
-    casos_uso::chat::{ResultadoTurno, ServiciosChat, atender_mensaje},
-    puertos::RelojSistema,
+    casos_uso::{
+        asambleas::whatsapp::{ResultadoAsamblea, ServiciosAsamblea, atender_mensaje_asamblea},
+        chat::{ResultadoTurno, ServiciosChat, atender_mensaje},
+    },
+    puertos::{DirectorioAsambleas, RelojSistema},
 };
 use axum::{
     Json, Router,
@@ -108,12 +111,59 @@ async fn recibir(
         // y el turno es idempotente por `wamid`.
         let state = state.clone();
         tokio::spawn(async move { atender(&state, mensaje).await });
-        // Votaciones (plan 06): el menú del chat sumará la opción de votar en asamblea.
+    }
+    let acuses = notificacion.acuses();
+    let calidades = notificacion.calidades();
+    if !acuses.is_empty() || !calidades.is_empty() {
+        let state = state.clone();
+        tokio::spawn(async move {
+            for a in acuses {
+                if let Err(e) = state.asambleas.registrar_acuse(&a).await {
+                    tracing::warn!(wamid = %a.wamid, error = %e, "no se pudo registrar el acuse");
+                }
+            }
+            for c in calidades {
+                tracing::warn!(degradada = c.degradada, calidad = ?c.calidad, "cambio de calidad de una línea");
+                if let Err(e) = state
+                    .asambleas
+                    .actualizar_calidad_linea(&c.numero, c.degradada, c.calidad)
+                    .await
+                {
+                    tracing::warn!(error = %e, "no se pudo actualizar la calidad de la línea");
+                }
+            }
+        });
     }
     StatusCode::OK
 }
 
+/// La asamblea (votar, confirmar asistencia) va antes que el chat de la copropiedad.
 async fn atender(state: &GatewayState, mensaje: application::puertos::mensajeria::MensajeEntrante) {
+    let servicios = ServiciosAsamblea {
+        unidad: &state.unidad,
+        directorio: &state.asambleas,
+        sesiones: &state.sesiones,
+        reloj: &RelojSistema,
+    };
+    match atender_mensaje_asamblea(&servicios, &mensaje).await {
+        Ok(ResultadoAsamblea::NoAplica) => atender_chat(state, mensaje).await,
+        Ok(ResultadoAsamblea::Repetido) => {
+            tracing::debug!(wamid = %mensaje.wamid, "mensaje de asamblea repetido");
+        }
+        Ok(ResultadoAsamblea::Atendido { respuestas }) => {
+            tracing::debug!(wamid = %mensaje.wamid, respuestas, "mensaje de asamblea atendido");
+            state.hay_salida.notify_one();
+        }
+        Err(e) => {
+            tracing::error!(wamid = %mensaje.wamid, error = %e, "no se pudo atender el mensaje de asamblea");
+        }
+    }
+}
+
+async fn atender_chat(
+    state: &GatewayState,
+    mensaje: application::puertos::mensajeria::MensajeEntrante,
+) {
     let servicios = ServiciosChat {
         unidad: &state.unidad,
         sesiones: &state.sesiones,
@@ -147,6 +197,8 @@ mod tests {
     use sqlx::{Executor, PgPool, postgres::PgPoolOptions};
     use tower::ServiceExt;
 
+    use uuid::Uuid;
+
     use super::*;
 
     fn app() -> Router {
@@ -176,6 +228,7 @@ mod tests {
             unidad: infra_postgres::UnidadDeTrabajoPg::new(db.clone()),
             sesiones: infra_postgres::SesionesChatPg::new(db.clone()),
             directorio: infra_postgres::DirectorioTelefonosPg::new(db.clone()),
+            asambleas: infra_postgres::DirectorioAsambleasPg::new(db.clone()),
             mensajeria: crate::mensajeria::MensajeriaGateway::new(None),
             archivos: Arc::new(archivos),
             hay_salida: Arc::default(),
@@ -300,6 +353,158 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(sesiones, 1);
+    }
+
+    async fn pool_app(duenio: &PgPool) -> PgPool {
+        PgPoolOptions::new()
+            .max_connections(4)
+            .after_connect(|c, _| {
+                Box::pin(async move {
+                    c.execute("SET ROLE dad_app").await?;
+                    Ok(())
+                })
+            })
+            .connect_with((*duenio.connect_options()).clone())
+            .await
+            .unwrap()
+    }
+
+    async fn esperar_conteo(duenio: &PgPool, sql: &str, esperado: i64) -> i64 {
+        let mut n = 0;
+        for _ in 0..100 {
+            n = sqlx::query_scalar(sqlx::AssertSqlSafe(sql.to_owned()))
+                .fetch_one(duenio)
+                .await
+                .unwrap();
+            if n >= esperado {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
+        n
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn un_acuse_de_entrega_por_el_webhook_queda_registrado(duenio: PgPool) {
+        let cuerpo = json!({
+            "object": "whatsapp_business_account",
+            "entry": [{ "id": "WABA", "changes": [{ "field": "messages", "value": {
+                "messaging_product": "whatsapp",
+                "metadata": { "display_phone_number": "573000000000", "phone_number_id": "PNID" },
+                "statuses": [{ "id": "wamid.salida", "status": "failed", "timestamp": "1798000000",
+                               "errors": [{ "code": 131026 }] }]
+            }}]}]
+        })
+        .to_string();
+        let res = app_con(pool_app(&duenio).await)
+            .oneshot(
+                Request::post("/webhook/whatsapp")
+                    .header(CABECERA_FIRMA, firmar(cuerpo.as_bytes()))
+                    .body(Body::from(cuerpo))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let n = esperar_conteo(
+            &duenio,
+            "SELECT count(*) FROM whatsapp_estados WHERE wamid = 'wamid.salida' AND error_codigo = 131026",
+            1,
+        )
+        .await;
+        assert_eq!(n, 1);
+    }
+
+    /// Asamblea instalada con una pregunta sí/no abierta y un asistente presente que confirmó
+    /// WhatsApp. Devuelve (tenant, pregunta, opción «Sí»).
+    async fn asamblea_con_pregunta_abierta(duenio: &PgPool, telefono: &str) -> (Uuid, Uuid, Uuid) {
+        let (t, b, p, r, a, q, o) = (
+            Uuid::now_v7(),
+            Uuid::now_v7(),
+            Uuid::now_v7(),
+            Uuid::now_v7(),
+            Uuid::now_v7(),
+            Uuid::now_v7(),
+            Uuid::now_v7(),
+        );
+        let sql = format!(
+            "INSERT INTO copropiedades (id, nombre, estado) VALUES ('{t}', 'Conjunto', 'activa');
+             INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
+                 VALUES (gen_random_uuid(), '{t}', 'asambleas', now() - interval '1 day');
+             INSERT INTO bienes_privados (id, tenant_id, codigo, coeficiente) VALUES ('{b}', '{t}', 'T1-101', 0.5);
+             INSERT INTO personas (id, tenant_id, nombre, telefono) VALUES ('{p}', '{t}', 'Ana', '{telefono}');
+             INSERT INTO reuniones (id, tenant_id, titulo, tipo, estado, fecha_programada)
+                 VALUES ('{r}', '{t}', 'Asamblea', 'ordinaria', 'instalada', now());
+             INSERT INTO padron_reunion (tenant_id, reunion_id, bien_privado_id, coeficiente, representante_persona_id)
+                 VALUES ('{t}', '{r}', '{b}', 0.5, '{p}');
+             INSERT INTO asistentes (id, tenant_id, reunion_id, persona_id, metodo, telefono, linea_whatsapp,
+                                     whatsapp_confirmado_en)
+                 VALUES ('{a}', '{t}', '{r}', '{p}', 'mesa', '{telefono}', 'PNID', now());
+             INSERT INTO asistente_bienes (id, tenant_id, reunion_id, asistente_id, bien_privado_id, calidad, desde)
+                 VALUES (gen_random_uuid(), '{t}', '{r}', '{a}', '{b}', 'propietario', now());
+             INSERT INTO asistente_presencias (id, tenant_id, reunion_id, asistente_id, entrada_en)
+                 VALUES (gen_random_uuid(), '{t}', '{r}', '{a}', now());
+             INSERT INTO preguntas (id, tenant_id, reunion_id, orden, enunciado, tipo, tipo_voto, base_computo,
+                                    regla_mayoria, estado, abierta_en)
+                 VALUES ('{q}', '{t}', '{r}', 1, '¿Aprueba?', 'si_no', 'nominal', 'coeficiente', 'simple',
+                         'abierta', now());
+             INSERT INTO opciones (id, tenant_id, pregunta_id, orden, texto) VALUES
+                 ('{o}', '{t}', '{q}', 1, 'Sí'), (gen_random_uuid(), '{t}', '{q}', 2, 'No');
+             INSERT INTO pregunta_habilitados (tenant_id, pregunta_id, bien_privado_id, coeficiente, desde)
+                 VALUES ('{t}', '{q}', '{b}', 0.5, now());"
+        );
+        sqlx::raw_sql(sqlx::AssertSqlSafe(sql))
+            .execute(duenio)
+            .await
+            .unwrap();
+        (t, q, o)
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn un_boton_de_voto_por_el_webhook_registra_la_participacion(duenio: PgPool) {
+        let telefono = "573009998877";
+        let (t, q, o) = asamblea_con_pregunta_abierta(&duenio, telefono).await;
+        let cuerpo = json!({
+            "object": "whatsapp_business_account",
+            "entry": [{ "id": "WABA", "changes": [{ "field": "messages", "value": {
+                "messaging_product": "whatsapp",
+                "metadata": { "display_phone_number": "573000000000", "phone_number_id": "PNID" },
+                "messages": [{ "from": telefono, "id": "wamid.voto", "timestamp": "1798000000",
+                               "type": "interactive",
+                               "interactive": { "type": "button_reply",
+                                                "button_reply": { "id": format!("vt:{t}:{q}:{o}"), "title": "1. Sí" } } }]
+            }}]}]
+        })
+        .to_string();
+        let app = app_con(pool_app(&duenio).await);
+        for _ in 0..2 {
+            // Meta reintenta el mismo webhook.
+            let res = app
+                .clone()
+                .oneshot(
+                    Request::post("/webhook/whatsapp")
+                        .header(CABECERA_FIRMA, firmar(cuerpo.as_bytes()))
+                        .body(Body::from(cuerpo.clone()))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(res.status(), StatusCode::OK);
+        }
+        let sql = format!(
+            "SELECT count(*) FROM participaciones WHERE pregunta_id = '{q}' AND wamid = 'wamid.voto'"
+        );
+        assert_eq!(esperar_conteo(&duenio, &sql, 1).await, 1);
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        assert_eq!(esperar_conteo(&duenio, &sql, 1).await, 1, "sin duplicados");
+        let confirmaciones: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM outbox WHERE destino = $1 AND payload->'contenido'->>'cuerpo' LIKE '✅ Voto registrado%'",
+        )
+        .bind(telefono)
+        .fetch_one(&duenio)
+        .await
+        .unwrap();
+        assert_eq!(confirmaciones, 1);
     }
 
     #[tokio::test]

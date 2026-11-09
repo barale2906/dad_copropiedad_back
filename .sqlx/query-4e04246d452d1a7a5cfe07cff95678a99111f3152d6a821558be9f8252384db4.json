@@ -1,0 +1,161 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, reunion_id, bien_privado_id, poderdante_persona_id, apoderado_persona_id,\n                    soporte_archivo_id, estado, motivo, registrado_por, registrado_en,\n                    revisado_por, revisado_en\n             FROM poderes\n             WHERE ($1::uuid IS NULL OR reunion_id = $1) AND ($2::uuid IS NULL OR id = $2)\n             ORDER BY registrado_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "reunion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "reunion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "poderdante_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "poderdante_persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "apoderado_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "apoderado_persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "soporte_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "soporte_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "registrado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "registrado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "registrado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "registrado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "revisado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "revisado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "revisado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "poderes",
+            "name": "revisado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "4e04246d452d1a7a5cfe07cff95678a99111f3152d6a821558be9f8252384db4"
+}

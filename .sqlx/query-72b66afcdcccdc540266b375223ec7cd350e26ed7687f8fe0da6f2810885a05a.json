@@ -1,0 +1,110 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT pr.bien_privado_id, b.codigo, pr.coeficiente, pr.representante_persona_id,\n                      p.nombre AS \"nombre?\", p.telefono AS \"telefono?\",\n                      (m.bien_privado_id IS NOT NULL) AS \"moroso!\", ab.asistente_id AS \"asistente_id?\"\n               FROM padron_reunion pr\n               JOIN bienes_privados b ON b.tenant_id = pr.tenant_id AND b.id = pr.bien_privado_id\n               LEFT JOIN personas p ON p.tenant_id = pr.tenant_id AND p.id = pr.representante_persona_id\n               LEFT JOIN morosos_reunion m ON m.reunion_id = pr.reunion_id\n                                          AND m.bien_privado_id = pr.bien_privado_id\n               LEFT JOIN asistente_bienes ab ON ab.reunion_id = pr.reunion_id\n                                            AND ab.bien_privado_id = pr.bien_privado_id\n                                            AND ab.hasta IS NULL\n               WHERE pr.reunion_id = $1\n                 AND (normalizar(b.codigo) LIKE normalizar($2) ESCAPE '\\' OR p.documento = $3)\n               ORDER BY normalizar(b.codigo), pr.bien_privado_id\n               LIMIT $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "padron_reunion",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "coeficiente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "padron_reunion",
+            "name": "coeficiente"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "representante_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "padron_reunion",
+            "name": "representante_persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "nombre?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "telefono?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "telefono"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "moroso!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
+        "name": "asistente_id?",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "asistente_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      null,
+      false
+    ]
+  },
+  "hash": "72b66afcdcccdc540266b375223ec7cd350e26ed7687f8fe0da6f2810885a05a"
+}

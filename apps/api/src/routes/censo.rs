@@ -14,7 +14,7 @@ use application::{
 };
 use axum::{
     extract::State,
-    http::{HeaderValue, StatusCode, header},
+    http::StatusCode,
     response::{IntoResponse, Response},
 };
 use chrono::{DateTime, NaiveDate, Utc};
@@ -31,6 +31,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
+    csv::csv,
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::{Json, Path, Query},
     openapi::ETIQUETA_CENSO,
@@ -1101,38 +1102,6 @@ impl From<FilaLibroResidentes> for FilaResidenteRespuesta {
             vigente_desde: f.vigente_desde,
         }
     }
-}
-
-/// CSV con BOM y `;` (Excel en español lo abre directo). Los campos se citan siempre.
-fn csv(nombre: &'static str, encabezado: &[&str], filas: Vec<Vec<String>>) -> Response {
-    let citar = |c: &str| format!("\"{}\"", c.replace('"', "\"\""));
-    let mut texto = String::from("\u{feff}");
-    texto.push_str(
-        &encabezado
-            .iter()
-            .map(|c| citar(c))
-            .collect::<Vec<_>>()
-            .join(";"),
-    );
-    texto.push_str("\r\n");
-    for f in filas {
-        texto.push_str(&f.iter().map(|c| citar(c)).collect::<Vec<_>>().join(";"));
-        texto.push_str("\r\n");
-    }
-    (
-        [
-            (
-                header::CONTENT_TYPE,
-                HeaderValue::from_static("text/csv; charset=utf-8"),
-            ),
-            (
-                header::CONTENT_DISPOSITION,
-                HeaderValue::from_static(nombre),
-            ),
-        ],
-        texto,
-    )
-        .into_response()
 }
 
 fn opt(v: Option<String>) -> String {

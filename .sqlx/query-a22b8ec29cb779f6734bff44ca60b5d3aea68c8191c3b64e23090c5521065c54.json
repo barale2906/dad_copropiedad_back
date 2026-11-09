@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT outbox_id AS \"outbox_id!\", estado FROM estados_entrega($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "outbox_id!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8Array"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "a22b8ec29cb779f6734bff44ca60b5d3aea68c8191c3b64e23090c5521065c54"
+}

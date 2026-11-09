@@ -57,7 +57,7 @@ impl RepositorioCopropiedad for TransaccionEnMemoria {
     }
 
     async fn cargos_vigentes(&mut self) -> AppResult<Vec<CargoVigente>> {
-        Ok(Vec::new())
+        Ok(self.datos.asambleas.cargos_vigentes.clone())
     }
 
     async fn bienes_para_consejo(&mut self) -> AppResult<u64> {

@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT elegir_linea_whatsapp()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "elegir_linea_whatsapp",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "b46345788b7dfd66f1b34274db271571e93ad5897b97b074966f357abbb077a5"
+}

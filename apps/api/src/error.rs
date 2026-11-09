@@ -168,6 +168,7 @@ impl ApiError {
                 | DominioError::PlantillaInvalida(_)
                 | DominioError::DatoInvalido { .. }
                 | DominioError::ReservaNoPermitida(_)
+                | DominioError::VotoInvalido(_)
                 | DominioError::ValorDesconocido { .. } => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion)
                 }

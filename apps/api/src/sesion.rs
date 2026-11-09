@@ -7,6 +7,10 @@
 //! - [`EnCopropiedad`]: toma `{copropiedad_id}` de la ruta y arma el [`Contexto`] con los
 //!   permisos efectivos de la cuenta en esa PH. Si no tiene ningún rol allí responde 404 (no se
 //!   revela si la copropiedad existe). El superusuario tiene todos los permisos en todas.
+//! - [`EnCopropiedadWs`]: igual, para abrir un WebSocket desde el navegador (que no puede
+//!   enviar `Authorization`): el token va en `Sec-WebSocket-Protocol: dad.v1, <token>`.
+//! - [`PapeletaVirtual`]: la papeleta del asistente (cabecera `X-Papeleta`): el token es la
+//!   credencial (como el enlace firmado de una descarga); no hay sesión.
 
 use application::{
     AppError, Contexto, ContextoPlataforma,
@@ -89,37 +93,120 @@ pub struct EnCopropiedad {
     pub ctx: Contexto,
 }
 
+async fn tenant_de_ruta(parts: &mut Parts, state: &AppState) -> Result<TenantId, ApiError> {
+    let params = RawPathParams::from_request_parts(parts, state)
+        .await
+        .map_err(|e| ApiError::PeticionInvalida(e.body_text()))?;
+    params
+        .iter()
+        .find(|(k, _)| *k == PARAMETRO_COPROPIEDAD)
+        .and_then(|(_, v)| Uuid::try_parse(v).ok())
+        .map(TenantId::from_uuid)
+        .ok_or_else(|| ApiError::PeticionInvalida("copropiedad_id inválido".into()))
+}
+
 impl FromRequestParts<AppState> for EnCopropiedad {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
-        let params = RawPathParams::from_request_parts(parts, state)
-            .await
-            .map_err(|e| ApiError::PeticionInvalida(e.body_text()))?;
-        let tenant = params
-            .iter()
-            .find(|(k, _)| *k == PARAMETRO_COPROPIEDAD)
-            .and_then(|(_, v)| Uuid::try_parse(v).ok())
-            .map(TenantId::from_uuid)
-            .ok_or_else(|| ApiError::PeticionInvalida("copropiedad_id inválido".into()))?;
+        let tenant = tenant_de_ruta(parts, state).await?;
         let cuenta = CuentaAutenticada::from_request_parts(parts, state).await?;
-        let permisos = permisos_en_copropiedad(
-            &state.unidad,
-            &RelojSistema,
-            tenant,
-            cuenta.sesion.cuenta_id,
-            cuenta.sesion.es_superusuario,
-        )
-        .await?;
-        if permisos.es_vacio() {
-            // Sin vínculo con la copropiedad: para esa cuenta "no existe" (invariante 1).
-            return Err(ApiError::App(AppError::NoEncontrado("copropiedad")));
-        }
-        let ctx = Contexto::de_cuenta(tenant, cuenta.sesion.cuenta_id, permisos)
-            .con_request_id(request_id(parts));
+        en_copropiedad(parts, state, tenant, cuenta).await
+    }
+}
+
+async fn en_copropiedad(
+    parts: &Parts,
+    state: &AppState,
+    tenant: TenantId,
+    cuenta: CuentaAutenticada,
+) -> Result<EnCopropiedad, ApiError> {
+    let permisos = permisos_en_copropiedad(
+        &state.unidad,
+        &RelojSistema,
+        tenant,
+        cuenta.sesion.cuenta_id,
+        cuenta.sesion.es_superusuario,
+    )
+    .await?;
+    if permisos.es_vacio() {
+        // Sin vínculo con la copropiedad: para esa cuenta "no existe" (invariante 1).
+        return Err(ApiError::App(AppError::NoEncontrado("copropiedad")));
+    }
+    let ctx = Contexto::de_cuenta(tenant, cuenta.sesion.cuenta_id, permisos)
+        .con_request_id(request_id(parts));
+    Ok(EnCopropiedad {
+        sesion: cuenta.sesion,
+        ctx,
+    })
+}
+
+/// Subprotocolo del WebSocket del tablero en vivo.
+pub const SUBPROTOCOLO_WS: &str = "dad.v1";
+
+/// [`EnCopropiedad`] para abrir un WebSocket: acepta el token en `Authorization` o como
+/// segundo valor de `Sec-WebSocket-Protocol` (`dad.v1, <token>`), que los navegadores sí
+/// permiten enviar. Nunca en la URL (quedaría en los logs).
+#[derive(Debug, Clone)]
+pub struct EnCopropiedadWs(pub EnCopropiedad);
+
+impl FromRequestParts<AppState> for EnCopropiedadWs {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
+        let tenant = tenant_de_ruta(parts, state).await?;
+        let token = match token(parts) {
+            Ok(t) => t.to_owned(),
+            Err(e) => parts
+                .headers
+                .get(header::SEC_WEBSOCKET_PROTOCOL)
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| {
+                    v.split(',')
+                        .map(str::trim)
+                        .find(|p| !p.is_empty() && *p != SUBPROTOCOLO_WS)
+                        .map(str::to_owned)
+                })
+                .ok_or(e)?,
+        };
+        let sesion = autenticar(&state.plataforma, &RelojSistema, &token).await?;
+        let ctx = ContextoPlataforma::de_cuenta(
+            sesion.cuenta_id,
+            sesion.permisos_plataforma.clone(),
+            request_id(parts),
+        );
+        let cuenta = CuentaAutenticada { sesion, ctx };
+        Ok(Self(en_copropiedad(parts, state, tenant, cuenta).await?))
+    }
+}
+
+/// Cabecera con el token de la papeleta virtual.
+pub const CABECERA_PAPELETA: &str = "x-papeleta";
+
+/// Papeleta virtual de un asistente: la copropiedad de la ruta y el token de su enlace. El
+/// contexto es el del sistema de esa copropiedad; la identidad la prueba el token.
+#[derive(Debug, Clone)]
+pub struct PapeletaVirtual {
+    pub ctx: Contexto,
+    pub token: String,
+}
+
+impl FromRequestParts<AppState> for PapeletaVirtual {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
+        let tenant = tenant_de_ruta(parts, state).await?;
+        let token = parts
+            .headers
+            .get(CABECERA_PAPELETA)
+            .and_then(|v| v.to_str().ok())
+            .map(str::trim)
+            .filter(|t| !t.is_empty() && t.len() <= 200)
+            .ok_or(ApiError::App(AppError::NoAutenticado))?
+            .to_owned();
         Ok(Self {
-            sesion: cuenta.sesion,
-            ctx,
+            ctx: Contexto::new(tenant).con_request_id(request_id(parts)),
+            token,
         })
     }
 }

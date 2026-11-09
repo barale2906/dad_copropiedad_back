@@ -43,6 +43,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(bloquear_cuenta))
         .routes(routes!(reclamaciones_pendientes))
         .routes(routes!(resolver_reclamacion))
+        .merge(super::asambleas::lineas::rutas())
 }
 
 /// Copropiedad registrada.

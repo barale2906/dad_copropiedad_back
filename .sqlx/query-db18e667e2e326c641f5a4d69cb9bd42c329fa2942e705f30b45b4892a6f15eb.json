@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO reuniones (id, tenant_id, titulo, tipo, convocatoria, modalidad, estado,\n                 fecha_programada, lugar, enlace_video, plazo_respuesta, reunion_origen_id,\n                 base_computo, max_bienes_apoderado, apoderados_prohibidos, exigir_soporte_poder,\n                 efecto_mora, temporizador_segundos, creada_por, creado_en, actualizado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19, $20, $20)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Uuid",
+        "Text",
+        "Int2",
+        "TextArray",
+        "Bool",
+        "Text",
+        "Int4",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "db18e667e2e326c641f5a4d69cb9bd42c329fa2942e705f30b45b4892a6f15eb"
+}

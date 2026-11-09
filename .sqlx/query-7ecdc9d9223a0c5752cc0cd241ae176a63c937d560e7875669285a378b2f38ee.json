@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM candidatos WHERE pregunta_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7ecdc9d9223a0c5752cc0cd241ae176a63c937d560e7875669285a378b2f38ee"
+}

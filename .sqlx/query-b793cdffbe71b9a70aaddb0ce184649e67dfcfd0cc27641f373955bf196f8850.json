@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO pregunta_habilitados (tenant_id, pregunta_id, bien_privado_id, coeficiente, desde)\n             SELECT $1, $2, b, c, $5 FROM UNNEST($3::uuid[], $4::numeric[]) AS x (b, c)\n             ON CONFLICT (pregunta_id, bien_privado_id) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray",
+        "NumericArray",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b793cdffbe71b9a70aaddb0ce184649e67dfcfd0cc27641f373955bf196f8850"
+}

@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE preguntas SET punto_id = $2, enunciado = $3, tipo = $4, tipo_voto = $5,\n                     base_computo = $6, regla_mayoria = $7, umbral_porcentaje = $8,\n                     umbral_sobre = $9, max_selecciones = $10, cupos = $11, cargo = $12,\n                     temporizador_segundos = $13\n                 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Text",
+        "Int2",
+        "Int2",
+        "Text",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "adb99bc6395a3e832f7167a51a34daace09d08fd1de3b30fa61ef71dcf859336"
+}

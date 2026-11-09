@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO documentos_reunion (tenant_id, reunion_id, archivo_id, tipo, titulo)\n             VALUES ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "622ec32889c685143293b161edc0ef7bf88d38cd04bfdbe9077225d4333ea1f7"
+}

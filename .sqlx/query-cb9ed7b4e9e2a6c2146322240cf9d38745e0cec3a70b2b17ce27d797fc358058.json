@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT b.id, b.coeficiente AS \"coeficiente!\", t.persona_id AS \"representante?\"\n               FROM bienes_privados b\n               LEFT JOIN titularidades t\n                      ON t.tenant_id = b.tenant_id AND t.bien_privado_id = b.id AND t.es_representante\n                     AND t.vigente_desde <= now() AND (t.vigente_hasta IS NULL OR t.vigente_hasta > now())\n               WHERE b.activo AND b.coeficiente IS NOT NULL\n               ORDER BY b.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "coeficiente!",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "coeficiente"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "representante?",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "titularidades",
+            "name": "persona_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "cb9ed7b4e9e2a6c2146322240cf9d38745e0cec3a70b2b17ce27d797fc358058"
+}

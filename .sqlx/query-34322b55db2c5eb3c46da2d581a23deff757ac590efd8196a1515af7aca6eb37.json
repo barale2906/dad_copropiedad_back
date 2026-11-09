@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE rotulos SET liberado_en = greatest($2, asignado_en)\n             WHERE asistente_id = $1 AND liberado_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "34322b55db2c5eb3c46da2d581a23deff757ac590efd8196a1515af7aca6eb37"
+}

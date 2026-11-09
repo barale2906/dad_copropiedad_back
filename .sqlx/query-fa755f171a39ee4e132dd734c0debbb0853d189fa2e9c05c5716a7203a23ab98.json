@@ -1,0 +1,83 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT e.persona_id, p.nombre, e.canal, o.estado AS \"estado?\", o.enviado_en,\n                      x.estado AS \"acuse?\"\n               FROM envios_convocatoria e\n               JOIN personas p ON p.tenant_id = e.tenant_id AND p.id = e.persona_id\n               LEFT JOIN outbox o ON o.id = e.outbox_id\n               LEFT JOIN LATERAL estados_entrega(ARRAY[e.outbox_id]) x ON TRUE\n               WHERE e.reunion_id = $1\n               ORDER BY normalizar(p.nombre), e.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "envios_convocatoria",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "canal",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "envios_convocatoria",
+            "name": "canal"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "outbox",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "enviado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "outbox",
+            "name": "enviado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "acuse?",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      null
+    ]
+  },
+  "hash": "fa755f171a39ee4e132dd734c0debbb0853d189fa2e9c05c5716a7203a23ab98"
+}

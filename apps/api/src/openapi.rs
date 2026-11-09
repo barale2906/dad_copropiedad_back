@@ -43,6 +43,9 @@ pub const ETIQUETA_COEFICIENTES: &str = "coeficientes";
 /// Etiqueta de las importaciones masivas.
 pub const ETIQUETA_IMPORTACIONES: &str = "importaciones";
 /// Etiqueta de la operación de la plataforma.
+/// Etiqueta de asambleas y votaciones.
+pub const ETIQUETA_ASAMBLEAS: &str = "asambleas";
+/// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
 /// Registra el esquema de seguridad `bearer` (token de acceso opaco).
@@ -113,6 +116,10 @@ impl utoipa::Modify for EsquemaBearer {
                                                        `gestion_administrativa`)"),
         (name = ETIQUETA_IMPORTACIONES, description = "Importación masiva desde CSV/XLSX con vista \
                                                        previa"),
+        (name = ETIQUETA_ASAMBLEAS, description = "Asambleas y votaciones (Ley 675, arts. 37–49): \
+            convocatoria con padrón y constancias, mesa de registro asistido, poderes, morosos, \
+            quórum en vivo, preguntas (sí/no, selección, elección por cociente), voto del \
+            asistente por todos sus bienes, acta en PDF, reportes y papeleta virtual"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
     ),
     modifiers(&EsquemaBearer),

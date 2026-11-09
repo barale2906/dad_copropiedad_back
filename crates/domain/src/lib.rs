@@ -7,13 +7,17 @@
 //! - Un bien privado vota **una sola vez** por pregunta (unicidad en BD + validación aquí).
 //! - Reintentos con la misma clave de idempotencia (o el mismo `wamid`) **no** generan votos.
 //! - Solo una [`PreguntaAbierta`] puede emitir votos: el compilador impide votar en otra.
-//! - En votaciones secretas nada permite reconstruir qué opción eligió cada bien privado.
-//! - Resultados y quórum se calculan sumando **coeficientes** (`Decimal`), nunca contando votos.
+//! - El asistente vota una vez por todos los bienes que representa: una participación por bien.
+//! - En votaciones reservadas el vínculo bien → opción solo lo consulta quien tiene permiso
+//!   (ADR 0010: no existe el secreto absoluto).
+//! - Resultados y quórum se calculan por **coeficientes** (`Decimal`) y, a la vez, por unidades;
+//!   decide la base de cómputo de la pregunta.
 
 #[macro_use]
 mod macros;
 
 pub mod archivo;
+pub mod asistente;
 pub mod bien_privado;
 pub mod calendario;
 pub mod censo;
@@ -22,6 +26,7 @@ pub mod copropiedad;
 pub mod correo;
 pub mod cuadro_coeficientes;
 pub mod cuenta;
+pub mod eleccion;
 pub mod error;
 pub mod horario;
 pub mod ids;
@@ -36,7 +41,6 @@ pub mod permisos;
 pub mod pregunta;
 pub mod proteccion_datos;
 pub mod quorum;
-pub mod registro;
 pub mod reserva;
 pub mod resultados;
 pub mod reunion;
@@ -46,6 +50,9 @@ pub mod titularidad;
 pub mod voto;
 
 pub use archivo::{Almacen, ClasificacionArchivo, ClaveArchivo, NombreArchivo, TipoArchivo};
+pub use asistente::{
+    CalidadRepresentacion, CodigoRotulo, EstadoPoder, MetodoRegistro, MomentoQuorum, MotivoSalida,
+};
 pub use bien_privado::{
     CodigoAgrupacion, CodigoBienPrivado, NumeroBienPrivado, PlantillaNomenclatura, TipoAgrupacion,
     TipoBienPrivado, TipoUsoExclusivo, UsoBienPrivado,
@@ -65,13 +72,14 @@ pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
 pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
-    ActivoId, AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AutorizacionId,
-    BienPrivadoId, CambioCensoId, CargoId, CategoriaTicketId, ContratoServicioId, ConversacionId,
-    CuadroCoeficientesId, CuentaId, ImportacionId, InscripcionId, MascotaId, MensajeTicketId,
-    MovimientoInventarioId, ObligacionId, OpcionId, OrdenTrabajoId, OrganizacionId,
-    ParticipacionId, PersonaId, PlanMantenimientoId, PoliticaTratamientoId, PreguntaFrecuenteId,
-    PreguntaId, PuntoAtencionId, ReclamacionId, RecursoId, ReservaId, ResidenciaId, RestriccionId,
-    ReunionId, RolId, SesionId, SolicitudTitularId, SorteoId, TenantId, TicketId, TitularidadId,
+    ActivoId, AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AsistenteBienId,
+    AsistenteId, AutorizacionId, BienPrivadoId, CambioCensoId, CargoId, CategoriaTicketId,
+    ContratoServicioId, ConversacionId, CuadroCoeficientesId, CuentaId, FotoQuorumId,
+    ImportacionId, MascotaId, MensajeTicketId, MovimientoInventarioId, ObligacionId, OpcionId,
+    OrdenTrabajoId, OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId,
+    PoliticaTratamientoId, PreguntaFrecuenteId, PreguntaId, PresenciaId, PuntoAtencionId,
+    PuntoOrdenId, ReclamacionId, RecursoId, ReservaId, ResidenciaId, RestriccionId, ReunionId,
+    RolId, RotuloId, SesionId, SolicitudTitularId, SorteoId, TenantId, TicketId, TitularidadId,
     UsoExclusivoId, VehiculoId, VotoId,
 };
 pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
@@ -80,7 +88,7 @@ pub use mantenimiento::{
     NumeroOrden, OrigenOrden, PuntoChecklist, Recurrencia, TipoArchivoActivo, TipoMovimiento,
     TipoOrden,
 };
-pub use mayoria::ReglaMayoria;
+pub use mayoria::{BaseComputo, BaseMayoria, ReglaMayoria};
 pub use modulo::Modulo;
 pub use nit::Nit;
 pub use organizacion::{
@@ -91,22 +99,28 @@ pub use parqueadero::{
     EstadoSorteo, NaturalezaParqueadero, OrigenAsignacionParqueadero, TipoParqueadero,
 };
 pub use permisos::{Ambito, ConjuntoPermisos, OrigenAsignacion, Permiso, RolPlantilla};
-pub use pregunta::{EstadoPregunta, Pregunta, PreguntaAbierta, TipoVoto};
+pub use pregunta::{
+    CargoEleccion, EstadoPregunta, OpcionPregunta, Pregunta, PreguntaAbierta, TEXTOS_SI_NO,
+    TipoPregunta, TipoVoto,
+};
 pub use proteccion_datos::{FinalidadTratamiento, MedioAutorizacion, TipoSolicitudTitular};
-pub use quorum::{Convocatoria, Quorum};
-pub use registro::{MetodoRegistro, RolAsistente};
+pub use quorum::{Convocatoria, Quorum, QuorumReunion};
 pub use reserva::{
     CanalReserva, CategoriaBienComun, CobroPor, ConceptoCargo, EstadoPago, EstadoRecurso,
     EstadoReserva, Franja, MetodoEntrega, ModalidadCita, ModoAsignacion, PoliticaReserva,
     QuienReserva, TipoEntrega, TipoRecurso, VinculoSolicitante,
 };
-pub use resultados::ProyeccionResultados;
-pub use reunion::{EstadoReunion, TipoReunion};
+pub use resultados::{Conteo, Decision, Escrutinio, ResultadoOpcion, VotosOpcion};
+pub use reunion::{
+    EfectoMora, EstadoActa, EstadoPunto, EstadoReunion, Modalidad, TipoDocumentoReunion,
+    TipoReunion,
+};
 pub use ticket::{
     Calificacion, CanalTicket, EstadoTicket, JornadaHabil, NumeroTicket, Plazo, PlazosTicket,
     PrioridadTicket, TipoTicket, UnidadPlazo,
 };
 pub use titularidad::{ConjuntoTitulares, Porcentaje, TipoPersona, TipoTitularidad, TitularNuevo};
 pub use voto::{
-    Canal, ClaveIdempotencia, Papeleta, ParticipacionNueva, VinculoNominal, VotoEmitido, VotoNuevo,
+    BienRepresentado, Canal, ClaveIdempotencia, Papeleta, ParticipacionNueva, VotoEmitido,
+    VotoNuevo,
 };

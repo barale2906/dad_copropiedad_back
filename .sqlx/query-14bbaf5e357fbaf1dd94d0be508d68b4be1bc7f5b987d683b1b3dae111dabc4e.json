@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tarifas_whatsapp (id, pais, categoria, moneda, valor, vigente_desde)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (pais, categoria, moneda, vigente_desde) DO UPDATE SET valor = EXCLUDED.valor",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "14bbaf5e357fbaf1dd94d0be508d68b4be1bc7f5b987d683b1b3dae111dabc4e"
+}

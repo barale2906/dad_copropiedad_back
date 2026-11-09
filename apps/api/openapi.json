@@ -555,6 +555,213 @@
         ]
       }
     },
+    "/api/v1/plataforma/whatsapp/lineas": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Líneas de la plataforma (cualquiera atiende cualquier copropiedad).",
+        "operationId": "listar",
+        "responses": {
+          "200": {
+            "description": "Líneas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LineaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso o sin segundo factor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Registra una línea.",
+        "operationId": "crear",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LineaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Línea registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/whatsapp/lineas/{linea_id}": {
+      "patch": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Cambia el estado, el ritmo o la franquicia de una línea.",
+        "operationId": "actualizar",
+        "parameters": [
+          {
+            "name": "linea_id",
+            "in": "path",
+            "description": "Línea",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarLineaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Actualizada"
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/whatsapp/tarifas": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Tarifas registradas (la vigente es la más reciente por país, categoría y moneda).",
+        "operationId": "listar_tarifas",
+        "responses": {
+          "200": {
+            "description": "Tarifas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TarifaDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Registra la tarifa vigente desde una fecha (Meta publica tablas nuevas cada trimestre).",
+        "operationId": "guardar_tarifa",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TarifaDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Tarifa registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TarifaDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/yo": {
       "get": {
         "tags": [
@@ -9244,6 +9451,3395 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Reuniones de la copropiedad, más recientes primero.",
+        "operationId": "listar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "description": "Estado de la reunión.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "convocada"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de reuniones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_ReunionRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `asambleas.ver` o módulo no contratado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Crea una reunión en borrador con su configuración (poderes, mora, base de cómputo).",
+        "operationId": "crear",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReunionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Reunión creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReunionRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `asambleas.convocar` o módulo no contratado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos o configuración inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Reunión con su orden del día y anexos.",
+        "operationId": "ver",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reunión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalleReunionRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Edita la reunión (la elección de la mora queda auditada).",
+        "operationId": "editar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarReunionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Reunión actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReunionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El estado ya no permite el cambio (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/puntos": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Agrega un punto al orden del día (en borrador).",
+        "operationId": "crear_punto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PuntoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Punto creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PuntoRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya convocada u orden repetido (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/puntos/{punto_id}": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Edita un punto (en borrador).",
+        "operationId": "editar_punto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "punto_id",
+            "in": "path",
+            "description": "Punto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PuntoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Punto actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PuntoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Elimina un punto (en borrador).",
+        "operationId": "eliminar_punto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "punto_id",
+            "in": "path",
+            "description": "Punto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Eliminado"
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/puntos/{punto_id}/estado": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Avanza un punto del orden del día durante la reunión.",
+        "operationId": "estado_punto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "punto_id",
+            "in": "path",
+            "description": "Punto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoPuntoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Punto actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PuntoRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición inválida o reunión no instalada (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/documentos": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Anexa un documento a la convocatoria.",
+        "operationId": "agregar_documento",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Anexo agregado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya anexo o reunión en curso (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/documentos/{archivo_id}": {
+      "delete": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Quita un anexo.",
+        "operationId": "quitar_documento",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "archivo_id",
+            "in": "path",
+            "description": "Archivo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Quitado"
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/convocatoria": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Convoca: fija el padrón (cuadro de coeficientes vigente y representantes) y envía la\nconvocatoria por WhatsApp y correo con constancia. Ordinarias de primera convocatoria: al\nmenos 15 días calendario de antelación (art. 39).",
+        "operationId": "convocar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvocarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Convocada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConvocatoriaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está en borrador (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Antelación, orden del día o coeficientes (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/convocatoria/constancias": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Constancias de envío de la convocatoria (estado y acuse de cada mensaje).",
+        "operationId": "constancias",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Constancias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConstanciaRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/segunda-convocatoria": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Sin quórum en primera convocatoria: cancela la reunión y convoca la de segunda para el\ntercer día hábil siguiente a las 8:00 p. m. (art. 41).",
+        "operationId": "segunda_convocatoria",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión de primera convocatoria",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvocarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Segunda reunión convocada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConvocatoriaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tiene quórum o no está en registro (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/transiciones": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Abre el registro, instala (exige quórum), suspende, reanuda, cierra (cierra las preguntas\nabiertas y envía el resumen por WhatsApp) o cancela.",
+        "operationId": "transicionar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransicionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Reunión actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReunionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición inválida (`conflicto_estado`) o sin quórum (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/quorum": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Quórum actual por coeficiente y por unidades.",
+        "operationId": "quorum",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quórum",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuorumRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Toma una foto manual del quórum para el acta.",
+        "operationId": "foto_quorum",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Foto tomada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuorumRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/tablero": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Tablero en vivo (el mismo que emite el WebSocket).",
+        "operationId": "tablero",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tablero",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TableroRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/en-vivo": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "WebSocket del tablero en vivo: al conectar envía el tablero y luego uno nuevo cada vez que\nalgo cambia (a lo sumo cada ~500 ms). El navegador envía el token como subprotocolo:\n`new WebSocket(url, [\"dad.v1\", token])`.",
+        "operationId": "en_vivo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "101": {
+            "description": "WebSocket abierto: mensajes JSON `TableroRespuesta`"
+          },
+          "403": {
+            "description": "Sin `asambleas.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/mesa": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Busca en el padrón por código del bien o documento del representante (sin tildes ni\nmayúsculas). Trae el representante, su teléfono del censo y sus otros bienes.",
+        "operationId": "buscar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "texto",
+            "in": "query",
+            "description": "Código del bien («506», «T3-506») o documento del representante.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "506"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coincidencias (máximo 20)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoincidenciaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `asambleas.registrar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/asistentes": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Asistentes con el estado de entrega de su confirmación por WhatsApp.",
+        "operationId": "listar_asistentes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asistentes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AsistenteRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Registra al asistente al firmar la planilla: cuenta para el quórum de inmediato; con un\ntoque agrega sus otros bienes y los poderes. Le envía la plantilla de confirmación por\nWhatsApp y entrega el token de su papeleta virtual.",
+        "operationId": "registrar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Asistente registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistroRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Bien en otro asistente, cargo prohibido o máximo de poderes (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin bienes, teléfono inválido o falta el soporte (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/asistentes/{asistente_id}/poderes": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Agrega un poder a un asistente ya registrado.",
+        "operationId": "agregar_poder",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "asistente_id",
+            "in": "path",
+            "description": "Asistente",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoderPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Poder registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Bien ocupado, cargo prohibido o máximo (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/asistentes/{asistente_id}/salida": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Registra la salida con hora y motivo: sus bienes dejan el quórum y las preguntas que se\nabran después; sus votos se conservan.",
+        "operationId": "salida",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "asistente_id",
+            "in": "path",
+            "description": "Asistente",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalidaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Salida registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No estaba presente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/asistentes/{asistente_id}/reingreso": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Registra el reingreso (nuevo periodo de presencia).",
+        "operationId": "reingreso",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "asistente_id",
+            "in": "path",
+            "description": "Asistente",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reingreso registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya estaba presente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/asistentes/{asistente_id}/rotulo": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Liga (o cambia) el rótulo preimpreso del asistente.",
+        "operationId": "rotulo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "asistente_id",
+            "in": "path",
+            "description": "Asistente",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotuloPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rótulo ligado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El rótulo ya está en uso (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/asistentes/{asistente_id}/confirmacion": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Reenvía la plantilla `confirmar_asistencia` (p. ej. con otro número si no llegó).",
+        "operationId": "confirmacion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "asistente_id",
+            "in": "path",
+            "description": "Asistente",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Confirmación encolada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin teléfono o sin líneas activas (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/poderes": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Poderes de la reunión.",
+        "operationId": "listar_poderes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Poderes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PoderRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/poderes/{poder_id}/estado": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Verifica, rechaza o revoca un poder (rechazado o revocado, el bien deja de estar\nrepresentado por el apoderado).",
+        "operationId": "revisar_poder",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "poder_id",
+            "in": "path",
+            "description": "Poder",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionPoderPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Poder actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoderRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición inválida (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/morosos": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Fija el listado de morosos (después de convocar y antes de instalar). El efecto lo define la\nconfiguración de la reunión y queda auditado.",
+        "operationId": "fijar_morosos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MorososPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Morosos fijados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MorososRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La reunión ya se instaló (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/morosos/planilla": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Importa los morosos desde un CSV o XLSX (primera columna: código del bien).",
+        "operationId": "importar_morosos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "CSV o XLSX",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Morosos fijados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MorososRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No es una planilla legible (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Preguntas de la reunión, en orden.",
+        "operationId": "listar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preguntas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PreguntaRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Crea una pregunta en borrador (antes o durante la reunión).",
+        "operationId": "crear",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreguntaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Pregunta creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreguntaRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Definición incoherente (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Reemplaza la definición de una pregunta en borrador.",
+        "operationId": "editar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreguntaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Pregunta actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreguntaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya no está en borrador (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Elimina una pregunta en borrador.",
+        "operationId": "eliminar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Eliminada"
+          },
+          "409": {
+            "description": "Ya se abrió: se anula (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/estado": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Abre (habilita a los presentes y les envía la pregunta por WhatsApp), cierra (guarda el\nescrutinio) o anula la pregunta.",
+        "operationId": "estado",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoPreguntaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Pregunta actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreguntaRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Reunión no instalada o transición inválida (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/votos": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Registra el voto del asistente por **todos** sus bienes habilitados. Exige\n`asambleas.votos.registrar` y la cabecera `Idempotency-Key` (una por lectura: la consola\nde la mesa la conserva si reintenta tras un corte).",
+        "operationId": "votar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Clave única de la lectura",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VotoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Voto registrado (o el original si se reintenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VotoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso (`sin_permiso`) o el asistente no está presente (`no_inscrito`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Sus bienes ya votaron (`ya_voto`) o la pregunta cerró (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/resultados": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Resultados (en vivo si está abierta; los guardados si cerró). En reservadas se publican\nsolo los totales.",
+        "operationId": "resultados",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultadosRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/detalle": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Detalle bien → opción. En reservadas exige `asambleas.votos.ver_detalle` y cada consulta\nqueda auditada.",
+        "operationId": "detalle",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DetalleVotoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Reservada sin `asambleas.votos.ver_detalle` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/eleccion": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Aplica una elección cerrada de consejo, revisor fiscal o comité: crea los roles de los\nelegidos (origen `asamblea`) y termina los del periodo anterior.",
+        "operationId": "aplicar_eleccion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EleccionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Elegidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ElegidoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No es una elección cerrada de un cargo o ya se aplicó (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/acta": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Datos del acta para revisarla antes de generar el PDF (todo ya calculado).",
+        "operationId": "vista_previa",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos del acta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Genera (o regenera mientras no se apruebe) el acta en PDF con Typst y la guarda como\narchivo con datos personales (`acta_archivo_id`).",
+        "operationId": "generar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acta generada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReunionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La reunión no está cerrada o el acta ya se aprobó",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/acta/estado": {
+      "put": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Sube el escaneo firmado, aprueba o publica el acta.",
+        "operationId": "avanzar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasoActaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Acta actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReunionRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición inválida o falta el escaneo firmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/actas": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Libro de actas: reuniones con el acta publicada.",
+        "operationId": "libro",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Libro de actas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReunionRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/rotulos": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Hoja de rótulos genéricos numerados en Code 128 (PDF para imprimir).",
+        "operationId": "rotulos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RotulosPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cantidad o prefijo inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/reportes/asistencia": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Asistencia (un renglón por bien representado), en JSON o CSV.",
+        "operationId": "asistencia",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "formato",
+            "in": "query",
+            "description": "`json` (por defecto) o `csv` (separado por `;`, para Excel).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "csv"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asistencia (JSON o `text/csv`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaAsistenciaRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/reportes/votos/{pregunta_id}": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Votos de una pregunta (en reservadas, la opción solo con permiso y auditada).",
+        "operationId": "votos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "pregunta_id",
+            "in": "path",
+            "description": "Pregunta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "formato",
+            "in": "query",
+            "description": "`json` (por defecto) o `csv` (separado por `;`, para Excel).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "csv"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Votos (JSON o `text/csv`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaVotoRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/reportes/canales": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Participación por canal y tiempos de cada pregunta.",
+        "operationId": "canales",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Participación por canal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CanalesRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/reportes/costo-whatsapp": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Costo estimado de WhatsApp de la asamblea (para cobrarlo dentro de su valor).",
+        "operationId": "costo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "moneda",
+            "in": "query",
+            "description": "`COP` (por defecto) o `USD`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "COP"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Costo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostoRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/papeleta": {
+      "get": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Papeleta: reunión, asistente con sus bienes y preguntas abiertas.",
+        "operationId": "ver",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Papeleta",
+            "in": "header",
+            "description": "Token del enlace personal",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Papeleta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PapeletaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token inválido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/papeleta/ingreso": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Ingreso virtual (reuniones virtuales o mixtas): cuenta para el quórum desde ahora.",
+        "operationId": "ingreso",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Papeleta",
+            "in": "header",
+            "description": "Token del enlace personal",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ingreso registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Presencial, no admite registro o ya está presente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/papeleta/salida": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "«Salir de la asamblea»: sus votos se conservan.",
+        "operationId": "salida",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Papeleta",
+            "in": "header",
+            "description": "Token del enlace personal",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Salida registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsistenteRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No estaba presente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/papeleta/votos": {
+      "post": {
+        "tags": [
+          "asambleas"
+        ],
+        "summary": "Vota por **todos** sus bienes habilitados (canal web). Exige `Idempotency-Key`.",
+        "operationId": "votar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Papeleta",
+            "in": "header",
+            "description": "Token del enlace personal",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "La genera el cliente por cada voto",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VotoPapeletaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Voto registrado (o el original si se reintenta)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VotoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No está presente (`no_inscrito`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya votó (`ya_voto`) o la pregunta cerró (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/importaciones/bienes-privados": {
       "post": {
         "tags": [
@@ -10403,6 +13999,27 @@
   },
   "components": {
     "schemas": {
+      "AccionPregunta": {
+        "type": "string",
+        "description": "Acción sobre la pregunta.",
+        "enum": [
+          "abrir",
+          "cerrar",
+          "anular"
+        ]
+      },
+      "AccionReunion": {
+        "type": "string",
+        "description": "Acción sobre la reunión.",
+        "enum": [
+          "abrir_registro",
+          "instalar",
+          "suspender",
+          "reanudar",
+          "cerrar",
+          "cancelar"
+        ]
+      },
       "ActivoPeticion": {
         "type": "object",
         "description": "Activo nuevo.",
@@ -10593,6 +14210,34 @@
           "creado_en": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ActualizarLineaPeticion": {
+        "type": "object",
+        "description": "Cambios de una línea.",
+        "required": [
+          "estado",
+          "limite_mps",
+          "franquicia_servicio_mes"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "description": "`activa`, `degradada` o `pausada`.",
+            "example": "activa"
+          },
+          "limite_mps": {
+            "type": "integer",
+            "format": "int32",
+            "example": 80,
+            "minimum": 0
+          },
+          "franquicia_servicio_mes": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1000,
+            "minimum": 0
           }
         }
       },
@@ -10934,6 +14579,69 @@
           }
         }
       },
+      "AsistenteRespuesta": {
+        "type": "object",
+        "description": "Asistente de la reunión.",
+        "required": [
+          "id",
+          "persona_id",
+          "nombre",
+          "metodo",
+          "whatsapp_confirmado",
+          "presente",
+          "bienes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "metodo": {
+            "type": "string",
+            "description": "`mesa`, `prerregistro`, `enlace` o `consulta`.",
+            "example": "mesa"
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Teléfono de WhatsApp (dato personal; solo para la mesa)."
+          },
+          "whatsapp_confirmado": {
+            "type": "boolean"
+          },
+          "presente": {
+            "type": "boolean"
+          },
+          "rotulo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bienes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BienAsistenteRespuesta"
+            }
+          },
+          "entrega_confirmacion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Último acuse de la plantilla de confirmación (`failed` = «no llegó: entregue rótulo»)."
+          }
+        }
+      },
       "AutorizacionPeticion": {
         "type": "object",
         "description": "Autorización de reservas de un tenedor.",
@@ -11062,6 +14770,46 @@
           }
         ],
         "description": "Avance de una orden."
+      },
+      "BienAsistenteRespuesta": {
+        "type": "object",
+        "description": "Bien que representa un asistente.",
+        "required": [
+          "bien_privado_id",
+          "codigo",
+          "coeficiente",
+          "calidad",
+          "moroso"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "T3-506"
+          },
+          "coeficiente": {
+            "type": "string",
+            "example": "0.01250000"
+          },
+          "calidad": {
+            "type": "string",
+            "description": "`propietario` o `apoderado`.",
+            "example": "propietario"
+          },
+          "poder_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "moroso": {
+            "type": "boolean"
+          }
+        }
       },
       "BienComunDto": {
         "type": "object",
@@ -11795,6 +15543,56 @@
           }
         }
       },
+      "CanalesRespuesta": {
+        "type": "object",
+        "description": "Participación por canal.",
+        "required": [
+          "pregunta_id",
+          "orden",
+          "enunciado",
+          "por_canal"
+        ],
+        "properties": {
+          "pregunta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "enunciado": {
+            "type": "string"
+          },
+          "por_canal": {
+            "type": "object",
+            "description": "Canal → bienes que votaron por él.",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "primero": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "ultimo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "CargoRespuesta": {
         "type": "object",
         "description": "Cargo vigente en la copropiedad.",
@@ -11997,6 +15795,69 @@
           }
         }
       },
+      "CoincidenciaRespuesta": {
+        "type": "object",
+        "description": "Coincidencia de la búsqueda de la mesa.",
+        "required": [
+          "bien_privado_id",
+          "codigo",
+          "coeficiente",
+          "moroso",
+          "otros_bienes"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "coeficiente": {
+            "type": "string",
+            "example": "0.01250000"
+          },
+          "moroso": {
+            "type": "boolean"
+          },
+          "representante_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "representante_nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "representante_telefono": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Teléfono del censo (dato personal; solo para la mesa)."
+          },
+          "otros_bienes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Otros bienes del mismo representante (se agregan con un toque)."
+          },
+          "asistente_actual": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Asistente que ya representa el bien."
+          }
+        }
+      },
       "ConfiguracionDto": {
         "type": "object",
         "description": "Configuración de tickets. Los tipos sin regla usan los plazos por defecto (Ley 1755: 15 días\nhábiles para peticiones, 10 para documentos; mantenimiento según la prioridad).",
@@ -12031,6 +15892,60 @@
             "items": {
               "$ref": "#/components/schemas/ReglaPlazoDto"
             }
+          }
+        }
+      },
+      "ConfirmacionPeticion": {
+        "type": "object",
+        "description": "Reenvío de la confirmación.",
+        "properties": {
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Otro número si el anterior no recibió la plantilla."
+          }
+        }
+      },
+      "ConstanciaRespuesta": {
+        "type": "object",
+        "description": "Constancia de envío de la convocatoria.",
+        "required": [
+          "persona_id",
+          "nombre",
+          "canal",
+          "estado_envio"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "canal": {
+            "type": "string",
+            "description": "`whatsapp` o `correo`."
+          },
+          "estado_envio": {
+            "type": "string",
+            "description": "`pendiente`, `enviado` o `fallido`."
+          },
+          "acuse": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Último acuse de WhatsApp: `sent`, `delivered`, `read` o `failed`."
+          },
+          "enviado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -12211,6 +16126,63 @@
           }
         }
       },
+      "ConvocarPeticion": {
+        "type": "object",
+        "description": "Canales del envío de la convocatoria.",
+        "properties": {
+          "whatsapp": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Plantilla `convocatoria_asamblea` (por defecto, sí)."
+          },
+          "correo": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Correo (por defecto, sí)."
+          }
+        }
+      },
+      "ConvocatoriaRespuesta": {
+        "type": "object",
+        "description": "Resumen de la convocatoria.",
+        "required": [
+          "reunion",
+          "bienes_padron",
+          "envios_whatsapp",
+          "envios_correo",
+          "sin_contacto"
+        ],
+        "properties": {
+          "reunion": {
+            "$ref": "#/components/schemas/ReunionRespuesta"
+          },
+          "bienes_padron": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "envios_whatsapp": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "envios_correo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "sin_contacto": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Representantes sin teléfono ni correo: hay que convocarlos por otro medio.",
+            "minimum": 0
+          }
+        }
+      },
       "CopropiedadRespuesta": {
         "type": "object",
         "description": "Copropiedad registrada.",
@@ -12247,6 +16219,56 @@
           "costo": {
             "type": "string",
             "example": "350000.00"
+          }
+        }
+      },
+      "CostoRespuesta": {
+        "type": "object",
+        "description": "Costo estimado de WhatsApp.",
+        "required": [
+          "moneda",
+          "plantillas",
+          "servicio",
+          "fallidos",
+          "tarifa_utilidad",
+          "tarifa_servicio",
+          "valor_estimado",
+          "por_linea"
+        ],
+        "properties": {
+          "moneda": {
+            "type": "string"
+          },
+          "plantillas": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "servicio": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "fallidos": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "tarifa_utilidad": {
+            "type": "string"
+          },
+          "tarifa_servicio": {
+            "type": "string"
+          },
+          "valor_estimado": {
+            "type": "string",
+            "description": "Sin descontar la franquicia gratuita de cada línea (el valor exacto sale de la factura)."
+          },
+          "por_linea": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MensajesLineaRespuesta"
+            }
           }
         }
       },
@@ -12714,6 +16736,185 @@
           }
         }
       },
+      "DetalleReunionRespuesta": {
+        "type": "object",
+        "description": "Reunión con su orden del día y anexos.",
+        "required": [
+          "reunion",
+          "puntos",
+          "documentos"
+        ],
+        "properties": {
+          "reunion": {
+            "$ref": "#/components/schemas/ReunionRespuesta"
+          },
+          "puntos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PuntoRespuesta"
+            }
+          },
+          "documentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentoDto"
+            }
+          }
+        }
+      },
+      "DetalleVotoRespuesta": {
+        "type": "object",
+        "description": "Voto de un bien.",
+        "required": [
+          "bien_privado_id",
+          "codigo",
+          "coeficiente",
+          "opcion_id",
+          "canal",
+          "asistente",
+          "apoderado",
+          "registrado_en"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "coeficiente": {
+            "type": "string",
+            "example": "0.01250000"
+          },
+          "opcion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "canal": {
+            "type": "string",
+            "example": "whatsapp"
+          },
+          "asistente": {
+            "type": "string"
+          },
+          "apoderado": {
+            "type": "boolean"
+          },
+          "registrado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DocumentoDto": {
+        "type": "object",
+        "description": "Documento anexo a la convocatoria.",
+        "required": [
+          "archivo_id",
+          "tipo",
+          "titulo"
+        ],
+        "properties": {
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "`estados_financieros`, `presupuesto`, `informe`, `reglamento` u `otro`.",
+            "example": "presupuesto"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        }
+      },
+      "DocumentoPeticion": {
+        "type": "object",
+        "description": "Anexo (archivo ya subido con `POST /archivos`).",
+        "required": [
+          "archivo_id",
+          "tipo",
+          "titulo"
+        ],
+        "properties": {
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "estados_financieros"
+          },
+          "titulo": {
+            "type": "string",
+            "example": "Estados financieros 2026"
+          }
+        }
+      },
+      "EditarReunionPeticion": {
+        "type": "object",
+        "description": "Cambios: los datos de la convocatoria solo en borrador; la configuración, hasta instalar.",
+        "properties": {
+          "datos": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReunionPeticion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "configuracion": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConfiguracionDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "EleccionPeticion": {
+        "type": "object",
+        "description": "Vigencia de los roles de los elegidos.",
+        "properties": {
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Fin del periodo (p. ej. la próxima asamblea ordinaria); `null` = sin fecha."
+          }
+        }
+      },
+      "ElegidoRespuesta": {
+        "type": "object",
+        "description": "Elegido.",
+        "required": [
+          "persona_id",
+          "nombre",
+          "rol_asignado"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "rol_asignado": {
+            "type": "boolean",
+            "description": "`false`: la persona no tiene cuenta; el rol se asigna cuando la cree."
+          }
+        }
+      },
       "EncuestaDto": {
         "type": "object",
         "description": "Encuesta de satisfacción.",
@@ -12936,6 +17137,39 @@
           }
         }
       },
+      "EstadoPreguntaPeticion": {
+        "type": "object",
+        "description": "Cambio de estado de una pregunta.",
+        "required": [
+          "accion"
+        ],
+        "properties": {
+          "accion": {
+            "$ref": "#/components/schemas/AccionPregunta"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorio al anular."
+          }
+        }
+      },
+      "EstadoPuntoPeticion": {
+        "type": "object",
+        "description": "Nuevo estado de un punto.",
+        "required": [
+          "estado"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "description": "`en_curso`, `terminado` o `aplazado`.",
+            "example": "en_curso"
+          }
+        }
+      },
       "EstadoRecursoPeticion": {
         "type": "object",
         "description": "Estado nuevo de un recurso.",
@@ -13142,6 +17376,62 @@
           }
         }
       },
+      "FilaAsistenciaRespuesta": {
+        "type": "object",
+        "description": "Fila del reporte de asistencia.",
+        "required": [
+          "asistente",
+          "bien",
+          "coeficiente",
+          "calidad",
+          "metodo",
+          "moroso",
+          "whatsapp_confirmado"
+        ],
+        "properties": {
+          "asistente": {
+            "type": "string"
+          },
+          "bien": {
+            "type": "string"
+          },
+          "coeficiente": {
+            "type": "string"
+          },
+          "calidad": {
+            "type": "string"
+          },
+          "metodo": {
+            "type": "string"
+          },
+          "moroso": {
+            "type": "boolean"
+          },
+          "entrada": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "salida": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "motivo_salida": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "whatsapp_confirmado": {
+            "type": "boolean"
+          }
+        }
+      },
       "FilaCoeficientePeticion": {
         "type": "object",
         "description": "Coeficiente de un bien privado (por id o por código).",
@@ -13310,6 +17600,46 @@
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          }
+        }
+      },
+      "FilaVotoRespuesta": {
+        "type": "object",
+        "description": "Fila del reporte de votos.",
+        "required": [
+          "bien",
+          "coeficiente",
+          "canal",
+          "asistente",
+          "apoderado",
+          "registrado_en"
+        ],
+        "properties": {
+          "bien": {
+            "type": "string"
+          },
+          "coeficiente": {
+            "type": "string"
+          },
+          "canal": {
+            "type": "string"
+          },
+          "asistente": {
+            "type": "string"
+          },
+          "apoderado": {
+            "type": "boolean"
+          },
+          "registrado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "opcion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Vacío en votaciones reservadas sin permiso de detalle."
           }
         }
       },
@@ -13552,6 +17882,97 @@
           "uri": {
             "type": "string",
             "description": "Para mostrarlo como código QR."
+          }
+        }
+      },
+      "LineaPeticion": {
+        "type": "object",
+        "description": "Línea nueva (ya verificada en Meta).",
+        "required": [
+          "phone_number_id",
+          "numero_visible",
+          "nombre"
+        ],
+        "properties": {
+          "phone_number_id": {
+            "type": "string"
+          },
+          "numero_visible": {
+            "type": "string",
+            "example": "+57 300 000 0000"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        }
+      },
+      "LineaRespuesta": {
+        "type": "object",
+        "description": "Línea de WhatsApp con su uso del mes.",
+        "required": [
+          "id",
+          "phone_number_id",
+          "numero_visible",
+          "nombre",
+          "limite_mps",
+          "estado",
+          "franquicia_servicio_mes",
+          "servicio_mes",
+          "plantillas_mes",
+          "franquicia_disponible"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "phone_number_id": {
+            "type": "string"
+          },
+          "numero_visible": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "limite_mps": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "estado": {
+            "type": "string",
+            "description": "`activa`, `degradada` (Meta bajó su calidad) o `pausada`."
+          },
+          "calidad": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "franquicia_servicio_mes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Mensajes de servicio gratuitos al mes.",
+            "minimum": 0
+          },
+          "servicio_mes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Mensajes de servicio de este mes (consumen la franquicia).",
+            "minimum": 0
+          },
+          "plantillas_mes": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Plantillas de este mes (se pagan aparte).",
+            "minimum": 0
+          },
+          "franquicia_disponible": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Franquicia que le queda: las conversaciones nuevas salen por la que tenga más.",
+            "minimum": 0
           }
         }
       },
@@ -13867,6 +18288,36 @@
           }
         }
       },
+      "MensajesLineaRespuesta": {
+        "type": "object",
+        "description": "Mensajes de una línea.",
+        "required": [
+          "es_plantilla",
+          "enviados",
+          "fallidos"
+        ],
+        "properties": {
+          "linea": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "es_plantilla": {
+            "type": "boolean"
+          },
+          "enviados": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "fallidos": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "MiembroPeticion": {
         "type": "object",
         "description": "Miembro de la organización.",
@@ -13883,6 +18334,48 @@
             "type": "string",
             "description": "`dueno`, `gestor` u `operario`.",
             "example": "operario"
+          }
+        }
+      },
+      "MorososPeticion": {
+        "type": "object",
+        "description": "Listado de morosos que entrega la copropiedad.",
+        "required": [
+          "codigos"
+        ],
+        "properties": {
+          "codigos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos de bien privado (reemplazan el listado).",
+            "example": [
+              "T1-301",
+              "T2-405"
+            ]
+          }
+        }
+      },
+      "MorososRespuesta": {
+        "type": "object",
+        "description": "Resultado de fijar los morosos.",
+        "required": [
+          "marcados",
+          "no_encontrados"
+        ],
+        "properties": {
+          "marcados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "no_encontrados": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos que no están en el padrón."
           }
         }
       },
@@ -14672,6 +19165,66 @@
           },
           "activa": {
             "type": "boolean"
+          }
+        }
+      },
+      "OpcionPeticion": {
+        "type": "object",
+        "description": "Opción nueva.",
+        "required": [
+          "texto"
+        ],
+        "properties": {
+          "texto": {
+            "type": "string"
+          },
+          "en_blanco": {
+            "type": "boolean",
+            "description": "Voto en blanco (solo elecciones)."
+          },
+          "candidatos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Integrantes de la plancha o candidato (elecciones), en orden."
+          }
+        }
+      },
+      "OpcionRespuesta": {
+        "type": "object",
+        "description": "Opción de una pregunta.",
+        "required": [
+          "id",
+          "orden",
+          "texto",
+          "en_blanco",
+          "candidatos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "texto": {
+            "type": "string"
+          },
+          "en_blanco": {
+            "type": "boolean"
+          },
+          "candidatos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Integrantes de la plancha (elecciones)."
           }
         }
       },
@@ -15494,6 +20047,150 @@
           }
         }
       },
+      "PaginaRespuesta_ReunionRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Reunión de la asamblea (o consulta por escrito).",
+              "required": [
+                "id",
+                "titulo",
+                "tipo",
+                "convocatoria",
+                "modalidad",
+                "estado",
+                "fecha_programada",
+                "configuracion",
+                "acta_estado"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "tipo": {
+                  "type": "string",
+                  "example": "ordinaria"
+                },
+                "convocatoria": {
+                  "type": "string",
+                  "description": "`primera`, `segunda` o `derecho_propio`.",
+                  "example": "primera"
+                },
+                "modalidad": {
+                  "type": "string",
+                  "description": "`presencial`, `virtual`, `mixta` o `escrita`.",
+                  "example": "presencial"
+                },
+                "estado": {
+                  "type": "string",
+                  "description": "`borrador`, `convocada`, `en_registro`, `instalada`, `suspendida`, `cerrada`, `cancelada`.",
+                  "example": "convocada"
+                },
+                "fecha_programada": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "lugar": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "enlace_video": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Enlace de la videollamada (p. ej. Google Meet)."
+                },
+                "plazo_respuesta": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "reunion_origen_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "configuracion": {
+                  "$ref": "#/components/schemas/ConfiguracionDto"
+                },
+                "convocada_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "instalada_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "cerrada_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "motivo_cancelacion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "acta_estado": {
+                  "type": "string",
+                  "description": "`pendiente`, `generada`, `aprobada` o `publicada`.",
+                  "example": "pendiente"
+                },
+                "acta_archivo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "acta_firmada_archivo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_TicketRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -15712,6 +20409,29 @@
           }
         }
       },
+      "PapeletaRespuesta": {
+        "type": "object",
+        "description": "Papeleta del asistente.",
+        "required": [
+          "reunion",
+          "asistente",
+          "preguntas_abiertas"
+        ],
+        "properties": {
+          "reunion": {
+            "$ref": "#/components/schemas/ReunionRespuesta"
+          },
+          "asistente": {
+            "$ref": "#/components/schemas/AsistenteRespuesta"
+          },
+          "preguntas_abiertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreguntaPapeletaRespuesta"
+            }
+          }
+        }
+      },
       "ParqueaderoDto": {
         "type": "object",
         "description": "Detalle de un parqueadero.",
@@ -15760,6 +20480,34 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "PasoActaDto": {
+        "type": "string",
+        "description": "Paso del acta.",
+        "enum": [
+          "firmada",
+          "aprobar",
+          "publicar"
+        ]
+      },
+      "PasoActaPeticion": {
+        "type": "object",
+        "description": "Avance del acta.",
+        "required": [
+          "paso"
+        ],
+        "properties": {
+          "paso": {
+            "$ref": "#/components/schemas/PasoActaDto"
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -16139,6 +20887,88 @@
           }
         }
       },
+      "PoderPeticion": {
+        "type": "object",
+        "description": "Poder recibido en la mesa.",
+        "required": [
+          "bien_privado_id"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Foto o PDF del poder subido con `POST /archivos` (puede quedar pendiente)."
+          }
+        }
+      },
+      "PoderRespuesta": {
+        "type": "object",
+        "description": "Poder.",
+        "required": [
+          "id",
+          "bien_privado_id",
+          "apoderado_persona_id",
+          "estado",
+          "registrado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "poderdante_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "apoderado_persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`pendiente`, `verificado`, `rechazado` o `revocado`.",
+            "example": "pendiente"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registrado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revisado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "PoliticaDto": {
         "type": "object",
         "description": "Política de reserva de un recurso. Montos en pesos (texto decimal).",
@@ -16271,6 +21101,39 @@
             "type": "string",
             "description": "`sin_entrega`, `entrega_llaves`, `entrega_con_inventario` o `acceso_automatico`.",
             "example": "entrega_con_inventario"
+          }
+        }
+      },
+      "PreguntaEnVivoRespuesta": {
+        "type": "object",
+        "description": "Pregunta con su escrutinio en vivo.",
+        "required": [
+          "pregunta",
+          "escrutinio"
+        ],
+        "properties": {
+          "pregunta": {
+            "$ref": "#/components/schemas/PreguntaRespuesta"
+          },
+          "escrutinio": {
+            "type": "object",
+            "description": "Escrutinio por coeficiente y por unidades (ver `ResultadosRespuesta`)."
+          }
+        }
+      },
+      "PreguntaPapeletaRespuesta": {
+        "type": "object",
+        "description": "Pregunta abierta en la papeleta.",
+        "required": [
+          "pregunta",
+          "ya_voto"
+        ],
+        "properties": {
+          "pregunta": {
+            "$ref": "#/components/schemas/PreguntaRespuesta"
+          },
+          "ya_voto": {
+            "type": "boolean"
           }
         }
       },
@@ -16425,6 +21288,122 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "PuntoPeticion": {
+        "type": "object",
+        "description": "Punto del orden del día.",
+        "required": [
+          "orden",
+          "titulo"
+        ],
+        "properties": {
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1,
+            "minimum": 0
+          },
+          "titulo": {
+            "type": "string",
+            "example": "Verificación del quórum"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PuntoRespuesta": {
+        "type": "object",
+        "description": "Punto del orden del día.",
+        "required": [
+          "id",
+          "orden",
+          "titulo",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "example": "pendiente"
+          },
+          "iniciado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "terminado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "QuorumRespuesta": {
+        "type": "object",
+        "description": "Quórum por coeficiente y por unidades.",
+        "required": [
+          "coeficiente_presente",
+          "coeficiente_total",
+          "porcentaje_coeficiente",
+          "unidades_presentes",
+          "unidades_total",
+          "asistentes"
+        ],
+        "properties": {
+          "coeficiente_presente": {
+            "type": "string",
+            "example": "0.55"
+          },
+          "coeficiente_total": {
+            "type": "string",
+            "example": "1"
+          },
+          "porcentaje_coeficiente": {
+            "type": "string",
+            "description": "Porcentaje del coeficiente (4 decimales).",
+            "example": "55.0000"
+          },
+          "unidades_presentes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "unidades_total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "asistentes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },
@@ -16724,6 +21703,63 @@
           "contrasena": {
             "type": "string",
             "description": "De 10 a 128 caracteres."
+          }
+        }
+      },
+      "RegistroRespuesta": {
+        "type": "object",
+        "description": "Resultado del registro en la mesa.",
+        "required": [
+          "asistente",
+          "avisos"
+        ],
+        "properties": {
+          "asistente": {
+            "$ref": "#/components/schemas/AsistenteRespuesta"
+          },
+          "token_papeleta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Token de la papeleta virtual (enlace o QR): se entrega **una sola vez**."
+          },
+          "avisos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Avisos para la mesa (morosos, poderes pendientes…)."
+          }
+        }
+      },
+      "ReglaDto": {
+        "type": "object",
+        "description": "Regla de mayoría.",
+        "required": [
+          "regla"
+        ],
+        "properties": {
+          "regla": {
+            "type": "string",
+            "description": "`simple` (art. 45), `calificada_70` (art. 46) o `personalizada`.",
+            "example": "simple"
+          },
+          "porcentaje": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo en `personalizada`: porcentaje (0–100].",
+            "example": "60"
+          },
+          "sobre": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo en `personalizada`: `presentes` o `total`.",
+            "example": "presentes"
           }
         }
       },
@@ -17156,6 +22192,23 @@
           }
         }
       },
+      "ResultadosRespuesta": {
+        "type": "object",
+        "description": "Escrutinio de una pregunta.",
+        "required": [
+          "pregunta",
+          "escrutinio"
+        ],
+        "properties": {
+          "pregunta": {
+            "$ref": "#/components/schemas/PreguntaRespuesta"
+          },
+          "escrutinio": {
+            "type": "object",
+            "description": "Totales por opción por coeficiente y por unidades, habilitados, votantes, decisión y\nreparto de cupos (elecciones). Decimales como texto."
+          }
+        }
+      },
       "ResumenRespuesta": {
         "type": "object",
         "description": "Resumen de lo que hace (o hizo) la importación.",
@@ -17200,6 +22253,210 @@
             ],
             "format": "uuid",
             "description": "Borrador con los coeficientes del archivo (actívelo en `/cuadros-coeficientes`)."
+          }
+        }
+      },
+      "ReunionPeticion": {
+        "type": "object",
+        "description": "Reunión nueva (o sus datos al editarla en borrador).",
+        "required": [
+          "titulo",
+          "tipo",
+          "modalidad",
+          "fecha_programada"
+        ],
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "example": "Asamblea general ordinaria 2027"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "ordinaria"
+          },
+          "convocatoria": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`primera` (por defecto), `segunda` o `derecho_propio`.",
+            "example": "primera"
+          },
+          "modalidad": {
+            "type": "string",
+            "description": "`presencial`, `virtual`, `mixta` o `escrita` (consulta por escrito, art. 43).",
+            "example": "presencial"
+          },
+          "fecha_programada": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lugar": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enlace_video": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Enlace de Google Meet u otro proveedor."
+          },
+          "plazo_respuesta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Solo en consultas por escrito: hasta un mes después de `fecha_programada`."
+          },
+          "configuracion": {
+            "$ref": "#/components/schemas/ConfiguracionDto"
+          }
+        }
+      },
+      "ReunionRespuesta": {
+        "type": "object",
+        "description": "Reunión de la asamblea (o consulta por escrito).",
+        "required": [
+          "id",
+          "titulo",
+          "tipo",
+          "convocatoria",
+          "modalidad",
+          "estado",
+          "fecha_programada",
+          "configuracion",
+          "acta_estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "ordinaria"
+          },
+          "convocatoria": {
+            "type": "string",
+            "description": "`primera`, `segunda` o `derecho_propio`.",
+            "example": "primera"
+          },
+          "modalidad": {
+            "type": "string",
+            "description": "`presencial`, `virtual`, `mixta` o `escrita`.",
+            "example": "presencial"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`borrador`, `convocada`, `en_registro`, `instalada`, `suspendida`, `cerrada`, `cancelada`.",
+            "example": "convocada"
+          },
+          "fecha_programada": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lugar": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enlace_video": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Enlace de la videollamada (p. ej. Google Meet)."
+          },
+          "plazo_respuesta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "reunion_origen_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "configuracion": {
+            "$ref": "#/components/schemas/ConfiguracionDto"
+          },
+          "convocada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "instalada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "cerrada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "motivo_cancelacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "acta_estado": {
+            "type": "string",
+            "description": "`pendiente`, `generada`, `aprobada` o `publicada`.",
+            "example": "pendiente"
+          },
+          "acta_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "acta_firmada_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "RevisionPoderPeticion": {
+        "type": "object",
+        "description": "Revisión de un poder.",
+        "required": [
+          "estado"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "description": "`verificado`, `rechazado` o `revocado`.",
+            "example": "verificado"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -17299,6 +22556,66 @@
             "example": [
               "roles.ver",
               "roles.asignar"
+            ]
+          }
+        }
+      },
+      "RotuloPeticion": {
+        "type": "object",
+        "description": "Rótulo del asistente (`null` lo libera).",
+        "properties": {
+          "codigo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "R-0042"
+          }
+        }
+      },
+      "RotulosPeticion": {
+        "type": "object",
+        "description": "Paquete de rótulos.",
+        "required": [
+          "prefijo",
+          "desde",
+          "cantidad"
+        ],
+        "properties": {
+          "prefijo": {
+            "type": "string",
+            "example": "R-"
+          },
+          "desde": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1,
+            "minimum": 0
+          },
+          "cantidad": {
+            "type": "integer",
+            "format": "int32",
+            "example": 300,
+            "minimum": 0
+          }
+        }
+      },
+      "SalidaPeticion": {
+        "type": "object",
+        "description": "Salida del asistente.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "description": "`se_retiro`, `delego_poder`, `problema_tecnico` u `otro` (con `detalle`).",
+            "example": "se_retiro"
+          },
+          "detalle": {
+            "type": [
+              "string",
+              "null"
             ]
           }
         }
@@ -17590,6 +22907,40 @@
             ],
             "format": "double",
             "description": "Promedio de la encuesta (1 a 5)."
+          }
+        }
+      },
+      "TarifaDto": {
+        "type": "object",
+        "description": "Tarifa de Meta.",
+        "required": [
+          "pais",
+          "categoria",
+          "moneda",
+          "valor",
+          "vigente_desde"
+        ],
+        "properties": {
+          "pais": {
+            "type": "string",
+            "example": "CO"
+          },
+          "categoria": {
+            "type": "string",
+            "description": "`utilidad`, `servicio`, `marketing` o `autenticacion`.",
+            "example": "utilidad"
+          },
+          "moneda": {
+            "type": "string",
+            "example": "COP"
+          },
+          "valor": {
+            "type": "string",
+            "example": "2.95"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -18181,6 +23532,103 @@
             }
           }
         }
+      },
+      "VotoPapeletaPeticion": {
+        "type": "object",
+        "description": "Voto desde la papeleta.",
+        "required": [
+          "pregunta_id",
+          "opciones"
+        ],
+        "properties": {
+          "pregunta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "opciones": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "VotoPeticion": {
+        "type": "object",
+        "description": "Voto registrado por un operador o un puesto de escaneo.",
+        "required": [
+          "opciones",
+          "canal"
+        ],
+        "properties": {
+          "asistente_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "El asistente que buscó el operador …"
+          },
+          "rotulo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "… o el rótulo escaneado en el puesto.",
+            "example": "R-0042"
+          },
+          "opciones": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "canal": {
+            "type": "string",
+            "description": "`presencial` (operador) o `rotulo` (puesto de escaneo).",
+            "example": "rotulo"
+          }
+        }
+      },
+      "VotoRespuesta": {
+        "type": "object",
+        "description": "Resultado de una emisión de voto (sin la opción elegida).",
+        "required": [
+          "registrado",
+          "asistente_id",
+          "nombre",
+          "bienes",
+          "omitidos"
+        ],
+        "properties": {
+          "registrado": {
+            "type": "boolean",
+            "description": "`false` = reintento de una emisión ya registrada."
+          },
+          "asistente_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "bienes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Bienes por los que votó."
+          },
+          "omitidos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Bienes que no votaron esta vez (ya habían votado o no estaban habilitados)."
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -18251,6 +23699,10 @@
     {
       "name": "importaciones",
       "description": "Importación masiva desde CSV/XLSX con vista previa"
+    },
+    {
+      "name": "asambleas",
+      "description": "Asambleas y votaciones (Ley 675, arts. 37–49): convocatoria con padrón y constancias, mesa de registro asistido, poderes, morosos, quórum en vivo, preguntas (sí/no, selección, elección por cociente), voto del asistente por todos sus bienes, acta en PDF, reportes y papeleta virtual"
     },
     {
       "name": "plataforma",

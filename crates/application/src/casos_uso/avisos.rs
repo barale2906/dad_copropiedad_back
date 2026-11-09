@@ -59,6 +59,7 @@ fn whatsapp(linea: &str, telefono: &str, plantilla: &(&'static str, Vec<String>)
             nombre: plantilla.0.to_owned(),
             idioma: IDIOMA_PLANTILLAS.to_owned(),
             parametros: plantilla.1.iter().map(|p| parametro(p)).collect(),
+            botones: Vec::new(),
         },
     })
 }

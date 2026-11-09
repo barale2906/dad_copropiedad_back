@@ -1,0 +1,167 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT a.id, a.reunion_id, a.persona_id, p.nombre, a.metodo, a.telefono,\n                      a.linea_whatsapp, a.whatsapp_confirmado_en, a.confirmacion_outbox_id,\n                      a.registrado_por, a.creado_en,\n                      EXISTS (SELECT 1 FROM asistente_presencias x\n                              WHERE x.asistente_id = a.id AND x.salida_en IS NULL) AS \"presente!\",\n                      (SELECT r.codigo FROM rotulos r\n                       WHERE r.asistente_id = a.id AND r.liberado_en IS NULL) AS rotulo\n               FROM asistentes a\n               JOIN personas p ON p.tenant_id = a.tenant_id AND p.id = a.persona_id\n               WHERE ($1::uuid IS NULL OR a.reunion_id = $1)\n                 AND ($2::uuid IS NULL OR a.id = $2)\n                 AND ($3::uuid IS NULL OR a.persona_id = $3)\n                 AND ($4::bytea IS NULL OR a.token_hash = $4)\n                 AND ($5::text IS NULL OR a.telefono = $5)\n                 AND ($6::text IS NULL OR a.id = (SELECT r.asistente_id FROM rotulos r\n                                                  WHERE r.reunion_id = $1 AND r.codigo = $6\n                                                    AND r.liberado_en IS NULL))\n               ORDER BY normalizar(p.nombre), a.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "reunion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "reunion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "metodo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "metodo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "telefono",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "telefono"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "linea_whatsapp",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "linea_whatsapp"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "whatsapp_confirmado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "whatsapp_confirmado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "confirmacion_outbox_id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "confirmacion_outbox_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "registrado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "registrado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asistentes",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "presente!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 12,
+        "name": "rotulo",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Bytea",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "60f3540d3f770a3b9173c6e41aff1a804d53e3df9add93581e32549c96fcefb5"
+}

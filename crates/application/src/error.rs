@@ -13,7 +13,7 @@ pub enum AppError {
     #[error("{0} no encontrada")]
     NoEncontrado(&'static str),
 
-    #[error("el bien privado ya votó en esta pregunta")]
+    #[error("los bienes privados que representa ya votaron en esta pregunta")]
     BienPrivadoYaVoto,
 
     /// Falta la sesión o no es válida (token vencido, revocado o inexistente).
@@ -45,7 +45,7 @@ pub enum AppError {
     #[error("el módulo `{0}` no está habilitado para esta copropiedad")]
     ModuloNoHabilitado(Modulo),
 
-    #[error("la persona no está inscrita como representante del bien privado en esta reunión")]
+    #[error("no está registrado como asistente presente de esta reunión")]
     NoInscrito,
 
     /// Fallo de un adaptador (BD, red, proveedor). El detalle va a logs, no al cliente.

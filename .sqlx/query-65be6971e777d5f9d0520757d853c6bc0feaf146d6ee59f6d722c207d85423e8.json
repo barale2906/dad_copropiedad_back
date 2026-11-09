@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO opciones (id, tenant_id, pregunta_id, orden, texto, en_blanco)\n                 VALUES ($1, $2, $3, $4, $5, $6)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "65be6971e777d5f9d0520757d853c6bc0feaf146d6ee59f6d722c207d85423e8"
+}
