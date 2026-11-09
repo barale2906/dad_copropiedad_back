@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, plataforma, token, nombre, activo, registrado_en FROM dispositivos_push\n             WHERE cuenta_id = $1 AND activo ORDER BY registrado_en",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_push",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "plataforma",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_push",
+            "name": "plataforma"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "token",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_push",
+            "name": "token"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_push",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "activo",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_push",
+            "name": "activo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "registrado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_push",
+            "name": "registrado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "6406f3e5508aaadfbe133b255c48fc5a085d86fc93ad9192c629346cccf4c057"
+}

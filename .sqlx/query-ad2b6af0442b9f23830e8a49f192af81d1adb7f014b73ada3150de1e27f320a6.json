@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE dispositivos_push SET activo = FALSE, actualizado_en = now()\n             WHERE id = $1 AND cuenta_id = $2 AND activo",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ad2b6af0442b9f23830e8a49f192af81d1adb7f014b73ada3150de1e27f320a6"
+}

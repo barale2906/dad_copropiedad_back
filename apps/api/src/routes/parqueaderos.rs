@@ -45,7 +45,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 
 /// Asignación de un parqueadero.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct AsignacionRespuesta {
+pub struct AsignacionParqueaderoRespuesta {
     pub id: Uuid,
     pub recurso_id: Uuid,
     pub bien_privado_id: Uuid,
@@ -58,7 +58,7 @@ pub struct AsignacionRespuesta {
     pub sorteo_id: Option<Uuid>,
 }
 
-impl From<AsignacionParqueadero> for AsignacionRespuesta {
+impl From<AsignacionParqueadero> for AsignacionParqueaderoRespuesta {
     fn from(a: AsignacionParqueadero) -> Self {
         Self {
             id: a.id.as_uuid(),
@@ -77,7 +77,7 @@ impl From<AsignacionParqueadero> for AsignacionRespuesta {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ParqueaderoRespuesta {
     pub recurso: RecursoRespuesta,
-    pub asignacion: Option<AsignacionRespuesta>,
+    pub asignacion: Option<AsignacionParqueaderoRespuesta>,
 }
 
 impl From<ParqueaderoConAsignacion> for ParqueaderoRespuesta {
@@ -168,7 +168,7 @@ pub async fn crear(
 
 /// Asignación nueva.
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct AsignacionPeticion {
+pub struct AsignacionParqueaderoPeticion {
     pub bien_privado_id: Uuid,
     pub vehiculo_id: Option<Uuid>,
     /// `propiedad`, `arriendo` o `manual` (las de sorteo las crea el sorteo).
@@ -188,9 +188,9 @@ pub struct AsignacionPeticion {
         ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
         ("recurso_id" = Uuid, Path, description = "Parqueadero"),
     ),
-    request_body = AsignacionPeticion,
+    request_body = AsignacionParqueaderoPeticion,
     responses(
-        (status = CREATED, description = "Asignado", body = AsignacionRespuesta),
+        (status = CREATED, description = "Asignado", body = AsignacionParqueaderoRespuesta),
         (status = CONFLICT, description = "Ya asignado en ese periodo (`conflicto`)", body = ErrorRespuesta),
     )
 )]
@@ -198,8 +198,8 @@ pub async fn asignar(
     State(state): State<AppState>,
     en: EnCopropiedad,
     Path(ruta): Path<(Uuid, Uuid)>,
-    Json(p): Json<AsignacionPeticion>,
-) -> ApiResult<(StatusCode, Json<AsignacionRespuesta>)> {
+    Json(p): Json<AsignacionParqueaderoPeticion>,
+) -> ApiResult<(StatusCode, Json<AsignacionParqueaderoRespuesta>)> {
     let a = uc::asignar_parqueadero(
         &state.unidad,
         &RelojSistema,
@@ -444,7 +444,7 @@ pub async fn inscribir(
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ResultadoRespuesta {
     pub sorteo: SorteoRespuesta,
-    pub asignaciones: Vec<AsignacionRespuesta>,
+    pub asignaciones: Vec<AsignacionParqueaderoRespuesta>,
 }
 
 /// Ejecuta el sorteo: revela la semilla y asigna los parqueaderos por el periodo.

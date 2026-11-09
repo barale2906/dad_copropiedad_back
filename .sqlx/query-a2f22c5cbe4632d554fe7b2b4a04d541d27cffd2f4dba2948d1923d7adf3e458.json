@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, estado, usos, version FROM visitas\n             WHERE origen = 'preautorizada' AND version > $1 ORDER BY version LIMIT $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "usos",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "usos"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "version",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "visitas",
+            "name": "version"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "a2f22c5cbe4632d554fe7b2b4a04d541d27cffd2f4dba2948d1923d7adf3e458"
+}

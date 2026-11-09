@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, persona_id, version_texto, soporte_archivo_id, otorgado_en, revocado_en,\n                    registrado_por\n             FROM consentimientos_biometricos WHERE persona_id = $1 AND revocado_en IS NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "consentimientos_biometricos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "consentimientos_biometricos",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "version_texto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "consentimientos_biometricos",
+            "name": "version_texto"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "soporte_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "consentimientos_biometricos",
+            "name": "soporte_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "otorgado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "consentimientos_biometricos",
+            "name": "otorgado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "revocado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "consentimientos_biometricos",
+            "name": "revocado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "registrado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "consentimientos_biometricos",
+            "name": "registrado_por"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "291466e977992cfddceda4e5548dd94f785b96d624f503e29325e1798dbf36bb"
+}

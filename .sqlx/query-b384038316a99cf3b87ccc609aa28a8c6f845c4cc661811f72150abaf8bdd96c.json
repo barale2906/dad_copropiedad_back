@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT persona_id, tercero_nombre, tercero_documento, firma_archivo_id,\n                    foto_archivo_id, entregada_por, entregada_en, soportes_hasta\n             FROM entregas_correspondencia WHERE correspondencia_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tercero_nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "tercero_nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tercero_documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "tercero_documento"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "firma_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "firma_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "foto_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "foto_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "entregada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "entregada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "entregada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "entregada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "soportes_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "entregas_correspondencia",
+            "name": "soportes_hasta"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "b384038316a99cf3b87ccc609aa28a8c6f845c4cc661811f72150abaf8bdd96c"
+}

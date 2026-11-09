@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE dispositivos_acceso SET puente_id = $2, punto_acceso_id = $3, tipo = $4,\n                     fabricante = $5, modelo = $6, config = $7, activo = $8\n                 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2c34e69c457443ace4b5ffa0312d9516a1cf53916f0ff78db6a28990a4b899e3"
+}

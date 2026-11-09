@@ -203,7 +203,12 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('ticket_mensajes', 'texto'), ('conversaciones', 'telefono'),
                ('conversacion_mensajes', 'texto'), ('sesiones_chat', 'telefono'),
                ('sesiones_chat', 'estado'), ('ordenes_trabajo', 'recibido_por'),
-               ('asistentes', 'telefono'))
+               ('asistentes', 'telefono'), ('visitas', 'visitante_nombre'),
+               ('visitas', 'visitante_documento'), ('visitas', 'placa'),
+               ('entregas_correspondencia', 'tercero_nombre'),
+               ('entregas_correspondencia', 'tercero_documento'), ('minuta_porteria', 'texto'),
+               ('eventos_acceso', 'placa'), ('dispositivos_push', 'token'),
+               ('consentimientos_biometricos', 'persona_id'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

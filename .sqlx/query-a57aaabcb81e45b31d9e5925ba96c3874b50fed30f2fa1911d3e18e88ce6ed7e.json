@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, puente_id, punto_acceso_id, tipo, fabricante, modelo, config, activo\n             FROM dispositivos_acceso WHERE ($1::uuid IS NULL OR puente_id = $1) ORDER BY id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "puente_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "puente_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "punto_acceso_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "punto_acceso_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "fabricante",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "fabricante"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "modelo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "modelo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "config",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "config"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "activo",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "dispositivos_acceso",
+            "name": "activo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "a57aaabcb81e45b31d9e5925ba96c3874b50fed30f2fa1911d3e18e88ce6ed7e"
+}

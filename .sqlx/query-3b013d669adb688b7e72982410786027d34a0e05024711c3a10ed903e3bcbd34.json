@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE puntos_acceso SET nombre = $2, tipo = $3, sentido = $4, recurso_id = $5,\n                                          activo = $6\n                 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3b013d669adb688b7e72982410786027d34a0e05024711c3a10ed903e3bcbd34"
+}

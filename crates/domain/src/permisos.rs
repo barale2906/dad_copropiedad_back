@@ -171,6 +171,16 @@ catalogo_permisos! {
     AccesoRegistrar => "acceso.registrar", Copropiedad;
     AccesoVisitantesAutorizar => "acceso.visitantes.autorizar", Copropiedad;
     AccesoBitacoraVer => "acceso.bitacora.ver", Copropiedad;
+    /// Entregar correspondencia (con firma o foto de quien recoge) y devolverla.
+    AccesoCorrespondenciaEntregar => "acceso.correspondencia.entregar", Copropiedad;
+    AccesoMinutaRegistrar => "acceso.minuta.registrar", Copropiedad;
+    AccesoMinutaVer => "acceso.minuta.ver", Copropiedad;
+    /// Configuración del módulo: plazos, silencio, puntos de acceso, puentes y dispositivos.
+    AccesoConfigurar => "acceso.configurar", Copropiedad;
+    /// Emitir, suspender y revocar credenciales; autorizaciones manuales.
+    AccesoCredencialesGestionar => "acceso.credenciales.gestionar", Copropiedad;
+    /// Enrolar biometría (solo con consentimiento vigente).
+    AccesoBiometriaEnrolar => "acceso.biometria.enrolar", Copropiedad;
     ContabilidadVer => "contabilidad.ver", Copropiedad;
 }
 
@@ -461,6 +471,9 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
         permisos: Some(&[
             P::AccesoRegistrar,
             P::AccesoBitacoraVer,
+            P::AccesoCorrespondenciaEntregar,
+            P::AccesoMinutaRegistrar,
+            P::AccesoMinutaVer,
             P::TicketsCrear,
             P::ReservasEntregasRegistrar,
             P::ParqueaderosVer,
@@ -474,6 +487,10 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AccesoRegistrar,
             P::AccesoBitacoraVer,
             P::AccesoVisitantesAutorizar,
+            P::AccesoCorrespondenciaEntregar,
+            P::AccesoMinutaRegistrar,
+            P::AccesoMinutaVer,
+            P::AccesoCredencialesGestionar,
             P::TicketsCrear,
             P::ReservasEntregasRegistrar,
             P::ParqueaderosVer,

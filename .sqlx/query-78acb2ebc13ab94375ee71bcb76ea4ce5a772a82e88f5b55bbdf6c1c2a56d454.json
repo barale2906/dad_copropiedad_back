@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE correspondencia SET estado = $2, avisos_enviados = $3, ultimo_aviso_en = $4,\n                 siguiente_aviso_en = $5, alerta_administracion_en = $6, cerrada_en = $7,\n                 motivo_devolucion = $8\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int2",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "78acb2ebc13ab94375ee71bcb76ea4ce5a772a82e88f5b55bbdf6c1c2a56d454"
+}

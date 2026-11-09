@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tenant_id AS \"tenant_id!\" FROM copropiedades_con_control_acceso()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tenant_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "1cd8c23caeba4298585e3a50d4515a3e5a328e7e7fcdd69607daf77212571379"
+}

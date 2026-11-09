@@ -14,6 +14,7 @@ use domain::TenantId;
 use crate::{
     AppResult,
     outbox::{Canal, MensajeOutbox},
+    puertos::mensajeria::MensajeSaliente,
 };
 
 /// Mensaje reclamado del outbox.
@@ -62,6 +63,15 @@ pub trait LoteSalida: Send {
         error: String,
         espera: Duration,
         max_intentos: u32,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// El token push del mensaje ya no sirve (app desinstalada): marca el mensaje como fallido
+    /// sin reintentos, desactiva el token y, si hay `respaldo`, lo encola por WhatsApp en la
+    /// misma copropiedad (prioridad del original).
+    fn desviar_push(
+        &mut self,
+        id: i64,
+        respaldo: Option<MensajeSaliente>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Confirma las marcas del lote y libera las filas.

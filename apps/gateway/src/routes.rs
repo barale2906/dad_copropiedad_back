@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use application::{
     casos_uso::{
+        acceso::whatsapp::{ResultadoVisitaWhatsapp, atender_respuesta_visita},
         asambleas::whatsapp::{ResultadoAsamblea, ServiciosAsamblea, atender_mensaje_asamblea},
         chat::{ResultadoTurno, ServiciosChat, atender_mensaje},
     },
@@ -137,8 +138,24 @@ async fn recibir(
     StatusCode::OK
 }
 
-/// La asamblea (votar, confirmar asistencia) va antes que el chat de la copropiedad.
+/// Los botones de visitas van primero; luego la asamblea (votar, confirmar asistencia) y al
+/// final el chat de la copropiedad.
 async fn atender(state: &GatewayState, mensaje: application::puertos::mensajeria::MensajeEntrante) {
+    match atender_respuesta_visita(&state.unidad, &state.sesiones, &RelojSistema, &mensaje).await {
+        Ok(ResultadoVisitaWhatsapp::NoAplica) => {}
+        Ok(ResultadoVisitaWhatsapp::Repetido) => {
+            tracing::debug!(wamid = %mensaje.wamid, "respuesta de visita repetida");
+            return;
+        }
+        Ok(ResultadoVisitaWhatsapp::Atendido { .. }) => {
+            state.hay_salida.notify_one();
+            return;
+        }
+        Err(e) => {
+            tracing::error!(wamid = %mensaje.wamid, error = %e, "no se pudo atender la respuesta de visita");
+            return;
+        }
+    }
     let servicios = ServiciosAsamblea {
         unidad: &state.unidad,
         directorio: &state.asambleas,

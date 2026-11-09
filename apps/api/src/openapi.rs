@@ -45,6 +45,8 @@ pub const ETIQUETA_IMPORTACIONES: &str = "importaciones";
 /// Etiqueta de la operación de la plataforma.
 /// Etiqueta de asambleas y votaciones.
 pub const ETIQUETA_ASAMBLEAS: &str = "asambleas";
+/// Etiqueta del control de acceso, visitas y correspondencia.
+pub const ETIQUETA_ACCESO: &str = "acceso";
 /// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
@@ -66,6 +68,18 @@ impl utoipa::Modify for EsquemaBearer {
                     .build(),
             ),
         );
+        componentes.add_security_scheme(
+            "puente",
+            SecurityScheme::Http(
+                HttpBuilder::new()
+                    .scheme(HttpAuthScheme::Bearer)
+                    .description(Some(
+                        "Token de máquina del puente de acceso (se entrega al registrarlo en \
+                         `POST /copropiedades/{copropiedad_id}/puentes`)",
+                    ))
+                    .build(),
+            ),
+        );
     }
 }
 
@@ -79,7 +93,8 @@ impl utoipa::Modify for EsquemaBearer {
                        - Rutas de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/…`\n\
                        - Rutas de la cuenta autenticada: `/api/v1/yo/…`\n\
                        - Rutas globales de la plataforma: `/api/v1/plataforma/…`\n\
-                       - Descarga con enlace firmado: `/api/v1/archivos/descarga`\n\n\
+                       - Descarga con enlace firmado: `/api/v1/archivos/descarga`\n\
+                       - Puentes de acceso (token de máquina): `/api/v1/puentes/…`\n\n\
                        Errores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` \
                        (ver el esquema `CodigoError`). Listados: paginación por cursor con \
                        `?limite=&despues=`."
@@ -120,6 +135,11 @@ impl utoipa::Modify for EsquemaBearer {
             convocatoria con padrón y constancias, mesa de registro asistido, poderes, morosos, \
             quórum en vivo, preguntas (sí/no, selección, elección por cociente), voto del \
             asistente por todos sus bienes, acta en PDF, reportes y papeleta virtual"),
+        (name = ETIQUETA_ACCESO, description = "Control de acceso (plan 05): visitas con aviso \
+            al primer respondiente y escalamiento (2 min a todos los residentes, 5 min llamada), \
+            pre-autorizaciones con QR firmado, correspondencia con avisos cada 24 h y entrega con \
+            firma o foto, minuta, bitácora, credenciales, autorizaciones, biometría con \
+            consentimiento y la API de los puentes (`/api/v1/puentes`)"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
     ),
     modifiers(&EsquemaBearer),

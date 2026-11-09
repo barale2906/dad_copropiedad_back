@@ -45,6 +45,7 @@ dependencies = [
  "anyhow",
  "application",
  "axum",
+ "base64 0.22.1",
  "chrono",
  "domain",
  "hex",
@@ -1199,6 +1200,7 @@ dependencies = [
  "infra-archivos",
  "infra-correo",
  "infra-postgres",
+ "infra-push",
  "infra-whatsapp",
  "serde",
  "serde_json",
@@ -2010,6 +2012,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "infra-push"
+version = "0.1.0"
+dependencies = [
+ "application",
+ "axum",
+ "base64 0.22.1",
+ "chrono",
+ "reqwest",
+ "ring",
+ "rustls",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "webpki-roots",
+]
+
+[[package]]
 name = "infra-seguridad"
 version = "0.1.0"
 dependencies = [
@@ -2019,7 +2040,9 @@ dependencies = [
  "domain",
  "getrandom 0.4.3",
  "hmac",
+ "ring",
  "sha1 0.11.0",
+ "sha2 0.11.1",
  "thiserror",
  "tokio",
 ]
@@ -2794,6 +2817,29 @@ checksum = "4dcd034599e63b970727f70d79e02d62390a4a84f7c6b827c27c46d5ac3fa622"
 dependencies = [
  "ar_archive_writer",
  "cc",
+]
+
+[[package]]
+name = "puente-acceso"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono",
+ "chrono-tz",
+ "domain",
+ "hex",
+ "reqwest",
+ "ring",
+ "rustls",
+ "serde",
+ "serde_json",
+ "shared",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "uuid",
+ "webpki-roots",
 ]
 
 [[package]]

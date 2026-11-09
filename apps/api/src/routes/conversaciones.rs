@@ -39,7 +39,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 
 /// Pregunta frecuente.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct PreguntaRespuesta {
+pub struct PreguntaFrecuenteRespuesta {
     pub id: Uuid,
     #[schema(example = "Horario de la piscina")]
     pub pregunta: String,
@@ -49,7 +49,7 @@ pub struct PreguntaRespuesta {
     pub archivo_id: Option<Uuid>,
 }
 
-impl From<PreguntaFrecuente> for PreguntaRespuesta {
+impl From<PreguntaFrecuente> for PreguntaFrecuenteRespuesta {
     fn from(p: PreguntaFrecuente) -> Self {
         Self {
             id: p.id.as_uuid(),
@@ -64,7 +64,7 @@ impl From<PreguntaFrecuente> for PreguntaRespuesta {
 
 /// Datos de una pregunta frecuente.
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct PreguntaPeticion {
+pub struct PreguntaFrecuentePeticion {
     /// Hasta 72 caracteres (se muestra en la lista de WhatsApp).
     pub pregunta: String,
     /// Hasta 4000 caracteres; admite saltos de línea.
@@ -81,8 +81,8 @@ const fn verdadero() -> bool {
     true
 }
 
-impl From<PreguntaPeticion> for DatosPregunta {
-    fn from(p: PreguntaPeticion) -> Self {
+impl From<PreguntaFrecuentePeticion> for DatosPregunta {
+    fn from(p: PreguntaFrecuentePeticion) -> Self {
         Self {
             pregunta: p.pregunta,
             respuesta: p.respuesta,
@@ -101,14 +101,14 @@ impl From<PreguntaPeticion> for DatosPregunta {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
-        (status = OK, description = "Preguntas", body = Vec<PreguntaRespuesta>),
+        (status = OK, description = "Preguntas", body = Vec<PreguntaFrecuenteRespuesta>),
         (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_preguntas(
     State(state): State<AppState>,
     en: EnCopropiedad,
-) -> ApiResult<Json<Vec<PreguntaRespuesta>>> {
+) -> ApiResult<Json<Vec<PreguntaFrecuenteRespuesta>>> {
     let v = uc::listar_preguntas(&state.unidad, &RelojSistema, &en.ctx).await?;
     Ok(Json(v.into_iter().map(Into::into).collect()))
 }
@@ -120,9 +120,9 @@ pub async fn listar_preguntas(
     tag = ETIQUETA_CONVERSACIONES,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    request_body = PreguntaPeticion,
+    request_body = PreguntaFrecuentePeticion,
     responses(
-        (status = CREATED, description = "Pregunta creada", body = PreguntaRespuesta),
+        (status = CREATED, description = "Pregunta creada", body = PreguntaFrecuenteRespuesta),
         (status = FORBIDDEN, description = "Sin `preguntas_frecuentes.editar` (`sin_permiso`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Textos inválidos (`validacion`)", body = ErrorRespuesta),
     )
@@ -130,8 +130,8 @@ pub async fn listar_preguntas(
 pub async fn crear_pregunta(
     State(state): State<AppState>,
     en: EnCopropiedad,
-    Json(p): Json<PreguntaPeticion>,
-) -> ApiResult<(StatusCode, Json<PreguntaRespuesta>)> {
+    Json(p): Json<PreguntaFrecuentePeticion>,
+) -> ApiResult<(StatusCode, Json<PreguntaFrecuenteRespuesta>)> {
     let r = uc::guardar_pregunta(&state.unidad, &RelojSistema, &en.ctx, None, p.into()).await?;
     Ok((StatusCode::CREATED, Json(r.into())))
 }
@@ -146,9 +146,9 @@ pub async fn crear_pregunta(
         ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
         ("pregunta_id" = Uuid, Path, description = "Pregunta"),
     ),
-    request_body = PreguntaPeticion,
+    request_body = PreguntaFrecuentePeticion,
     responses(
-        (status = OK, description = "Pregunta", body = PreguntaRespuesta),
+        (status = OK, description = "Pregunta", body = PreguntaFrecuenteRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
     )
 )]
@@ -156,8 +156,8 @@ pub async fn editar_pregunta(
     State(state): State<AppState>,
     en: EnCopropiedad,
     Path(ruta): Path<(Uuid, Uuid)>,
-    Json(p): Json<PreguntaPeticion>,
-) -> ApiResult<Json<PreguntaRespuesta>> {
+    Json(p): Json<PreguntaFrecuentePeticion>,
+) -> ApiResult<Json<PreguntaFrecuenteRespuesta>> {
     let r = uc::guardar_pregunta(
         &state.unidad,
         &RelojSistema,

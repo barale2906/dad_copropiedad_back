@@ -57,6 +57,7 @@ impl Entorno {
             db,
             AlmacenLocal::abrir(&self.dir, enlaces()).expect("abre"),
             true,
+            infra_seguridad::FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
         );
         state.archivos = Arc::clone(&self.almacen);
         let ruta = url.strip_prefix(URL_PUBLICA).expect("URL de la API");

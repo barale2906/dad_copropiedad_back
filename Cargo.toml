@@ -22,6 +22,7 @@ infra-correo = { path = "crates/infra-correo" }
 infra-archivos = { path = "crates/infra-archivos" }
 infra-seguridad = { path = "crates/infra-seguridad" }
 infra-planillas = { path = "crates/infra-planillas" }
+infra-push = { path = "crates/infra-push" }
 
 # HTTP / async
 axum = { version = "0.8.9", features = ["macros", "ws"] }
@@ -92,6 +93,11 @@ argon2 = { version = "0.6.0", features = ["getrandom"] }
 getrandom = "0.4.3"
 sha2 = "0.11.1"
 hex = "0.4.3"
+# Firma Ed25519 de los QR de visitas y RS256 del token de servicio de Firebase (mismo proveedor de
+# criptografía que rustls: sin OpenSSL ni aws-lc).
+ring = "0.17.14"
+# Base64 (claves PEM de la cuenta de servicio de Firebase y JWT del token de acceso).
+base64 = "0.22.1"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

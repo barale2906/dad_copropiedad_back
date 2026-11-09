@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO minuta_adjuntos (tenant_id, novedad_id, archivo_id) VALUES ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "00f5dd4ca295f0b236405d294a5a75d48be613289d15d40e30cd8d3dd4f445ee"
+}

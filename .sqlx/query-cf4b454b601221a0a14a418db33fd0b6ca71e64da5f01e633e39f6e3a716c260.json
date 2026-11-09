@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO eventos_acceso (id, tenant_id, punto_acceso_id, dispositivo_id, puente_id,\n                 id_local, credencial_id, visita_id, sentido, resultado, motivo, placa,\n                 registrado_por, ocurrido_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)\n             ON CONFLICT (tenant_id, puente_id, id_local, ocurrido_en) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cf4b454b601221a0a14a418db33fd0b6ca71e64da5f01e633e39f6e3a716c260"
+}

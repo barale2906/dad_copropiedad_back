@@ -15,9 +15,13 @@
 //! - Asambleas: [`TransaccionPg`] implementa `RepositorioAsambleas`; [`DirectorioAsambleasPg`]
 //!   cruza copropiedades para el gateway; los cambios en vivo se avisan con `pg_notify` en
 //!   [`CANAL_EN_VIVO`].
+//! - Control de acceso: [`TransaccionPg`] implementa `RepositorioAcceso`; [`DirectorioAccesoPg`]
+//!   cruza copropiedades para el worker y autentica los puentes; los dispositivos push van en la
+//!   transacción de plataforma.
 //! - Las migraciones se ejecutan con otra conexión (dueño del esquema): [`migrar`].
 //! - Preferir `sqlx::query!`/`query_as!` en los repositorios y versionar `.sqlx/`.
 
+mod acceso;
 mod archivos;
 mod asambleas;
 mod bienes_privados;
@@ -40,6 +44,7 @@ mod tickets;
 mod titulares;
 mod unidad_trabajo;
 
+pub use acceso::DirectorioAccesoPg;
 pub use asambleas::{CANAL_EN_VIVO, DirectorioAsambleasPg, OyenteEnVivo};
 pub use chat::{DirectorioGestionPg, DirectorioTelefonosPg, SesionesChatPg};
 pub use cola_salida::{ColaSalidaPg, LoteSalidaPg};

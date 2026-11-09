@@ -300,6 +300,118 @@ impl ArchivosConfig {
     }
 }
 
+/// Control de acceso (plan 05): secreto de los QR de visitas.
+#[derive(Clone)]
+pub struct AccesoConfig {
+    /// Secreto maestro (≥ 32 caracteres) del que se deriva la clave Ed25519 de cada PH
+    /// (`ACCESO_QR_SECRETO`). Rotarlo invalida los QR de visitas emitidos.
+    pub qr_secreto: String,
+}
+
+impl std::fmt::Debug for AccesoConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AccesoConfig")
+            .field("qr_secreto", &"<oculto>")
+            .finish()
+    }
+}
+
+impl AccesoConfig {
+    /// Lee `ACCESO_QR_SECRETO`.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si falta o tiene menos de 32 caracteres.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        let qr_secreto = required("ACCESO_QR_SECRETO")?;
+        if qr_secreto.len() < 32 {
+            return Err(ConfigError::Invalid {
+                var: "ACCESO_QR_SECRETO",
+                detail: "debe tener al menos 32 caracteres".into(),
+            });
+        }
+        Ok(Self { qr_secreto })
+    }
+}
+
+/// Base de la API de Firebase Cloud Messaging.
+pub const FCM_API_URL_PREDETERMINADA: &str = "https://fcm.googleapis.com";
+
+/// Notificaciones push de las apps Flutter (Firebase Cloud Messaging HTTP v1).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PushConfig {
+    /// Ruta del JSON de la cuenta de servicio de Firebase (`FCM_CREDENCIALES`). `None` = el
+    /// gateway no envía push (los avisos de acceso salen por WhatsApp).
+    pub credenciales: Option<String>,
+    /// Base de la API (`FCM_API_URL`).
+    pub api_url: String,
+}
+
+impl PushConfig {
+    /// Lee `FCM_*`.
+    ///
+    /// # Errors
+    ///
+    /// No falla hoy; se deja `Result` por consistencia con el resto de la configuración.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        Ok(Self {
+            credenciales: optional("FCM_CREDENCIALES"),
+            api_url: optional("FCM_API_URL").unwrap_or_else(|| FCM_API_URL_PREDETERMINADA.into()),
+        })
+    }
+}
+
+/// Puente de acceso en sitio (`apps/puente-acceso`).
+#[derive(Clone)]
+pub struct PuenteConfig {
+    /// Base de la API (`PUENTE_API_URL`, p. ej. `https://api.dominio.co/api/v1`).
+    pub api_url: String,
+    /// Token de máquina del puente (`PUENTE_TOKEN`), entregado al registrarlo.
+    pub token: String,
+    /// Directorio de la cache local y la cola de eventos (`PUENTE_DATOS_DIR`).
+    pub datos_dir: String,
+    /// Zona horaria IANA de la PH para evaluar horarios sin internet (`PUENTE_ZONA_HORARIA`).
+    pub zona_horaria: String,
+    /// Segundos entre sincronizaciones (`PUENTE_INTERVALO_SEGUNDOS`, 20 por defecto: una
+    /// credencial revocada sale de la cache en menos de un minuto).
+    pub intervalo_segundos: u64,
+    pub log_format: LogFormat,
+}
+
+impl std::fmt::Debug for PuenteConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PuenteConfig")
+            .field("api_url", &self.api_url)
+            .field("token", &"<oculto>")
+            .field("datos_dir", &self.datos_dir)
+            .field("zona_horaria", &self.zona_horaria)
+            .field("intervalo_segundos", &self.intervalo_segundos)
+            .finish()
+    }
+}
+
+impl PuenteConfig {
+    /// Lee `PUENTE_*`.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si falta `PUENTE_API_URL` o `PUENTE_TOKEN`, o un valor es inválido.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        Ok(Self {
+            api_url: required("PUENTE_API_URL")?,
+            token: required("PUENTE_TOKEN")?,
+            datos_dir: optional("PUENTE_DATOS_DIR").unwrap_or_else(|| "./datos/puente".into()),
+            zona_horaria: optional("PUENTE_ZONA_HORARIA")
+                .unwrap_or_else(|| "America/Bogota".into()),
+            intervalo_segundos: parse_or("PUENTE_INTERVALO_SEGUNDOS", 20)?,
+            log_format: parse_or("LOG_FORMAT", LogFormat::Pretty)?,
+        })
+    }
+}
+
 /// Seguridad de las cuentas.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SeguridadConfig {

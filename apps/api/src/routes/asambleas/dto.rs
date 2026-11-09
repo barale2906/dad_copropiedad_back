@@ -30,7 +30,7 @@ use crate::error::{ApiError, ApiResult};
 
 /// Configuración que la copropiedad fija para la asamblea.
 #[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
-pub struct ConfiguracionDto {
+pub struct ConfiguracionAsambleaDto {
     /// `coeficiente` (por defecto, lo que exige la ley) o `unidades` (se advierte en el acta).
     #[schema(value_type = String, example = "coeficiente")]
     #[serde(default)]
@@ -57,13 +57,13 @@ fn prohibidos_por_defecto() -> Vec<String> {
     ConfiguracionReunion::default().apoderados_prohibidos
 }
 
-impl Default for ConfiguracionDto {
+impl Default for ConfiguracionAsambleaDto {
     fn default() -> Self {
         ConfiguracionReunion::default().into()
     }
 }
 
-impl From<ConfiguracionReunion> for ConfiguracionDto {
+impl From<ConfiguracionReunion> for ConfiguracionAsambleaDto {
     fn from(c: ConfiguracionReunion) -> Self {
         Self {
             base_computo: c.base_computo,
@@ -76,8 +76,8 @@ impl From<ConfiguracionReunion> for ConfiguracionDto {
     }
 }
 
-impl From<ConfiguracionDto> for ConfiguracionReunion {
-    fn from(c: ConfiguracionDto) -> Self {
+impl From<ConfiguracionAsambleaDto> for ConfiguracionReunion {
+    fn from(c: ConfiguracionAsambleaDto) -> Self {
         Self {
             base_computo: c.base_computo,
             max_bienes_apoderado: c.max_bienes_apoderado,
@@ -111,7 +111,7 @@ pub struct ReunionRespuesta {
     pub enlace_video: Option<String>,
     pub plazo_respuesta: Option<DateTime<Utc>>,
     pub reunion_origen_id: Option<Uuid>,
-    pub configuracion: ConfiguracionDto,
+    pub configuracion: ConfiguracionAsambleaDto,
     pub convocada_en: Option<DateTime<Utc>>,
     pub instalada_en: Option<DateTime<Utc>>,
     pub cerrada_en: Option<DateTime<Utc>>,

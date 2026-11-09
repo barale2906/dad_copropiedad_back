@@ -1,5 +1,6 @@
 //! Casos de uso. Cada uno es genérico sobre los puertos que necesita.
 
+pub mod acceso;
 pub mod archivos;
 pub mod asambleas;
 pub mod autenticacion;

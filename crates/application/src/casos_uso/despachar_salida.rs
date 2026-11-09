@@ -1,22 +1,27 @@
 //! Caso de uso: despachar un lote del outbox (lo ejecuta en bucle el worker del gateway).
 //!
-//! Despacha los canales **correo** y **WhatsApp** que estén configurados: solo reclama los
-//! canales que sabe enviar, así los mensajes de un canal sin configurar siguen pendientes.
+//! Despacha los canales **correo**, **WhatsApp** y **push** que estén configurados: solo reclama
+//! los canales que sabe enviar, así los mensajes de un canal sin configurar siguen pendientes.
+//! Un push con token inválido no se reintenta: se desvía a su respaldo de WhatsApp.
 
 use crate::{
     AppResult,
     outbox::{Canal, MensajeOutbox, PoliticaReintentos},
-    puertos::{ColaSalida, EnvioCorreo, LoteSalida, MensajePendiente, Mensajeria},
+    puertos::{
+        ColaSalida, EnvioCorreo, EnvioPush, LoteSalida, MensajePendiente, Mensajeria,
+        acceso::ErrorPush,
+    },
 };
 
 /// Adaptadores de envío configurados (`None` = canal desactivado).
 #[derive(Debug)]
-pub struct Despachadores<'a, E, M> {
+pub struct Despachadores<'a, E, M, P> {
     pub correo: Option<&'a E>,
     pub whatsapp: Option<&'a M>,
+    pub push: Option<&'a P>,
 }
 
-impl<E, M> Despachadores<'_, E, M> {
+impl<E, M, P> Despachadores<'_, E, M, P> {
     /// Canales que se pueden enviar.
     pub fn canales(&self) -> Vec<Canal> {
         let mut c = Vec::new();
@@ -25,6 +30,9 @@ impl<E, M> Despachadores<'_, E, M> {
         }
         if self.whatsapp.is_some() {
             c.push(Canal::WhatsApp);
+        }
+        if self.push.is_some() {
+            c.push(Canal::Push);
         }
         c
     }
@@ -36,12 +44,14 @@ pub struct ResumenDespacho {
     pub enviados: usize,
     /// Intentos fallidos (se reintentarán o quedaron `fallido` si agotaron los intentos).
     pub fallidos: usize,
+    /// Push con token inválido desviados a su respaldo de WhatsApp.
+    pub desviados: usize,
 }
 
 impl ResumenDespacho {
     /// ¿El lote vino vacío? El worker lo usa para esperar antes de volver a consultar.
     pub const fn vacio(self) -> bool {
-        self.enviados == 0 && self.fallidos == 0
+        self.enviados == 0 && self.fallidos == 0 && self.desviados == 0
     }
 }
 
@@ -54,9 +64,9 @@ impl ResumenDespacho {
 ///
 /// Solo errores de la cola (base de datos); en ese caso el lote se revierte y los mensajes
 /// vuelven a quedar pendientes.
-pub async fn despachar_lote<C, E, M>(
+pub async fn despachar_lote<C, E, M, P>(
     cola: &C,
-    envios: &Despachadores<'_, E, M>,
+    envios: &Despachadores<'_, E, M, P>,
     politica: PoliticaReintentos,
     limite: u32,
 ) -> AppResult<ResumenDespacho>
@@ -64,6 +74,7 @@ where
     C: ColaSalida,
     E: EnvioCorreo,
     M: Mensajeria,
+    P: EnvioPush,
 {
     let canales = envios.canales();
     if canales.is_empty() {
@@ -86,6 +97,19 @@ where
             }
             (Ok(MensajeOutbox::WhatsApp(m)), _, Some(wa)) => {
                 wa.enviar(&m).await.map(Some).map_err(|e| e.to_string())
+            }
+            (Ok(MensajeOutbox::Push(n)), ..) if envios.push.is_some() => {
+                let Some(push) = envios.push else { continue };
+                match push.enviar(&n).await {
+                    Ok(referencia) => Ok(Some(referencia)),
+                    Err(ErrorPush::TokenInvalido) => {
+                        lote.desviar_push(id, n.respaldo).await?;
+                        resumen.desviados += 1;
+                        tracing::info!(outbox_id = id, tenant_id = ?tenant_id, "token push inválido: aviso desviado a WhatsApp");
+                        continue;
+                    }
+                    Err(e) => Err(e.to_string()),
+                }
             }
             (Ok(otro), ..) => Err(format!("canal {} sin despachador", otro.canal().as_str())),
             (Err(e), ..) => {
@@ -131,6 +155,7 @@ mod tests {
     use crate::{
         AppError,
         puertos::{
+            acceso::NotificacionPush,
             correo::CorreoSaliente,
             mensajeria::{ContenidoSaliente, MensajeSaliente},
         },
@@ -140,6 +165,7 @@ mod tests {
     enum Marca {
         Enviado(i64, Option<String>),
         Fallido(i64, Duration, u32),
+        Desviado(i64, bool),
     }
 
     #[derive(Default, Clone)]
@@ -198,6 +224,15 @@ mod tests {
             Ok(())
         }
 
+        async fn desviar_push(
+            &mut self,
+            id: i64,
+            respaldo: Option<MensajeSaliente>,
+        ) -> AppResult<()> {
+            self.marcas.push(Marca::Desviado(id, respaldo.is_some()));
+            Ok(())
+        }
+
         async fn confirmar(self) -> AppResult<()> {
             self.registro
                 .marcas
@@ -237,6 +272,75 @@ mod tests {
         }
     }
 
+    /// Tokens que empiezan por `viejo` son inválidos; por `caido`, falla temporal.
+    struct PushFalso;
+
+    impl EnvioPush for PushFalso {
+        async fn enviar(&self, n: &NotificacionPush) -> Result<String, ErrorPush> {
+            if n.token.starts_with("viejo") {
+                Err(ErrorPush::TokenInvalido)
+            } else if n.token.starts_with("caido") {
+                Err(ErrorPush::Temporal("503".into()))
+            } else {
+                Ok(format!("fcm-{}", n.token))
+            }
+        }
+    }
+
+    fn push(id: i64, token: &str, respaldo: bool) -> MensajePendiente {
+        MensajePendiente {
+            id,
+            tenant_id: Some(TenantId::nuevo()),
+            intentos: 0,
+            mensaje: Ok(MensajeOutbox::Push(NotificacionPush {
+                token: token.into(),
+                titulo: "Visita".into(),
+                cuerpo: "Lo buscan en portería".into(),
+                datos: Default::default(),
+                respaldo: respaldo.then(|| MensajeSaliente {
+                    linea: "1".into(),
+                    telefono: "573001112233".into(),
+                    contenido: ContenidoSaliente::Texto { cuerpo: "x".into() },
+                }),
+            })),
+        }
+    }
+
+    #[tokio::test]
+    async fn push_con_token_invalido_se_desvia_a_whatsapp() {
+        let registro = Registro::default();
+        let cola = ColaFalsa {
+            mensajes: Mutex::new(vec![
+                push(1, "bueno", true),
+                push(2, "viejo", true),
+                push(3, "caido", false),
+            ]),
+            registro: registro.clone(),
+        };
+        let envios = Despachadores {
+            correo: None::<&CorreoFalso>,
+            whatsapp: None::<&WhatsappFalso>,
+            push: Some(&PushFalso),
+        };
+
+        let resumen = despachar_lote(&cola, &envios, PoliticaReintentos::default(), 10)
+            .await
+            .expect("lote");
+
+        assert_eq!(
+            (resumen.enviados, resumen.desviados, resumen.fallidos),
+            (1, 1, 1)
+        );
+        assert_eq!(*registro.canales.lock().expect("mutex"), vec![Canal::Push]);
+        let marcas = registro.marcas.lock().expect("mutex").clone();
+        assert_eq!(marcas[0], Marca::Enviado(1, Some("fcm-bueno".into())));
+        assert_eq!(marcas[1], Marca::Desviado(2, true));
+        assert!(
+            matches!(marcas[2], Marca::Fallido(3, _, _)),
+            "falla temporal: se reintenta"
+        );
+    }
+
     fn correo(id: i64, para: &str, intentos: u32) -> MensajePendiente {
         MensajePendiente {
             id,
@@ -260,6 +364,7 @@ mod tests {
         let envios = Despachadores {
             correo: Some(&CorreoFalso),
             whatsapp: None::<&WhatsappFalso>,
+            push: None::<&PushFalso>,
         };
         let resumen = despachar_lote(&cola, &envios, PoliticaReintentos::default(), 10)
             .await
@@ -287,7 +392,8 @@ mod tests {
             resumen,
             ResumenDespacho {
                 enviados: 1,
-                fallidos: 0
+                fallidos: 0,
+                desviados: 0
             }
         );
         assert_eq!(
@@ -305,7 +411,8 @@ mod tests {
             resumen,
             ResumenDespacho {
                 enviados: 1,
-                fallidos: 1
+                fallidos: 1,
+                desviados: 0
             }
         );
         assert_eq!(
@@ -354,6 +461,7 @@ mod tests {
         let envios = Despachadores {
             correo: Some(&CorreoFalso),
             whatsapp: Some(&WhatsappFalso),
+            push: None::<&PushFalso>,
         };
 
         let resumen = despachar_lote(&cola, &envios, PoliticaReintentos::default(), 10)

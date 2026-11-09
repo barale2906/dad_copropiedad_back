@@ -8,10 +8,12 @@
 //! - `/api/v1/organizaciones/{organizacion_id}/…` — ficha global de una organización
 //!   (módulo `organizaciones`), y `/api/v1/permisos` — catálogo.
 //! - `/api/v1/archivos/descarga` — descarga con enlace firmado, sin sesión (módulo `archivos`).
+//! - `/api/v1/puentes/…` — puentes de acceso con token de máquina, sin sesión (`acceso::puentes`).
 //!
 //! Cada handler se registra con `utoipa_axum::routes!` para que el contrato OpenAPI salga de
 //! las mismas rutas que se sirven.
 
+mod acceso;
 mod archivos;
 pub(crate) mod asambleas;
 mod auth;
@@ -117,7 +119,8 @@ fn rutas() -> OpenApiRouter<AppState> {
 fn api_v1() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .nest("/plataforma", plataforma::rutas())
-        .nest("/yo", yo::rutas())
+        .nest("/yo", yo::rutas().merge(acceso::push::rutas()))
+        .nest("/puentes", acceso::puentes::rutas())
         .nest("/archivos", archivos::rutas())
         .nest("/auth", auth::rutas())
         .nest("/organizaciones", organizaciones::rutas_cuenta())
@@ -172,7 +175,12 @@ mod tests {
             infra_archivos::FirmanteEnlaces::new(&[7; 32], "http://localhost").expect("válido");
         let archivos = infra_archivos::AlmacenLocal::abrir(std::env::temp_dir(), enlaces)
             .expect("directorio temporal");
-        let state = AppState::new(db, archivos, true);
+        let state = AppState::new(
+            db,
+            archivos,
+            true,
+            infra_seguridad::FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
+        );
         router(state, &cfg)
             .oneshot(
                 Request::get(uri)

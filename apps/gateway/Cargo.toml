@@ -17,6 +17,7 @@ application.workspace = true
 infra-archivos.workspace = true
 infra-correo.workspace = true
 infra-postgres.workspace = true
+infra-push.workspace = true
 infra-whatsapp.workspace = true
 shared.workspace = true
 

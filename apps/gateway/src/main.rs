@@ -13,10 +13,14 @@
 //! - Asambleas por WhatsApp (`casos_uso::asambleas::whatsapp`) antes del chat: confirmar
 //!   asistencia y votar con botones cuyo id lleva la pregunta; registra los acuses de entrega y
 //!   la calidad de las líneas; cierra las preguntas con temporizador ([`worker_asambleas`]).
+//! - Control de acceso (`casos_uso::acceso`): botones «Autorizar» / «Rechazar» de las visitas
+//!   antes que la asamblea; escalamiento de visitas y correspondencia y retención
+//!   ([`worker_acceso`]); push a las apps con Firebase (respaldo por WhatsApp).
 
 mod mensajeria;
 mod routes;
 mod state;
+mod worker_acceso;
 mod worker_asambleas;
 mod worker_gestion;
 mod worker_recordatorios;
@@ -28,11 +32,12 @@ use anyhow::Context;
 use infra_archivos::AlmacenLocal;
 use infra_correo::CorreoSmtp;
 use infra_postgres::{
-    ColaSalidaPg, DirectorioAsambleasPg, DirectorioGestionPg, DirectorioRecordatoriosPg,
-    DirectorioTelefonosPg, SesionesChatPg, UnidadDeTrabajoPg,
+    ColaSalidaPg, DirectorioAccesoPg, DirectorioAsambleasPg, DirectorioGestionPg,
+    DirectorioRecordatoriosPg, DirectorioTelefonosPg, SesionesChatPg, UnidadDeTrabajoPg,
 };
+use infra_push::ClienteFcm;
 use infra_whatsapp::ClienteWhatsapp;
-use shared::{AppConfig, ArchivosConfig, SmtpConfig, WhatsappConfig, telemetry};
+use shared::{AppConfig, ArchivosConfig, PushConfig, SmtpConfig, WhatsappConfig, telemetry};
 use tokio::{
     net::TcpListener,
     sync::{Notify, watch},
@@ -92,17 +97,41 @@ async fn main() -> anyhow::Result<()> {
         &ArchivosConfig::from_env().context("configuración de archivos inválida")?,
     )
     .context("almacén de archivos inválido")?;
+    let push = PushConfig::from_env().context("configuración de push inválida")?;
+    let fcm = match &push.credenciales {
+        Some(ruta) => {
+            let c = ClienteFcm::desde_archivo(ruta, &push.api_url)
+                .context("cuenta de servicio de Firebase (FCM_CREDENCIALES) inválida")?;
+            tracing::info!("envío push (Firebase Cloud Messaging) activado");
+            Some(c)
+        }
+        None => {
+            tracing::warn!(
+                "FCM_CREDENCIALES no está definido: los avisos de portería salen por WhatsApp"
+            );
+            None
+        }
+    };
+    let archivos = Arc::new(archivos);
     let hay_salida = Arc::new(Notify::new());
 
-    let worker = (correo.is_some() || mensajeria.activa()).then(|| {
+    let worker = (correo.is_some() || mensajeria.activa() || fcm.is_some()).then(|| {
         let cola = ColaSalidaPg::new(db.clone());
         let whatsapp = mensajeria.activa().then(|| mensajeria.clone());
         let aviso = Arc::clone(&hay_salida);
         let apagado = esperar_apagado(apagado.clone());
         tokio::spawn(async move {
-            worker_salida::ejecutar(cola, correo, whatsapp, &aviso, apagado).await;
+            worker_salida::ejecutar(cola, correo, whatsapp, fcm, &aviso, apagado).await;
         })
     });
+
+    let acceso = tokio::spawn(worker_acceso::ejecutar(
+        DirectorioAccesoPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        Arc::clone(&archivos),
+        Arc::clone(&hay_salida),
+        esperar_apagado(apagado.clone()),
+    ));
 
     let recordatorios = tokio::spawn(worker_recordatorios::ejecutar(
         DirectorioRecordatoriosPg::new(db.clone()),
@@ -130,7 +159,7 @@ async fn main() -> anyhow::Result<()> {
         directorio: DirectorioTelefonosPg::new(db.clone()),
         asambleas: DirectorioAsambleasPg::new(db.clone()),
         mensajeria,
-        archivos: Arc::new(archivos),
+        archivos,
         hay_salida,
         db,
         whatsapp: Arc::new(whatsapp),
@@ -163,6 +192,9 @@ async fn main() -> anyhow::Result<()> {
 
     if let Err(e) = asambleas.await {
         tracing::error!(error = %e, "el worker de asambleas terminó con error");
+    }
+    if let Err(e) = acceso.await {
+        tracing::error!(error = %e, "el worker de control de acceso terminó con error");
     }
 
     tracing::info!("gateway detenido correctamente");

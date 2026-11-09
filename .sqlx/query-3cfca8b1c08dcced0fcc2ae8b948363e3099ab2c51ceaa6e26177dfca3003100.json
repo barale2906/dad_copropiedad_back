@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE visitas SET estado = $2, decidida_por_persona_id = $3, canal_decision = $4,\n                 ventana_desde = $5, ventana_hasta = $6, usos = $7, avisos_enviados = $8,\n                 siguiente_paso_en = $9, decidida_en = $10, ingreso_en = $11, salida_en = $12\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Int2",
+        "Int2",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3cfca8b1c08dcced0fcc2ae8b948363e3099ab2c51ceaa6e26177dfca3003100"
+}

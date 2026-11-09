@@ -3,13 +3,15 @@
 //! ([`crate::casos_uso::despachar_salida`]); si el proceso se cae, el mensaje sigue pendiente y
 //! no se pierde.
 //!
-//! El outbox es multicanal: WhatsApp, correo y (más adelante) push.
+//! El outbox es multicanal: WhatsApp, correo y push (apps móviles, con respaldo por WhatsApp).
 
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use crate::puertos::{correo::CorreoSaliente, mensajeria::MensajeSaliente};
+use crate::puertos::{
+    acceso::NotificacionPush, correo::CorreoSaliente, mensajeria::MensajeSaliente,
+};
 
 /// Prioridad de la cola de salida (menor número = sale primero). En WhatsApp, siempre dentro
 /// del límite de 80 mensajes/segundo por número.
@@ -38,7 +40,7 @@ impl PrioridadSalida {
 pub enum Canal {
     WhatsApp,
     Correo,
-    /// Notificaciones de las apps móviles (previsto).
+    /// Notificaciones de las apps móviles (Firebase Cloud Messaging).
     Push,
 }
 
@@ -60,6 +62,7 @@ pub enum MensajeOutbox {
     #[serde(rename = "whatsapp")]
     WhatsApp(MensajeSaliente),
     Correo(CorreoSaliente),
+    Push(NotificacionPush),
 }
 
 impl MensajeOutbox {
@@ -67,14 +70,16 @@ impl MensajeOutbox {
         match self {
             Self::WhatsApp(_) => Canal::WhatsApp,
             Self::Correo(_) => Canal::Correo,
+            Self::Push(_) => Canal::Push,
         }
     }
 
-    /// Destino según el canal: teléfono o dirección de correo (dato personal).
+    /// Destino según el canal: teléfono, dirección de correo o token push (dato personal).
     pub fn destino(&self) -> &str {
         match self {
             Self::WhatsApp(m) => &m.telefono,
             Self::Correo(c) => c.para.as_str(),
+            Self::Push(n) => &n.token,
         }
     }
 
@@ -82,7 +87,7 @@ impl MensajeOutbox {
     pub fn linea(&self) -> Option<&str> {
         match self {
             Self::WhatsApp(m) => Some(&m.linea),
-            Self::Correo(_) => None,
+            Self::Correo(_) | Self::Push(_) => None,
         }
     }
 }

@@ -9,6 +9,7 @@ use axum::{
     http::{Method, Request, StatusCode, header},
 };
 use infra_archivos::{AlmacenLocal, FirmanteEnlaces};
+use infra_seguridad::FirmaQrEd25519;
 use serde_json::{Value, json};
 use sqlx::{Executor, PgPool, postgres::PgPoolOptions};
 use tower::ServiceExt;
@@ -58,7 +59,15 @@ pub async fn api(pool: PgPool) -> Api {
         docs_api_habilitada: false,
     };
     Api {
-        router: routes::router(AppState::new(app, almacen, true), &config),
+        router: routes::router(
+            AppState::new(
+                app,
+                almacen,
+                true,
+                FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
+            ),
+            &config,
+        ),
         duenio: pool,
         _dir: DirTemporal(dir),
     }
