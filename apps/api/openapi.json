@@ -16363,6 +16363,973 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/proteccion-datos/politica": {
+      "get": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Política vigente (la lee cualquier cuenta de la PH antes de autorizar); `null` si no hay.",
+        "operationId": "politica_vigente",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Política vigente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/PoliticaRespuesta"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/proteccion-datos/politicas": {
+      "get": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Todas las versiones publicadas, la más reciente primero.",
+        "operationId": "historial_politicas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Versiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PoliticaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `proteccion_datos.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Publica una versión nueva de la política (las autorizaciones anteriores conservan la suya).",
+        "operationId": "publicar_politica",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoliticaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión publicada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `proteccion_datos.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin texto ni archivo o vigencia pasada (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/proteccion-datos/mis-datos": {
+      "get": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "«Mis datos»: la ficha de la cuenta en la PH, sus autorizaciones y solicitudes. Se audita.",
+        "operationId": "mis_datos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos del titular",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosTitularRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no tiene persona en la PH",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/personas/{persona_id}/datos-tratados": {
+      "get": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Lo que la PH trata de una persona (para responder una consulta). Se audita.",
+        "operationId": "datos_de_persona",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos del titular",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosTitularRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ni es el titular ni tiene `proteccion_datos.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/personas/{persona_id}/autorizaciones-tratamiento": {
+      "get": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Autorizaciones (vigentes y revocadas) de la persona.",
+        "operationId": "autorizaciones",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Autorizaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AutorizacionTratamientoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Registra la autorización del titular bajo la política vigente.",
+        "operationId": "otorgar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtorgarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Autorizadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinalidadesRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin finalidades o sin política vigente (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/personas/{persona_id}/autorizaciones-tratamiento/revocacion": {
+      "post": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Revoca la autorización para esas finalidades (art. 8, lit. e).",
+        "operationId": "revocar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevocarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Revocadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevocadasRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin permiso (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/proteccion-datos/solicitudes": {
+      "get": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Solicitudes, más recientes primero. El titular ve las suyas; la administración, todas.",
+        "operationId": "listar_solicitudes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "radicada"
+          },
+          {
+            "name": "persona_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "vencen_hasta",
+            "in": "query",
+            "description": "Sin responder que vencen (con prórroga) hasta esta fecha, p. ej. hoy para las vencidas.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Solicitudes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_SolicitudTitularRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Pide las de otra persona sin permiso (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Radica una consulta o un reclamo; el vencimiento se calcula en días hábiles de Colombia.",
+        "operationId": "radicar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RadicarSolicitudPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Solicitud radicada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudTitularRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Ni es el titular ni tiene `proteccion_datos.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/proteccion-datos/solicitudes/{solicitud_id}/tramite": {
+      "post": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "La administración empieza a atender la solicitud.",
+        "operationId": "tramitar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "solicitud_id",
+            "in": "path",
+            "description": "Solicitud",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "En trámite",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudTitularRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se respondió (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/proteccion-datos/solicitudes/{solicitud_id}/prorroga": {
+      "post": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Prórroga única antes del vencimiento (5 días hábiles las consultas, 8 los reclamos).",
+        "operationId": "prorrogar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "solicitud_id",
+            "in": "path",
+            "description": "Solicitud",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProrrogaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Prorrogada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudTitularRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ya se prorrogó, ya venció o ya se respondió (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/proteccion-datos/solicitudes/{solicitud_id}/respuesta": {
+      "post": {
+        "tags": [
+          "proteccion_datos"
+        ],
+        "summary": "Responde la solicitud (texto, archivo o ambos).",
+        "operationId": "responder",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "solicitud_id",
+            "in": "path",
+            "description": "Solicitud",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RespuestaSolicitudPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Respondida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudTitularRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se respondió (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin texto ni archivo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/auditoria": {
+      "get": {
+        "tags": [
+          "auditoria"
+        ],
+        "summary": "Eventos de la auditoría, más recientes primero.",
+        "operationId": "consultar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "entidad",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "visita"
+          },
+          {
+            "name": "entidad_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "accion",
+            "in": "query",
+            "description": "Acción exacta (`acceso.visita.decidir`) o prefijo terminado en punto (`acceso.`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_EventoAuditadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `auditoria.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cursor inválido o fechas invertidas (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/importaciones/bienes-privados": {
       "post": {
         "tags": [
@@ -18503,6 +19470,55 @@
           }
         }
       },
+      "AutorizacionTratamientoRespuesta": {
+        "type": "object",
+        "description": "Autorización por finalidad.",
+        "required": [
+          "id",
+          "finalidad",
+          "medio",
+          "politica_version",
+          "otorgada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "finalidad": {
+            "type": "string",
+            "description": "`administracion`, `comunicaciones`, `control_acceso` o `publicidad`.",
+            "example": "comunicaciones"
+          },
+          "medio": {
+            "type": "string",
+            "description": "`web`, `app`, `whatsapp` o `escrito`."
+          },
+          "politica_version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "evidencia_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "otorgada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revocada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "AvancePeticion": {
         "oneOf": [
           {
@@ -19576,7 +20592,7 @@
       },
       "CodigoError": {
         "type": "string",
-        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_autenticado` | 401 | Falta la sesión o venció (`Authorization: Bearer …`). |\n| `credenciales_invalidas` | 401 | Usuario/correo o contraseña (o código) incorrectos. |\n| `sin_permiso` | 403 | La cuenta no tiene el permiso necesario en esta copropiedad o en la plataforma. |\n| `segundo_factor_requerido` | 403 | La operación de plataforma exige una sesión con segundo factor. |\n| `conflicto` | 409 | Ya existe (usuario, correo, código de rol) o rompe una regla (último administrador). |\n| `demasiados_intentos` | 429 | Demasiados intentos fallidos; esperar unos minutos. |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |\n| `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `coeficientes_no_suman_uno` | 422 | El cuadro de coeficientes no suma exactamente 1 (el mensaje trae la diferencia). |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
+        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_autenticado` | 401 | Falta la sesión o venció (`Authorization: Bearer …`). |\n| `credenciales_invalidas` | 401 | Usuario/correo o contraseña (o código) incorrectos. |\n| `sin_permiso` | 403 | La cuenta no tiene el permiso necesario en esta copropiedad o en la plataforma. |\n| `segundo_factor_requerido` | 403 | La operación de plataforma exige una sesión con segundo factor. |\n| `conflicto` | 409 | Ya existe (usuario, correo, código de rol) o rompe una regla (último administrador). |\n| `demasiados_intentos` | 429 | Demasiados intentos fallidos; esperar unos minutos. |\n| `demasiadas_peticiones` | 429 | Superó el límite de peticiones por minuto de la ruta; reintentar tras `Retry-After`. |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |\n| `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `coeficientes_no_suman_uno` | 422 | El cuadro de coeficientes no suma exactamente 1 (el mensaje trae la diferencia). |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
         "enum": [
           "peticion_invalida",
           "no_autenticado",
@@ -19585,6 +20601,7 @@
           "segundo_factor_requerido",
           "conflicto",
           "demasiados_intentos",
+          "demasiadas_peticiones",
           "no_encontrado",
           "conflicto_estado",
           "ya_voto",
@@ -20866,6 +21883,32 @@
           }
         }
       },
+      "DatosTitularRespuesta": {
+        "type": "object",
+        "description": "Lo que la PH trata del titular (art. 14).",
+        "required": [
+          "persona",
+          "autorizaciones",
+          "solicitudes"
+        ],
+        "properties": {
+          "persona": {
+            "$ref": "#/components/schemas/PersonaRespuesta"
+          },
+          "autorizaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutorizacionTratamientoRespuesta"
+            }
+          },
+          "solicitudes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SolicitudTitularRespuesta"
+            }
+          }
+        }
+      },
       "DecisionRespuesta": {
         "type": "object",
         "description": "Resultado de la decisión: la primera respuesta gana.",
@@ -21872,6 +22915,66 @@
           }
         }
       },
+      "EventoAuditadoRespuesta": {
+        "type": "object",
+        "description": "Evento auditado.",
+        "required": [
+          "id",
+          "ocurrido_en",
+          "accion",
+          "entidad",
+          "resultado",
+          "detalle"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cursor opaco del evento (para `despues`)."
+          },
+          "ocurrido_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actor_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cuenta que actuó; `null` = el sistema."
+          },
+          "accion": {
+            "type": "string",
+            "example": "acceso.visita.decidir"
+          },
+          "entidad": {
+            "type": "string",
+            "example": "visita"
+          },
+          "entidad_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "resultado": {
+            "type": "string",
+            "description": "`ok`, `rechazado` o `error`."
+          },
+          "detalle": {
+            "type": "object",
+            "description": "Detalle sin datos personales."
+          },
+          "request_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "EventoManualPeticion": {
         "type": "object",
         "description": "Evento manual de la portería.",
@@ -22497,6 +23600,21 @@
               "null"
             ],
             "description": "Vacío en votaciones reservadas sin permiso de detalle."
+          }
+        }
+      },
+      "FinalidadesRespuesta": {
+        "type": "object",
+        "description": "Finalidades que quedaron autorizadas (las que ya lo estaban no se duplican).",
+        "required": [
+          "finalidades"
+        ],
+        "properties": {
+          "finalidades": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -24465,6 +25583,39 @@
           }
         }
       },
+      "OtorgarPeticion": {
+        "type": "object",
+        "description": "Finalidades que se autorizan.",
+        "required": [
+          "finalidades",
+          "medio"
+        ],
+        "properties": {
+          "finalidades": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "administracion",
+              "comunicaciones"
+            ]
+          },
+          "medio": {
+            "type": "string",
+            "description": "`web`, `app`, `whatsapp` o `escrito`.",
+            "example": "app"
+          },
+          "evidencia_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Formato firmado escaneado (autorizaciones por escrito), ya subido con `/archivos`."
+          }
+        }
+      },
       "PaginaRespuesta_ActivoRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -24997,6 +26148,87 @@
           }
         }
       },
+      "PaginaRespuesta_EventoAuditadoRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Evento auditado.",
+              "required": [
+                "id",
+                "ocurrido_en",
+                "accion",
+                "entidad",
+                "resultado",
+                "detalle"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid",
+                  "description": "Cursor opaco del evento (para `despues`)."
+                },
+                "ocurrido_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "actor_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid",
+                  "description": "Cuenta que actuó; `null` = el sistema."
+                },
+                "accion": {
+                  "type": "string",
+                  "example": "acceso.visita.decidir"
+                },
+                "entidad": {
+                  "type": "string",
+                  "example": "visita"
+                },
+                "entidad_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "resultado": {
+                  "type": "string",
+                  "description": "`ok`, `rechazado` o `error`."
+                },
+                "detalle": {
+                  "type": "object",
+                  "description": "Detalle sin datos personales."
+                },
+                "request_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_NovedadRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -25476,6 +26708,108 @@
                     "null"
                   ],
                   "format": "uuid"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_SolicitudTitularRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Solicitud del titular.",
+              "required": [
+                "id",
+                "persona_id",
+                "tipo",
+                "estado",
+                "radicada_en",
+                "vence_el"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "persona_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "tipo": {
+                  "type": "string",
+                  "description": "`consulta`, `actualizacion`, `rectificacion`, `supresion` o `revocatoria`.",
+                  "example": "consulta"
+                },
+                "estado": {
+                  "type": "string",
+                  "description": "`radicada`, `en_tramite` o `respondida`.",
+                  "example": "radicada"
+                },
+                "detalle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "radicada_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "vence_el": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Vencimiento legal inicial (10 días hábiles las consultas, 15 los reclamos)."
+                },
+                "prorrogada_hasta": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date",
+                  "description": "Vencimiento con la prórroga, si se usó."
+                },
+                "motivo_prorroga": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "respuesta": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "respuesta_archivo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
+                },
+                "respondida_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
                 }
               }
             },
@@ -26579,6 +27913,73 @@
           }
         }
       },
+      "PoliticaPeticion": {
+        "type": "object",
+        "description": "Versión nueva de la política.",
+        "properties": {
+          "texto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "PDF ya subido con `/archivos`."
+          },
+          "vigente_desde": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Desde ahora si se omite (nunca en el pasado)."
+          }
+        }
+      },
+      "PoliticaRespuesta": {
+        "type": "object",
+        "description": "Versión de la política de tratamiento.",
+        "required": [
+          "id",
+          "version",
+          "vigente_desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1,
+            "minimum": 0
+          },
+          "texto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "PDF de la política (descarga con `/archivos/{archivo_id}/enlace`)."
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PreautorizarPeticion": {
         "allOf": [
           {
@@ -26953,6 +28354,19 @@
           },
           "datos": {
             "type": "object"
+          }
+        }
+      },
+      "ProrrogaPeticion": {
+        "type": "object",
+        "description": "Motivo de la prórroga.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "example": "Se verifica la información con la portería"
           }
         }
       },
@@ -27355,6 +28769,32 @@
             ],
             "format": "uuid",
             "description": "Persona por la que radica la administración (casos presenciales o por correo); exige\n`tickets.asignar`."
+          }
+        }
+      },
+      "RadicarSolicitudPeticion": {
+        "type": "object",
+        "description": "Solicitud nueva.",
+        "required": [
+          "persona_id",
+          "tipo"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "El titular (su `persona_id` sale de `/proteccion-datos/mis-datos`)."
+          },
+          "tipo": {
+            "type": "string",
+            "example": "rectificacion"
+          },
+          "detalle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Mi número de celular cambió"
           }
         }
       },
@@ -28142,6 +29582,26 @@
           }
         }
       },
+      "RespuestaSolicitudPeticion": {
+        "type": "object",
+        "description": "Respuesta al titular.",
+        "properties": {
+          "respuesta": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Documento de respuesta ya subido con `/archivos`."
+          }
+        }
+      },
       "RestablecerPeticion": {
         "type": "object",
         "description": "Código recibido y contraseña nueva.",
@@ -28588,6 +30048,38 @@
           }
         }
       },
+      "RevocadasRespuesta": {
+        "type": "object",
+        "description": "Autorizaciones revocadas.",
+        "required": [
+          "revocadas"
+        ],
+        "properties": {
+          "revocadas": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "RevocarPeticion": {
+        "type": "object",
+        "description": "Finalidades que se revocan.",
+        "required": [
+          "finalidades"
+        ],
+        "properties": {
+          "finalidades": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "publicidad"
+            ]
+          }
+        }
+      },
       "RolRespuesta": {
         "type": "object",
         "description": "Rol con sus permisos.",
@@ -28848,6 +30340,87 @@
             ],
             "description": "Obligatoria en parqueaderos de visitantes.",
             "example": "ABC123"
+          }
+        }
+      },
+      "SolicitudTitularRespuesta": {
+        "type": "object",
+        "description": "Solicitud del titular.",
+        "required": [
+          "id",
+          "persona_id",
+          "tipo",
+          "estado",
+          "radicada_en",
+          "vence_el"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "description": "`consulta`, `actualizacion`, `rectificacion`, `supresion` o `revocatoria`.",
+            "example": "consulta"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`radicada`, `en_tramite` o `respondida`.",
+            "example": "radicada"
+          },
+          "detalle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "radicada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vence_el": {
+            "type": "string",
+            "format": "date",
+            "description": "Vencimiento legal inicial (10 días hábiles las consultas, 15 los reclamos)."
+          },
+          "prorrogada_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Vencimiento con la prórroga, si se usó."
+          },
+          "motivo_prorroga": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "respuesta": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "respuesta_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "respondida_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -30217,6 +31790,14 @@
     {
       "name": "acceso",
       "description": "Control de acceso (plan 05): visitas con aviso al primer respondiente y escalamiento (2 min a todos los residentes, 5 min llamada), pre-autorizaciones con QR firmado, correspondencia con avisos cada 24 h y entrega con firma o foto, minuta, bitácora, credenciales, autorizaciones, biometría con consentimiento y la API de los puentes (`/api/v1/puentes`)"
+    },
+    {
+      "name": "proteccion_datos",
+      "description": "Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»"
+    },
+    {
+      "name": "auditoria",
+      "description": "Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)"
     },
     {
       "name": "plataforma",

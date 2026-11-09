@@ -1,0 +1,60 @@
+# Despliegue de referencia en el VPS (ver docs/despliegue.md). Nginx (HestiaCP) termina TLS y
+# publica la API y el gateway; aquí todo escucha solo en 127.0.0.1.
+#
+#   docker compose -f docker-compose.prod.yml --env-file .env.produccion run --rm migracion
+#   docker compose -f docker-compose.prod.yml --env-file .env.produccion up -d api gateway
+#
+# La imagen la publica el CI en GHCR (`IMAGEN`, con etiqueta fija: nunca `latest`).
+name: dad_copropiedad_prod
+
+x-app: &app
+  image: ${IMAGEN:?defina IMAGEN, p. ej. ghcr.io/barale2906/dad_copropiedad_back:sha-abc1234}
+  env_file: .env.produccion
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+  volumes:
+    - archivos:/app/datos/archivos
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-dad_copropiedad}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?defina APP_DB_PASSWORD}
+      TZ: America/Bogota
+    volumes:
+      - pg_data:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Paso explícito del despliegue: aplica las migraciones con el dueño del esquema y termina.
+  migracion:
+    <<: *app
+    restart: "no"
+    command: ["dad_admin", "migrar"]
+    profiles: ["migracion"]
+
+  api:
+    <<: *app
+    command: ["dad_copropiedad_api"]
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  gateway:
+    <<: *app
+    command: ["dad_copropiedad_gateway"]
+    ports:
+      - "127.0.0.1:8081:8081"
+
+volumes:
+  pg_data:
+  archivos:

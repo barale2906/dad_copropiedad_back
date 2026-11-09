@@ -1,0 +1,184 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, persona_id, tipo, radicada_en, vence_el, estado, detalle, radicada_por,\n                    prorrogada_hasta, motivo_prorroga, respuesta, respuesta_archivo_id,\n                    respondida_en, respondida_por\n             FROM solicitudes_titular WHERE id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "radicada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "radicada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "vence_el",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "vence_el"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "detalle",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "detalle"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "radicada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "radicada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "prorrogada_hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "prorrogada_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "motivo_prorroga",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "motivo_prorroga"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "respuesta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "respuesta"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "respuesta_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "respuesta_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "respondida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "respondida_en"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "respondida_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "solicitudes_titular",
+            "name": "respondida_por"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "14783d47a59746857d2158d2a628c5e1d2c96796fbf51e8e35a653776c8d53a9"
+}

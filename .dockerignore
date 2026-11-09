@@ -1,0 +1,8 @@
+# Lo que no entra al contexto de la imagen (velocidad y secretos fuera).
+target/
+.git/
+datos/
+.env
+.env.*
+!.env.example
+*.log

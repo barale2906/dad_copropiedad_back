@@ -3,6 +3,7 @@
 pub mod acceso;
 pub mod archivos;
 pub mod asambleas;
+pub mod auditoria;
 pub mod autenticacion;
 pub mod avisos;
 pub mod bienes_privados;

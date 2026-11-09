@@ -114,7 +114,9 @@ pub use pregunta::{
     CargoEleccion, EstadoPregunta, OpcionPregunta, Pregunta, PreguntaAbierta, TEXTOS_SI_NO,
     TipoPregunta, TipoVoto,
 };
-pub use proteccion_datos::{FinalidadTratamiento, MedioAutorizacion, TipoSolicitudTitular};
+pub use proteccion_datos::{
+    EstadoSolicitudTitular, FinalidadTratamiento, MedioAutorizacion, TipoSolicitudTitular,
+};
 pub use quorum::{Convocatoria, Quorum, QuorumReunion};
 pub use reserva::{
     CanalReserva, CategoriaBienComun, CobroPor, ConceptoCargo, EstadoPago, EstadoRecurso,

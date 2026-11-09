@@ -20,6 +20,7 @@ pub mod csv;
 pub mod en_vivo;
 pub mod error;
 pub mod extractores;
+pub mod limite;
 pub mod openapi;
 pub mod paginacion;
 pub mod routes;

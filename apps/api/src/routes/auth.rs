@@ -23,6 +23,7 @@ use uuid::Uuid;
 use crate::{
     error::{ApiResult, ErrorRespuesta},
     extractores::Json,
+    limite::LimiteAuth,
     openapi::ETIQUETA_AUTH,
     sesion::CuentaAutenticada,
     state::AppState,
@@ -80,6 +81,7 @@ pub struct CuentaCreada {
     )
 )]
 pub async fn registrar(
+    _limite: LimiteAuth,
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(p): Json<RegistroPeticion>,
@@ -164,6 +166,7 @@ pub struct InicioRespuesta {
     )
 )]
 pub async fn iniciar_sesion(
+    _limite: LimiteAuth,
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(p): Json<InicioPeticion>,
@@ -224,6 +227,7 @@ pub struct SegundoFactorPeticion {
     )
 )]
 pub async fn completar_segundo_factor(
+    _limite: LimiteAuth,
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(p): Json<SegundoFactorPeticion>,
@@ -259,6 +263,7 @@ pub struct RenovarPeticion {
     )
 )]
 pub async fn renovar(
+    _limite: LimiteAuth,
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(p): Json<RenovarPeticion>,
@@ -314,6 +319,7 @@ pub struct RecuperarPeticion {
     responses((status = ACCEPTED, description = "Si la cuenta existe, se envió el código"))
 )]
 pub async fn solicitar_recuperacion(
+    _limite: LimiteAuth,
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(p): Json<RecuperarPeticion>,
@@ -351,6 +357,7 @@ pub struct RestablecerPeticion {
     )
 )]
 pub async fn restablecer_contrasena(
+    _limite: LimiteAuth,
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(p): Json<RestablecerPeticion>,

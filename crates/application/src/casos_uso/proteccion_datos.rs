@@ -1,30 +1,42 @@
 //! Casos de uso de protección de datos personales (Ley 1581 de 2012).
 //!
-//! - [`publicar_politica`]: nueva versión de la política de tratamiento de la copropiedad.
-//! - [`registrar_autorizacion`] / [`revocar_autorizacion`]: autorizaciones por finalidad.
+//! - [`publicar_politica`], [`politica_vigente`], [`historial_politicas`]: la política de
+//!   tratamiento de la copropiedad (versionada).
+//! - [`registrar_autorizacion`] / [`revocar_autorizacion`] / [`autorizaciones_de`]:
+//!   autorizaciones por finalidad.
 //! - [`esta_autorizado`]: lo consultan los módulos antes de tratar datos para una finalidad
 //!   (p. ej. publicidad o comunicaciones).
-//! - [`radicar_solicitud`]: consulta o reclamo del titular con su vencimiento legal en días
-//!   hábiles de Colombia.
+//! - [`radicar_solicitud`], [`tramitar_solicitud`], [`prorrogar_solicitud`],
+//!   [`responder_solicitud`], [`listar_solicitudes`]: consultas y reclamos del titular con su
+//!   vencimiento legal en días hábiles de Colombia.
+//! - [`mis_datos`]: la consulta del titular (art. 14) sobre lo que la PH guarda de él.
 //!
-//! La auditoría guarda ids, finalidades y fechas, nunca los datos personales.
+//! **Quién actúa**: el titular sobre sí mismo (su persona en la PH, vinculada a su cuenta) o la
+//! administración con `proteccion_datos.gestionar`. La auditoría guarda ids, finalidades y
+//! fechas, nunca los datos personales.
 
 use std::collections::BTreeSet;
 
 use chrono::{DateTime, Utc};
 use domain::{
-    ArchivoId, AutorizacionId, FinalidadTratamiento, MedioAutorizacion, PersonaId,
-    PoliticaTratamientoId, SolicitudTitularId, TipoSolicitudTitular,
-    proteccion_datos::fecha_en_colombia,
+    ArchivoId, AutorizacionId, EstadoSolicitudTitular, FinalidadTratamiento, MedioAutorizacion,
+    Permiso, PersonaId, PoliticaTratamientoId, SolicitudTitularId, TipoSolicitudTitular,
+    copropiedad::{texto_obligatorio, texto_opcional},
+    proteccion_datos::{fecha_en_colombia, prorrogar_solicitud as nueva_prorroga},
 };
 use serde_json::Value;
 
 use crate::{
-    AppError, AppResult, Contexto,
+    AppError, AppResult, Contexto, Pagina, SolicitudPagina,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
-        RegistroAuditoria, Reloj, RepositorioProteccionDatos, Transaccion, UnidadDeTrabajo,
-        proteccion_datos::{Autorizacion, PoliticaTratamiento, SolicitudTitular},
+        RegistroAuditoria, Reloj, RepositorioArchivos, RepositorioPersonas,
+        RepositorioProteccionDatos, RepositorioTickets, Transaccion, UnidadDeTrabajo,
+        copropiedades::Persona,
+        proteccion_datos::{
+            Autorizacion, AutorizacionRegistrada, FiltroSolicitudes, PoliticaTratamiento,
+            SolicitudTitular,
+        },
     },
 };
 
@@ -36,6 +48,71 @@ pub const ACCION_REVOCAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.autorizacion.revocar");
 pub const ACCION_RADICAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.solicitud.radicar");
+pub const ACCION_TRAMITAR: AccionAuditoria =
+    AccionAuditoria::new("proteccion_datos.solicitud.tramitar");
+pub const ACCION_PRORROGAR: AccionAuditoria =
+    AccionAuditoria::new("proteccion_datos.solicitud.prorrogar");
+pub const ACCION_RESPONDER: AccionAuditoria =
+    AccionAuditoria::new("proteccion_datos.solicitud.responder");
+pub const ACCION_CONSULTAR: AccionAuditoria =
+    AccionAuditoria::new("proteccion_datos.titular.consultar");
+
+/// Puertos que usan los casos de uso de protección de datos.
+pub trait TxProteccionDatos:
+    RepositorioProteccionDatos
+    + RepositorioPersonas
+    + RepositorioTickets
+    + RepositorioArchivos
+    + RegistroAuditoria
+{
+}
+
+impl<T> TxProteccionDatos for T where
+    T: RepositorioProteccionDatos
+        + RepositorioPersonas
+        + RepositorioTickets
+        + RepositorioArchivos
+        + RegistroAuditoria
+{
+}
+
+fn gestiona(ctx: &Contexto) -> bool {
+    ctx.exigir(Permiso::ProteccionDatosGestionar).is_ok()
+}
+
+/// Exige que el actor sea el titular `persona` o tenga `proteccion_datos.gestionar`.
+async fn exigir_titular_o_gestion<T: TxProteccionDatos>(
+    tx: &mut T,
+    ctx: &Contexto,
+    persona: PersonaId,
+) -> AppResult<()> {
+    if gestiona(ctx) {
+        return Ok(());
+    }
+    let propia = match ctx.actor_id {
+        Some(c) => tx.persona_de_cuenta(c).await? == Some(persona),
+        None => false,
+    };
+    if propia {
+        Ok(())
+    } else {
+        Err(AppError::SinPermiso(Permiso::ProteccionDatosGestionar))
+    }
+}
+
+/// Persona de la PH vinculada a la cuenta del actor.
+async fn persona_del_actor<T: TxProteccionDatos>(
+    tx: &mut T,
+    ctx: &Contexto,
+) -> AppResult<PersonaId> {
+    match ctx.actor_id {
+        Some(c) => tx
+            .persona_de_cuenta(c)
+            .await?
+            .ok_or(AppError::NoEncontrado("persona vinculada a la cuenta")),
+        None => Err(AppError::NoAutenticado),
+    }
+}
 
 /// Contenido de una política nueva: texto, archivo (PDF) o ambos.
 #[derive(Debug, Clone)]
@@ -50,7 +127,8 @@ pub struct NuevaPolitica {
 ///
 /// # Errors
 ///
-/// [`AppError::Validacion`] si no trae ni texto ni archivo, o si `vigente_desde` es pasado.
+/// [`AppError::SinPermiso`] sin `proteccion_datos.gestionar`; [`AppError::Validacion`] si no
+/// trae ni texto ni archivo, o si `vigente_desde` es pasado.
 pub async fn publicar_politica<U>(
     unidad: &U,
     reloj: &impl Reloj,
@@ -59,9 +137,9 @@ pub async fn publicar_politica<U>(
 ) -> AppResult<PoliticaTratamiento>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioProteccionDatos + RegistroAuditoria,
+    U::Transaccion: TxProteccionDatos,
 {
-    ctx.exigir(domain::Permiso::ProteccionDatosGestionar)?;
+    ctx.exigir(Permiso::ProteccionDatosGestionar)?;
     let texto = nueva.texto.filter(|t| !t.trim().is_empty());
     if texto.is_none() && nueva.archivo_id.is_none() {
         return Err(AppError::Validacion(
@@ -78,6 +156,11 @@ where
     }
 
     let mut tx = unidad.iniciar(ctx).await?;
+    if let Some(a) = nueva.archivo_id
+        && tx.buscar(a).await?.is_none()
+    {
+        return Err(AppError::NoEncontrado("archivo"));
+    }
     let politica = PoliticaTratamiento {
         id: PoliticaTratamientoId::nuevo(),
         version: tx.ultima_version_politica().await? + 1,
@@ -102,6 +185,42 @@ where
     Ok(politica)
 }
 
+/// Política vigente: la puede leer cualquier cuenta de la PH (se lee antes de autorizar).
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si falla la base de datos.
+pub async fn politica_vigente<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+) -> AppResult<Option<PoliticaTratamiento>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    let mut tx = unidad.iniciar(ctx).await?;
+    tx.politica_vigente(reloj.ahora()).await
+}
+
+/// Todas las versiones publicadas, la más reciente primero.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `proteccion_datos.gestionar`.
+pub async fn historial_politicas<U>(
+    unidad: &U,
+    ctx: &Contexto,
+) -> AppResult<Vec<PoliticaTratamiento>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    ctx.exigir(Permiso::ProteccionDatosGestionar)?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    tx.historial_politicas().await
+}
+
 /// Autorización que llega del titular.
 #[derive(Debug, Clone)]
 pub struct AutorizacionOtorgada {
@@ -116,6 +235,7 @@ pub struct AutorizacionOtorgada {
 ///
 /// # Errors
 ///
+/// [`AppError::SinPermiso`] si no es el titular ni tiene `proteccion_datos.gestionar`;
 /// [`AppError::Validacion`] si no hay finalidades o la copropiedad no tiene política vigente
 /// (sin política no hay autorización informada, art. 12).
 pub async fn registrar_autorizacion<U>(
@@ -126,7 +246,7 @@ pub async fn registrar_autorizacion<U>(
 ) -> AppResult<Vec<FinalidadTratamiento>>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioProteccionDatos + RegistroAuditoria,
+    U::Transaccion: TxProteccionDatos,
 {
     if otorgada.finalidades.is_empty() {
         return Err(AppError::Validacion(
@@ -135,6 +255,7 @@ where
     }
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar(ctx).await?;
+    exigir_titular_o_gestion(&mut tx, ctx, otorgada.persona_id).await?;
     let politica = tx.politica_vigente(ahora).await?.ok_or_else(|| {
         AppError::Validacion("la copropiedad no tiene una política de tratamiento vigente".into())
     })?;
@@ -174,6 +295,7 @@ where
 ///
 /// # Errors
 ///
+/// [`AppError::SinPermiso`] si no es el titular ni tiene `proteccion_datos.gestionar`;
 /// [`AppError::Validacion`] si no se indica ninguna finalidad.
 pub async fn revocar_autorizacion<U>(
     unidad: &U,
@@ -184,7 +306,7 @@ pub async fn revocar_autorizacion<U>(
 ) -> AppResult<u64>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioProteccionDatos + RegistroAuditoria,
+    U::Transaccion: TxProteccionDatos,
 {
     if finalidades.is_empty() {
         return Err(AppError::Validacion(
@@ -192,6 +314,7 @@ where
         ));
     }
     let mut tx = unidad.iniciar(ctx).await?;
+    exigir_titular_o_gestion(&mut tx, ctx, persona_id).await?;
     let revocadas = tx
         .revocar_autorizaciones(persona_id, finalidades, reloj.ahora())
         .await?;
@@ -205,6 +328,25 @@ where
     }
     tx.confirmar().await?;
     Ok(revocadas)
+}
+
+/// Autorizaciones (vigentes y revocadas) de la persona.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] si no es el titular ni tiene `proteccion_datos.gestionar`.
+pub async fn autorizaciones_de<U>(
+    unidad: &U,
+    ctx: &Contexto,
+    persona_id: PersonaId,
+) -> AppResult<Vec<AutorizacionRegistrada>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    let mut tx = unidad.iniciar(ctx).await?;
+    exigir_titular_o_gestion(&mut tx, ctx, persona_id).await?;
+    tx.autorizaciones_de_persona(persona_id).await
 }
 
 /// ¿La persona tiene autorización vigente para la finalidad?
@@ -234,19 +376,22 @@ where
 ///
 /// # Errors
 ///
-/// [`AppError::Infraestructura`] si falla la base de datos o el vencimiento se sale del
-/// calendario.
+/// [`AppError::SinPermiso`] si no es el titular ni tiene `proteccion_datos.gestionar`;
+/// [`AppError::Dominio`] si el detalle es inválido; [`AppError::Infraestructura`] si falla la
+/// base de datos o el vencimiento se sale del calendario.
 pub async fn radicar_solicitud<U>(
     unidad: &U,
     reloj: &impl Reloj,
     ctx: &Contexto,
     persona_id: PersonaId,
     tipo: TipoSolicitudTitular,
+    detalle: Option<String>,
 ) -> AppResult<SolicitudTitular>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioProteccionDatos + RegistroAuditoria,
+    U::Transaccion: TxProteccionDatos,
 {
+    let detalle = texto_opcional("detalle", detalle.as_deref(), 2000)?;
     let radicada_en = reloj.ahora();
     let vence_el = tipo
         .vencimiento(fecha_en_colombia(radicada_en))
@@ -257,9 +402,19 @@ where
         tipo,
         radicada_en,
         vence_el,
+        estado: EstadoSolicitudTitular::Radicada,
+        detalle,
+        radicada_por: ctx.actor_id,
+        prorrogada_hasta: None,
+        motivo_prorroga: None,
+        respuesta: None,
+        respuesta_archivo_id: None,
+        respondida_en: None,
+        respondida_por: None,
     };
 
     let mut tx = unidad.iniciar(ctx).await?;
+    exigir_titular_o_gestion(&mut tx, ctx, persona_id).await?;
     tx.insertar_solicitud(&solicitud).await?;
     let detalle = DetalleAuditoria::vacio()
         .con("tipo", tipo.as_str())?
@@ -271,6 +426,223 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(solicitud)
+}
+
+async fn solicitud_de<T: TxProteccionDatos>(
+    tx: &mut T,
+    id: SolicitudTitularId,
+) -> AppResult<SolicitudTitular> {
+    tx.solicitud_para_actualizar(id)
+        .await?
+        .ok_or(AppError::NoEncontrado("solicitud"))
+}
+
+async fn auditar_solicitud<T: TxProteccionDatos>(
+    tx: &mut T,
+    accion: AccionAuditoria,
+    s: &SolicitudTitular,
+) -> AppResult<()> {
+    let detalle = DetalleAuditoria::vacio()
+        .con("estado", s.estado.as_str())?
+        .con("vence", s.vence().to_string())?;
+    tx.registrar(
+        EventoAuditoria::ok(accion, "solicitud_titular", s.id.as_uuid()).con_detalle(detalle),
+    )
+    .await
+}
+
+/// Pasa la solicitud a `en_tramite` (la administración la está atendiendo).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `proteccion_datos.gestionar`; [`AppError::Dominio`] si ya se
+/// respondió.
+pub async fn tramitar_solicitud<U>(
+    unidad: &U,
+    ctx: &Contexto,
+    id: SolicitudTitularId,
+) -> AppResult<SolicitudTitular>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    ctx.exigir(Permiso::ProteccionDatosGestionar)?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    let mut s = solicitud_de(&mut tx, id).await?;
+    s.estado = s.estado.transicionar(EstadoSolicitudTitular::EnTramite)?;
+    tx.actualizar_solicitud(&s).await?;
+    auditar_solicitud(&mut tx, ACCION_TRAMITAR, &s).await?;
+    tx.confirmar().await?;
+    Ok(s)
+}
+
+/// Prorroga la solicitud una sola vez, antes del vencimiento y con motivo (arts. 14 y 15: 5
+/// días hábiles más para consultas, 8 para reclamos). El motivo se informa al titular.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `proteccion_datos.gestionar`; [`AppError::Dominio`] si ya se
+/// prorrogó, ya se respondió, el plazo venció o el motivo es inválido.
+pub async fn prorrogar_solicitud<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    id: SolicitudTitularId,
+    motivo: &str,
+) -> AppResult<SolicitudTitular>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    ctx.exigir(Permiso::ProteccionDatosGestionar)?;
+    let motivo = texto_obligatorio("motivo", motivo, 500)?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    let mut s = solicitud_de(&mut tx, id).await?;
+    let hasta = nueva_prorroga(
+        s.tipo,
+        s.estado,
+        fecha_en_colombia(s.radicada_en),
+        s.vence_el,
+        s.prorrogada_hasta.is_some(),
+        fecha_en_colombia(reloj.ahora()),
+    )?;
+    s.prorrogada_hasta = Some(hasta);
+    s.motivo_prorroga = Some(motivo);
+    tx.actualizar_solicitud(&s).await?;
+    auditar_solicitud(&mut tx, ACCION_PRORROGAR, &s).await?;
+    tx.confirmar().await?;
+    Ok(s)
+}
+
+/// Responde la solicitud con un texto, un archivo o ambos. En supresión y revocatoria la
+/// administración ejecuta el cambio en el censo y deja constancia aquí.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `proteccion_datos.gestionar`; [`AppError::Validacion`] sin
+/// texto ni archivo; [`AppError::NoEncontrado`] si el archivo no existe; [`AppError::Dominio`]
+/// si ya se respondió.
+pub async fn responder_solicitud<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    id: SolicitudTitularId,
+    respuesta: Option<String>,
+    archivo: Option<ArchivoId>,
+) -> AppResult<SolicitudTitular>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    ctx.exigir(Permiso::ProteccionDatosGestionar)?;
+    let respuesta = texto_opcional("respuesta", respuesta.as_deref(), 5000)?;
+    if respuesta.is_none() && archivo.is_none() {
+        return Err(AppError::Validacion(
+            "la respuesta necesita un texto o un archivo".into(),
+        ));
+    }
+    let mut tx = unidad.iniciar(ctx).await?;
+    if let Some(a) = archivo
+        && tx.buscar(a).await?.is_none()
+    {
+        return Err(AppError::NoEncontrado("archivo"));
+    }
+    let mut s = solicitud_de(&mut tx, id).await?;
+    s.estado = s.estado.transicionar(EstadoSolicitudTitular::Respondida)?;
+    s.respuesta = respuesta;
+    s.respuesta_archivo_id = archivo;
+    s.respondida_en = Some(reloj.ahora());
+    s.respondida_por = ctx.actor_id;
+    tx.actualizar_solicitud(&s).await?;
+    auditar_solicitud(&mut tx, ACCION_RESPONDER, &s).await?;
+    tx.confirmar().await?;
+    Ok(s)
+}
+
+/// Solicitudes de la PH. La administración ve todas; el titular, las suyas.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] si pide las de otra persona sin `proteccion_datos.gestionar`.
+pub async fn listar_solicitudes<U>(
+    unidad: &U,
+    ctx: &Contexto,
+    mut filtro: FiltroSolicitudes,
+    pagina: SolicitudPagina,
+) -> AppResult<Pagina<SolicitudTitular>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    let mut tx = unidad.iniciar(ctx).await?;
+    if !gestiona(ctx) {
+        let propia = persona_del_actor(&mut tx, ctx).await?;
+        if filtro.persona_id.is_some_and(|p| p != propia) {
+            return Err(AppError::SinPermiso(Permiso::ProteccionDatosGestionar));
+        }
+        filtro.persona_id = Some(propia);
+    }
+    tx.solicitudes(&filtro, pagina).await
+}
+
+/// Lo que la PH trata de un titular (art. 14).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DatosDelTitular {
+    pub persona: Persona,
+    pub autorizaciones: Vec<AutorizacionRegistrada>,
+    pub solicitudes: Vec<SolicitudTitular>,
+}
+
+/// Consulta del titular: su ficha en la PH, sus autorizaciones y sus solicitudes. Sin
+/// `persona` es la del actor; con ella, exige `proteccion_datos.gestionar`. Se audita.
+///
+/// # Errors
+///
+/// [`AppError::NoEncontrado`] si la cuenta no tiene persona en la PH; [`AppError::SinPermiso`].
+pub async fn mis_datos<U>(
+    unidad: &U,
+    ctx: &Contexto,
+    persona: Option<PersonaId>,
+) -> AppResult<DatosDelTitular>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxProteccionDatos,
+{
+    let mut tx = unidad.iniciar(ctx).await?;
+    let id = match persona {
+        Some(p) => {
+            exigir_titular_o_gestion(&mut tx, ctx, p).await?;
+            p
+        }
+        None => persona_del_actor(&mut tx, ctx).await?,
+    };
+    let ficha = tx
+        .persona(id)
+        .await?
+        .ok_or(AppError::NoEncontrado("persona"))?;
+    let autorizaciones = tx.autorizaciones_de_persona(id).await?;
+    let solicitudes = tx
+        .solicitudes(
+            &FiltroSolicitudes {
+                persona_id: Some(id),
+                ..FiltroSolicitudes::default()
+            },
+            SolicitudPagina::new(Some(200), None)?,
+        )
+        .await?
+        .datos;
+    tx.registrar(EventoAuditoria::ok(
+        ACCION_CONSULTAR,
+        "persona",
+        id.as_uuid(),
+    ))
+    .await?;
+    tx.confirmar().await?;
+    Ok(DatosDelTitular {
+        persona: ficha,
+        autorizaciones,
+        solicitudes,
+    })
 }
 
 fn nombres(finalidades: &[FinalidadTratamiento]) -> Value {
@@ -489,6 +861,7 @@ mod tests {
             &ctx,
             persona,
             TipoSolicitudTitular::Consulta,
+            None,
         )
         .await
         .expect("radica");
@@ -498,6 +871,7 @@ mod tests {
             &ctx,
             persona,
             TipoSolicitudTitular::Supresion,
+            None,
         )
         .await
         .expect("radica");
@@ -512,5 +886,181 @@ mod tests {
         );
         assert_eq!(unidad.datos().solicitudes.len(), 2);
         assert_eq!(unidad.confirmados()[0].1.accion, ACCION_RADICAR);
+    }
+
+    /// PH con política vigente y una titular con cuenta.
+    async fn con_titular() -> (UnidadEnMemoria, Contexto, PersonaId, Contexto) {
+        let (unidad, admin) = con_politica().await;
+        let persona = PersonaId::nuevo();
+        let cuenta = domain::CuentaId::nuevo();
+        unidad.con_datos(|d| {
+            let mut p = Persona::basica(persona, domain::TipoPersona::Natural, "Ana".into(), None);
+            p.cuenta_id = Some(cuenta);
+            d.personas.push(p);
+        });
+        let titular =
+            Contexto::de_cuenta(admin.tenant_id, cuenta, domain::ConjuntoPermisos::vacio());
+        (unidad, admin, persona, titular)
+    }
+
+    #[tokio::test]
+    async fn el_titular_actua_sobre_si_mismo_y_nadie_mas_sin_permiso() {
+        use FinalidadTratamiento::*;
+        let (unidad, _, persona, titular) = con_titular().await;
+
+        let nuevas = registrar_autorizacion(
+            &unidad,
+            &RelojFijo,
+            &titular,
+            otorgada(persona, &[Comunicaciones]),
+        )
+        .await
+        .expect("el titular autoriza");
+        assert_eq!(nuevas, vec![Comunicaciones]);
+        let ajeno = Contexto::de_cuenta(
+            titular.tenant_id,
+            domain::CuentaId::nuevo(),
+            domain::ConjuntoPermisos::vacio(),
+        );
+        for r in [
+            registrar_autorizacion(
+                &unidad,
+                &RelojFijo,
+                &ajeno,
+                otorgada(persona, &[Publicidad]),
+            )
+            .await
+            .map(|_| ()),
+            revocar_autorizacion(&unidad, &RelojFijo, &ajeno, persona, &[Comunicaciones])
+                .await
+                .map(|_| ()),
+            radicar_solicitud(
+                &unidad,
+                &RelojFijo,
+                &ajeno,
+                persona,
+                TipoSolicitudTitular::Consulta,
+                None,
+            )
+            .await
+            .map(|_| ()),
+        ] {
+            assert!(matches!(
+                r,
+                Err(AppError::SinPermiso(Permiso::ProteccionDatosGestionar))
+            ));
+        }
+        let datos = mis_datos(&unidad, &titular, None).await.expect("mis datos");
+        assert_eq!(datos.persona.id, persona);
+        assert_eq!(datos.autorizaciones.len(), 1);
+        assert!(mis_datos(&unidad, &ajeno, Some(persona)).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn la_solicitud_se_tramita_prorroga_una_vez_y_responde() {
+        let (unidad, admin, persona, titular) = con_titular().await;
+        let s = radicar_solicitud(
+            &unidad,
+            &RelojFijo,
+            &titular,
+            persona,
+            TipoSolicitudTitular::Rectificacion,
+            Some("Mi teléfono cambió".into()),
+        )
+        .await
+        .expect("radica");
+        assert_eq!(s.radicada_por, titular.actor_id);
+
+        tramitar_solicitud(&unidad, &admin, s.id)
+            .await
+            .expect("trámite");
+        let p = prorrogar_solicitud(
+            &unidad,
+            &RelojFijo,
+            &admin,
+            s.id,
+            "Se verifica con la portería",
+        )
+        .await
+        .expect("prórroga");
+        assert!(p.vence() > s.vence_el);
+        assert!(
+            prorrogar_solicitud(&unidad, &RelojFijo, &admin, s.id, "otra")
+                .await
+                .is_err(),
+            "una sola vez"
+        );
+        assert!(matches!(
+            responder_solicitud(&unidad, &RelojFijo, &admin, s.id, None, None).await,
+            Err(AppError::Validacion(_))
+        ));
+        let r = responder_solicitud(
+            &unidad,
+            &RelojFijo,
+            &admin,
+            s.id,
+            Some("Actualizado".into()),
+            None,
+        )
+        .await
+        .expect("responde");
+        assert_eq!(r.estado, EstadoSolicitudTitular::Respondida);
+        assert!(
+            responder_solicitud(&unidad, &RelojFijo, &admin, s.id, Some("x".into()), None)
+                .await
+                .is_err()
+        );
+        assert!(matches!(
+            tramitar_solicitud(&unidad, &titular, s.id).await,
+            Err(AppError::SinPermiso(_))
+        ));
+        let mias = listar_solicitudes(
+            &unidad,
+            &titular,
+            FiltroSolicitudes::default(),
+            SolicitudPagina::default(),
+        )
+        .await
+        .expect("listar");
+        assert_eq!(mias.datos.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn las_vencidas_se_filtran_por_su_vencimiento_con_prorroga() {
+        let (unidad, admin, persona, _) = con_titular().await;
+        let s = radicar_solicitud(
+            &unidad,
+            &RelojFijo,
+            &admin,
+            persona,
+            TipoSolicitudTitular::Consulta,
+            None,
+        )
+        .await
+        .expect("radica");
+        let filtro = |h| FiltroSolicitudes {
+            vencen_hasta: Some(h),
+            ..FiltroSolicitudes::default()
+        };
+
+        let antes = listar_solicitudes(
+            &unidad,
+            &admin,
+            filtro(s.vence_el.pred_opt().expect("día")),
+            SolicitudPagina::default(),
+        )
+        .await
+        .expect("listar");
+        let el_dia = listar_solicitudes(
+            &unidad,
+            &admin,
+            filtro(s.vence_el),
+            SolicitudPagina::default(),
+        )
+        .await
+        .expect("listar");
+
+        assert!(antes.datos.is_empty());
+        assert_eq!(el_dia.datos.len(), 1);
     }
 }

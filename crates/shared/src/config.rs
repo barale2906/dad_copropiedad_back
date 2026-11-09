@@ -412,6 +412,31 @@ impl PuenteConfig {
     }
 }
 
+/// Límite de peticiones por IP de la API (`LIMITE_*`, `CONFIAR_PROXY`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LimitesConfig {
+    /// Registro, inicio de sesión, segundo factor y recuperar contraseña (10 por defecto).
+    pub auth_por_minuto: u32,
+    /// Papeleta, puentes y descarga con enlace (120 por defecto).
+    pub publico_por_minuto: u32,
+    /// Tomar la IP real de `X-Real-IP` (solo detrás de Nginx propio; `false` por defecto).
+    pub confiar_proxy: bool,
+}
+
+impl LimitesConfig {
+    /// # Errors
+    ///
+    /// [`ConfigError::Invalid`] si un valor no es un número o un booleano.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        Ok(Self {
+            auth_por_minuto: parse_or("LIMITE_AUTH_POR_MINUTO", 10)?,
+            publico_por_minuto: parse_or("LIMITE_PUBLICO_POR_MINUTO", 120)?,
+            confiar_proxy: parse_or("CONFIAR_PROXY", false)?,
+        })
+    }
+}
+
 /// Seguridad de las cuentas.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SeguridadConfig {

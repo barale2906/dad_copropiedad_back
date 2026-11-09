@@ -17,6 +17,7 @@ use super::dto::{AsistenteRespuesta, PreguntaRespuesta, ReunionRespuesta, VotoRe
 use crate::{
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::Json,
+    limite::LimitePublico,
     openapi::ETIQUETA_ASAMBLEAS,
     sesion::PapeletaVirtual,
     state::AppState,
@@ -60,6 +61,7 @@ pub struct PapeletaRespuesta {
     )
 )]
 pub async fn ver(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     p: PapeletaVirtual,
 ) -> ApiResult<Json<PapeletaRespuesta>> {
@@ -93,6 +95,7 @@ pub async fn ver(
     )
 )]
 pub async fn ingreso(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     p: PapeletaVirtual,
 ) -> ApiResult<Json<AsistenteRespuesta>> {
@@ -118,6 +121,7 @@ pub async fn ingreso(
     )
 )]
 pub async fn salida(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     p: PapeletaVirtual,
 ) -> ApiResult<Json<AsistenteRespuesta>> {
@@ -153,6 +157,7 @@ pub struct VotoPapeletaPeticion {
     )
 )]
 pub async fn votar(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     p: PapeletaVirtual,
     cabeceras: HeaderMap,

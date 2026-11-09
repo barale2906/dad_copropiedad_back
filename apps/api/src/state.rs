@@ -32,6 +32,9 @@ pub struct AppState {
     pub firma_qr: Arc<FirmaQrEd25519>,
     /// Autenticación de los puentes de acceso (función `SECURITY DEFINER`).
     pub acceso: DirectorioAccesoPg,
+    /// Límite de peticiones por IP. `new` lo crea **sin límites**; `main` lo configura con
+    /// `LIMITE_*` (las pruebas que lo verifican lo reemplazan).
+    pub limitador: Arc<crate::limite::Limitador>,
 }
 
 impl AppState {
@@ -55,6 +58,9 @@ impl AppState {
             actas: GeneradorTypst,
             en_vivo: Arc::new(crate::en_vivo::EnVivo::new()),
             firma_qr: Arc::new(firma_qr),
+            limitador: Arc::new(crate::limite::Limitador::new(
+                crate::limite::Limites::ninguno(),
+            )),
         }
     }
 }

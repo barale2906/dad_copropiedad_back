@@ -17,3 +17,4 @@ Los ADR no se reescriben: si una decisión cambia, se crea uno nuevo que reempla
 | [0009](0009-gestion-administrativa-tickets-chat-y-mantenimiento.md) | Tickets con plazos hábiles, chat de WhatsApp con sesiones en PostgreSQL, inventario y mantenimiento | Aceptada |
 | [0010](0010-asambleas-y-votaciones.md) | Asambleas: asistente que vota por todos sus bienes, voto nominal o reservado, cociente electoral, mesa asistida, WhatsApp multilínea, tiempo real con LISTEN/NOTIFY y actas con Typst | Aceptada |
 | [0011](0011-control-de-acceso-visitas-y-correspondencia.md) | Control de acceso: avisos push primero con escalamiento, correspondencia con firma o foto, QR Ed25519, credenciales por huella, autorizaciones derivadas y puente en sitio | Aceptada |
+| [0012](0012-cierre-para-produccion.md) | Cierre para producción: límite de peticiones propio por IP, consulta de auditoría y despliegue con Docker y GHCR | Aceptada |

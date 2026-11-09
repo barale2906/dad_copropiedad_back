@@ -6,7 +6,10 @@ use application::{
     AppError, AppResult, Contexto,
     auditoria::EventoAuditoria,
     outbox::EventoSaliente,
-    puertos::{RegistroAuditoria, RegistroOutbox, Transaccion, UnidadDeTrabajo},
+    puertos::{
+        RegistroAuditoria, RegistroOutbox, Transaccion, UnidadDeTrabajo,
+        auditoria::{FiltroAuditoria, LecturaAuditoria, RegistroAuditado},
+    },
 };
 use sqlx::{PgPool, Postgres};
 
@@ -100,5 +103,70 @@ impl RegistroOutbox for TransaccionPg {
         .await
         .map_err(AppError::infra)?;
         Ok(())
+    }
+}
+
+impl LecturaAuditoria for TransaccionPg {
+    async fn consultar_auditoria(
+        &mut self,
+        f: &FiltroAuditoria,
+        antes_de: Option<i64>,
+        limite: i64,
+    ) -> AppResult<Vec<RegistroAuditado>> {
+        // Un prefijo terminado en punto filtra por módulo (`acceso.`); el LIKE se arma escapando
+        // los comodines para que la entrada del usuario no los use.
+        let (exacta, prefijo) = match f.accion.as_deref() {
+            Some(a) if a.ends_with('.') => (
+                None,
+                Some(format!(
+                    "{}%",
+                    a.replace('\\', "\\\\")
+                        .replace('%', "\\%")
+                        .replace('_', "\\_")
+                )),
+            ),
+            Some(a) => (Some(a.to_owned()), None),
+            None => (None, None),
+        };
+        let filas = sqlx::query!(
+            "SELECT id, ocurrido_en, actor_id, accion, entidad, entidad_id, resultado, detalle,
+                    request_id
+             FROM auditoria
+             WHERE ($1::text IS NULL OR entidad = $1)
+               AND ($2::uuid IS NULL OR entidad_id = $2)
+               AND ($3::text IS NULL OR accion = $3)
+               AND ($4::text IS NULL OR accion LIKE $4)
+               AND ($5::uuid IS NULL OR actor_id = $5)
+               AND ($6::timestamptz IS NULL OR ocurrido_en >= $6)
+               AND ($7::timestamptz IS NULL OR ocurrido_en < $7)
+               AND ($8::bigint IS NULL OR id < $8)
+             ORDER BY id DESC LIMIT $9",
+            f.entidad,
+            f.entidad_id,
+            exacta,
+            prefijo,
+            f.actor_id.map(domain::CuentaId::as_uuid),
+            f.desde,
+            f.hasta,
+            antes_de,
+            limite,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(filas
+            .into_iter()
+            .map(|r| RegistroAuditado {
+                id: r.id,
+                ocurrido_en: r.ocurrido_en,
+                actor_id: r.actor_id.map(domain::CuentaId::from_uuid),
+                accion: r.accion,
+                entidad: r.entidad,
+                entidad_id: r.entidad_id,
+                resultado: r.resultado,
+                detalle: r.detalle,
+                request_id: r.request_id,
+            })
+            .collect())
     }
 }

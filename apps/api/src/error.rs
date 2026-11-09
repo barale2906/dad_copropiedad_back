@@ -28,6 +28,7 @@ use utoipa::ToSchema;
 /// | `segundo_factor_requerido` | 403 | La operación de plataforma exige una sesión con segundo factor. |
 /// | `conflicto` | 409 | Ya existe (usuario, correo, código de rol) o rompe una regla (último administrador). |
 /// | `demasiados_intentos` | 429 | Demasiados intentos fallidos; esperar unos minutos. |
+/// | `demasiadas_peticiones` | 429 | Superó el límite de peticiones por minuto de la ruta; reintentar tras `Retry-After`. |
 /// | `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |
 /// | `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |
 /// | `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |
@@ -55,6 +56,8 @@ pub enum CodigoError {
     Conflicto,
     /// 429 · Demasiados intentos fallidos.
     DemasiadosIntentos,
+    /// 429 · Demasiadas peticiones por minuto desde la misma IP (cabecera `Retry-After`).
+    DemasiadasPeticiones,
     /// 404 · El recurso o la ruta no existen (o no pertenecen a la copropiedad).
     NoEncontrado,
     /// 409 · La operación no es válida en el estado actual del recurso.
@@ -111,6 +114,10 @@ pub enum ApiError {
 
     #[error("servicio no disponible: {0}")]
     NoDisponible(&'static str),
+
+    /// Límite de peticiones por minuto superado; `segundos` va en `Retry-After`.
+    #[error("demasiadas peticiones; intente de nuevo en {segundos} s")]
+    DemasiadasPeticiones { segundos: u64 },
 
     /// Errores inesperados. El detalle se registra en logs y **no** se expone al cliente.
     #[error(transparent)]
@@ -203,6 +210,9 @@ impl ApiError {
                 (StatusCode::INTERNAL_SERVER_ERROR, C::Interno)
             }
             Self::NoDisponible(_) => (StatusCode::SERVICE_UNAVAILABLE, C::NoDisponible),
+            Self::DemasiadasPeticiones { .. } => {
+                (StatusCode::TOO_MANY_REQUESTS, C::DemasiadasPeticiones)
+            }
         }
     }
 }
@@ -210,6 +220,10 @@ impl ApiError {
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
         let (status, codigo) = self.status_y_codigo();
+        let reintento = match &self {
+            Self::DemasiadasPeticiones { segundos } => Some(*segundos),
+            _ => None,
+        };
         let mensaje = if status == StatusCode::INTERNAL_SERVER_ERROR {
             tracing::error!(error = ?self, "error interno");
             "error interno del servidor".to_owned()
@@ -220,6 +234,13 @@ impl IntoResponse for ApiError {
             error: DetalleError { codigo, mensaje },
         };
         let mut respuesta = (status, Json(cuerpo)).into_response();
+        if let Some(s) = reintento
+            && let Ok(v) = axum::http::HeaderValue::from_str(&s.to_string())
+        {
+            respuesta
+                .headers_mut()
+                .insert(axum::http::header::RETRY_AFTER, v);
+        }
         if status == StatusCode::UNAUTHORIZED {
             respuesta.headers_mut().insert(
                 axum::http::header::WWW_AUTHENTICATE,

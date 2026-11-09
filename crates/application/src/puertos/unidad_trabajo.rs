@@ -262,6 +262,51 @@ pub(crate) mod memoria {
         }
     }
 
+    impl crate::puertos::auditoria::LecturaAuditoria for TransaccionEnMemoria {
+        async fn consultar_auditoria(
+            &mut self,
+            f: &crate::puertos::auditoria::FiltroAuditoria,
+            antes_de: Option<i64>,
+            limite: i64,
+        ) -> AppResult<Vec<crate::puertos::auditoria::RegistroAuditado>> {
+            let tenant = self.ctx.tenant_id;
+            let mut v: Vec<_> = self
+                .destino
+                .confirmados()
+                .into_iter()
+                .enumerate()
+                .filter(|(_, (c, _))| c.tenant_id == tenant)
+                .map(|(i, (c, e))| crate::puertos::auditoria::RegistroAuditado {
+                    id: i64::try_from(i).unwrap_or(0) + 1,
+                    ocurrido_en: DateTime::<Utc>::MIN_UTC,
+                    actor_id: c.actor_id,
+                    accion: e.accion.as_str().to_owned(),
+                    entidad: e.entidad.to_owned(),
+                    entidad_id: e.entidad_id,
+                    resultado: e.resultado.as_str().to_owned(),
+                    detalle: e.detalle.a_json(),
+                    request_id: c.request_id,
+                })
+                .filter(|r| f.entidad.as_ref().is_none_or(|x| &r.entidad == x))
+                .filter(|r| f.entidad_id.is_none_or(|x| r.entidad_id == Some(x)))
+                .filter(|r| {
+                    f.accion.as_ref().is_none_or(|a| {
+                        if a.ends_with('.') {
+                            r.accion.starts_with(a.as_str())
+                        } else {
+                            &r.accion == a
+                        }
+                    })
+                })
+                .filter(|r| f.actor_id.is_none_or(|x| r.actor_id == Some(x)))
+                .filter(|r| antes_de.is_none_or(|x| r.id < x))
+                .collect();
+            v.sort_by_key(|r| std::cmp::Reverse(r.id));
+            v.truncate(usize::try_from(limite).unwrap_or(usize::MAX));
+            Ok(v)
+        }
+    }
+
     impl RepositorioArchivos for TransaccionEnMemoria {
         async fn insertar(&mut self, archivo: &Archivo) -> AppResult<()> {
             self.datos.archivos.insert(archivo.id, archivo.clone());
@@ -367,6 +412,79 @@ pub(crate) mod memoria {
 
         async fn insertar_solicitud(&mut self, solicitud: &SolicitudTitular) -> AppResult<()> {
             self.datos.solicitudes.push(solicitud.clone());
+            Ok(())
+        }
+
+        async fn historial_politicas(&mut self) -> AppResult<Vec<PoliticaTratamiento>> {
+            let mut v = self.datos.politicas.clone();
+            v.sort_by_key(|p| std::cmp::Reverse(p.version));
+            Ok(v)
+        }
+
+        async fn autorizaciones_de_persona(
+            &mut self,
+            persona_id: PersonaId,
+        ) -> AppResult<Vec<crate::puertos::proteccion_datos::AutorizacionRegistrada>> {
+            let politicas = self.datos.politicas.clone();
+            let mut v: Vec<_> = self
+                .datos
+                .autorizaciones
+                .iter()
+                .filter(|(a, _)| a.persona_id == persona_id)
+                .map(
+                    |(a, revocada)| crate::puertos::proteccion_datos::AutorizacionRegistrada {
+                        autorizacion: a.clone(),
+                        politica_version: politicas
+                            .iter()
+                            .find(|p| p.id == a.politica_id)
+                            .map_or(0, |p| p.version),
+                        revocada_en: *revocada,
+                    },
+                )
+                .collect();
+            v.sort_by_key(|r| std::cmp::Reverse(r.autorizacion.otorgada_en));
+            Ok(v)
+        }
+
+        async fn solicitudes(
+            &mut self,
+            f: &crate::puertos::proteccion_datos::FiltroSolicitudes,
+            p: crate::SolicitudPagina,
+        ) -> AppResult<crate::Pagina<SolicitudTitular>> {
+            let mut v: Vec<SolicitudTitular> = self
+                .datos
+                .solicitudes
+                .iter()
+                .filter(|s| f.estado.is_none_or(|e| s.estado == e))
+                .filter(|s| f.persona_id.is_none_or(|x| s.persona_id == x))
+                .filter(|s| {
+                    f.vencen_hasta.is_none_or(|h| {
+                        s.estado != domain::EstadoSolicitudTitular::Respondida && s.vence() <= h
+                    })
+                })
+                .filter(|s| p.despues().is_none_or(|d| s.id.as_uuid() < d))
+                .cloned()
+                .collect();
+            v.sort_by_key(|s| std::cmp::Reverse(s.id.as_uuid()));
+            v.truncate(usize::try_from(p.filas_a_consultar()).unwrap_or(usize::MAX));
+            Ok(crate::Pagina::desde_filas(v, p, |s| s.id.as_uuid()))
+        }
+
+        async fn solicitud_para_actualizar(
+            &mut self,
+            id: domain::SolicitudTitularId,
+        ) -> AppResult<Option<SolicitudTitular>> {
+            Ok(self.datos.solicitudes.iter().find(|s| s.id == id).cloned())
+        }
+
+        async fn actualizar_solicitud(&mut self, solicitud: &SolicitudTitular) -> AppResult<()> {
+            let s = self
+                .datos
+                .solicitudes
+                .iter_mut()
+                .find(|s| s.id == solicitud.id)
+                .ok_or(AppError::NoEncontrado("solicitud"))?;
+            *s = solicitud.clone();
             Ok(())
         }
     }
