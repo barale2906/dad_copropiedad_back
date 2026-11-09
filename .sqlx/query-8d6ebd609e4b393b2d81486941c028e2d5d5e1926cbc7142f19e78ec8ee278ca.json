@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE asistente_bienes SET hasta = greatest($3, desde)\n             WHERE reunion_id = $1 AND bien_privado_id = $2 AND hasta IS NULL\n             RETURNING asistente_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "asistente_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asistente_bienes",
+            "name": "asistente_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8d6ebd609e4b393b2d81486941c028e2d5d5e1926cbc7142f19e78ec8ee278ca"
+}

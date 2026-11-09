@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE lineas_whatsapp SET estado = $2, limite_mps = $3, franquicia_servicio_mes = $4,\n                 actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "75198c98b1127489339d13004323dbd29e9b2e74403f5fdcfecfaef6a20a29a2"
+}

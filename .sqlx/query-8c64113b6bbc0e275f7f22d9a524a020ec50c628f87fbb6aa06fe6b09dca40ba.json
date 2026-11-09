@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT archivo_id, tipo, titulo FROM documentos_reunion WHERE reunion_id = $1\n             ORDER BY titulo, archivo_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_reunion",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_reunion",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "titulo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_reunion",
+            "name": "titulo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8c64113b6bbc0e275f7f22d9a524a020ec50c628f87fbb6aa06fe6b09dca40ba"
+}

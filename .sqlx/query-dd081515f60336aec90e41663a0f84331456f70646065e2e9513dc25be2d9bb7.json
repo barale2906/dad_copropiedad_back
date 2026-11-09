@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT pregunta_id, momento, coeficiente_presente, unidades_presentes,\n                    coeficiente_total, unidades_total, asistentes, tomada_en\n             FROM fotos_quorum WHERE reunion_id = $1 ORDER BY tomada_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "pregunta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "pregunta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "momento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "momento"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "coeficiente_presente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "coeficiente_presente"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "unidades_presentes",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "unidades_presentes"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "coeficiente_total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "coeficiente_total"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "unidades_total",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "unidades_total"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "asistentes",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "asistentes"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "tomada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "fotos_quorum",
+            "name": "tomada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "dd081515f60336aec90e41663a0f84331456f70646065e2e9513dc25be2d9bb7"
+}

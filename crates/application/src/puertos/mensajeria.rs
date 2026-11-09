@@ -94,6 +94,10 @@ pub enum ContenidoSaliente {
         nombre: String,
         idioma: String,
         parametros: Vec<String>,
+        /// `payload` de los botones de respuesta rápida de la plantilla, en orden (p. ej. el
+        /// «Confirmar» de `confirmar_asistencia`). Vacío si la plantilla no tiene botones.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        botones: Vec<String>,
     },
 }
 

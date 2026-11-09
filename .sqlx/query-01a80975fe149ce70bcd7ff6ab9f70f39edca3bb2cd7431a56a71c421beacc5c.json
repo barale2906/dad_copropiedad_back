@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE asistente_presencias\n             SET salida_en = greatest($2, entrada_en), motivo_salida = $3, detalle_salida = $4\n             WHERE asistente_id = $1 AND salida_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "01a80975fe149ce70bcd7ff6ab9f70f39edca3bb2cd7431a56a71c421beacc5c"
+}

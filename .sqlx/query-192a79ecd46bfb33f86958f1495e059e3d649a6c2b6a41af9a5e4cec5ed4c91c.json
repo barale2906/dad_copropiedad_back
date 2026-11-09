@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO poderes (id, tenant_id, reunion_id, bien_privado_id, poderdante_persona_id,\n                 apoderado_persona_id, soporte_archivo_id, estado, motivo, registrado_por,\n                 registrado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "192a79ecd46bfb33f86958f1495e059e3d649a6c2b6a41af9a5e4cec5ed4c91c"
+}

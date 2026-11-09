@@ -1,0 +1,386 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, titulo, tipo, convocatoria, modalidad, estado, fecha_programada, lugar, enlace_video,\n         plazo_respuesta, reunion_origen_id, base_computo, max_bienes_apoderado,\n         apoderados_prohibidos, exigir_soporte_poder, efecto_mora, temporizador_segundos,\n         convocada_en, registro_abierto_en, instalada_en, cerrada_en, cancelada_en,\n         motivo_cancelacion, acta_estado, acta_archivo_id, acta_firmada_archivo_id,\n         acta_generada_en, acta_aprobada_en, acta_publicada_en, creada_por, creado_en\n             FROM reuniones WHERE acta_estado = 'publicada' ORDER BY fecha_programada DESC, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "titulo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "titulo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "convocatoria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "convocatoria"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "modalidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "modalidad"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "fecha_programada",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "fecha_programada"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "lugar",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "lugar"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "enlace_video",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "enlace_video"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "plazo_respuesta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "plazo_respuesta"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "reunion_origen_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "reunion_origen_id"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "base_computo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "base_computo"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "max_bienes_apoderado",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "max_bienes_apoderado"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "apoderados_prohibidos",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "apoderados_prohibidos"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "exigir_soporte_poder",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "exigir_soporte_poder"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "efecto_mora",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "efecto_mora"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "temporizador_segundos",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "temporizador_segundos"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "convocada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "convocada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "registro_abierto_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "registro_abierto_en"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "instalada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "instalada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "cerrada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "cerrada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "cancelada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "cancelada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "motivo_cancelacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "motivo_cancelacion"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "acta_estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "acta_estado"
+          }
+        }
+      },
+      {
+        "ordinal": 24,
+        "name": "acta_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "acta_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 25,
+        "name": "acta_firmada_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "acta_firmada_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 26,
+        "name": "acta_generada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "acta_generada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 27,
+        "name": "acta_aprobada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "acta_aprobada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 28,
+        "name": "acta_publicada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "acta_publicada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 29,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 30,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reuniones",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "3cbe8b3e981d00060a002d94597b7999239e1799488cd1f387445eb473a0cdf8"
+}

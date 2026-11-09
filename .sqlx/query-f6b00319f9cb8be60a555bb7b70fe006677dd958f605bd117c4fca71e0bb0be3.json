@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE reuniones SET titulo = $2, tipo = $3, convocatoria = $4, modalidad = $5,\n                 estado = $6, fecha_programada = $7, lugar = $8, enlace_video = $9,\n                 plazo_respuesta = $10, base_computo = $11, max_bienes_apoderado = $12,\n                 apoderados_prohibidos = $13, exigir_soporte_poder = $14, efecto_mora = $15,\n                 temporizador_segundos = $16, convocada_en = $17, registro_abierto_en = $18,\n                 instalada_en = $19, cerrada_en = $20, cancelada_en = $21,\n                 motivo_cancelacion = $22, acta_estado = $23, acta_archivo_id = $24,\n                 acta_firmada_archivo_id = $25, acta_generada_en = $26, acta_aprobada_en = $27,\n                 acta_publicada_en = $28, actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Text",
+        "Int2",
+        "TextArray",
+        "Bool",
+        "Text",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f6b00319f9cb8be60a555bb7b70fe006677dd958f605bd117c4fca71e0bb0be3"
+}

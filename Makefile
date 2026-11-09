@@ -15,7 +15,7 @@ CARGO   := cargo
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 .PHONY: help herramientas env setup \
-	    up down reiniciar-bd ps logs psql redis \
+	    up down reiniciar-bd ps logs psql \
 	    api gateway dev superusuario \
 	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir openapi \
 	    migrar migracion revertir migraciones sqlx-prepare \
@@ -42,7 +42,7 @@ env: ## Crea .env a partir de .env.example (no sobrescribe uno existente)
 setup: env up migrar ## Primer arranque: .env + contenedores + migraciones
 	@echo "Listo. Ejecuta 'make api' y/o 'make gateway'."
 
-##@ Contenedores (PostgreSQL 18 + Redis 8)
+##@ Contenedores (PostgreSQL 18 + Mailpit)
 up: ## Levanta los contenedores y espera a que estén sanos
 	$(COMPOSE) up -d --wait
 
@@ -50,7 +50,7 @@ down: ## Detiene los contenedores (conserva los datos)
 	$(COMPOSE) down
 
 reiniciar-bd: ## BORRA los volúmenes y recrea la infraestructura (pide confirmación)
-	@read -p "Se borrarán TODOS los datos locales de PostgreSQL y Redis. ¿Continuar? [s/N] " r; \
+	@read -p "Se borrarán TODOS los datos locales de PostgreSQL. ¿Continuar? [s/N] " r; \
 	[ "$$r" = "s" ] || { echo "Cancelado"; exit 1; }
 	$(COMPOSE) down -v
 	$(COMPOSE) up -d --wait
@@ -65,8 +65,6 @@ logs: ## Logs de los contenedores en vivo
 psql: ## Consola psql como dueño del esquema
 	$(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
-redis: ## Consola redis-cli
-	$(COMPOSE) exec redis redis-cli
 
 ##@ Ejecución
 api: ## Ejecuta la API REST/WebSocket (:8080; migra si RUN_MIGRATIONS=true)

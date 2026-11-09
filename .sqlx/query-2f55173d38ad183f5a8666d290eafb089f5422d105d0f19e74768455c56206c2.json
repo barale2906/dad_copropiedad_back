@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO fotos_quorum (id, tenant_id, reunion_id, pregunta_id, momento,\n                 coeficiente_presente, unidades_presentes, coeficiente_total, unidades_total,\n                 asistentes, tomada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Int4",
+        "Numeric",
+        "Int4",
+        "Int4",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2f55173d38ad183f5a8666d290eafb089f5422d105d0f19e74768455c56206c2"
+}

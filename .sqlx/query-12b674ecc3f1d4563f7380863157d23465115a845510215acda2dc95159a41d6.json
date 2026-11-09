@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM preguntas WHERE id = $1 AND estado = 'borrador'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "12b674ecc3f1d4563f7380863157d23465115a845510215acda2dc95159a41d6"
+}

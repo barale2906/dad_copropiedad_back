@@ -169,7 +169,10 @@ async fn reportar_dano_orden_correctiva_verificada_resuelve_y_se_califica(pool: 
         .await;
     assert_eq!(s, StatusCode::CREATED, "{activo}");
     assert_eq!(activo["codigo"], "ASC-1");
-    let hoy = chrono::Utc::now().date_naive().to_string();
+    let hoy = chrono::Utc::now()
+        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .date_naive()
+        .to_string();
     let (s, orden) = ph
         .pedir(
             Method::POST,
@@ -423,7 +426,10 @@ async fn preguntas_frecuentes_bandeja_y_obligaciones(pool: PgPool) {
             .as_array()
             .is_some_and(|s| s.iter().any(|o| o["codigo"] == "recarga_extintores"))
     );
-    let hoy = chrono::Utc::now().date_naive();
+    // La PH evalúa las fechas en su hora local (Bogotá), no en UTC.
+    let hoy = chrono::Utc::now()
+        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .date_naive();
     let (s, o) = ph
         .pedir(
             Method::POST,

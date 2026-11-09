@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT coalesce(sum(coeficiente), 0) AS \"c!\", count(*) AS \"u!\"\n               FROM pregunta_habilitados WHERE pregunta_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "c!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "u!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "ad7b9b43af53ce9e2771ecaec08627d58a3033dbb630a9f3600bdb5cfc2a0c40"
+}

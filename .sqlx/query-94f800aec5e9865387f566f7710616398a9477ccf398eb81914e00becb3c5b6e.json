@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO asistente_presencias (id, tenant_id, reunion_id, asistente_id, entrada_en,\n                 registrada_por)\n             VALUES ($1, $2, $3, $4, $5, $6)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "94f800aec5e9865387f566f7710616398a9477ccf398eb81914e00becb3c5b6e"
+}

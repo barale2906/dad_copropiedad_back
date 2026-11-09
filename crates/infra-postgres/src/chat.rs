@@ -88,6 +88,21 @@ impl SesionesConversacion for SesionesChatPg {
         Ok(existe)
     }
 
+    async fn marcar_procesado(&self, wamid: &str) -> AppResult<bool> {
+        let mut tx = transaccion_plataforma(&self.pool).await?;
+        let nuevo = sqlx::query!(
+            "INSERT INTO mensajes_entrantes (wamid) VALUES ($1) ON CONFLICT DO NOTHING",
+            wamid
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(AppError::infra)?
+        .rows_affected()
+            == 1;
+        tx.commit().await.map_err(AppError::infra)?;
+        Ok(nuevo)
+    }
+
     async fn obtener(
         &self,
         linea: &str,

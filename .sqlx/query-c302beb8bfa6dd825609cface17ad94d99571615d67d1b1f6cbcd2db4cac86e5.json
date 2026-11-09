@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE puntos_orden_dia SET orden = $2, titulo = $3, descripcion = $4, estado = $5,\n                     iniciado_en = $6, terminado_en = $7\n                 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int2",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c302beb8bfa6dd825609cface17ad94d99571615d67d1b1f6cbcd2db4cac86e5"
+}

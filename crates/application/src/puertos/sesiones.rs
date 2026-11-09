@@ -38,6 +38,10 @@ pub trait SesionesConversacion: Send + Sync {
     /// ¿Ya se procesó este `wamid`? (Meta reintenta los webhooks.)
     fn ya_procesado(&self, wamid: &str) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Marca el `wamid` como procesado sin tocar la sesión (mensajes de una asamblea).
+    /// Devuelve `false` si ya lo estaba.
+    fn marcar_procesado(&self, wamid: &str) -> impl Future<Output = AppResult<bool>> + Send;
+
     /// Sesión vigente a `ahora`, si existe.
     fn obtener(
         &self,

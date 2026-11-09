@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use infra_archivos::AlmacenLocal;
+use infra_pdf::GeneradorTypst;
 use infra_planillas::LectorCsvXlsx;
 use infra_postgres::{PgPool, UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg};
 use infra_seguridad::{Argon2Contrasenas, Totp};
@@ -23,6 +24,10 @@ pub struct AppState {
     pub planillas: LectorCsvXlsx,
     /// `PLATAFORMA_EXIGE_SEGUNDO_FACTOR`.
     pub plataforma_exige_segundo_factor: bool,
+    /// Actas y hojas de rótulos en PDF (Typst).
+    pub actas: GeneradorTypst,
+    /// Tableros en vivo de las asambleas (WebSocket).
+    pub en_vivo: Arc<crate::en_vivo::EnVivo>,
 }
 
 impl AppState {
@@ -37,6 +42,8 @@ impl AppState {
             totp: Arc::new(Totp::new("DAD Copropiedad")),
             planillas: LectorCsvXlsx,
             plataforma_exige_segundo_factor,
+            actas: GeneradorTypst,
+            en_vivo: Arc::new(crate::en_vivo::EnVivo::new()),
         }
     }
 }

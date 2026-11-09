@@ -1,4 +1,4 @@
-//! Servicio HTTP de DAD_COPROPIEDAD: API REST (y, más adelante, WebSocket de resultados).
+//! Servicio HTTP de DAD_COPROPIEDAD: API REST y WebSocket del tablero en vivo de las asambleas.
 //!
 //! Es la **raíz de composición** de la arquitectura hexagonal: conecta los adaptadores
 //! (`infra-*`) con los casos de uso de `application` y traduce HTTP ↔ casos de uso. No contiene
@@ -13,7 +13,11 @@
 //! - [`paginacion`]: DTOs de la paginación por cursor.
 //! - [`openapi`]: metadatos del contrato OpenAPI.
 //! - [`sesion`]: extractores de autenticación y autorización.
+//! - [`en_vivo`]: tablero en vivo de las asambleas (escucha `pg_notify` y emite cada ~500 ms).
+//! - [`csv`]: respuestas CSV de reportes.
 
+pub mod csv;
+pub mod en_vivo;
 pub mod error;
 pub mod extractores;
 pub mod openapi;

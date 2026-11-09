@@ -35,6 +35,7 @@ hmac.workspace = true
 sha2.workspace = true
 sqlx.workspace = true
 tower.workspace = true
+uuid.workspace = true
 
 [lints]
 workspace = true

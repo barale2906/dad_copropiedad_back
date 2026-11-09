@@ -1,4 +1,4 @@
-//! Pruebas de las garantías que da el esquema (RLS, triggers, unicidad, secreto del voto).
+//! Pruebas de las garantías que da el esquema (RLS, triggers, unicidad, votos append-only).
 //!
 //! `#[sqlx::test]` crea una base aislada por prueba y aplica las migraciones. Requiere
 //! `DATABASE_URL` (dueño/superusuario) y `docker compose up -d`.
@@ -16,43 +16,54 @@ struct Datos {
     tenant: TenantId,
     bien_privado: Uuid,
     persona: Uuid,
+    asistente: Uuid,
     pregunta: Uuid,
     opcion: Uuid,
 }
 
-/// Siembra como dueño del esquema (sin RLS) una copropiedad con una pregunta secreta en borrador.
+/// Siembra como dueño del esquema (sin RLS) una copropiedad con una reunión instalada, un
+/// asistente presente que representa un bien y una pregunta reservada en borrador.
 async fn sembrar(pool: &PgPool, telefono: &str) -> Datos {
     let d = Datos {
         tenant: TenantId::nuevo(),
         bien_privado: Uuid::now_v7(),
         persona: Uuid::now_v7(),
+        asistente: Uuid::now_v7(),
         pregunta: Uuid::now_v7(),
         opcion: Uuid::now_v7(),
     };
     let t = d.tenant.as_uuid();
     let reunion = Uuid::now_v7();
-    let linea = Uuid::now_v7();
     let sql = format!(
-        "INSERT INTO lineas_whatsapp (id, phone_number_id, numero_visible, nombre)
-             VALUES ('{linea}', 'pnid-{linea}', '+57 300', 'Línea');
-         INSERT INTO copropiedades (id, nombre) VALUES ('{t}', 'Conjunto {t}');
+        "INSERT INTO copropiedades (id, nombre, estado) VALUES ('{t}', 'Conjunto {t}', 'activa');
+         INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
+             VALUES (gen_random_uuid(), '{t}', 'asambleas', now() - interval '1 day');
          INSERT INTO bienes_privados (id, tenant_id, codigo, coeficiente)
              VALUES ('{i}', '{t}', 'T1-101', 0.0125);
          INSERT INTO personas (id, tenant_id, nombre, telefono)
              VALUES ('{p}', '{t}', 'Ana', '{telefono}');
-         INSERT INTO reuniones (id, tenant_id, titulo, tipo, estado, fecha_programada, linea_whatsapp_id)
-             VALUES ('{reunion}', '{t}', 'Asamblea 2027', 'ordinaria', 'instalada', now(), '{linea}');
-         INSERT INTO inscripciones (id, tenant_id, reunion_id, bien_privado_id, persona_id, rol, metodo, telefono)
-             VALUES ('{ins}', '{t}', '{reunion}', '{i}', '{p}', 'propietario', 'enlace', '{telefono}');
-         INSERT INTO preguntas (id, tenant_id, reunion_id, orden, enunciado, tipo_voto, regla_mayoria)
-             VALUES ('{q}', '{t}', '{reunion}', 1, '¿Aprueba?', 'secreto', 'simple');
+         INSERT INTO reuniones (id, tenant_id, titulo, tipo, estado, fecha_programada)
+             VALUES ('{reunion}', '{t}', 'Asamblea 2027', 'ordinaria', 'instalada', now());
+         INSERT INTO padron_reunion (tenant_id, reunion_id, bien_privado_id, coeficiente,
+                                     representante_persona_id)
+             VALUES ('{t}', '{reunion}', '{i}', 0.0125, '{p}');
+         INSERT INTO asistentes (id, tenant_id, reunion_id, persona_id, metodo, telefono)
+             VALUES ('{a}', '{t}', '{reunion}', '{p}', 'mesa', '{telefono}');
+         INSERT INTO asistente_bienes (id, tenant_id, reunion_id, asistente_id, bien_privado_id,
+                                       calidad, desde)
+             VALUES (gen_random_uuid(), '{t}', '{reunion}', '{a}', '{i}', 'propietario', now());
+         INSERT INTO asistente_presencias (id, tenant_id, reunion_id, asistente_id, entrada_en)
+             VALUES (gen_random_uuid(), '{t}', '{reunion}', '{a}', now());
+         INSERT INTO preguntas (id, tenant_id, reunion_id, orden, enunciado, tipo, tipo_voto,
+                                base_computo, regla_mayoria)
+             VALUES ('{q}', '{t}', '{reunion}', 1, '¿Aprueba?', 'si_no', 'reservado', 'coeficiente', 'simple');
          INSERT INTO opciones (id, tenant_id, pregunta_id, orden, texto)
              VALUES ('{o}', '{t}', '{q}', 1, 'Sí');",
         i = d.bien_privado,
         p = d.persona,
+        a = d.asistente,
         q = d.pregunta,
         o = d.opcion,
-        ins = Uuid::now_v7(),
     );
     sqlx::raw_sql(AssertSqlSafe(sql))
         .execute(pool)
@@ -92,17 +103,14 @@ async fn contar_como_app(pool: &PgPool, tenant: Option<TenantId>, tabla: &str) -
         .expect("contar filas")
 }
 
-fn participacion(d: &Datos, clave: &str) -> String {
+fn participacion(d: &Datos, id: Uuid, clave: &str) -> String {
     format!(
-        "INSERT INTO participaciones (id, tenant_id, pregunta_id, bien_privado_id, coeficiente, canal,
-                                      emitido_por, idempotency_key, wamid)
-         VALUES ('{}', '{}', '{}', '{}', 0.0125, 'whatsapp', '{}', '{clave}', '{clave}')
+        "INSERT INTO participaciones (id, tenant_id, pregunta_id, bien_privado_id, asistente_id,
+                                      coeficiente, canal, emitido_por, idempotency_key, wamid,
+                                      registrado_en)
+         VALUES ('{id}', '{}', '{}', '{}', '{}', 0.0125, 'whatsapp', '{}', '{clave}', '{clave}', now())
          ON CONFLICT DO NOTHING",
-        Uuid::now_v7(),
-        d.tenant,
-        d.pregunta,
-        d.bien_privado,
-        d.persona
+        d.tenant, d.pregunta, d.bien_privado, d.asistente, d.persona
     )
 }
 
@@ -146,12 +154,16 @@ async fn rls_aisla_tenants(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
-async fn participacion_exige_pregunta_abierta_y_es_idempotente(pool: PgPool) {
+async fn participacion_exige_pregunta_abierta_bien_habilitado_y_un_voto_por_bien(pool: PgPool) {
     let d = sembrar(&pool, "573001110003").await;
 
-    let err = como_app(&pool, d.tenant, &participacion(&d, "wamid.1"))
-        .await
-        .unwrap_err();
+    let err = como_app(
+        &pool,
+        d.tenant,
+        &participacion(&d, Uuid::now_v7(), "wamid.1"),
+    )
+    .await
+    .unwrap_err();
     assert_eq!(sqlstate(&err), "V0001", "{err}");
 
     como_app(
@@ -164,26 +176,46 @@ async fn participacion_exige_pregunta_abierta_y_es_idempotente(pool: PgPool) {
     )
     .await
     .unwrap();
+    // Abierta pero el bien no quedó habilitado al abrirla (p. ej. moroso sin voto).
+    let err = como_app(
+        &pool,
+        d.tenant,
+        &participacion(&d, Uuid::now_v7(), "wamid.1"),
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(sqlstate(&err), "V0005", "{err}");
 
+    como_app(
+        &pool,
+        d.tenant,
+        &format!(
+            "INSERT INTO pregunta_habilitados (tenant_id, pregunta_id, bien_privado_id, coeficiente, desde)
+             VALUES ('{}', '{}', '{}', 0.0125, now())",
+            d.tenant, d.pregunta, d.bien_privado
+        ),
+    )
+    .await
+    .unwrap();
     assert_eq!(
-        como_app(&pool, d.tenant, &participacion(&d, "wamid.1"))
-            .await
-            .unwrap(),
+        como_app(
+            &pool,
+            d.tenant,
+            &participacion(&d, Uuid::now_v7(), "wamid.1")
+        )
+        .await
+        .unwrap(),
         1
     );
-    // Reintento de Meta con el mismo wamid / otro mensaje del mismo bien privado: 0 filas.
-    assert_eq!(
-        como_app(&pool, d.tenant, &participacion(&d, "wamid.1"))
-            .await
-            .unwrap(),
-        0
-    );
-    assert_eq!(
-        como_app(&pool, d.tenant, &participacion(&d, "wamid.2"))
-            .await
-            .unwrap(),
-        0
-    );
+    // Reintento de Meta / otro mensaje del mismo bien privado: 0 filas.
+    for clave in ["wamid.1", "wamid.2"] {
+        assert_eq!(
+            como_app(&pool, d.tenant, &participacion(&d, Uuid::now_v7(), clave))
+                .await
+                .unwrap(),
+            0
+        );
+    }
     assert_eq!(
         contar_como_app(&pool, Some(d.tenant), "participaciones").await,
         1
@@ -197,35 +229,57 @@ async fn participacion_exige_pregunta_abierta_y_es_idempotente(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
-async fn voto_secreto_sin_rastro(pool: PgPool) {
+async fn voto_reservado_guarda_el_vinculo_y_es_append_only(pool: PgPool) {
     let d = sembrar(&pool, "573001110004").await;
-    let voto = |id: Uuid, bien_privado: &str| {
+    let participacion_id = Uuid::now_v7();
+    como_app(
+        &pool,
+        d.tenant,
+        &format!(
+            "UPDATE preguntas SET estado = 'abierta', abierta_en = now() WHERE id = '{q}';
+             INSERT INTO pregunta_habilitados (tenant_id, pregunta_id, bien_privado_id, coeficiente, desde)
+             VALUES ('{t}', '{q}', '{b}', 0.0125, now());",
+            t = d.tenant,
+            q = d.pregunta,
+            b = d.bien_privado
+        ),
+    )
+    .await
+    .unwrap();
+    como_app(&pool, d.tenant, &participacion(&d, participacion_id, "k"))
+        .await
+        .unwrap();
+    let voto = |id: Uuid, bien: &str| {
         format!(
-            "INSERT INTO votos (id, tenant_id, pregunta_id, opcion_id, coeficiente, bien_privado_id)
-             VALUES ('{id}', '{}', '{}', '{}', 0.0125, {bien_privado})",
+            "INSERT INTO votos (id, tenant_id, pregunta_id, opcion_id, coeficiente, bien_privado_id,
+                                participacion_id)
+             VALUES ('{id}', '{}', '{}', '{}', 0.0125, {bien}, '{participacion_id}')",
             d.tenant, d.pregunta, d.opcion
         )
     };
 
     // id v7 (revela la hora): rechazado.
-    let err = como_app(&pool, d.tenant, &voto(Uuid::now_v7(), "NULL"))
+    let err = como_app(
+        &pool,
+        d.tenant,
+        &voto(Uuid::now_v7(), &format!("'{}'", d.bien_privado)),
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(sqlstate(&err), "23514", "{err}");
+    // El vínculo con el bien es obligatorio también en `reservado` (ADR 0010).
+    let err = como_app(&pool, d.tenant, &voto(Uuid::new_v4(), "NULL"))
         .await
         .unwrap_err();
-    assert_eq!(sqlstate(&err), "23514", "{err}");
+    assert_eq!(sqlstate(&err), "23502", "{err}");
 
-    // Voto secreto que referencia el bien privado: rechazado por el trigger `validar_voto`.
-    let err = como_app(
+    como_app(
         &pool,
         d.tenant,
         &voto(Uuid::new_v4(), &format!("'{}'", d.bien_privado)),
     )
     .await
-    .unwrap_err();
-    assert_eq!(sqlstate(&err), "23514", "{err}");
-
-    como_app(&pool, d.tenant, &voto(Uuid::new_v4(), "NULL"))
-        .await
-        .unwrap();
+    .unwrap();
     let err = como_app(&pool, d.tenant, "UPDATE votos SET coeficiente = 1")
         .await
         .unwrap_err();
@@ -236,28 +290,26 @@ async fn voto_secreto_sin_rastro(pool: PgPool) {
 async fn directorio_cruza_tenants_solo_por_funcion(pool: PgPool) {
     let telefono = "573001110005";
     let a = sembrar(&pool, telefono).await;
-    let linea: String = sqlx::query_scalar(
-        "SELECT l.phone_number_id FROM lineas_whatsapp l
-         JOIN reuniones r ON r.linea_whatsapp_id = l.id WHERE r.tenant_id = $1",
-    )
-    .bind(a.tenant.as_uuid())
-    .fetch_one(&pool)
-    .await
-    .unwrap();
+    sembrar(&pool, "573001110006").await;
 
     let mut tx = pool.begin().await.unwrap();
     sqlx::query("SET LOCAL ROLE dad_app")
         .execute(&mut *tx)
         .await
         .unwrap();
-    let filas: Vec<(Uuid, String)> =
-        sqlx::query_as("SELECT tenant_id, estado FROM reuniones_activas_por_telefono($1, $2)")
-            .bind(&linea)
+    let filas: Vec<(Uuid, Uuid)> =
+        sqlx::query_as("SELECT tenant_id, asistente_id FROM asistencias_por_telefono($1)")
             .bind(telefono)
             .fetch_all(&mut *tx)
             .await
             .unwrap();
-    assert_eq!(filas, vec![(a.tenant.as_uuid(), "instalada".to_owned())]);
+    assert_eq!(filas, vec![(a.tenant.as_uuid(), a.asistente)]);
+    // Sin tenant fijado, la tabla no muestra nada.
+    let directas: i64 = sqlx::query_scalar("SELECT count(*) FROM asistentes")
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+    assert_eq!(directas, 0);
 }
 
 /// Glosario de la Ley 675 (ADR 0002): ninguna tabla, columna, restricción ni función conserva

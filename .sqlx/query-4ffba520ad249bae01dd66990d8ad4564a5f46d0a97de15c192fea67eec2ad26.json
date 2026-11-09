@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO envios_convocatoria (tenant_id, reunion_id, persona_id, canal, outbox_id)\n             VALUES ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4ffba520ad249bae01dd66990d8ad4564a5f46d0a97de15c192fea67eec2ad26"
+}

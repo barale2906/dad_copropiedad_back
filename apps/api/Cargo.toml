@@ -22,6 +22,7 @@ path = "src/bin/dad_admin.rs"
 application.workspace = true
 domain.workspace = true
 infra-archivos.workspace = true
+infra-pdf.workspace = true
 infra-planillas.workspace = true
 infra-postgres.workspace = true
 infra-seguridad.workspace = true

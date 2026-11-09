@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT es_plantilla AS \"es_plantilla!\", linea, enviados AS \"enviados!\", fallidos AS \"fallidos!\"\n               FROM mensajes_whatsapp_reunion($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "es_plantilla!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "linea",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "enviados!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "fallidos!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "b2094e1c8c01c2e576f113eea0a76ac941521d3f6c32c417ae7cc9da552908f4"
+}

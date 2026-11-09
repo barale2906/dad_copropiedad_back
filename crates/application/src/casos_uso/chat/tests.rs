@@ -50,6 +50,15 @@ impl SesionesConversacion for SesionesEnMemoria {
             .any(|w| w == wamid))
     }
 
+    async fn marcar_procesado(&self, wamid: &str) -> AppResult<bool> {
+        let mut p = self.procesados.lock().expect("mutex");
+        if p.iter().any(|w| w == wamid) {
+            return Ok(false);
+        }
+        p.push(wamid.to_owned());
+        Ok(true)
+    }
+
     async fn obtener(
         &self,
         _linea: &str,

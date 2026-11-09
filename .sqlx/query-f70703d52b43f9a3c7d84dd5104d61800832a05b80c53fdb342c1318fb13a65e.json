@@ -1,0 +1,268 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, reunion_id, punto_id, orden, enunciado, tipo, tipo_voto, base_computo, regla_mayoria,\n         umbral_porcentaje, umbral_sobre, max_selecciones, cupos, cargo, estado,\n         temporizador_segundos, cierra_en, abierta_en, cerrada_en, resultado, roles_aplicados_en FROM preguntas WHERE id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "reunion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "reunion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "punto_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "punto_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "orden"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "enunciado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "enunciado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "tipo_voto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "tipo_voto"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "base_computo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "base_computo"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "regla_mayoria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "regla_mayoria"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "umbral_porcentaje",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "umbral_porcentaje"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "umbral_sobre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "umbral_sobre"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "max_selecciones",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "max_selecciones"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "cupos",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "cupos"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "cargo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "cargo"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "temporizador_segundos",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "temporizador_segundos"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "cierra_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "cierra_en"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "abierta_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "abierta_en"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "cerrada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "cerrada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "resultado",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "resultado"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "roles_aplicados_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "preguntas",
+            "name": "roles_aplicados_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "f70703d52b43f9a3c7d84dd5104d61800832a05b80c53fdb342c1318fb13a65e"
+}

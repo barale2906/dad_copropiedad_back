@@ -91,6 +91,10 @@ pub enum DominioError {
     #[error("reserva no permitida: {0}")]
     ReservaNoPermitida(&'static str),
 
+    /// La papeleta no corresponde a la pregunta (número de opciones, bienes repetidos…).
+    #[error("voto inválido: {0}")]
+    VotoInvalido(&'static str),
+
     #[error("valor desconocido `{valor}` para {tipo}")]
     ValorDesconocido { tipo: &'static str, valor: String },
 }

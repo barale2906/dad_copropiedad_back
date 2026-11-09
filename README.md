@@ -5,7 +5,7 @@
 Backend de **DAD_COPROPIEDAD**, el software de gestión de propiedad horizontal de DAD AI & SYSTEMS.
 El primer módulo es **votaciones** en asambleas: multi-PH, con votos por web y por WhatsApp (botones o listas).
 
-El backend es un monolito modular con arquitectura hexagonal, hecho con Rust, Axum, SQLx, PostgreSQL y Redis.
+El backend es un monolito modular con arquitectura hexagonal, hecho con Rust, Axum, SQLx y PostgreSQL (más Typst para las actas en PDF).
 
 ## Requisitos
 - Rust (rustup; la versión se instala sola según `rust-toolchain.toml`)
@@ -24,7 +24,7 @@ make verificar      # fmt + clippy + pruebas, antes de terminar una tarea
 Equivalente sin Make:
 ```bash
 cp .env.example .env          # variables locales
-docker compose up -d --wait   # PostgreSQL 18 (+ rol dad_app), Redis 8 y Mailpit
+docker compose up -d --wait   # PostgreSQL 18 (+ rol dad_app) y Mailpit
 cargo api                     # aplica migraciones y levanta la API en :8080
 cargo gateway                 # webhook de WhatsApp en :8081
 
@@ -41,6 +41,18 @@ plantillas `ticket_actualizado` y `reporte_urgente` deben estar aprobadas en Met
 gateway usa las mismas variables `ARCHIVOS_*` de la API para guardar las fotos recibidas, y su
 worker de gestión cierra tickets resueltos, alerta los vencidos y genera las órdenes preventivas
 cada 10 minutos.
+
+Asambleas (plan 06, ADR 0010): el gateway atiende primero los mensajes de una asamblea
+(botón «Confirmar» de la plantilla y votos con botones cuyo id lleva la pregunta) y luego el
+chat; registra los acuses de entrega (`statuses`) y la calidad de las líneas, y su worker de
+asambleas cierra cada 5 s las preguntas con temporizador vencido y las consultas por escrito.
+Deben estar aprobadas en Meta las plantillas de utilidad `confirmar_asistencia` (con un botón de
+respuesta rápida «Confirmar») y `convocatoria_asamblea` (4 parámetros; en consultas por escrito,
+con un botón «Votar»). La API emite el tablero en vivo por WebSocket
+(`/api/v1/copropiedades/{id}/asambleas/{reunion}/en-vivo`, token como subprotocolo
+`["dad.v1", token]`), recalculado desde la BD a lo sumo cada 500 ms tras cada `pg_notify`; no
+necesita Redis. Las líneas de WhatsApp y las tarifas de Meta se gestionan en
+`/api/v1/plataforma/whatsapp/…`.
 
 Primer acceso: cree el superusuario con `make superusuario USUARIO=admin CORREO=admin@dominio.co`
 (pide la contraseña), inicie sesión en `POST /api/v1/auth/sesion` desde `/docs` y use el token

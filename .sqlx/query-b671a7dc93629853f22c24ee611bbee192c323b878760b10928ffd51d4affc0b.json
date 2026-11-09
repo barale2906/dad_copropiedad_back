@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM documentos_reunion WHERE reunion_id = $1 AND archivo_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b671a7dc93629853f22c24ee611bbee192c323b878760b10928ffd51d4affc0b"
+}
