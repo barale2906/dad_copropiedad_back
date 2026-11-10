@@ -240,3 +240,63 @@ async fn una_campana_del_censo_llega_al_representante_y_sus_cambios_se_atienden(
     assert_eq!(lista[0]["con_cambios"], 1);
     assert_eq!(lista[0]["por_atender"], 0);
 }
+
+/// POST con `Idempotency-Key`: estado, si la respuesta es repetida y el JSON.
+async fn post_idempotente(
+    ph: &comun::Ph,
+    clave: &str,
+    cuerpo: serde_json::Value,
+) -> (StatusCode, bool, serde_json::Value) {
+    use axum::{
+        body::{Body, to_bytes},
+        http::{Request, header},
+    };
+    use tower::ServiceExt;
+    let req = Request::post(format!("{}/comunicados", ph.base))
+        .header(header::AUTHORIZATION, format!("Bearer {}", ph.admin))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Idempotency-Key", clave)
+        .body(Body::from(cuerpo.to_string()))
+        .expect("petición");
+    let res = ph.api.router.clone().oneshot(req).await.expect("router");
+    let status = res.status();
+    let repetida = res.headers().get("idempotency-replayed").is_some();
+    let bytes = to_bytes(res.into_body(), usize::MAX).await.expect("cuerpo");
+    (
+        status,
+        repetida,
+        serde_json::from_slice(&bytes).unwrap_or_default(),
+    )
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn un_post_reintentado_con_la_misma_clave_no_se_repite(pool: PgPool) {
+    let ph = ph(pool).await;
+    ph.habilitar("gestion_administrativa").await;
+    let cuerpo = json!({
+        "titulo": "Aviso", "cuerpo": "Texto", "finalidad": "administracion",
+        "audiencia": { "tipo": "todos" }
+    });
+
+    let (s1, rep1, c1) = post_idempotente(&ph, "clave-1", cuerpo.clone()).await;
+    let (s2, rep2, c2) = post_idempotente(&ph, "clave-1", cuerpo.clone()).await;
+    assert_eq!((s1, rep1), (StatusCode::CREATED, false), "{c1}");
+    assert_eq!((s2, rep2), (StatusCode::CREATED, true));
+    assert_eq!(c1["id"], c2["id"], "la misma respuesta original");
+    let creados: i64 = sqlx::query_scalar("SELECT count(*) FROM comunicados")
+        .fetch_one(&ph.api.duenio)
+        .await
+        .expect("conteo");
+    assert_eq!(creados, 1, "el reintento no crea otro");
+
+    let mut otro = cuerpo.clone();
+    otro["titulo"] = json!("Otro aviso");
+    let (s, _, e) = post_idempotente(&ph, "clave-1", otro).await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(e["error"]["codigo"], "idempotencia_reusada");
+
+    let (s, _, _) = post_idempotente(&ph, "clave-2", cuerpo.clone()).await;
+    assert_eq!(s, StatusCode::CREATED, "otra clave, otra petición");
+    let (s, _, _) = post_idempotente(&ph, &"x".repeat(201), cuerpo).await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
+}

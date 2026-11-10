@@ -14,6 +14,7 @@ pub mod cola_salida;
 pub mod comunicados;
 pub mod copropiedades;
 pub mod correo;
+pub mod idempotencia;
 pub mod identidad;
 pub mod mantenimiento;
 pub mod mensajeria;
@@ -42,6 +43,7 @@ pub use copropiedades::{
     RepositorioImportaciones, RepositorioPersonas, RepositorioTitulares,
 };
 pub use correo::EnvioCorreo;
+pub use idempotencia::RegistroIdempotencia;
 pub use identidad::{
     HashContrasenas, RepositorioContratos, RepositorioCuentas, RepositorioOrganizaciones,
     RepositorioPlataforma, RepositorioRoles, RepositorioSesiones, SegundoFactor,

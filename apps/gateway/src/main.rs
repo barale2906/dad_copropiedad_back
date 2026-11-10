@@ -150,6 +150,7 @@ async fn main() -> anyhow::Result<()> {
         DirectorioGestionPg::new(db.clone()),
         UnidadDeTrabajoPg::new(db.clone()),
         SesionesChatPg::new(db.clone()),
+        infra_postgres::IdempotenciaPg::new(db.clone()),
         esperar_apagado(apagado.clone()),
     ));
 

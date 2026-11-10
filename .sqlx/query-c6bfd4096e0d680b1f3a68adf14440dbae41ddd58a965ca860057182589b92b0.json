@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM peticiones_idempotentes\n             WHERE cuenta_id = $1 AND clave = $2 AND creada_en <= $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c6bfd4096e0d680b1f3a68adf14440dbae41ddd58a965ca860057182589b92b0"
+}

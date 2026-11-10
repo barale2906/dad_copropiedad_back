@@ -37,7 +37,7 @@ fn request_id(parts: &Parts) -> Option<String> {
         .map(str::to_owned)
 }
 
-fn token(parts: &Parts) -> Result<&str, ApiError> {
+pub(crate) fn token(parts: &Parts) -> Result<&str, ApiError> {
     parts
         .headers
         .get(header::AUTHORIZATION)

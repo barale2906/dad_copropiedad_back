@@ -1,7 +1,7 @@
 //! Worker de gestión administrativa: cada [`INTERVALO`] cierra los tickets resueltos cuyo plazo
 //! de reapertura pasó, alerta los vencidos, genera las órdenes preventivas de los planes, envía
 //! los comunicados programados cuya hora llegó (a lo sumo 10 min tarde) y purga las sesiones del
-//! chat vencidas. Los avisos salen por el worker del outbox.
+//! chat y las claves `Idempotency-Key` de la API vencidas. Los avisos salen por el worker del outbox.
 
 use std::{future::Future, time::Duration};
 
@@ -10,9 +10,9 @@ use application::{
         comunicados::TxComunicados,
         mantenimiento::{TxMantenimiento, tareas_gestion},
     },
-    puertos::{DirectorioGestion, Reloj, RelojSistema, UnidadDeTrabajo},
+    puertos::{DirectorioGestion, RegistroIdempotencia, Reloj, RelojSistema, UnidadDeTrabajo},
 };
-use infra_postgres::SesionesChatPg;
+use infra_postgres::{IdempotenciaPg, SesionesChatPg};
 
 /// Cada cuánto se revisan las tareas.
 pub const INTERVALO: Duration = Duration::from_secs(10 * 60);
@@ -22,6 +22,7 @@ pub async fn ejecutar<D, U>(
     directorio: D,
     unidad: U,
     sesiones: SesionesChatPg,
+    idempotencia: IdempotenciaPg,
     apagado: impl Future<Output = ()>,
 ) where
     D: DirectorioGestion,
@@ -53,6 +54,9 @@ pub async fn ejecutar<D, U>(
         }
         if let Err(e) = sesiones.purgar(RelojSistema.ahora()).await {
             tracing::warn!(error = %e, "no se pudieron purgar las sesiones del chat");
+        }
+        if let Err(e) = idempotencia.purgar(RelojSistema.ahora()).await {
+            tracing::warn!(error = %e, "no se pudieron purgar las claves de idempotencia");
         }
         tokio::select! {
             biased;

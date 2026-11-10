@@ -3,7 +3,9 @@ use std::sync::Arc;
 use infra_archivos::AlmacenLocal;
 use infra_pdf::GeneradorTypst;
 use infra_planillas::LectorCsvXlsx;
-use infra_postgres::{DirectorioAccesoPg, PgPool, UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg};
+use infra_postgres::{
+    DirectorioAccesoPg, IdempotenciaPg, PgPool, UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg,
+};
 use infra_seguridad::{Argon2Contrasenas, FirmaQrEd25519, Totp};
 
 /// Estado compartido entre handlers. Clonarlo es barato (todo va detrás de `Arc` o es un pool).
@@ -35,6 +37,8 @@ pub struct AppState {
     /// Límite de peticiones por IP. `new` lo crea **sin límites**; `main` lo configura con
     /// `LIMITE_*` (las pruebas que lo verifican lo reemplazan).
     pub limitador: Arc<crate::limite::Limitador>,
+    /// Registro de `Idempotency-Key` (reintentos seguros de los POST).
+    pub idempotencia: IdempotenciaPg,
 }
 
 impl AppState {
@@ -49,6 +53,7 @@ impl AppState {
             unidad: UnidadDeTrabajoPg::new(db.clone()),
             plataforma: UnidadDeTrabajoPlataformaPg::new(db.clone()),
             acceso: DirectorioAccesoPg::new(db.clone()),
+            idempotencia: IdempotenciaPg::new(db.clone()),
             db,
             archivos: Arc::new(archivos),
             contrasenas: Argon2Contrasenas,

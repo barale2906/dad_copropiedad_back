@@ -103,7 +103,12 @@ impl utoipa::Modify for EsquemaBearer {
                        - Puentes de acceso (token de máquina): `/api/v1/puentes/…`\n\n\
                        Errores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` \
                        (ver el esquema `CodigoError`). Listados: paginación por cursor con \
-                       `?limite=&despues=`."
+                       `?limite=&despues=`.\n\n\
+                       Reintentos seguros: los `POST` con sesión aceptan la cabecera \
+                       `Idempotency-Key` (1 a 200 caracteres). Durante 24 h, repetir la misma \
+                       petición con la misma clave devuelve la respuesta original con \
+                       `Idempotency-Replayed: true`; la misma clave con otra petición responde \
+                       422 `idempotencia_reusada`."
     ),
     tags(
         (name = ETIQUETA_SALUD, description = "Sondas de vida y disponibilidad del servicio"),
