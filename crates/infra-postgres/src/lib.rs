@@ -29,6 +29,7 @@ mod censo;
 mod chat;
 mod coeficientes;
 mod cola_salida;
+mod comunicados;
 mod copropiedades;
 mod error;
 mod mantenimiento;

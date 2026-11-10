@@ -10,6 +10,7 @@ pub mod bienes_privados;
 pub mod censo;
 pub mod chat;
 pub mod coeficientes;
+pub mod comunicados;
 pub mod conversaciones;
 pub mod copropiedades;
 pub mod despachar_salida;

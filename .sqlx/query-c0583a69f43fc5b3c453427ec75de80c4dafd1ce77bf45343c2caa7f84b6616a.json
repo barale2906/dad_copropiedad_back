@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE comunicado_destinatarios SET leido_en = $3\n             WHERE persona_id = $1 AND comunicado_id = $2 AND leido_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c0583a69f43fc5b3c453427ec75de80c4dafd1ce77bf45343c2caa7f84b6616a"
+}

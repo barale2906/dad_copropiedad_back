@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) AS destinatarios,\n                      count(*) FILTER (WHERE por_push) AS por_push,\n                      count(*) FILTER (WHERE por_correo) AS por_correo,\n                      count(*) FILTER (WHERE por_whatsapp) AS por_whatsapp,\n                      count(*) FILTER (WHERE NOT (por_push OR por_correo OR por_whatsapp)) AS sin_canal,\n                      count(leido_en) AS leidos,\n                      count(enterado_en) AS enterados\n               FROM comunicado_destinatarios WHERE comunicado_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "destinatarios",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "por_push",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "por_correo",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "por_whatsapp",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "sin_canal",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "leidos",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "enterados",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "08b96d44d1231e5e06ac5c1867d095ae13fd8a054bca273d1fba6b0e0a717df3"
+}

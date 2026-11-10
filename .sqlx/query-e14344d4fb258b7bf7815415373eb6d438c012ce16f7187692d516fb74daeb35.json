@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM comunicado_adjuntos WHERE comunicado_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e14344d4fb258b7bf7815415373eb6d438c012ce16f7187692d516fb74daeb35"
+}

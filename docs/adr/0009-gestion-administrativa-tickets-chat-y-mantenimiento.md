@@ -66,6 +66,18 @@ necesitan hoja de vida, mantenimiento preventivo y control de certificaciones (p
 - Obligaciones periódicas con un **catálogo sugerido editable** (ascensores, tanques,
   extintores, póliza de bienes comunes del art. 15, plan de emergencias…), sin citar normas
   locales: la PH confirma la periodicidad que le exige su municipio.
+- **Comunicados** (plan 10, fase 4; `casos_uso::comunicados`, permiso `comunicados.gestionar`):
+  `borrador → programado → enviado` o `anulado` (`EstadoComunicado::transicionar`; lo enviado no
+  se anula ni se edita). Declaran su **finalidad** (Ley 1581): `administracion` llega a todos y
+  `comunicaciones` solo a quien la autorizó. La audiencia (toda la PH, propietarios, residentes,
+  agrupaciones con sus hijas, bienes o roles) se resuelve en SQL (`destinatarios_comunicado`,
+  nunca a menores de edad) y **se fija al enviarse** en `comunicado_destinatarios`, con los
+  canales usados. Canales: push y correo siempre; WhatsApp (plantilla `comunicado_importante`)
+  solo si es importante y la persona no tiene la app (`canales_comunicado`). Todo va al outbox
+  con el concepto `comunicados` (costo por PH). Los programados los envía el worker de gestión
+  (a lo sumo 10 min tarde). Abrir un comunicado en la cartelera (`/mis-comunicados`) registra la
+  lectura; el «Enterado» solo si el comunicado lo pide. Los adjuntos se entregan con enlaces
+  firmados de 5 minutos.
 
 ## Consecuencias
 - Se agregan las dependencias `reqwest`, `rustls` y `webpki-roots` (licencias permitidas).

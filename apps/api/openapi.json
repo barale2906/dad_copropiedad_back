@@ -9809,6 +9809,768 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/comunicados": {
+      "get": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Comunicados de la PH con sus contadores, del más reciente al más antiguo.",
+        "operationId": "listar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comunicados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_ComunicadoConResumenRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `comunicados.gestionar` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Crea un comunicado en borrador.",
+        "operationId": "crear",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComunicadoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Borrador creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `comunicados.gestionar` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Un adjunto no existe (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Contenido, finalidad o audiencia inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/comunicados/{comunicado_id}": {
+      "get": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Un comunicado con su tablero de entrega y lectura.",
+        "operationId": "ver",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comunicado_id",
+            "in": "path",
+            "description": "Comunicado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comunicado y tablero",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoConResumenRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `comunicados.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Reemplaza el contenido de un borrador.",
+        "operationId": "editar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comunicado_id",
+            "in": "path",
+            "description": "Comunicado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComunicadoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Borrador actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `comunicados.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya no es borrador (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/comunicados/{comunicado_id}/publicar": {
+      "post": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Publica un borrador: sin `programado_para` sale de inmediato (push, correo y, si es\nimportante, WhatsApp a quien no tiene la app).",
+        "operationId": "publicar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comunicado_id",
+            "in": "path",
+            "description": "Comunicado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Enviado o programado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `comunicados.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No es borrador (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Programado a más de un año (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/comunicados/{comunicado_id}/retirar": {
+      "post": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Devuelve un comunicado programado a borrador.",
+        "operationId": "retirar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comunicado_id",
+            "in": "path",
+            "description": "Comunicado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "De nuevo en borrador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `comunicados.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está programado (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/comunicados/{comunicado_id}/anular": {
+      "post": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Anula un borrador o un programado (lo enviado no se anula).",
+        "operationId": "anular",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comunicado_id",
+            "in": "path",
+            "description": "Comunicado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anulado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `comunicados.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se envió (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mis-comunicados": {
+      "get": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Comunicados recibidos por la persona de la cuenta (vacío si no tiene persona en la PH).",
+        "operationId": "mis_comunicados",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cartelera",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_ComunicadoRecibidoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mis-comunicados/{comunicado_id}": {
+      "get": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Abre un comunicado recibido: registra la lectura y entrega los adjuntos con enlaces de\ndescarga de 5 minutos.",
+        "operationId": "abrir_mio",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comunicado_id",
+            "in": "path",
+            "description": "Comunicado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comunicado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoAbiertoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No es destinatario (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mis-comunicados/{comunicado_id}/enterado": {
+      "post": {
+        "tags": [
+          "comunicados"
+        ],
+        "summary": "Registra el «Enterado» (idempotente).",
+        "operationId": "enterado",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comunicado_id",
+            "in": "path",
+            "description": "Comunicado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Enterado registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComunicadoRecibidoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No es destinatario (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El comunicado no pide confirmación (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/asambleas": {
       "get": {
         "tags": [
@@ -18793,6 +19555,32 @@
           }
         }
       },
+      "AdjuntoComunicadoRespuesta": {
+        "type": "object",
+        "description": "Adjunto con enlace de descarga de 5 minutos.",
+        "required": [
+          "archivo_id",
+          "nombre",
+          "tipo_mime",
+          "url"
+        ],
+        "properties": {
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_mime": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
       "AdjuntoRespuesta": {
         "type": "object",
         "description": "Adjunto de un ticket (descargar con `POST /archivos/{archivo_id}/enlace`).",
@@ -19402,6 +20190,26 @@
               "null"
             ],
             "description": "Último acuse de la plantilla de confirmación (`failed` = «no llegó: entregue rótulo»)."
+          }
+        }
+      },
+      "AudienciaDto": {
+        "type": "object",
+        "description": "Audiencia: el tipo y, si aplica, los destinos.",
+        "required": [
+          "tipo"
+        ],
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoAudiencia"
+          },
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ids de agrupaciones o bienes, o códigos de rol. Vacío para `todos`, `propietarios` y\n`residentes`.",
+            "example": []
           }
         }
       },
@@ -20783,6 +21591,190 @@
             ],
             "format": "uuid",
             "description": "Asistente que ya representa el bien."
+          }
+        }
+      },
+      "ComunicadoAbiertoRespuesta": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ComunicadoRecibidoRespuesta"
+          },
+          {
+            "type": "object",
+            "required": [
+              "enlaces_adjuntos"
+            ],
+            "properties": {
+              "enlaces_adjuntos": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AdjuntoComunicadoRespuesta"
+                }
+              }
+            }
+          }
+        ],
+        "description": "Comunicado abierto por su destinatario."
+      },
+      "ComunicadoConResumenRespuesta": {
+        "type": "object",
+        "description": "Comunicado con su tablero.",
+        "required": [
+          "comunicado",
+          "resumen"
+        ],
+        "properties": {
+          "comunicado": {
+            "$ref": "#/components/schemas/ComunicadoRespuesta"
+          },
+          "resumen": {
+            "$ref": "#/components/schemas/ResumenLecturaRespuesta"
+          }
+        }
+      },
+      "ComunicadoPeticion": {
+        "type": "object",
+        "description": "Contenido del comunicado (crear o reemplazar el borrador).",
+        "required": [
+          "titulo",
+          "cuerpo",
+          "finalidad",
+          "audiencia"
+        ],
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "example": "Corte de agua el jueves"
+          },
+          "cuerpo": {
+            "type": "string",
+            "description": "Texto; admite saltos de línea (máximo 10 000 caracteres)."
+          },
+          "finalidad": {
+            "type": "string",
+            "description": "`administracion` (llega a todos) o `comunicaciones` (solo a quien lo autorizó, Ley 1581).",
+            "example": "administracion"
+          },
+          "audiencia": {
+            "$ref": "#/components/schemas/AudienciaDto"
+          },
+          "importante": {
+            "type": "boolean",
+            "description": "También por WhatsApp a quien no tiene la app (plantilla `comunicado_importante`, con costo)."
+          },
+          "requiere_confirmacion": {
+            "type": "boolean",
+            "description": "Pide el botón «Enterado»."
+          },
+          "adjuntos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Archivos ya subidos (PDF o imágenes), máximo 10."
+          }
+        }
+      },
+      "ComunicadoRecibidoRespuesta": {
+        "type": "object",
+        "description": "Comunicado en la cartelera de la persona.",
+        "required": [
+          "comunicado"
+        ],
+        "properties": {
+          "comunicado": {
+            "$ref": "#/components/schemas/ComunicadoRespuesta"
+          },
+          "leido_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "enterado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ComunicadoRespuesta": {
+        "type": "object",
+        "description": "Comunicado.",
+        "required": [
+          "id",
+          "titulo",
+          "cuerpo",
+          "finalidad",
+          "audiencia",
+          "importante",
+          "requiere_confirmacion",
+          "estado",
+          "adjuntos",
+          "creado_en",
+          "actualizado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "cuerpo": {
+            "type": "string"
+          },
+          "finalidad": {
+            "type": "string",
+            "example": "administracion"
+          },
+          "audiencia": {
+            "$ref": "#/components/schemas/AudienciaDto"
+          },
+          "importante": {
+            "type": "boolean"
+          },
+          "requiere_confirmacion": {
+            "type": "boolean"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`borrador`, `programado`, `enviado` o `anulado`.",
+            "example": "enviado"
+          },
+          "programado_para": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "enviado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "adjuntos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualizado_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -25912,6 +26904,90 @@
           }
         }
       },
+      "PaginaRespuesta_ComunicadoConResumenRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Comunicado con su tablero.",
+              "required": [
+                "comunicado",
+                "resumen"
+              ],
+              "properties": {
+                "comunicado": {
+                  "$ref": "#/components/schemas/ComunicadoRespuesta"
+                },
+                "resumen": {
+                  "$ref": "#/components/schemas/ResumenLecturaRespuesta"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_ComunicadoRecibidoRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Comunicado en la cartelera de la persona.",
+              "required": [
+                "comunicado"
+              ],
+              "properties": {
+                "comunicado": {
+                  "$ref": "#/components/schemas/ComunicadoRespuesta"
+                },
+                "leido_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "enterado_en": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_ConversacionRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -28432,6 +29508,20 @@
           }
         }
       },
+      "PublicarPeticion": {
+        "type": "object",
+        "description": "Publicación: sin fecha (o con una pasada) sale de inmediato.",
+        "properties": {
+          "programado_para": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Hora de envío; máximo un año adelante. El worker lo envía a lo sumo 10 min después."
+          }
+        }
+      },
       "PuentePeticion": {
         "type": "object",
         "description": "Puente nuevo.",
@@ -29795,6 +30885,57 @@
           }
         }
       },
+      "ResumenLecturaRespuesta": {
+        "type": "object",
+        "description": "Entrega y lectura.",
+        "required": [
+          "destinatarios",
+          "por_push",
+          "por_correo",
+          "por_whatsapp",
+          "sin_canal",
+          "leidos",
+          "enterados"
+        ],
+        "properties": {
+          "destinatarios": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "por_push": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "por_correo": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "por_whatsapp": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "sin_canal": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sin ningún medio de contacto: solo lo verán en la cartelera.",
+            "minimum": 0
+          },
+          "leidos": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "enterados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
       "ResumenRespuesta": {
         "type": "object",
         "description": "Resumen de lo que hace (o hizo) la importación.",
@@ -30997,6 +32138,18 @@
           }
         }
       },
+      "TipoAudiencia": {
+        "type": "string",
+        "description": "A quién va el comunicado.",
+        "enum": [
+          "todos",
+          "propietarios",
+          "residentes",
+          "agrupaciones",
+          "bienes",
+          "roles"
+        ]
+      },
       "TitularDto": {
         "type": "object",
         "description": "Persona **o** vehículo (exactamente uno).",
@@ -31887,6 +33040,10 @@
     {
       "name": "conversaciones",
       "description": "Chat de WhatsApp: preguntas frecuentes y bandeja de conversaciones escaladas a la administración (módulo `gestion_administrativa`)"
+    },
+    {
+      "name": "comunicados",
+      "description": "Comunicados de la administración: audiencia (toda la PH, propietarios, residentes, torres, bienes o roles), finalidad (Ley 1581), envío inmediato o programado por push, correo y WhatsApp (solo los importantes y a quien no tiene la app), cartelera con lectura y «Enterado» (módulo `gestion_administrativa`)"
     },
     {
       "name": "mantenimiento",

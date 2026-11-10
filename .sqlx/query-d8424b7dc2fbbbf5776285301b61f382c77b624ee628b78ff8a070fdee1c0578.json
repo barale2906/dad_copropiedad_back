@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO comunicado_adjuntos (tenant_id, comunicado_id, archivo_id, orden)\n             SELECT $1, $2, a, o::smallint FROM unnest($3::uuid[]) WITH ORDINALITY AS t (a, o)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d8424b7dc2fbbbf5776285301b61f382c77b624ee628b78ff8a070fdee1c0578"
+}

@@ -51,6 +51,8 @@ pub const ETIQUETA_PROTECCION_DATOS: &str = "proteccion_datos";
 pub const ETIQUETA_AUDITORIA: &str = "auditoria";
 /// Etiqueta del control de acceso, visitas y correspondencia.
 pub const ETIQUETA_ACCESO: &str = "acceso";
+/// Etiqueta de los comunicados de la administración.
+pub const ETIQUETA_COMUNICADOS: &str = "comunicados";
 /// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
@@ -129,6 +131,11 @@ impl utoipa::Modify for EsquemaBearer {
         (name = ETIQUETA_CONVERSACIONES, description = "Chat de WhatsApp: preguntas frecuentes y \
                                                         bandeja de conversaciones escaladas a la \
                                                         administración (módulo `gestion_administrativa`)"),
+        (name = ETIQUETA_COMUNICADOS, description = "Comunicados de la administración: \
+            audiencia (toda la PH, propietarios, residentes, torres, bienes o roles), finalidad \
+            (Ley 1581), envío inmediato o programado por push, correo y WhatsApp (solo los \
+            importantes y a quien no tiene la app), cartelera con lectura y «Enterado» (módulo \
+            `gestion_administrativa`)"),
         (name = ETIQUETA_MANTENIMIENTO, description = "Inventario de activos con hoja de vida, planes \
                                                        preventivos, órdenes de trabajo y \
                                                        obligaciones periódicas (módulo \

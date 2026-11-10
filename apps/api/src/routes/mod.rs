@@ -21,6 +21,7 @@ mod auth;
 mod bienes_privados;
 mod censo;
 mod coeficientes;
+mod comunicados;
 mod conversaciones;
 mod copropiedades;
 mod ficha;

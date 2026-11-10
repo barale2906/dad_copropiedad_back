@@ -1,4 +1,5 @@
-//! Pruebas funcionales del plan 10 (bloque 2) sobre el router completo con PostgreSQL real.
+//! Pruebas funcionales del plan 10 (bloque 2) sobre el router completo con PostgreSQL real:
+//! «mis solicitudes» entre PH y comunicados de la administración.
 
 mod comun;
 
@@ -58,4 +59,117 @@ async fn mis_solicitudes_reune_los_tickets_de_todas_mis_copropiedades(pool: PgPo
         )
         .await;
     assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn un_comunicado_llega_a_la_cartelera_y_cuenta_su_lectura(pool: PgPool) {
+    let ph = ph(pool).await;
+    ph.habilitar("gestion_administrativa").await;
+    assert_eq!(ph.estado("activa", &ph.root).await.0, StatusCode::OK);
+    ph.bien_con_dueno().await;
+    let dueno = ph.api.token("dueno").await;
+    let cuerpo = json!({
+        "titulo": "Asamblea ordinaria", "cuerpo": "Convocatoria.\nOrden del día adjunto.",
+        "finalidad": "administracion", "audiencia": { "tipo": "propietarios" },
+        "requiere_confirmacion": true
+    });
+
+    // El propietario no puede redactar comunicados.
+    let (s, _) = ph
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{}/comunicados", ph.base),
+            Some(&dueno),
+            Some(cuerpo.clone()),
+        )
+        .await;
+    assert_eq!(s, StatusCode::FORBIDDEN);
+
+    let (s, c) = ph.pedir(Method::POST, "/comunicados", Some(cuerpo)).await;
+    assert_eq!(s, StatusCode::CREATED, "{c}");
+    assert_eq!(c["estado"], "borrador");
+    let id = c["id"].as_str().expect("id").to_owned();
+    let (s, e) = ph
+        .pedir(
+            Method::POST,
+            &format!("/comunicados/{id}/publicar"),
+            Some(json!({})),
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{e}");
+    assert_eq!(e["estado"], "enviado");
+    let (s, _) = ph
+        .pedir(Method::POST, &format!("/comunicados/{id}/anular"), None)
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "lo enviado no se anula");
+
+    let (s, mios) = ph
+        .api
+        .pedir(
+            Method::GET,
+            &format!("{}/mis-comunicados", ph.base),
+            Some(&dueno),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{mios}");
+    assert_eq!(mios["datos"].as_array().map(Vec::len), Some(1));
+    assert!(mios["datos"][0]["leido_en"].is_null());
+    let (s, abierto) = ph
+        .api
+        .pedir(
+            Method::GET,
+            &format!("{}/mis-comunicados/{id}", ph.base),
+            Some(&dueno),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{abierto}");
+    assert!(abierto["leido_en"].is_string());
+    let (s, ent) = ph
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{}/mis-comunicados/{id}/enterado", ph.base),
+            Some(&dueno),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{ent}");
+    assert!(ent["enterado_en"].is_string());
+
+    let (s, tablero) = ph
+        .pedir(Method::GET, &format!("/comunicados/{id}"), None)
+        .await;
+    assert_eq!(s, StatusCode::OK, "{tablero}");
+    assert_eq!(tablero["resumen"]["destinatarios"], 1);
+    assert_eq!(tablero["resumen"]["por_correo"], 1);
+    assert_eq!(tablero["resumen"]["leidos"], 1);
+    assert_eq!(tablero["resumen"]["enterados"], 1);
+    let correos: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM outbox WHERE concepto = 'comunicados' AND canal = 'correo'",
+    )
+    .fetch_one(&ph.api.duenio)
+    .await
+    .expect("outbox");
+    assert_eq!(correos, 1);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn un_comunicado_con_audiencia_invalida_responde_422(pool: PgPool) {
+    let ph = ph(pool).await;
+    ph.habilitar("gestion_administrativa").await;
+    let (s, v) = ph
+        .pedir(
+            Method::POST,
+            "/comunicados",
+            Some(json!({
+                "titulo": "Aviso", "cuerpo": "Texto", "finalidad": "administracion",
+                "audiencia": { "tipo": "bienes", "ids": [] }
+            })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "{v}");
+    assert_eq!(v["error"]["codigo"], "validacion");
 }

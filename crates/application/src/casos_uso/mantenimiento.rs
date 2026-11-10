@@ -1646,11 +1646,14 @@ pub struct ResumenGestion {
     pub tickets_cerrados: u32,
     pub tickets_alertados: u32,
     pub ordenes_generadas: u32,
+    /// Comunicados programados que salieron (plan 10).
+    pub comunicados_enviados: u32,
 }
 
 /// Recorre las copropiedades con tareas pendientes y, con el contexto del sistema, cierra los
 /// tickets resueltos vencidos, alerta los vencidos y genera las órdenes preventivas. Un error
-/// en una copropiedad no detiene a las demás (queda en los logs).
+/// en una copropiedad no detiene a las demás (queda en los logs). También envía los
+/// comunicados programados cuya hora llegó ([`crate::casos_uso::comunicados::enviar_programados`]).
 ///
 /// # Errors
 ///
@@ -1663,22 +1666,26 @@ pub async fn tareas_gestion<D, U>(
 where
     D: crate::puertos::DirectorioGestion,
     U: UnidadDeTrabajo,
-    U::Transaccion: TxMantenimiento,
+    U::Transaccion: TxMantenimiento + crate::casos_uso::comunicados::TxComunicados,
 {
     let mut r = ResumenGestion::default();
     for tenant in directorio.copropiedades_con_gestion_pendiente().await? {
         let ctx = Contexto::new(tenant);
         let tickets = crate::casos_uso::tickets::tareas_tickets(unidad, reloj, &ctx).await;
         let ordenes = generar_ordenes_preventivas(unidad, reloj, &ctx).await;
-        match (tickets, ordenes) {
-            (Ok(t), Ok(o)) => {
+        let comunicados =
+            crate::casos_uso::comunicados::enviar_programados(unidad, reloj, &ctx).await;
+        match (tickets, ordenes, comunicados) {
+            (Ok(t), Ok(o), Ok(c)) => {
                 r.tickets_cerrados += t.cerrados;
                 r.tickets_alertados += t.alertados;
                 r.ordenes_generadas += o;
+                r.comunicados_enviados += c;
             }
-            (Err(AppError::ModuloNoHabilitado(_)), _)
-            | (_, Err(AppError::ModuloNoHabilitado(_))) => {}
-            (Err(e), _) | (_, Err(e)) => {
+            (Err(AppError::ModuloNoHabilitado(_)), _, _)
+            | (_, Err(AppError::ModuloNoHabilitado(_)), _)
+            | (_, _, Err(AppError::ModuloNoHabilitado(_))) => {}
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => {
                 tracing::error!(tenant_id = %tenant, error = %e, "tareas de gestión fallidas");
             }
         }

@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO comunicado_destinatarios\n                 (tenant_id, comunicado_id, persona_id, por_push, por_correo, por_whatsapp)\n             SELECT $1, $2, p, pu, co, wa\n             FROM unnest($3::uuid[], $4::bool[], $5::bool[], $6::bool[]) AS t (p, pu, co, wa)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "UuidArray",
+        "BoolArray",
+        "BoolArray",
+        "BoolArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "42db5e4c5dbd650ba8712100f3d025625a55500bf1a60ddd5febe75422bc0406"
+}

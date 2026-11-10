@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT leido_en, enterado_en FROM comunicado_destinatarios\n             WHERE persona_id = $1 AND comunicado_id = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "leido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comunicado_destinatarios",
+            "name": "leido_en"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "enterado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comunicado_destinatarios",
+            "name": "enterado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "115a98e47b9bdd1aa38e460232bfdaee297ea22c17e2d9c7bea66420e6c2b6a2"
+}

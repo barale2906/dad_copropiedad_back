@@ -181,6 +181,8 @@ catalogo_permisos! {
     AccesoCredencialesGestionar => "acceso.credenciales.gestionar", Copropiedad;
     /// Enrolar biometría (solo con consentimiento vigente).
     AccesoBiometriaEnrolar => "acceso.biometria.enrolar", Copropiedad;
+    /// Redactar, programar, enviar y anular comunicados; ver su tablero de lectura.
+    ComunicadosGestionar => "comunicados.gestionar", Copropiedad;
     ContabilidadVer => "contabilidad.ver", Copropiedad;
 }
 
@@ -369,6 +371,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AsambleasVer,
             P::AsambleasRegistrar,
             P::AccesoBitacoraVer,
+            P::ComunicadosGestionar,
         ]),
     },
     RolPlantilla {

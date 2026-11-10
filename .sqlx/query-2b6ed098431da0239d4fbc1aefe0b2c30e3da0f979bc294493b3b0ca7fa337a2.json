@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE comunicado_destinatarios\n             SET leido_en = coalesce(leido_en, $3), enterado_en = coalesce(enterado_en, $3)\n             WHERE persona_id = $1 AND comunicado_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2b6ed098431da0239d4fbc1aefe0b2c30e3da0f979bc294493b3b0ca7fa337a2"
+}
