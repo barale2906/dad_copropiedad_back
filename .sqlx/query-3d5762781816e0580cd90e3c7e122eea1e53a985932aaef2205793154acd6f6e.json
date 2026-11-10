@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE solicitudes_titular SET estado = $2, prorrogada_hasta = $3, motivo_prorroga = $4,\n                 respuesta = $5, respuesta_archivo_id = $6, respondida_en = $7, respondida_por = $8\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Date",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3d5762781816e0580cd90e3c7e122eea1e53a985932aaef2205793154acd6f6e"
+}

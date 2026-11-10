@@ -112,6 +112,71 @@ pub fn fecha_en_colombia(instante: DateTime<Utc>) -> NaiveDate {
     instante.with_timezone(&colombia).date_naive()
 }
 
+/// Estado de una solicitud del titular.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EstadoSolicitudTitular {
+    Radicada,
+    EnTramite,
+    Respondida,
+}
+
+enum_texto!(EstadoSolicitudTitular {
+    Radicada => "radicada",
+    EnTramite => "en_tramite",
+    Respondida => "respondida",
+});
+
+impl EstadoSolicitudTitular {
+    /// # Errors
+    ///
+    /// [`crate::DominioError::TransicionInvalida`] si ya se respondió o la transición no existe.
+    pub fn transicionar(self, hacia: Self) -> Result<Self, crate::DominioError> {
+        match (self, hacia) {
+            (Self::Radicada, Self::EnTramite | Self::Respondida)
+            | (Self::EnTramite, Self::Respondida) => Ok(hacia),
+            _ => Err(crate::DominioError::TransicionInvalida {
+                entidad: "solicitud del titular",
+                desde: self.as_str(),
+                hacia: hacia.as_str(),
+            }),
+        }
+    }
+}
+
+/// Nuevo vencimiento al prorrogar una solicitud (arts. 14 y 15): una sola vez, antes de que
+/// venza el plazo inicial y sin haberla respondido.
+///
+/// # Errors
+///
+/// [`crate::DominioError::DatoInvalido`] si ya se prorrogó, ya se respondió o el plazo venció.
+pub fn prorrogar_solicitud(
+    tipo: TipoSolicitudTitular,
+    estado: EstadoSolicitudTitular,
+    radicada: NaiveDate,
+    vence_el: NaiveDate,
+    ya_prorrogada: bool,
+    hoy: NaiveDate,
+) -> Result<NaiveDate, crate::DominioError> {
+    let invalido = |regla| crate::DominioError::DatoInvalido {
+        campo: "prorroga",
+        regla,
+    };
+    if ya_prorrogada {
+        return Err(invalido("la solicitud ya se prorrogó una vez"));
+    }
+    if estado == EstadoSolicitudTitular::Respondida {
+        return Err(invalido("la solicitud ya se respondió"));
+    }
+    if hoy > vence_el {
+        return Err(invalido(
+            "solo se prorroga antes de que venza el plazo inicial",
+        ));
+    }
+    tipo.vencimiento_con_prorroga(radicada)
+        .ok_or(invalido("el vencimiento se sale del calendario"))
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
@@ -177,6 +242,66 @@ mod tests {
         assert_eq!(
             TipoSolicitudTitular::try_from("supresion"),
             Ok(TipoSolicitudTitular::Supresion)
+        );
+    }
+
+    #[test]
+    fn ciclo_de_la_solicitud_del_titular() {
+        use EstadoSolicitudTitular::*;
+        assert_eq!(Radicada.transicionar(EnTramite), Ok(EnTramite));
+        assert_eq!(EnTramite.transicionar(Respondida), Ok(Respondida));
+        assert!(Respondida.transicionar(EnTramite).is_err());
+        assert!(EnTramite.transicionar(Radicada).is_err());
+    }
+
+    #[test]
+    fn la_prorroga_es_unica_y_antes_del_vencimiento() {
+        let t = TipoSolicitudTitular::Supresion;
+        let radicada = NaiveDate::from_ymd_opt(2026, 11, 3).expect("fecha");
+        let vence = t.vencimiento(radicada).expect("vence");
+        let nuevo = prorrogar_solicitud(
+            t,
+            EstadoSolicitudTitular::EnTramite,
+            radicada,
+            vence,
+            false,
+            radicada,
+        )
+        .expect("prórroga");
+        assert_eq!(Some(nuevo), t.vencimiento_con_prorroga(radicada));
+        assert!(
+            prorrogar_solicitud(
+                t,
+                EstadoSolicitudTitular::EnTramite,
+                radicada,
+                vence,
+                true,
+                radicada
+            )
+            .is_err()
+        );
+        assert!(
+            prorrogar_solicitud(
+                t,
+                EstadoSolicitudTitular::Respondida,
+                radicada,
+                vence,
+                false,
+                radicada
+            )
+            .is_err()
+        );
+        let tarde = vence.succ_opt().expect("fecha");
+        assert!(
+            prorrogar_solicitud(
+                t,
+                EstadoSolicitudTitular::Radicada,
+                radicada,
+                vence,
+                false,
+                tarde
+            )
+            .is_err()
         );
     }
 }

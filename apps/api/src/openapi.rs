@@ -45,6 +45,10 @@ pub const ETIQUETA_IMPORTACIONES: &str = "importaciones";
 /// Etiqueta de la operación de la plataforma.
 /// Etiqueta de asambleas y votaciones.
 pub const ETIQUETA_ASAMBLEAS: &str = "asambleas";
+/// Etiqueta de la protección de datos personales (Ley 1581).
+pub const ETIQUETA_PROTECCION_DATOS: &str = "proteccion_datos";
+/// Etiqueta de la consulta de auditoría.
+pub const ETIQUETA_AUDITORIA: &str = "auditoria";
 /// Etiqueta del control de acceso, visitas y correspondencia.
 pub const ETIQUETA_ACCESO: &str = "acceso";
 /// Etiqueta de las operaciones de plataforma.
@@ -140,6 +144,11 @@ impl utoipa::Modify for EsquemaBearer {
             pre-autorizaciones con QR firmado, correspondencia con avisos cada 24 h y entrega con \
             firma o foto, minuta, bitácora, credenciales, autorizaciones, biometría con \
             consentimiento y la API de los puentes (`/api/v1/puentes`)"),
+        (name = ETIQUETA_PROTECCION_DATOS, description = "Protección de datos personales (Ley 1581 \
+            de 2012): política de tratamiento versionada, autorizaciones por finalidad, \
+            consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»"),
+        (name = ETIQUETA_AUDITORIA, description = "Consulta de la auditoría de la copropiedad \
+            (solo lectura; nunca trae datos personales)"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
     ),
     modifiers(&EsquemaBearer),

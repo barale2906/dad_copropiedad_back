@@ -2,7 +2,7 @@
 
 use anyhow::Context;
 use infra_archivos::AlmacenLocal;
-use shared::{AccesoConfig, AppConfig, ArchivosConfig, SeguridadConfig, telemetry};
+use shared::{AccesoConfig, AppConfig, ArchivosConfig, LimitesConfig, SeguridadConfig, telemetry};
 use tokio::net::TcpListener;
 
 use api::{en_vivo, routes, state::AppState};
@@ -46,12 +46,19 @@ async fn main() -> anyhow::Result<()> {
     let acceso = AccesoConfig::from_env().context("configuración de control de acceso inválida")?;
     let firma_qr = infra_seguridad::FirmaQrEd25519::new(acceso.qr_secreto.as_bytes())
         .context("ACCESO_QR_SECRETO inválido")?;
-    let state = AppState::new(
+    let limites = LimitesConfig::from_env().context("configuración de límites inválida")?;
+    let mut state = AppState::new(
         db,
         archivos,
         seguridad.plataforma_exige_segundo_factor,
         firma_qr,
     );
+    state.limitador = std::sync::Arc::new(api::limite::Limitador::new(api::limite::Limites {
+        auth_por_minuto: limites.auth_por_minuto,
+        publico_por_minuto: limites.publico_por_minuto,
+        confiar_proxy: limites.confiar_proxy,
+    }));
+    tracing::info!(?limites, "límite de peticiones por IP");
     // Tablero en vivo: oyente de `pg_notify` y emisor cada ~500 ms, hasta el apagado.
     let (avisar_apagado, apagado) = tokio::sync::watch::channel(false);
     let esperar = |mut rx: tokio::sync::watch::Receiver<bool>| async move {
@@ -74,10 +81,13 @@ async fn main() -> anyhow::Result<()> {
         .with_context(|| format!("no se pudo abrir el puerto {addr}"))?;
 
     tracing::info!(%addr, "servidor escuchando");
-    axum::serve(listener, app)
-        .with_graceful_shutdown(shared::apagado::senal_apagado())
-        .await
-        .context("error del servidor HTTP")?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .with_graceful_shutdown(shared::apagado::senal_apagado())
+    .await
+    .context("error del servidor HTTP")?;
     let _ = avisar_apagado.send(true);
     for t in [oyente, emisor] {
         if let Err(e) = t.await {

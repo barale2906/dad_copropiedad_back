@@ -1,0 +1,132 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, ocurrido_en, actor_id, accion, entidad, entidad_id, resultado, detalle,\n                    request_id\n             FROM auditoria\n             WHERE ($1::text IS NULL OR entidad = $1)\n               AND ($2::uuid IS NULL OR entidad_id = $2)\n               AND ($3::text IS NULL OR accion = $3)\n               AND ($4::text IS NULL OR accion LIKE $4)\n               AND ($5::uuid IS NULL OR actor_id = $5)\n               AND ($6::timestamptz IS NULL OR ocurrido_en >= $6)\n               AND ($7::timestamptz IS NULL OR ocurrido_en < $7)\n               AND ($8::bigint IS NULL OR id < $8)\n             ORDER BY id DESC LIMIT $9",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "ocurrido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "ocurrido_en"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "actor_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "actor_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "accion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "accion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "entidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "entidad"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "entidad_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "entidad_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "resultado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "resultado"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "detalle",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "detalle"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "request_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "auditoria",
+            "name": "request_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "a78f5a2277b3630ef6f0e2030b0f3af15c9892985440d5c0124743b9133b7c80"
+}

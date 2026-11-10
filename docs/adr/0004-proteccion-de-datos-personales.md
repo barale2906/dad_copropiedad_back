@@ -27,7 +27,10 @@ encargada.
 
 ## Consecuencias
 - Hay prueba de cada autorización y de su revocación, por versión de la política.
-- Pendiente con el plan 02 (sesión y permisos): endpoints del titular (ver mis datos, autorizar,
-  revocar, radicar). Con el plan 07: detalle y respuesta de las solicitudes como tickets. Con
-  el censo (plan 07): marcar datos de menores (art. 7) y sensibles con acceso restringido.
+- Actualización 2026-11-09 (plan 09): endpoints del titular y de la administración en
+  `/proteccion-datos/…` y `/personas/{persona_id}/…`; quien actúa es el titular sobre sí mismo o
+  quien tiene `proteccion_datos.gestionar`. Las solicitudes tienen detalle, trámite, prórroga
+  única con motivo y respuesta (texto o archivo) dentro del módulo, sin pasar por tickets; la
+  consulta «mis datos» se audita. Los datos de menores y sensibles ya se marcan en el censo
+  (ADR 0007). El borrado efectivo tras una supresión lo hace la administración en el censo.
 - Nueva columna con datos personales = su `COMMENT ON` en la misma migración y en la prueba.

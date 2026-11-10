@@ -6,11 +6,11 @@ use std::future::Future;
 
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    ArchivoId, AutorizacionId, FinalidadTratamiento, MedioAutorizacion, PersonaId,
-    PoliticaTratamientoId, SolicitudTitularId, TipoSolicitudTitular,
+    ArchivoId, AutorizacionId, CuentaId, EstadoSolicitudTitular, FinalidadTratamiento,
+    MedioAutorizacion, PersonaId, PoliticaTratamientoId, SolicitudTitularId, TipoSolicitudTitular,
 };
 
-use crate::AppResult;
+use crate::{AppResult, Pagina, SolicitudPagina};
 
 /// Versión publicada de la política de tratamiento. Inmutable: un cambio es una versión nueva.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -46,6 +46,42 @@ pub struct SolicitudTitular {
     pub radicada_en: DateTime<Utc>,
     /// Último día (hora de Colombia) para responder sin prórroga.
     pub vence_el: NaiveDate,
+    pub estado: EstadoSolicitudTitular,
+    /// Lo que pide el titular (dato personal).
+    pub detalle: Option<String>,
+    /// Cuenta que la radicó (el titular o la administración por él).
+    pub radicada_por: Option<CuentaId>,
+    /// Nuevo vencimiento si se prorrogó (una sola vez).
+    pub prorrogada_hasta: Option<NaiveDate>,
+    pub motivo_prorroga: Option<String>,
+    pub respuesta: Option<String>,
+    pub respuesta_archivo_id: Option<ArchivoId>,
+    pub respondida_en: Option<DateTime<Utc>>,
+    pub respondida_por: Option<CuentaId>,
+}
+
+impl SolicitudTitular {
+    /// Último día para responder (con la prórroga, si la hubo).
+    pub fn vence(&self) -> NaiveDate {
+        self.prorrogada_hasta.unwrap_or(self.vence_el)
+    }
+}
+
+/// Autorización con su estado.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AutorizacionRegistrada {
+    pub autorizacion: Autorizacion,
+    pub politica_version: u32,
+    pub revocada_en: Option<DateTime<Utc>>,
+}
+
+/// Filtro de solicitudes del titular.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FiltroSolicitudes {
+    pub estado: Option<EstadoSolicitudTitular>,
+    pub persona_id: Option<PersonaId>,
+    /// Solo las sin responder cuyo vencimiento (con prórroga) es anterior o igual a esta fecha.
+    pub vencen_hasta: Option<NaiveDate>,
 }
 
 /// Persistencia de la protección de datos dentro de una transacción.
@@ -87,6 +123,36 @@ pub trait RepositorioProteccionDatos: Send {
     ) -> impl Future<Output = AppResult<Vec<FinalidadTratamiento>>> + Send;
 
     fn insertar_solicitud(
+        &mut self,
+        solicitud: &SolicitudTitular,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Todas las versiones de la política, la más reciente primero.
+    fn historial_politicas(
+        &mut self,
+    ) -> impl Future<Output = AppResult<Vec<PoliticaTratamiento>>> + Send;
+
+    /// Autorizaciones (vigentes y revocadas) de la persona, más recientes primero.
+    fn autorizaciones_de_persona(
+        &mut self,
+        persona_id: PersonaId,
+    ) -> impl Future<Output = AppResult<Vec<AutorizacionRegistrada>>> + Send;
+
+    /// Solicitudes, más recientes primero (cursor por `id` descendente).
+    fn solicitudes(
+        &mut self,
+        filtro: &FiltroSolicitudes,
+        pagina: SolicitudPagina,
+    ) -> impl Future<Output = AppResult<Pagina<SolicitudTitular>>> + Send;
+
+    /// Solicitud bloqueada para actualizar (`FOR UPDATE`).
+    fn solicitud_para_actualizar(
+        &mut self,
+        id: SolicitudTitularId,
+    ) -> impl Future<Output = AppResult<Option<SolicitudTitular>>> + Send;
+
+    /// Guarda estado, prórroga y respuesta.
+    fn actualizar_solicitud(
         &mut self,
         solicitud: &SolicitudTitular,
     ) -> impl Future<Output = AppResult<()>> + Send;

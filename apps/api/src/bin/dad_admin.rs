@@ -7,6 +7,13 @@
 //!
 //! Crea la cuenta (o reutiliza la que tenga ese usuario) y le asigna el rol superusuario. La
 //! contraseña se lee de `DAD_ADMIN_CONTRASENA` para que no quede en el historial del shell.
+//!
+//! ```text
+//! DATABASE_URL=postgres://dueno… dad_admin migrar
+//! ```
+//!
+//! Aplica las migraciones pendientes con el **dueño del esquema** (`DATABASE_URL`). Es el paso
+//! explícito del despliegue: la API y el gateway nunca migran al arrancar en producción.
 
 use anyhow::{Context, bail};
 use application::{
@@ -34,11 +41,13 @@ fn argumento(args: &[String], nombre: &str) -> Option<String> {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if args.first().map(String::as_str) != Some("crear-superusuario") {
-        bail!(
+    match args.first().map(String::as_str) {
+        Some("crear-superusuario") => {}
+        Some("migrar") => return migrar().await,
+        _ => bail!(
             "uso: dad_admin crear-superusuario --usuario U --correo C --nombre N \
-             (contraseña en DAD_ADMIN_CONTRASENA)"
-        );
+             (contraseña en DAD_ADMIN_CONTRASENA) | dad_admin migrar (dueño en DATABASE_URL)"
+        ),
     }
     let usuario = NombreUsuario::new(&argumento(&args, "--usuario").context("falta --usuario")?)?;
     let correo = argumento(&args, "--correo")
@@ -92,5 +101,17 @@ async fn main() -> anyhow::Result<()> {
         "Superusuario listo: usuario `{}` (cuenta {cuenta}). Inicie sesión en POST /api/v1/auth/sesion.",
         usuario.as_str()
     );
+    Ok(())
+}
+
+/// Aplica las migraciones con el dueño del esquema.
+async fn migrar() -> anyhow::Result<()> {
+    let _ = dotenvy::dotenv();
+    let url = std::env::var("DATABASE_URL")
+        .context("defina DATABASE_URL con el dueño del esquema (no el rol dad_app)")?;
+    infra_postgres::migrar(&url)
+        .await
+        .context("no se pudieron aplicar las migraciones")?;
+    eprintln!("migraciones aplicadas");
     Ok(())
 }

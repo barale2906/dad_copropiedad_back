@@ -48,6 +48,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "domain",
+ "dotenvy",
  "hex",
  "infra-archivos",
  "infra-pdf",

@@ -16,6 +16,7 @@
 mod acceso;
 mod archivos;
 pub(crate) mod asambleas;
+mod auditoria;
 mod auth;
 mod bienes_privados;
 mod censo;
@@ -29,6 +30,7 @@ mod mantenimiento;
 mod organizaciones;
 mod parqueaderos;
 mod plataforma;
+mod proteccion_datos;
 mod reservas;
 mod roles;
 mod tickets;

@@ -86,6 +86,19 @@ Con `API_DOCS_HABILITADA=true` (así viene en `.env.example`): documentación in
 > El rol `dad_app` se crea con login la **primera vez** que se crea el volumen de PostgreSQL
 > (`docker/postgres/init`). Si ya tenías el volumen: `docker compose down -v && docker compose up -d --wait`.
 
+## Producción
+
+Despliegue en el VPS con la imagen que publica el CI (GHCR), `docker-compose.prod.yml` y Nginx de
+HestiaCP: ver [`docs/despliegue.md`](docs/despliegue.md). Las migraciones son un paso explícito
+(`dad_admin migrar`). Detrás de Nginx: `CONFIAR_PROXY=true` para que el límite de peticiones use
+la IP real (`LIMITE_AUTH_POR_MINUTO`, `LIMITE_PUBLICO_POR_MINUTO`).
+
+Protección de datos (Ley 1581, ADR 0004): la PH publica su política en
+`/api/v1/copropiedades/{id}/proteccion-datos/politicas`; cada titular autoriza finalidades,
+consulta «mis datos» y radica consultas o reclamos, que la administración tramita, prorroga una
+vez y responde dentro de los plazos legales. La auditoría se consulta en `/auditoria`
+(`auditoria.ver`).
+
 ## Desarrollo
 ```bash
 bacon                 # revisión continua al guardar

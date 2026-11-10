@@ -7,7 +7,7 @@ pub mod config;
 pub mod telemetry;
 
 pub use config::{
-    AccesoConfig, AppConfig, ArchivosConfig, ConfigError, FCM_API_URL_PREDETERMINADA, LogFormat,
-    PuenteConfig, PushConfig, SeguridadConfig, SeguridadSmtp, SmtpConfig, TipoAlmacen,
-    WHATSAPP_API_URL_PREDETERMINADA, WhatsappConfig,
+    AccesoConfig, AppConfig, ArchivosConfig, ConfigError, FCM_API_URL_PREDETERMINADA,
+    LimitesConfig, LogFormat, PuenteConfig, PushConfig, SeguridadConfig, SeguridadSmtp, SmtpConfig,
+    TipoAlmacen, WHATSAPP_API_URL_PREDETERMINADA, WhatsappConfig,
 };

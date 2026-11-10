@@ -29,6 +29,7 @@ use uuid::Uuid;
 use crate::{
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::{Json, Path, Query},
+    limite::LimitePublico,
     openapi::ETIQUETA_ARCHIVOS,
     sesion::EnCopropiedad,
     state::AppState,
@@ -201,6 +202,7 @@ pub struct ParametrosEnlace {
     )
 )]
 pub async fn descargar(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     Query(p): Query<ParametrosEnlace>,
 ) -> ApiResult<Response> {

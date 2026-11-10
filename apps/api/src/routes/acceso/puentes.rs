@@ -30,6 +30,7 @@ use super::{
 use crate::{
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::{Json, Query},
+    limite::LimitePublico,
     openapi::ETIQUETA_ACCESO,
     state::AppState,
 };
@@ -178,6 +179,7 @@ pub struct SincronizacionRespuesta {
     )
 )]
 pub async fn sincronizacion(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     PuenteMaquina(p): PuenteMaquina,
     Query(q): Query<SincronizacionQuery>,
@@ -257,6 +259,7 @@ pub struct ReporteRespuesta {
     )
 )]
 pub async fn eventos(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     PuenteMaquina(p): PuenteMaquina,
     Json(r): Json<ReportePeticion>,
@@ -321,6 +324,7 @@ pub struct LatidoPeticion {
     )
 )]
 pub async fn latido(
+    _limite: LimitePublico,
     State(state): State<AppState>,
     PuenteMaquina(p): PuenteMaquina,
     Json(l): Json<LatidoPeticion>,

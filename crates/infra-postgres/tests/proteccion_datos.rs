@@ -140,6 +140,7 @@ async fn solicitud_queda_radicada_con_su_vencimiento(pool: PgPool) {
         &ctx,
         persona,
         TipoSolicitudTitular::Supresion,
+        Some("Quiero que borren mi correo".into()),
     )
     .await
     .expect("radica");
@@ -208,7 +209,8 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('entregas_correspondencia', 'tercero_nombre'),
                ('entregas_correspondencia', 'tercero_documento'), ('minuta_porteria', 'texto'),
                ('eventos_acceso', 'placa'), ('dispositivos_push', 'token'),
-               ('consentimientos_biometricos', 'persona_id'))
+               ('consentimientos_biometricos', 'persona_id'), ('solicitudes_titular', 'detalle'),
+               ('solicitudes_titular', 'respuesta'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",
@@ -221,4 +223,92 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
         sin_clasificar.is_empty(),
         "sin COMMENT dato_personal: {sin_clasificar:?}"
     );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_solicitud_recorre_su_ciclo_en_la_base(pool: PgPool) {
+    use application::{
+        SolicitudPagina,
+        casos_uso::proteccion_datos::{
+            listar_solicitudes, mis_datos, prorrogar_solicitud, responder_solicitud,
+            tramitar_solicitud,
+        },
+        puertos::proteccion_datos::FiltroSolicitudes,
+    };
+    let (unidad, ctx, persona) = con_politica(&pool).await;
+    registrar_autorizacion(
+        &unidad,
+        &RelojSistema,
+        &ctx,
+        otorgada(persona, &[Comunicaciones]),
+    )
+    .await
+    .expect("autoriza");
+    let s = radicar_solicitud(
+        &unidad,
+        &RelojSistema,
+        &ctx,
+        persona,
+        TipoSolicitudTitular::Consulta,
+        None,
+    )
+    .await
+    .expect("radica");
+
+    tramitar_solicitud(&unidad, &ctx, s.id)
+        .await
+        .expect("trámite");
+    let p = prorrogar_solicitud(&unidad, &RelojSistema, &ctx, s.id, "Verificación")
+        .await
+        .expect("prórroga");
+    responder_solicitud(
+        &unidad,
+        &RelojSistema,
+        &ctx,
+        s.id,
+        Some("Sus datos son…".into()),
+        None,
+    )
+    .await
+    .expect("responde");
+
+    let todas = listar_solicitudes(
+        &unidad,
+        &ctx,
+        FiltroSolicitudes::default(),
+        SolicitudPagina::default(),
+    )
+    .await
+    .expect("listar");
+    assert_eq!(todas.datos.len(), 1);
+    assert_eq!(todas.datos[0].prorrogada_hasta, p.prorrogada_hasta);
+    let vencidas = listar_solicitudes(
+        &unidad,
+        &ctx,
+        FiltroSolicitudes {
+            vencen_hasta: Some(chrono::NaiveDate::MAX),
+            ..FiltroSolicitudes::default()
+        },
+        SolicitudPagina::default(),
+    )
+    .await
+    .expect("listar");
+    assert!(
+        vencidas.datos.is_empty(),
+        "respondida: no cuenta como vencida"
+    );
+    let datos = mis_datos(&unidad, &ctx, Some(persona))
+        .await
+        .expect("datos");
+    assert_eq!(
+        (datos.autorizaciones.len(), datos.solicitudes.len()),
+        (1, 1)
+    );
+
+    // La base rechaza una respuesta vacía aunque alguien salte el caso de uso.
+    let r = sqlx::query("UPDATE solicitudes_titular SET respuesta = NULL WHERE id = $1")
+        .bind(s.id.as_uuid())
+        .execute(&pool)
+        .await;
+    assert!(r.is_err());
 }

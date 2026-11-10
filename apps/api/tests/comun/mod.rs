@@ -33,6 +33,11 @@ impl Drop for DirTemporal {
 }
 
 pub async fn api(pool: PgPool) -> Api {
+    api_con_limites(pool, api::limite::Limites::ninguno()).await
+}
+
+/// API con límites de peticiones (las pruebas del limitador).
+pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api {
     let app = PgPoolOptions::new()
         .max_connections(4)
         .after_connect(|c, _| {
@@ -60,12 +65,16 @@ pub async fn api(pool: PgPool) -> Api {
     };
     Api {
         router: routes::router(
-            AppState::new(
-                app,
-                almacen,
-                true,
-                FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
-            ),
+            {
+                let mut state = AppState::new(
+                    app,
+                    almacen,
+                    true,
+                    FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
+                );
+                state.limitador = std::sync::Arc::new(api::limite::Limitador::new(limites));
+                state
+            },
             &config,
         ),
         duenio: pool,
