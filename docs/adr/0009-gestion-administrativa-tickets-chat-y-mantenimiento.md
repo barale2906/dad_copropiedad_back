@@ -73,6 +73,9 @@ necesitan hoja de vida, mantenimiento preventivo y control de certificaciones (p
   para enviar, `WHATSAPP_ACCESS_TOKEN`; sin token recibe pero no envía.
 - Hay que registrar en Meta las plantillas `ticket_actualizado` (número, estado, detalle) y
   `reporte_urgente` (número, asunto, ubicación) en español.
-- Pendiente: votar desde el chat (plan 06), autorizar visitas (plan 05), ticket automático desde
-  la novedad del recibo de una reserva, `/yo/tickets` entre copropiedades y atender como tickets
-  las solicitudes del titular de datos (plan 01).
+- Actualización 2026-11-10 (plan 10, fase 1): el menú del chat ofrece «Autorizar una visita»
+  (QR temporal sin exigir cuenta: el teléfono identifica a la persona), «Mis paquetes» y, con una
+  asamblea en curso, «Votar» (reenvía las preguntas abiertas pendientes). `GET /api/v1/yo/tickets`
+  reúne las solicitudes de la cuenta en todas sus PH (función `tickets_de_cuenta`). Las
+  solicitudes del titular de datos se atienden en su propio módulo (ADR 0004). El menú prioriza
+  las opciones porque WhatsApp admite 10 filas.

@@ -37,7 +37,9 @@ use infra_postgres::{
 };
 use infra_push::ClienteFcm;
 use infra_whatsapp::ClienteWhatsapp;
-use shared::{AppConfig, ArchivosConfig, PushConfig, SmtpConfig, WhatsappConfig, telemetry};
+use shared::{
+    AccesoConfig, AppConfig, ArchivosConfig, PushConfig, SmtpConfig, WhatsappConfig, telemetry,
+};
 use tokio::{
     net::TcpListener,
     sync::{Notify, watch},
@@ -97,6 +99,11 @@ async fn main() -> anyhow::Result<()> {
         &ArchivosConfig::from_env().context("configuración de archivos inválida")?,
     )
     .context("almacén de archivos inválido")?;
+    let acceso = AccesoConfig::from_env().context("configuración de control de acceso inválida")?;
+    let firma_qr = Arc::new(
+        infra_seguridad::FirmaQrEd25519::new(acceso.qr_secreto.as_bytes())
+            .context("ACCESO_QR_SECRETO inválido")?,
+    );
     let push = PushConfig::from_env().context("configuración de push inválida")?;
     let fcm = match &push.credenciales {
         Some(ruta) => {
@@ -161,6 +168,7 @@ async fn main() -> anyhow::Result<()> {
         mensajeria,
         archivos,
         hay_salida,
+        firma_qr,
         db,
         whatsapp: Arc::new(whatsapp),
     };

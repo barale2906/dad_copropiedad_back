@@ -362,3 +362,27 @@ pub trait DirectorioGestion: Send + Sync {
         &self,
     ) -> impl Future<Output = AppResult<Vec<TenantId>>> + Send;
 }
+
+/// Ticket de la cuenta en cualquiera de sus copropiedades (sin descripción ni mensajes).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TicketDeCuenta {
+    pub tenant_id: TenantId,
+    pub copropiedad: String,
+    pub ticket_id: TicketId,
+    pub numero: NumeroTicket,
+    pub tipo: TipoTicket,
+    pub estado: EstadoTicket,
+    pub asunto: String,
+    pub creado_en: DateTime<Utc>,
+    pub actualizado_en: DateTime<Utc>,
+}
+
+/// Tickets de una cuenta en todas sus copropiedades (transacción de plataforma, función
+/// `SECURITY DEFINER` `tickets_de_cuenta`).
+pub trait RepositorioTicketsDeCuenta: Send {
+    fn tickets_de_cuenta(
+        &mut self,
+        cuenta: CuentaId,
+        limite: u32,
+    ) -> impl Future<Output = AppResult<Vec<TicketDeCuenta>>> + Send;
+}

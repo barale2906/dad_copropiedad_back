@@ -35,7 +35,8 @@ Correos en desarrollo: `docker compose up -d` también levanta **Mailpit**; todo
 gateway aparece en <http://localhost:8025> (no sale a internet).
 
 WhatsApp: el gateway recibe el webhook en `/webhook/whatsapp` y atiende el chat de la
-copropiedad (menú, reportes con foto, reservas, bandeja humana). Para **enviar** necesita
+copropiedad (menú, reportes con foto, reservas, bandeja humana, autorizar visitas con QR, paquetes
+en portería y, con una asamblea en curso, votar). Para **enviar** necesita
 `WHATSAPP_ACCESS_TOKEN`; sin él recibe y deja las respuestas pendientes en el outbox. Las
 plantillas `ticket_actualizado` y `reporte_urgente` deben estar aprobadas en Meta (ADR 0009). El
 gateway usa las mismas variables `ARCHIVOS_*` de la API para guardar las fotos recibidas, y su

@@ -229,6 +229,44 @@ where
     Ok(ResultadoAsamblea::Atendido { respuestas })
 }
 
+/// Reenvía las preguntas abiertas que el teléfono aún no ha votado en todas sus asambleas (la
+/// opción «Votar» del chat). Solo para asistentes presentes; cada pregunta conserva su id
+/// `vt:{tenant}:{pregunta}:{opcion}`. El mensaje del residente abre la ventana de 24 h, así que
+/// su teléfono y su línea quedan como medio de la asamblea. Devuelve cuántas se enviaron.
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si falla la base de datos.
+pub async fn reenviar_preguntas_abiertas<U, D, R>(
+    unidad: &U,
+    directorio: &D,
+    reloj: &R,
+    m: &MensajeEntrante,
+) -> AppResult<u32>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxAsambleas,
+    D: DirectorioAsambleas,
+    R: Reloj,
+{
+    let mut enviadas = 0;
+    for asis in directorio.asistencias_por_telefono(&m.telefono).await? {
+        let ctx = ctx_de(asis.tenant_id, m);
+        let mut tx = super::abrir(unidad, reloj, &ctx).await?;
+        let Some(a) = tx.asistente(asis.asistente_id).await? else {
+            continue;
+        };
+        if !a.presente {
+            continue;
+        }
+        let r = super::reunion_de(&mut tx, asis.reunion_id).await?;
+        marcar_ventana(&mut tx, &a, m, reloj.ahora()).await?;
+        enviadas += enviar_abiertas(&mut tx, &ctx, &r, a.id).await?;
+        tx.confirmar().await?;
+    }
+    Ok(enviadas)
+}
+
 enum Accion {
     Votar(TenantId, PreguntaId, Vec<OpcionId>),
     Confirmar(TenantId, AsistenteId),

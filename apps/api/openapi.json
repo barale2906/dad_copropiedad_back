@@ -837,6 +837,68 @@
         ]
       }
     },
+    "/api/v1/yo/tickets": {
+      "get": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Solicitudes (tickets) que la cuenta radicó en todas sus copropiedades, las movidas más\nrecientemente primero. El detalle se consulta dentro de cada copropiedad.",
+        "operationId": "mis_tickets",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "1–100 (20 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Solicitudes de la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TicketDeCuentaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`limite` fuera de rango (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/yo/correo/verificar": {
       "post": {
         "tags": [
@@ -30698,6 +30760,57 @@
           "vigente_desde": {
             "type": "string",
             "format": "date"
+          }
+        }
+      },
+      "TicketDeCuentaRespuesta": {
+        "type": "object",
+        "description": "Solicitud de la cuenta en una de sus copropiedades.",
+        "required": [
+          "copropiedad_id",
+          "copropiedad",
+          "ticket_id",
+          "numero",
+          "tipo",
+          "estado",
+          "asunto",
+          "creado_en",
+          "actualizado_en"
+        ],
+        "properties": {
+          "copropiedad_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "copropiedad": {
+            "type": "string"
+          },
+          "ticket_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "numero": {
+            "type": "string",
+            "example": "PQR-2026-00042"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "solicitud_mantenimiento"
+          },
+          "estado": {
+            "type": "string",
+            "example": "en_progreso"
+          },
+          "asunto": {
+            "type": "string"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualizado_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },

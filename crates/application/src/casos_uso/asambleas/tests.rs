@@ -1239,6 +1239,60 @@ async fn whatsapp_texto_libre_solo_con_una_pregunta_pendiente() {
     );
 }
 
+#[tokio::test]
+async fn votar_desde_el_chat_reenvia_solo_lo_pendiente() {
+    let e = entorno();
+    let (r, a) = instalada_con(&e, ConfiguracionReunion::default()).await;
+    let p1 = pregunta_abierta(&e, &r, si_no()).await;
+    let directorio = Directorio(vec![AsistenciaTelefono {
+        tenant_id: e.ctx.tenant_id,
+        copropiedad: "PH".into(),
+        reunion_id: r.id,
+        titulo: r.titulo.clone(),
+        asistente_id: a,
+        linea: Some("PNID".into()),
+        confirmado: true,
+    }]);
+    let tel = telefono(0);
+    let antes = e.unidad.outbox().len();
+
+    let n = super::whatsapp::reenviar_preguntas_abiertas(
+        &e.unidad,
+        &directorio,
+        &reloj(),
+        &entrante(
+            &tel,
+            "wamid.chat",
+            ContenidoEntrante::Texto {
+                cuerpo: "menú".into(),
+            },
+        ),
+    )
+    .await
+    .expect("reenvía");
+    assert_eq!(n, 1);
+    assert!(e.unidad.outbox().len() > antes);
+
+    emitir_voto(&e.unidad, &reloj(), &e.ctx, voto(&r, &p1, a, 0, "web"))
+        .await
+        .expect("vota");
+    let n = super::whatsapp::reenviar_preguntas_abiertas(
+        &e.unidad,
+        &directorio,
+        &reloj(),
+        &entrante(
+            &tel,
+            "wamid.chat2",
+            ContenidoEntrante::Texto {
+                cuerpo: "menú".into(),
+            },
+        ),
+    )
+    .await
+    .expect("reenvía");
+    assert_eq!(n, 0, "ya votó");
+}
+
 #[test]
 fn opciones_de_texto_entiende_numeros_y_si_no() {
     let p = PreguntaGuardada {

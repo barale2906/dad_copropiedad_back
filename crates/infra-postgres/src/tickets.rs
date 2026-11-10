@@ -810,3 +810,41 @@ impl RepositorioTickets for TransaccionPg {
             .map_err(AppError::infra)
     }
 }
+
+impl application::puertos::tickets::RepositorioTicketsDeCuenta for crate::TransaccionPlataformaPg {
+    async fn tickets_de_cuenta(
+        &mut self,
+        cuenta: CuentaId,
+        limite: u32,
+    ) -> AppResult<Vec<application::puertos::tickets::TicketDeCuenta>> {
+        sqlx::query!(
+            r#"SELECT tenant_id AS "tenant_id!", copropiedad AS "copropiedad!", ticket_id AS "ticket_id!",
+                      anio AS "anio!", consecutivo AS "consecutivo!", tipo AS "tipo!", estado AS "estado!",
+                      asunto AS "asunto!", creado_en AS "creado_en!", actualizado_en AS "actualizado_en!"
+               FROM tickets_de_cuenta($1, $2)"#,
+            cuenta.as_uuid(),
+            i32::try_from(limite).unwrap_or(100),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            Ok(application::puertos::tickets::TicketDeCuenta {
+                tenant_id: domain::TenantId::from_uuid(f.tenant_id),
+                copropiedad: f.copropiedad,
+                ticket_id: TicketId::from_uuid(f.ticket_id),
+                numero: NumeroTicket {
+                    anio: i32::from(f.anio),
+                    consecutivo: u32::try_from(f.consecutivo).unwrap_or(0),
+                },
+                tipo: TipoTicket::try_from(f.tipo.as_str())?,
+                estado: EstadoTicket::try_from(f.estado.as_str())?,
+                asunto: f.asunto,
+                creado_en: f.creado_en,
+                actualizado_en: f.actualizado_en,
+            })
+        })
+        .collect()
+    }
+}

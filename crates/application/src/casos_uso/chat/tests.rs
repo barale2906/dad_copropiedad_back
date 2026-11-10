@@ -110,7 +110,52 @@ impl Mensajeria for MetaFalsa {
     }
 }
 
+/// Asistencias simuladas por teléfono (opción «Votar»).
+#[derive(Default)]
+struct Asambleas(Mutex<Vec<crate::puertos::asambleas::AsistenciaTelefono>>);
+
+impl DirectorioAsambleas for Asambleas {
+    async fn asistencias_por_telefono(
+        &self,
+        _telefono: &str,
+    ) -> AppResult<Vec<crate::puertos::asambleas::AsistenciaTelefono>> {
+        Ok(self.0.lock().expect("mutex").clone())
+    }
+
+    async fn copropiedades_con_asambleas_pendientes(&self) -> AppResult<Vec<TenantId>> {
+        Ok(Vec::new())
+    }
+
+    async fn registrar_acuse(&self, _: &crate::puertos::asambleas::AcuseEntrega) -> AppResult<()> {
+        Ok(())
+    }
+
+    async fn actualizar_calidad_linea(&self, _: &str, _: bool, _: Option<&str>) -> AppResult<()> {
+        Ok(())
+    }
+}
+
+/// Firma de prueba (64 bytes deterministas).
+struct FirmaFalsa;
+
+impl FirmaQr for FirmaFalsa {
+    fn firmar(&self, _tenant: TenantId, carga: &[u8]) -> Vec<u8> {
+        let mut f = carga.to_vec();
+        f.resize(64, 7);
+        f
+    }
+
+    fn verificar(&self, tenant: TenantId, carga: &[u8], firma: &[u8]) -> bool {
+        self.firmar(tenant, carga) == firma
+    }
+
+    fn clave_publica(&self, _tenant: TenantId) -> [u8; 32] {
+        [0; 32]
+    }
+}
+
 struct Entorno {
+    asambleas: Asambleas,
     unidad: UnidadEnMemoria,
     sesiones: SesionesEnMemoria,
     directorio: Directorio,
@@ -151,6 +196,7 @@ fn entorno(vinculos: usize) -> Entorno {
             .collect(),
     );
     Entorno {
+        asambleas: Asambleas::default(),
         unidad,
         sesiones: SesionesEnMemoria::default(),
         directorio,
@@ -185,6 +231,8 @@ impl Entorno {
             mensajeria: &MetaFalsa,
             almacen: &self.almacen,
             reloj: &RelojFijo(ahora()),
+            asambleas: &self.asambleas,
+            firma: &FirmaFalsa,
         };
         atender_mensaje(
             &s,
@@ -436,4 +484,165 @@ fn menu_y_comandos_reconocidos() {
     assert!(pide_menu(&elige(ID_MENU)));
     assert!(!pide_menu(&texto("menudo problema")));
     assert_eq!(corto("abcdef", 4), "abc…");
+}
+
+/// Entorno con control de acceso: la persona del chat reside en el bien de su vínculo.
+fn entorno_con_acceso() -> Entorno {
+    let e = entorno(1);
+    e.unidad.habilitar(Modulo::ControlAcceso);
+    let (persona, bien) = (e.persona, e.directorio.0[0].bien_privado_id);
+    e.unidad.con_datos(|d| {
+        d.bienes.insert(
+            bien,
+            crate::puertos::copropiedades::BienPrivado {
+                id: bien,
+                codigo: domain::CodigoBienPrivado::new("T1-100").expect("código"),
+                tipo: domain::TipoBienPrivado::Apartamento,
+                agrupacion_id: None,
+                numero: None,
+                piso: None,
+                area_privada_m2: None,
+                matricula_inmobiliaria: None,
+                cedula_catastral: None,
+                uso: domain::UsoBienPrivado::Residencial,
+                activo: true,
+                bien_principal_id: None,
+                coeficiente: None,
+            },
+        );
+        d.residencias.push(crate::puertos::censo::Residencia {
+            id: domain::ResidenciaId::nuevo(),
+            bien_privado_id: bien,
+            persona_id: persona,
+            calidad: domain::CalidadResidencia::Familiar,
+            es_responsable: true,
+            autorizado_por: None,
+            contrato_archivo_id: None,
+            vigente_desde: ahora() - Duration::days(30),
+            vigente_hasta: None,
+            reservas_autorizadas: true,
+        });
+    });
+    e
+}
+
+#[tokio::test]
+async fn sin_asamblea_el_menu_no_ofrece_votar_y_con_ella_si() {
+    let e = entorno(1);
+    let menu = e.enviar(texto("hola")).await;
+    assert!(!ids(&menu[0]).contains(&"m:votar".to_owned()));
+    assert!(ids(&menu[0]).contains(&"m:visita".to_owned()));
+
+    e.asambleas
+        .0
+        .lock()
+        .expect("mutex")
+        .push(crate::puertos::asambleas::AsistenciaTelefono {
+            tenant_id: e.tenant,
+            copropiedad: "Conjunto Alameda".into(),
+            reunion_id: domain::ReunionId::nuevo(),
+            titulo: "Asamblea ordinaria".into(),
+            asistente_id: domain::AsistenteId::nuevo(),
+            linea: None,
+            confirmado: true,
+        });
+    let menu = e.enviar(texto("menú")).await;
+    assert_eq!(ids(&menu[0])[0], "m:votar");
+    assert!(ids(&menu[0]).len() <= ContenidoSaliente::MAX_FILAS_LISTA);
+}
+
+#[tokio::test]
+async fn votar_sin_preguntas_abiertas_lo_explica() {
+    let e = entorno(1);
+    e.enviar(texto("hola")).await;
+
+    let r = e.enviar(elige("m:votar")).await;
+
+    assert!(
+        matches!(&r[0], ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("No tiene preguntas"))
+    );
+}
+
+#[tokio::test]
+async fn autorizar_una_visita_desde_el_chat_envia_el_qr_sin_cuenta() {
+    let e = entorno_con_acceso();
+    e.enviar(texto("hola")).await;
+    e.enviar(elige("m:visita")).await;
+    assert_eq!(e.paso(), Some(Paso::VisitaNombre));
+
+    let dias = e.enviar(texto("Rosa Pérez")).await;
+    let hoy = ahora()
+        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .date_naive();
+    assert!(ids(&dias[0]).contains(&format!("vd:{hoy}")));
+    let r = e.enviar(elige(&format!("vd:{hoy}"))).await;
+
+    assert!(
+        r.iter().any(
+            |c| matches!(c, ContenidoSaliente::Texto { cuerpo } if cuerpo.starts_with("DQ1."))
+        )
+    );
+    let visitas = e.unidad.datos().acceso.visitas;
+    assert_eq!(visitas.len(), 1);
+    assert_eq!(visitas[0].visitante_nombre, "Rosa Pérez");
+    assert_eq!(visitas[0].decidida_por, Some(e.persona));
+    assert_eq!(
+        visitas[0].canal_decision,
+        Some(domain::CanalRespuestaVisita::Whatsapp)
+    );
+    assert_eq!(e.paso(), Some(Paso::Menu));
+}
+
+#[tokio::test]
+async fn quien_no_vive_ni_es_dueno_no_autoriza_visitas() {
+    let e = entorno(1);
+    e.unidad.habilitar(Modulo::ControlAcceso);
+    e.enviar(texto("hola")).await;
+    e.enviar(elige("m:visita")).await;
+    e.enviar(texto("Rosa Pérez")).await;
+    let hoy = ahora()
+        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .date_naive();
+
+    let r = e.enviar(elige(&format!("vd:{hoy}"))).await;
+
+    assert!(
+        matches!(&r[0], ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("no tiene acceso"))
+    );
+    assert!(e.unidad.datos().acceso.visitas.is_empty());
+}
+
+#[tokio::test]
+async fn mis_paquetes_lista_la_correspondencia_pendiente() {
+    let e = entorno_con_acceso();
+    let bien = e.directorio.0[0].bien_privado_id;
+    e.unidad.con_datos(|d| {
+        d.acceso
+            .correspondencia
+            .push(crate::puertos::acceso::Correspondencia {
+                id: domain::CorrespondenciaId::nuevo(),
+                bien_privado_id: bien,
+                tipo: domain::TipoCorrespondencia::Paquete,
+                estado: domain::EstadoCorrespondencia::Recibida,
+                remitente: Some("Servientrega".into()),
+                guia: None,
+                ubicacion: None,
+                foto_archivo_id: None,
+                recibida_por: None,
+                recibida_en: ahora(),
+                avisos_enviados: 1,
+                ultimo_aviso_en: None,
+                siguiente_aviso_en: None,
+                alerta_administracion_en: None,
+                cerrada_en: None,
+                motivo_devolucion: None,
+            });
+    });
+    e.enviar(texto("hola")).await;
+
+    let r = e.enviar(elige("m:paquetes")).await;
+
+    assert!(
+        matches!(&r[0], ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("Servientrega"))
+    );
 }

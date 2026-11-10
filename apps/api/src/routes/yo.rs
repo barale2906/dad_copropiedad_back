@@ -1,20 +1,20 @@
 //! Rutas de la cuenta autenticada: `/api/v1/yo/…`.
 //!
 //! Datos propios de quien inició sesión, sin depender de una copropiedad: perfil, copropiedades
-//! donde tiene roles (para elegir en cuál trabajar), correo, contraseña, sesiones y segundo
-//! factor.
+//! donde tiene roles (para elegir en cuál trabajar), correo, contraseña, sesiones, segundo
+//! factor y sus solicitudes en todas sus copropiedades.
 
 use application::{casos_uso::autenticacion as uc, puertos::RelojSistema};
 use axum::{extract::State, http::StatusCode};
 use domain::{ContrasenaNueva, Permiso};
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
     error::{ApiResult, ErrorRespuesta},
-    extractores::Json,
+    extractores::{Json, Query},
     openapi::ETIQUETA_CUENTA,
     sesion::CuentaAutenticada,
     state::AppState,
@@ -25,6 +25,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(perfil))
         .routes(routes!(mis_copropiedades))
+        .routes(routes!(mis_tickets))
         .routes(routes!(verificar_correo))
         .routes(routes!(reenviar_verificacion))
         .routes(routes!(cambiar_contrasena))
@@ -281,4 +282,71 @@ pub async fn confirmar_segundo_factor(
     )
     .await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// Límite de «mis solicitudes».
+#[derive(Debug, Default, serde::Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct MisTicketsQuery {
+    /// 1–100 (20 si se omite).
+    pub limite: Option<u32>,
+}
+
+/// Solicitud de la cuenta en una de sus copropiedades.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct TicketDeCuentaRespuesta {
+    pub copropiedad_id: Uuid,
+    pub copropiedad: String,
+    pub ticket_id: Uuid,
+    #[schema(example = "PQR-2026-00042")]
+    pub numero: String,
+    #[schema(example = "solicitud_mantenimiento")]
+    pub tipo: String,
+    #[schema(example = "en_progreso")]
+    pub estado: String,
+    pub asunto: String,
+    pub creado_en: chrono::DateTime<chrono::Utc>,
+    pub actualizado_en: chrono::DateTime<chrono::Utc>,
+}
+
+/// Solicitudes (tickets) que la cuenta radicó en todas sus copropiedades, las movidas más
+/// recientemente primero. El detalle se consulta dentro de cada copropiedad.
+#[utoipa::path(
+    get,
+    path = "/tickets",
+    tag = ETIQUETA_CUENTA,
+    security(("bearer" = [])),
+    params(MisTicketsQuery),
+    responses(
+        (status = OK, description = "Solicitudes de la cuenta", body = Vec<TicketDeCuentaRespuesta>),
+        (status = UNAUTHORIZED, description = "Sin sesión (`no_autenticado`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "`limite` fuera de rango (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn mis_tickets(
+    State(state): State<AppState>,
+    cuenta: CuentaAutenticada,
+    Query(q): Query<MisTicketsQuery>,
+) -> ApiResult<Json<Vec<TicketDeCuentaRespuesta>>> {
+    let v = application::casos_uso::tickets::tickets_de_mi_cuenta(
+        &state.plataforma,
+        &cuenta.ctx,
+        q.limite.unwrap_or(20),
+    )
+    .await?;
+    Ok(Json(
+        v.into_iter()
+            .map(|t| TicketDeCuentaRespuesta {
+                copropiedad_id: t.tenant_id.as_uuid(),
+                copropiedad: t.copropiedad,
+                ticket_id: t.ticket_id.as_uuid(),
+                numero: t.numero.to_string(),
+                tipo: t.tipo.as_str().into(),
+                estado: t.estado.as_str().into(),
+                asunto: t.asunto,
+                creado_en: t.creado_en,
+                actualizado_en: t.actualizado_en,
+            })
+            .collect(),
+    ))
 }

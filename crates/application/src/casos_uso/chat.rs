@@ -14,6 +14,8 @@
 //! - Nunca se envía información de otros residentes; las respuestas solo hablan de lo propio.
 //! - Reservar exige que la persona tenga cuenta en la plataforma: se usan sus permisos, igual
 //!   que en la web.
+//! - Autorizar una visita (QR temporal), ver los paquetes en portería y votar en una asamblea no
+//!   exigen cuenta: la persona ya la identificó su teléfono (plan 10, fase 1).
 
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use domain::{
@@ -26,7 +28,13 @@ use serde::{Deserialize, Serialize};
 use crate::{
     AppError, AppResult, Contexto,
     casos_uso::{
+        acceso::{
+            TxAcceso,
+            correspondencia::listar_correspondencia,
+            visitas::{NuevaPreautorizacion, NuevaVisita, preautorizar_para_persona},
+        },
         archivos::{ArchivoSubido, subir_archivo},
+        asambleas::{TxAsambleas, whatsapp::reenviar_preguntas_abiertas},
         conversaciones::{
             EntradaConversacion, TxChat, conversacion_sigue_abierta, listar_preguntas,
             registrar_entrante,
@@ -36,8 +44,10 @@ use crate::{
         tickets::{NuevoTicket, TxTickets, listar_categorias, radicar_ticket, tickets_de_persona},
     },
     puertos::{
-        AlmacenArchivos, Mensajeria, Reloj, RepositorioArchivos, RepositorioReservas,
+        AlmacenArchivos, FirmaQr, Mensajeria, Reloj, RepositorioArchivos, RepositorioReservas,
         UnidadDeTrabajo,
+        acceso::FiltroCorrespondencia,
+        asambleas::DirectorioAsambleas,
         chat::{DirectorioTelefonos, VinculoTelefono},
         mensajeria::{
             ContenidoEntrante, ContenidoSaliente, Eleccion, MensajeEntrante, MensajeSaliente,
@@ -106,6 +116,12 @@ pub enum Paso {
     Humano {
         conversacion: ConversacionId,
     },
+    /// Autorizar una visita: nombre del visitante.
+    VisitaNombre,
+    /// Autorizar una visita: día de la visita.
+    VisitaDia {
+        nombre: String,
+    },
 }
 
 /// Reserva en construcción.
@@ -139,20 +155,27 @@ impl Default for EstadoChat {
 }
 
 /// Adaptadores que necesita el chat.
-pub struct ServiciosChat<'a, U, S, D, M, A, R> {
+pub struct ServiciosChat<'a, U, S, D, M, A, R, DA, F> {
     pub unidad: &'a U,
     pub sesiones: &'a S,
     pub directorio: &'a D,
     pub mensajeria: &'a M,
     pub almacen: &'a A,
     pub reloj: &'a R,
+    /// Asistencias por teléfono (opción «Votar»).
+    pub asambleas: &'a DA,
+    /// Firma de los QR de visitas.
+    pub firma: &'a F,
 }
 
 /// Puertos de la transacción de copropiedad que usa el chat.
-pub trait TxConversacional: TxTickets + TxChat + RepositorioReservas + RepositorioArchivos {}
+pub trait TxConversacional:
+    TxTickets + TxChat + RepositorioReservas + RepositorioArchivos + TxAcceso + TxAsambleas
+{
+}
 
 impl<T> TxConversacional for T where
-    T: TxTickets + TxChat + RepositorioReservas + RepositorioArchivos
+    T: TxTickets + TxChat + RepositorioReservas + RepositorioArchivos + TxAcceso + TxAsambleas
 {
 }
 
@@ -229,17 +252,28 @@ fn lista(cuerpo: String, boton: &str, mut filas: Vec<Eleccion>) -> ContenidoSali
     }
 }
 
-fn menu(v: &VinculoTelefono, varios: bool) -> ContenidoSaliente {
-    let mut filas = vec![
-        Eleccion::new("m:info", "Información de la PH")
-            .con_descripcion("Horarios, reglas y preguntas frecuentes"),
-        Eleccion::new("m:reservar", "Reservar bien común"),
-        Eleccion::new("m:visitante", "Parqueadero visitante"),
-        Eleccion::new("m:cita", "Cita con administración"),
+/// Menú principal. WhatsApp admite 10 filas: si sobran, salen primero las de menos uso (la
+/// opción «Votar» solo aparece con una asamblea en curso).
+fn menu(v: &VinculoTelefono, varios: bool, votar: bool) -> ContenidoSaliente {
+    let mut filas = Vec::new();
+    if votar {
+        filas.push(
+            Eleccion::new("m:votar", "Votar en la asamblea").con_descripcion("Preguntas abiertas"),
+        );
+    }
+    filas.extend([
+        Eleccion::new("m:visita", "Autorizar una visita").con_descripcion("Le enviamos el QR"),
+        Eleccion::new("m:paquetes", "Mis paquetes").con_descripcion("Correspondencia en portería"),
         Eleccion::new("m:reportar", "Reportar un daño").con_descripcion("Con foto si quiere"),
         Eleccion::new("m:estado", "Mis solicitudes"),
         Eleccion::new("m:humano", "Contactar administración"),
-    ];
+        Eleccion::new("m:reservar", "Reservar bien común"),
+        Eleccion::new("m:visitante", "Parqueadero visitante"),
+        Eleccion::new("m:cita", "Cita con administración"),
+        Eleccion::new("m:info", "Información de la PH")
+            .con_descripcion("Horarios, reglas y preguntas frecuentes"),
+    ]);
+    filas.truncate(ContenidoSaliente::MAX_FILAS_LISTA - usize::from(varios));
     if varios {
         filas.push(Eleccion::new("m:cambiar", "Cambiar bien privado"));
     }
@@ -251,6 +285,20 @@ fn menu(v: &VinculoTelefono, varios: bool) -> ContenidoSaliente {
         boton: "Ver opciones".into(),
         filas,
     }
+}
+
+/// ¿El teléfono es asistente de una asamblea en curso? (Si la consulta falla, no se ofrece.)
+async fn votacion_abierta<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+    m: &MensajeEntrante,
+) -> bool
+where
+    DA: DirectorioAsambleas,
+{
+    s.asambleas
+        .asistencias_por_telefono(&m.telefono)
+        .await
+        .is_ok_and(|a| !a.is_empty())
 }
 
 fn mensaje_error(e: &AppError) -> String {
@@ -274,8 +322,8 @@ fn mensaje_error(e: &AppError) -> String {
 ///
 /// Solo errores de las sesiones (base de datos de plataforma). Los errores de los casos de uso
 /// se responden al usuario con un mensaje seguro.
-pub async fn atender_mensaje<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+pub async fn atender_mensaje<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     m: MensajeEntrante,
 ) -> AppResult<ResultadoTurno>
 where
@@ -286,6 +334,8 @@ where
     M: Mensajeria,
     A: AlmacenArchivos,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     if s.sesiones.ya_procesado(&m.wamid).await? {
         return Ok(ResultadoTurno::Repetido);
@@ -357,8 +407,8 @@ where
     }
 }
 
-async fn conversar<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn conversar<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     m: &MensajeEntrante,
     turno: &mut Turno,
 ) -> AppResult<()>
@@ -370,6 +420,8 @@ where
     M: Mensajeria,
     A: AlmacenArchivos,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let vinculos = s.directorio.vinculos_por_telefono(&m.telefono).await?;
     if vinculos.is_empty() {
@@ -401,7 +453,7 @@ where
             };
             match elegido {
                 Some(v) => {
-                    turno.responder(menu(&v, true));
+                    turno.responder(menu(&v, true, votacion_abierta(s, m).await));
                     estado.vinculo = Some(v);
                     estado.paso = Paso::Menu;
                 }
@@ -436,8 +488,8 @@ where
 }
 
 /// Atiende el mensaje con el vínculo ya resuelto y deja en `estado` el paso siguiente.
-async fn procesar<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn procesar<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     m: &MensajeEntrante,
     estado: &mut EstadoChat,
     varios: bool,
@@ -451,6 +503,8 @@ where
     M: Mensajeria,
     A: AlmacenArchivos,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let Some(vinculo) = estado.vinculo.clone() else {
         return Ok(());
@@ -485,13 +539,13 @@ where
             return Ok(());
         }
         estado.paso = Paso::Menu;
-        turno.responder(menu(&vinculo, varios));
+        turno.responder(menu(&vinculo, varios, votacion_abierta(s, m).await));
         return Ok(());
     }
 
     if pide_menu(&m.contenido) {
         estado.paso = Paso::Menu;
-        turno.responder(menu(&vinculo, varios));
+        turno.responder(menu(&vinculo, varios, votacion_abierta(s, m).await));
         return Ok(());
     }
 
@@ -519,8 +573,8 @@ fn texto_de(c: &ContenidoEntrante) -> Option<&str> {
 
 /// Atiende el mensaje en el paso actual y devuelve el siguiente paso.
 #[allow(clippy::too_many_lines)]
-async fn avanzar<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn avanzar<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     m: &MensajeEntrante,
     ctx: &Contexto,
     v: &VinculoTelefono,
@@ -536,6 +590,8 @@ where
     M: Mensajeria,
     A: AlmacenArchivos,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let id = respuesta_id(&m.contenido);
     match paso {
@@ -606,12 +662,32 @@ where
                 );
                 Ok(Paso::Humano { conversacion: c.id })
             }
+            Some("m:visita") => {
+                turno.texto(
+                    "Escriba el nombre de la persona que lo visita (como aparece en su documento).",
+                );
+                Ok(Paso::VisitaNombre)
+            }
+            Some("m:paquetes") => {
+                mostrar_paquetes(s, ctx, v, turno).await?;
+                Ok(Paso::Menu)
+            }
+            Some("m:votar") => {
+                let n = reenviar_preguntas_abiertas(s.unidad, s.asambleas, s.reloj, m).await?;
+                if n == 0 {
+                    turno.texto("No tiene preguntas abiertas por votar en este momento.");
+                    turno.responder(boton_menu());
+                } else {
+                    turno.texto(format!("Le enviamos {n} pregunta(s) para votar."));
+                }
+                Ok(Paso::Menu)
+            }
             Some("m:cambiar") if varios => {
                 turno.texto("Escriba cualquier mensaje para elegir el bien privado.");
                 Ok(Paso::ElegirVinculo)
             }
             _ => {
-                turno.responder(menu(v, varios));
+                turno.responder(menu(v, varios, votacion_abierta(s, m).await));
                 Ok(Paso::Menu)
             }
         },
@@ -879,12 +955,45 @@ where
             }
             Some(ID_NO) => {
                 turno.texto("Cancelamos la solicitud.");
-                turno.responder(menu(v, varios));
+                turno.responder(menu(v, varios, votacion_abierta(s, m).await));
                 Ok(Paso::Menu)
             }
             _ => confirmar_reserva(s, ctx, reserva, turno).await,
         },
         Paso::Humano { conversacion } => Ok(Paso::Humano { conversacion }),
+        Paso::VisitaNombre => match texto_de(&m.contenido) {
+            Some(nombre) if (2..=120).contains(&nombre.chars().count()) => {
+                let tz = zona_de_chat(s, ctx).await?;
+                let hoy = s.reloj.ahora().with_timezone(&tz).date_naive();
+                let filas = (0..DIAS_VISITA)
+                    .filter_map(|i| hoy.checked_add_days(chrono::Days::new(i)))
+                    .map(|d| Eleccion::new(format!("vd:{d}"), etiqueta_dia(d, hoy)))
+                    .collect();
+                turno.responder(lista(
+                    format!("¿Qué día llega {}?", corto(nombre, 60)),
+                    "Elegir día",
+                    filas,
+                ));
+                Ok(Paso::VisitaDia {
+                    nombre: nombre.to_owned(),
+                })
+            }
+            _ => {
+                turno.texto("Escriba solo el nombre del visitante (o «menú» para salir).");
+                Ok(Paso::VisitaNombre)
+            }
+        },
+        Paso::VisitaDia { nombre } => {
+            let dia = id
+                .and_then(|i| i.strip_prefix("vd:"))
+                .and_then(|d| d.parse::<NaiveDate>().ok());
+            let Some(dia) = dia else {
+                turno.texto("Elija el día de la lista.");
+                return Ok(Paso::VisitaDia { nombre });
+            };
+            autorizar_visita(s, ctx, v, &nombre, dia, turno).await?;
+            Ok(Paso::Menu)
+        }
     }
 }
 
@@ -900,8 +1009,8 @@ fn preguntar_urgencia() -> ContenidoSaliente {
     }
 }
 
-async fn mostrar_faq<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn mostrar_faq<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     ctx: &Contexto,
     turno: &mut Turno,
 ) -> AppResult<Paso>
@@ -909,6 +1018,8 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxConversacional,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let preguntas = listar_preguntas(s.unidad, s.reloj, ctx).await?;
     if preguntas.is_empty() {
@@ -927,8 +1038,8 @@ where
     Ok(Paso::Faq)
 }
 
-async fn guardar_foto<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn guardar_foto<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     ctx: &Contexto,
     media_id: &str,
 ) -> AppResult<ArchivoId>
@@ -938,6 +1049,8 @@ where
     M: Mensajeria,
     A: AlmacenArchivos,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let media = s.mensajeria.descargar_media(media_id).await?;
     let archivo = subir_archivo(
@@ -956,14 +1069,16 @@ where
     Ok(archivo.id)
 }
 
-async fn contexto_cuenta<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn contexto_cuenta<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     v: &VinculoTelefono,
 ) -> AppResult<Contexto>
 where
     U: UnidadDeTrabajo,
     U::Transaccion: TxConversacional,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let cuenta = v.cuenta_id.ok_or_else(|| {
         AppError::Validacion(
@@ -976,8 +1091,8 @@ where
     Ok(Contexto::de_cuenta(v.tenant_id, cuenta, permisos))
 }
 
-async fn recursos_de<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn recursos_de<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     _ctx: &Contexto,
     v: &VinculoTelefono,
     tipo: TipoRecurso,
@@ -987,6 +1102,8 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxConversacional,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let ctx_cuenta = contexto_cuenta(s, v).await?;
     let recursos = listar_recursos(s.unidad, s.reloj, &ctx_cuenta, Some(tipo))
@@ -1003,8 +1120,8 @@ where
     Ok((ctx_cuenta, recursos))
 }
 
-async fn elegir_recurso<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn elegir_recurso<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     ctx: &Contexto,
     v: &VinculoTelefono,
     tipo: TipoRecurso,
@@ -1015,6 +1132,8 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxConversacional,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let (_, recursos) = recursos_de(s, ctx, v, tipo, visitantes).await?;
     if recursos.is_empty() {
@@ -1070,8 +1189,8 @@ fn inicios(
     v
 }
 
-async fn elegir_dia<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn elegir_dia<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     ctx_cuenta: &Contexto,
     reserva: BorradorReserva,
     turno: &mut Turno,
@@ -1080,6 +1199,8 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxConversacional,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let ahora = s.reloj.ahora();
     let tz = tz_de(s.unidad, ctx_cuenta).await?;
@@ -1130,8 +1251,8 @@ where
     Ok(Paso::ReservaDia { reserva })
 }
 
-async fn elegir_franja<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn elegir_franja<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     ctx_cuenta: &Contexto,
     reserva: BorradorReserva,
     dia: NaiveDate,
@@ -1141,6 +1262,8 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxConversacional,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let ahora = s.reloj.ahora();
     let tz = tz_de(s.unidad, ctx_cuenta).await?;
@@ -1178,8 +1301,8 @@ where
     Ok(Paso::ReservaFranja { reserva, dia })
 }
 
-async fn confirmar_reserva<U, S, D, M, A, R>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R>,
+async fn confirmar_reserva<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
     ctx: &Contexto,
     reserva: BorradorReserva,
     turno: &mut Turno,
@@ -1188,6 +1311,8 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxConversacional,
     R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
 {
     let tz = tz_de(s.unidad, ctx).await?;
     let cuando = reserva
@@ -1214,3 +1339,144 @@ where
 
 #[cfg(test)]
 mod tests;
+
+/// Días que se ofrecen para una visita desde el chat (hoy y los 6 siguientes).
+const DIAS_VISITA: u64 = 7;
+
+fn etiqueta_dia(d: NaiveDate, hoy: NaiveDate) -> String {
+    match (d - hoy).num_days() {
+        0 => "Hoy".into(),
+        1 => "Mañana".into(),
+        _ => d.format("%d/%m/%Y").to_string(),
+    }
+}
+
+async fn zona_de_chat<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+    ctx: &Contexto,
+) -> AppResult<Tz>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+{
+    let mut tx = s.unidad.iniciar(ctx).await?;
+    zona(&mut tx).await
+}
+
+/// Pre-autoriza la visita para todo el día elegido (un ingreso) y envía el QR.
+async fn autorizar_visita<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    nombre: &str,
+    dia: NaiveDate,
+    turno: &mut Turno,
+) -> AppResult<()>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+    F: FirmaQr,
+{
+    let tz = zona_de_chat(s, ctx).await?;
+    let local = |d: NaiveDate| {
+        use chrono::TimeZone;
+        tz.from_local_datetime(&d.and_time(chrono::NaiveTime::MIN))
+            .earliest()
+            .map(|x| x.with_timezone(&Utc))
+    };
+    let siguiente = dia
+        .succ_opt()
+        .ok_or(AppError::Validacion("fecha inválida".into()))?;
+    let (Some(inicio), Some(fin)) = (local(dia), local(siguiente)) else {
+        return Err(AppError::Validacion("fecha inválida".into()));
+    };
+    let desde = inicio.max(s.reloj.ahora());
+    let (visita, qr) = preautorizar_para_persona(
+        s.unidad,
+        s.reloj,
+        s.firma,
+        ctx,
+        v.persona_id,
+        NuevaPreautorizacion {
+            visita: NuevaVisita {
+                bien_privado_id: v.bien_privado_id,
+                tipo: domain::TipoVisita::Visita,
+                visitante_nombre: nombre.to_owned(),
+                visitante_documento: None,
+                placa: None,
+                observacion: None,
+            },
+            desde,
+            hasta: fin,
+            usos: 1,
+        },
+    )
+    .await?;
+    turno.texto(format!(
+        "✅ Visita de {} autorizada para el {} ({}). Comparta este código con su visitante: en \
+         portería lo leen o lo digitan.",
+        corto(&visita.visitante_nombre, 60),
+        dia.format("%d/%m/%Y"),
+        v.codigo
+    ));
+    turno.texto(qr);
+    turno.responder(boton_menu());
+    Ok(())
+}
+
+/// Correspondencia que espera en portería para el bien.
+async fn mostrar_paquetes<U, S, D, M, A, R, DA, F>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    turno: &mut Turno,
+) -> AppResult<()>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let pagina = listar_correspondencia(
+        s.unidad,
+        s.reloj,
+        ctx,
+        FiltroCorrespondencia {
+            estado: Some(domain::EstadoCorrespondencia::Recibida),
+            bien_privado_id: Some(v.bien_privado_id),
+            bienes: None,
+        },
+        crate::SolicitudPagina::new(Some(10), None)?,
+    )
+    .await?;
+    if pagina.datos.is_empty() {
+        turno.texto(format!(
+            "No hay correspondencia pendiente para {}.",
+            v.codigo
+        ));
+    } else {
+        let tz = zona_de_chat(s, ctx).await?;
+        let lineas: Vec<String> = pagina
+            .datos
+            .iter()
+            .map(|c| {
+                format!(
+                    "• {}{} · desde el {}",
+                    c.tipo.as_str(),
+                    c.remitente
+                        .as_deref()
+                        .map(|r| format!(" de {}", corto(r, 40)))
+                        .unwrap_or_default(),
+                    c.recibida_en.with_timezone(&tz).format("%d/%m %H:%M")
+                )
+            })
+            .collect();
+        turno.texto(format!(
+            "Correspondencia en portería para {}:\n{}\nRecójala con su documento.",
+            v.codigo,
+            lineas.join("\n")
+        ));
+    }
+    turno.responder(boton_menu());
+    Ok(())
+}
