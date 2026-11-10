@@ -892,6 +892,56 @@ where
     unidad.iniciar(ctx).await?.libro_residentes(corte).await
 }
 
+/// Libro listo para imprimir: las columnas y celdas ya formateadas (las mismas del CSV).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LibroPdf {
+    pub titulo: String,
+    pub corte: chrono::DateTime<Utc>,
+    pub columnas: Vec<String>,
+    pub filas: Vec<Vec<String>>,
+}
+
+/// PDF de un libro del censo (art. 51) con el nombre de la PH y la fecha de corte en su hora
+/// local.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `censo.exportar`; errores del generador.
+pub async fn libro_en_pdf<U, G>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    generador: &G,
+    ctx: &Contexto,
+    libro: LibroPdf,
+) -> AppResult<Vec<u8>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: crate::puertos::RepositorioCopropiedad,
+    G: crate::puertos::GeneradorActas,
+{
+    ctx.exigir(Permiso::CensoExportar)?;
+    let ficha =
+        crate::puertos::RepositorioCopropiedad::ficha(&mut unidad.iniciar(ctx).await?).await?;
+    let (nombre, tz) = ficha.map_or((String::new(), domain::reserva::Tz::America__Bogota), |f| {
+        let tz = f
+            .zona_horaria
+            .parse()
+            .unwrap_or(domain::reserva::Tz::America__Bogota);
+        (f.nombre, tz)
+    });
+    let hora = |t| crate::puertos::actas::hora_local(t, tz);
+    generador
+        .tabla(&crate::puertos::actas::TablaPdf {
+            titulo: libro.titulo,
+            copropiedad: nombre,
+            subtitulo: format!("Fecha de corte: {}", hora(libro.corte)),
+            columnas: libro.columnas,
+            filas: libro.filas,
+            generada: hora(reloj.ahora()),
+        })
+        .await
+}
+
 /// Alertas del censo.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AlertasCenso {

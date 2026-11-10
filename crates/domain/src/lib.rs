@@ -69,7 +69,7 @@ pub use bien_privado::{
 };
 pub use censo::{
     AlertaMascota, CalidadResidencia, EspecieMascota, EstadoCambioCenso, EstadoMascota, Placa,
-    TipoCambioCenso, TipoDocumento, TipoVehiculo,
+    RespuestaCampanaCenso, TipoCambioCenso, TipoDocumento, TipoVehiculo,
 };
 pub use coeficiente::Coeficiente;
 pub use comunicado::{Audiencia, CanalesComunicado, EstadoComunicado};

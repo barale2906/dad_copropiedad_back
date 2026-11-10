@@ -148,6 +148,26 @@ async fn libro_de_propietarios_en_csv(pool: PgPool) {
     assert!(texto.contains("\"101\";\"\";\"Ana Dueña\""), "{texto}");
     let (_, json) = ph.pedir(Method::GET, "/libros/propietarios", None).await;
     assert_eq!(json[0]["documento"], "52123456");
+    for libro in ["propietarios", "residentes"] {
+        let (s, tipo, pdf) = ph
+            .api
+            .pedir_texto(
+                &format!("{}/libros/{libro}?formato=pdf", ph.base),
+                &ph.admin,
+            )
+            .await;
+        assert_eq!(s, StatusCode::OK, "{libro}");
+        assert_eq!(tipo, "application/pdf");
+        assert!(pdf.starts_with("%PDF-"), "{libro}");
+    }
+    let (s, _, _) = ph
+        .api
+        .pedir_texto(
+            &format!("{}/libros/residentes?formato=xls", ph.base),
+            &ph.admin,
+        )
+        .await;
+    assert_eq!(s, StatusCode::BAD_REQUEST);
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]

@@ -15,6 +15,7 @@ use application::{
 use axum::{
     extract::State,
     http::StatusCode,
+    http::header,
     response::{IntoResponse, Response},
 };
 use chrono::{DateTime, NaiveDate, Utc};
@@ -1027,20 +1028,79 @@ pub async fn rechazar_cambio(
 pub struct ParametrosLibro {
     /// Fecha y hora de corte (por defecto, ahora).
     pub corte: Option<DateTime<Utc>>,
-    /// `json` (por defecto) o `csv` (separado por `;`, para Excel).
+    /// `json` (por defecto), `csv` (separado por `;`, para Excel) o `pdf` (para imprimir o
+    /// archivar).
     pub formato: Option<String>,
 }
 
+/// Formato de salida de un libro.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FormatoLibro {
+    Json,
+    Csv,
+    Pdf,
+}
+
 impl ParametrosLibro {
-    fn es_csv(&self) -> Result<bool, ApiError> {
+    fn formato(&self) -> Result<FormatoLibro, ApiError> {
         match self.formato.as_deref() {
-            None | Some("json") => Ok(false),
-            Some("csv") => Ok(true),
+            None | Some("json") => Ok(FormatoLibro::Json),
+            Some("csv") => Ok(FormatoLibro::Csv),
+            Some("pdf") => Ok(FormatoLibro::Pdf),
             Some(_) => Err(ApiError::PeticionInvalida(
-                "`formato` es `json` o `csv`".into(),
+                "`formato` es `json`, `csv` o `pdf`".into(),
             )),
         }
     }
+}
+
+/// Encabezado de un libro exportado.
+struct Libro {
+    /// `Content-Disposition` del CSV (el PDF usa el mismo nombre con `.pdf`).
+    archivo: &'static str,
+    titulo: &'static str,
+    columnas: &'static [&'static str],
+}
+
+/// CSV o PDF de un libro con las mismas columnas y celdas.
+async fn exportar_libro(
+    state: &AppState,
+    en: &EnCopropiedad,
+    formato: FormatoLibro,
+    libro: Libro,
+    corte: DateTime<Utc>,
+    filas: Vec<Vec<String>>,
+) -> ApiResult<Response> {
+    let Libro {
+        archivo,
+        titulo,
+        columnas,
+    } = libro;
+    if formato == FormatoLibro::Csv {
+        return Ok(csv(archivo, columnas, filas));
+    }
+    let pdf = uc::libro_en_pdf(
+        &state.unidad,
+        &RelojSistema,
+        &state.actas,
+        &en.ctx,
+        uc::LibroPdf {
+            titulo: titulo.to_owned(),
+            corte,
+            columnas: columnas.iter().map(|c| (*c).to_owned()).collect(),
+            filas,
+        },
+    )
+    .await?;
+    let nombre = archivo.replace(".csv", ".pdf");
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/pdf".to_owned()),
+            (header::CONTENT_DISPOSITION, nombre),
+        ],
+        pdf,
+    )
+        .into_response())
 }
 
 /// Fila del libro de propietarios.
@@ -1108,7 +1168,7 @@ fn opt(v: Option<String>) -> String {
     v.unwrap_or_default()
 }
 
-/// Libro de propietarios a una fecha de corte (Ley 675, art. 51), en JSON o CSV.
+/// Libro de propietarios a una fecha de corte (Ley 675, art. 51), en JSON, CSV o PDF.
 #[utoipa::path(
     get,
     path = "/libros/propietarios",
@@ -1116,7 +1176,7 @@ fn opt(v: Option<String>) -> String {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ParametrosLibro),
     responses(
-        (status = OK, description = "Libro de propietarios (JSON o `text/csv`)", body = Vec<FilaPropietarioRespuesta>),
+        (status = OK, description = "Libro de propietarios (JSON, `text/csv` o `application/pdf`)", body = Vec<FilaPropietarioRespuesta>),
         (status = FORBIDDEN, description = "Sin `censo.exportar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
@@ -1125,29 +1185,37 @@ pub async fn libro_propietarios(
     en: EnCopropiedad,
     Query(p): Query<ParametrosLibro>,
 ) -> ApiResult<Response> {
-    let es_csv = p.es_csv()?;
+    let formato = p.formato()?;
+    let corte = p.corte.unwrap_or_else(Utc::now);
     let filas: Vec<FilaPropietarioRespuesta> =
-        uc::libro_propietarios(&state.unidad, &en.ctx, p.corte.unwrap_or_else(Utc::now))
+        uc::libro_propietarios(&state.unidad, &en.ctx, corte)
             .await?
             .into_iter()
             .map(Into::into)
             .collect();
-    if !es_csv {
+    if formato == FormatoLibro::Json {
         return Ok(Json(filas).into_response());
     }
-    Ok(csv(
-        "attachment; filename=\"libro_propietarios.csv\"",
-        &[
-            "Bien privado",
-            "Coeficiente",
-            "Titular",
-            "Tipo de documento",
-            "Documento",
-            "Calidad",
-            "Porcentaje",
-            "Representante",
-            "Desde",
-        ],
+    exportar_libro(
+        &state,
+        &en,
+        formato,
+        Libro {
+            archivo: "attachment; filename=\"libro_propietarios.csv\"",
+            titulo: "Libro de propietarios",
+            columnas: &[
+                "Bien privado",
+                "Coeficiente",
+                "Titular",
+                "Tipo de documento",
+                "Documento",
+                "Calidad",
+                "Porcentaje",
+                "Representante",
+                "Desde",
+            ],
+        },
+        corte,
         filas
             .into_iter()
             .map(|f| {
@@ -1164,10 +1232,11 @@ pub async fn libro_propietarios(
                 ]
             })
             .collect(),
-    ))
+    )
+    .await
 }
 
-/// Libro de residentes a una fecha de corte (Ley 675, art. 51), en JSON o CSV.
+/// Libro de residentes a una fecha de corte (Ley 675, art. 51), en JSON, CSV o PDF.
 #[utoipa::path(
     get,
     path = "/libros/residentes",
@@ -1175,7 +1244,7 @@ pub async fn libro_propietarios(
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ParametrosLibro),
     responses(
-        (status = OK, description = "Libro de residentes (JSON o `text/csv`)", body = Vec<FilaResidenteRespuesta>),
+        (status = OK, description = "Libro de residentes (JSON, `text/csv` o `application/pdf`)", body = Vec<FilaResidenteRespuesta>),
         (status = FORBIDDEN, description = "Sin `censo.exportar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
@@ -1184,27 +1253,34 @@ pub async fn libro_residentes(
     en: EnCopropiedad,
     Query(p): Query<ParametrosLibro>,
 ) -> ApiResult<Response> {
-    let es_csv = p.es_csv()?;
-    let filas: Vec<FilaResidenteRespuesta> =
-        uc::libro_residentes(&state.unidad, &en.ctx, p.corte.unwrap_or_else(Utc::now))
-            .await?
-            .into_iter()
-            .map(Into::into)
-            .collect();
-    if !es_csv {
+    let formato = p.formato()?;
+    let corte = p.corte.unwrap_or_else(Utc::now);
+    let filas: Vec<FilaResidenteRespuesta> = uc::libro_residentes(&state.unidad, &en.ctx, corte)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect();
+    if formato == FormatoLibro::Json {
         return Ok(Json(filas).into_response());
     }
-    Ok(csv(
-        "attachment; filename=\"libro_residentes.csv\"",
-        &[
-            "Bien privado",
-            "Residente",
-            "Tipo de documento",
-            "Documento",
-            "Calidad",
-            "Responsable",
-            "Desde",
-        ],
+    exportar_libro(
+        &state,
+        &en,
+        formato,
+        Libro {
+            archivo: "attachment; filename=\"libro_residentes.csv\"",
+            titulo: "Libro de residentes",
+            columnas: &[
+                "Bien privado",
+                "Residente",
+                "Tipo de documento",
+                "Documento",
+                "Calidad",
+                "Responsable",
+                "Desde",
+            ],
+        },
+        corte,
         filas
             .into_iter()
             .map(|f| {
@@ -1219,7 +1295,8 @@ pub async fn libro_residentes(
                 ]
             })
             .collect(),
-    ))
+    )
+    .await
 }
 
 /// Alertas de una mascota.

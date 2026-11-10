@@ -97,12 +97,28 @@ pub struct HojaRotulos {
     pub codigos: Vec<String>,
 }
 
+/// Documento tabular (libros del censo a una fecha de corte). Las celdas llegan como texto ya
+/// formateado.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TablaPdf {
+    pub titulo: String,
+    pub copropiedad: String,
+    /// Línea bajo el título (p. ej. la fecha de corte).
+    pub subtitulo: String,
+    pub columnas: Vec<String>,
+    pub filas: Vec<Vec<String>>,
+    pub generada: String,
+}
+
 pub trait GeneradorActas: Send + Sync {
     /// PDF del acta.
     fn generar(&self, datos: &DatosActa) -> impl Future<Output = AppResult<Vec<u8>>> + Send;
 
     /// PDF con los rótulos en Code 128, listos para recortar.
     fn rotulos(&self, hoja: &HojaRotulos) -> impl Future<Output = AppResult<Vec<u8>>> + Send;
+
+    /// PDF horizontal con una tabla (libros del censo).
+    fn tabla(&self, tabla: &TablaPdf) -> impl Future<Output = AppResult<Vec<u8>>> + Send;
 }
 
 /// Hora local legible (`2027-03-15 19:04`) para el acta.

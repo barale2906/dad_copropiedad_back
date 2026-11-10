@@ -4659,7 +4659,7 @@
         "tags": [
           "censo"
         ],
-        "summary": "Libro de propietarios a una fecha de corte (Ley 675, art. 51), en JSON o CSV.",
+        "summary": "Libro de propietarios a una fecha de corte (Ley 675, art. 51), en JSON, CSV o PDF.",
         "operationId": "libro_propietarios",
         "parameters": [
           {
@@ -4685,7 +4685,7 @@
           {
             "name": "formato",
             "in": "query",
-            "description": "`json` (por defecto) o `csv` (separado por `;`, para Excel).",
+            "description": "`json` (por defecto), `csv` (separado por `;`, para Excel) o `pdf` (para imprimir o\narchivar).",
             "required": false,
             "schema": {
               "type": "string"
@@ -4694,7 +4694,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Libro de propietarios (JSON o `text/csv`)",
+            "description": "Libro de propietarios (JSON, `text/csv` o `application/pdf`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -4729,7 +4729,7 @@
         "tags": [
           "censo"
         ],
-        "summary": "Libro de residentes a una fecha de corte (Ley 675, art. 51), en JSON o CSV.",
+        "summary": "Libro de residentes a una fecha de corte (Ley 675, art. 51), en JSON, CSV o PDF.",
         "operationId": "libro_residentes",
         "parameters": [
           {
@@ -4755,7 +4755,7 @@
           {
             "name": "formato",
             "in": "query",
-            "description": "`json` (por defecto) o `csv` (separado por `;`, para Excel).",
+            "description": "`json` (por defecto), `csv` (separado por `;`, para Excel) o `pdf` (para imprimir o\narchivar).",
             "required": false,
             "schema": {
               "type": "string"
@@ -4764,7 +4764,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Libro de residentes (JSON o `text/csv`)",
+            "description": "Libro de residentes (JSON, `text/csv` o `application/pdf`)",
             "content": {
               "application/json": {
                 "schema": {

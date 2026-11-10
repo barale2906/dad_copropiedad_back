@@ -349,6 +349,11 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Campaña de actualización de datos del censo por WhatsApp.
+    CampanaCensoId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Comunicado de la administración (cartelera digital).
     ComunicadoId,
     Uuid::now_v7
