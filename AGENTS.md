@@ -45,7 +45,7 @@ crates/
   application/     casos de uso + puertos (traits): RepositorioVotos, Mensajeria, Reloj, Sesiones…
   infra-postgres/  SQLx: pool, migraciones, transacción por tenant (RLS), repositorios
   infra-whatsapp/  Cloud API: firma de Meta, webhook entrante, cliente de envío y descarga de fotos
-  infra-pdf/       actas y hoja de rótulos en PDF con Typst (librería): puerto GeneradorActas
+  infra-pdf/       actas y hoja de rótulos en PDF con Typst (librería) y QR en PNG: puertos GeneradorActas y GeneradorImagenQr
   infra-correo/    correo saliente por SMTP (lettre): puerto EnvioCorreo
   infra-archivos/  almacén de archivos (disco local; S3 previsto) y enlaces firmados: puerto AlmacenArchivos
   infra-seguridad/ contraseñas Argon2id y segundo factor TOTP: puertos HashContrasenas y SegundoFactor
@@ -110,7 +110,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Planillas | csv 1.4 · calamine 0.38 | En uso | Crate `infra-planillas`, puerto `LectorPlanillas` (solo lectura, Rust puro). Importación con vista previa (ADR 0006). |
 | Limitador | Propios, sin crate (`apps/gateway/src/mensajeria.rs` · `apps/api/src/limite.rs`) | En uso | 80 mensajes/s por línea de WhatsApp. API: ventana fija de un minuto por IP en los grupos `auth` y `publico` (extractores `LimiteAuth` / `LimitePublico`), 429 `demasiadas_peticiones` con `Retry-After`; IP de `X-Real-IP` solo con `CONFIAR_PROXY=true` (ADR 0012). Con varias instancias, `limit_req` de Nginx. |
 | OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
-| Actas y rótulos | Typst 0.15 (`typst`, `typst-pdf`, `typst-layout`, `typst-assets` con fuentes embebidas) | En uso | Crate `infra-pdf`, puerto `GeneradorActas`: plantillas en `crates/infra-pdf/plantillas/`, datos ya calculados como `datos.json`; Code 128 propio para los rótulos. Arrastra avisos RustSec transitivos: excepciones documentadas en `deny.toml` (revisar al actualizar Typst). |
+| Actas, rótulos y QR | Typst 0.15 (`typst`, `typst-pdf`, `typst-layout`, `typst-assets` con fuentes embebidas) · `qrcode` 0.14 (sin extras) · `png` 0.18 | En uso | Crate `infra-pdf`: puerto `GeneradorImagenQr` (`GeneradorQrPng`: QR de las visitas en PNG que el chat envía como imagen con un enlace firmado de una hora) y puerto `GeneradorActas`: plantillas en `crates/infra-pdf/plantillas/`, datos ya calculados como `datos.json`; Code 128 propio para los rótulos. Arrastra avisos RustSec transitivos: excepciones documentadas en `deny.toml` (revisar al actualizar Typst). |
 | Contenedores | Docker Compose · `Dockerfile` multi-stage | En uso | `docker-compose.yml` (desarrollo) y `docker-compose.prod.yml` (referencia del VPS: postgres, `migracion`, api, gateway). Imagen `rust:1.99-slim-bookworm` → `debian:bookworm-slim`, usuario no root, `tini`. |
 | CI/CD | GitHub Actions · GHCR | En uso | `.github/workflows/ci.yml`: fmt, clippy, pruebas con PostgreSQL, rustdoc, cargo-deny y job `imagen` (construye en cada PR; publica `ghcr.io/…:sha-<commit>` en `main`). El despliegue al VPS es manual con `docs/despliegue.md`. |
 | Despliegue | VPS Ubuntu + Nginx (HestiaCP) + Docker Compose | En uso | Guía en `docs/despliegue.md`: Nginx con TLS y `X-Real-IP`, migraciones como paso explícito (`dad_admin migrar`), respaldos. |

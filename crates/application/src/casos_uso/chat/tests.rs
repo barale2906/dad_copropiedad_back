@@ -135,6 +135,15 @@ impl DirectorioAsambleas for Asambleas {
     }
 }
 
+/// Imagen de prueba: el PNG mínimo.
+struct QrFalso;
+
+impl GeneradorImagenQr for QrFalso {
+    fn png(&self, _texto: &str) -> AppResult<Vec<u8>> {
+        Ok(PNG.to_vec())
+    }
+}
+
 /// Firma de prueba (64 bytes deterministas).
 struct FirmaFalsa;
 
@@ -233,6 +242,7 @@ impl Entorno {
             reloj: &RelojFijo(ahora()),
             asambleas: &self.asambleas,
             firma: &FirmaFalsa,
+            qr: &QrFalso,
         };
         atender_mensaje(
             &s,
@@ -582,6 +592,13 @@ async fn autorizar_una_visita_desde_el_chat_envia_el_qr_sin_cuenta() {
             |c| matches!(c, ContenidoSaliente::Texto { cuerpo } if cuerpo.starts_with("DQ1."))
         )
     );
+    assert!(
+        r.iter().any(
+            |c| matches!(c, ContenidoSaliente::Imagen { url, .. } if url.starts_with("memoria://"))
+        ),
+        "el QR también va como imagen"
+    );
+    assert_eq!(e.almacen.claves().len(), 1, "el PNG quedó en el almacén");
     let visitas = e.unidad.datos().acceso.visitas;
     assert_eq!(visitas.len(), 1);
     assert_eq!(visitas[0].visitante_nombre, "Rosa Pérez");

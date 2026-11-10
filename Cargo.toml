@@ -84,6 +84,10 @@ typst = "0.15.1"
 typst-pdf = "0.15.1"
 typst-layout = "0.15.1"
 typst-assets = { version = "0.15.1", features = ["fonts"] }
+# QR de las visitas como imagen PNG (matriz con `qrcode` sin extras; PNG con `png`, que ya
+# arrastra Typst).
+qrcode = { version = "0.14.1", default-features = false }
+png = "0.18.1"
 
 # Criptografía (firma de webhooks de Meta, enlaces de descarga firmados, huellas SHA-256)
 hmac = "0.13.0"

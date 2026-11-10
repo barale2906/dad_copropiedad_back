@@ -190,6 +190,7 @@ async fn atender_chat(
         reloj: &RelojSistema,
         asambleas: &state.asambleas,
         firma: state.firma_qr.as_ref(),
+        qr: &infra_pdf::GeneradorQrPng,
     };
     let wamid = mensaje.wamid.clone();
     match atender_mensaje(&servicios, mensaje).await {

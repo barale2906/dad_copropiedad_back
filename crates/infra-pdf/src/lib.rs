@@ -1,5 +1,6 @@
 //! Generación de PDF con Typst (como librería): el acta de la asamblea y la hoja de rótulos de
-//! código de barras. Implementa [`application::puertos::GeneradorActas`].
+//! código de barras. Implementa [`application::puertos::GeneradorActas`]. También genera el QR
+//! de las visitas en PNG ([`GeneradorQrPng`], puerto `GeneradorImagenQr`).
 //!
 //! Lineamientos:
 //! - Las plantillas Typst están versionadas en `plantillas/` y se embeben al compilar.
@@ -11,6 +12,7 @@
 
 mod code128;
 mod mundo;
+mod qr;
 
 use application::{
     AppError, AppResult,
@@ -22,6 +24,7 @@ use application::{
 use serde_json::json;
 
 pub use code128::modulos as code128;
+pub use qr::GeneradorQrPng;
 
 const PLANTILLA_ACTA: &str = include_str!("../plantillas/acta.typ");
 const PLANTILLA_ROTULOS: &str = include_str!("../plantillas/rotulos.typ");

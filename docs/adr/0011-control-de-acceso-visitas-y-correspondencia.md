@@ -85,7 +85,9 @@ supervisor de seguridad reciben los de portería).
   «Rechazar»), `correspondencia_recibida` y `correspondencia_entregada`.
 - El worker de acceso corre cada 15 s en el gateway; la retención, una vez al día, y prepara
   las particiones de los próximos meses.
-- Pendientes: adaptadores reales de hardware (cuando se conozca el de la primera PH), envío del
-  QR al visitante por WhatsApp como imagen y alertas push a la portería (plan 10). Autorizar
+- Pendientes: adaptadores reales de hardware (cuando se conozca el de la primera PH) y alertas
+  push a la portería (plan 10). El QR ya llega como imagen por el chat (plan 10, fase 2): PNG
+  guardado como archivo de la PH y enlace firmado de una hora que Meta descarga; el texto del
+  código acompaña la imagen por si no se puede leer. Autorizar
   visitas desde el chat ya está (plan 10, fase 1): el gateway también necesita
   `ACCESO_QR_SECRETO`.

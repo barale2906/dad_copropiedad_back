@@ -25,7 +25,8 @@ pub mod tickets;
 pub mod unidad_trabajo;
 
 pub use acceso::{
-    DirectorioAcceso, EnvioPush, FirmaQr, RepositorioAcceso, RepositorioDispositivosPush,
+    DirectorioAcceso, EnvioPush, FirmaQr, GeneradorImagenQr, RepositorioAcceso,
+    RepositorioDispositivosPush,
 };
 pub use actas::GeneradorActas;
 pub use archivos::{AlmacenArchivos, RepositorioArchivos};

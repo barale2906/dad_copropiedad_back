@@ -16,6 +16,7 @@ path = "src/main.rs"
 application.workspace = true
 infra-archivos.workspace = true
 infra-correo.workspace = true
+infra-pdf.workspace = true
 infra-postgres.workspace = true
 infra-push.workspace = true
 infra-seguridad.workspace = true

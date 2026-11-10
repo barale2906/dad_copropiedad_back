@@ -44,8 +44,8 @@ use crate::{
         tickets::{NuevoTicket, TxTickets, listar_categorias, radicar_ticket, tickets_de_persona},
     },
     puertos::{
-        AlmacenArchivos, FirmaQr, Mensajeria, Reloj, RepositorioArchivos, RepositorioReservas,
-        UnidadDeTrabajo,
+        AlmacenArchivos, FirmaQr, GeneradorImagenQr, Mensajeria, Reloj, RepositorioArchivos,
+        RepositorioReservas, UnidadDeTrabajo,
         acceso::FiltroCorrespondencia,
         asambleas::DirectorioAsambleas,
         chat::{DirectorioTelefonos, VinculoTelefono},
@@ -155,7 +155,7 @@ impl Default for EstadoChat {
 }
 
 /// Adaptadores que necesita el chat.
-pub struct ServiciosChat<'a, U, S, D, M, A, R, DA, F> {
+pub struct ServiciosChat<'a, U, S, D, M, A, R, DA, F, Q> {
     pub unidad: &'a U,
     pub sesiones: &'a S,
     pub directorio: &'a D,
@@ -166,6 +166,8 @@ pub struct ServiciosChat<'a, U, S, D, M, A, R, DA, F> {
     pub asambleas: &'a DA,
     /// Firma de los QR de visitas.
     pub firma: &'a F,
+    /// Imagen PNG del QR que se envía al residente.
+    pub qr: &'a Q,
 }
 
 /// Puertos de la transacción de copropiedad que usa el chat.
@@ -288,8 +290,8 @@ fn menu(v: &VinculoTelefono, varios: bool, votar: bool) -> ContenidoSaliente {
 }
 
 /// ¿El teléfono es asistente de una asamblea en curso? (Si la consulta falla, no se ofrece.)
-async fn votacion_abierta<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn votacion_abierta<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     m: &MensajeEntrante,
 ) -> bool
 where
@@ -322,8 +324,8 @@ fn mensaje_error(e: &AppError) -> String {
 ///
 /// Solo errores de las sesiones (base de datos de plataforma). Los errores de los casos de uso
 /// se responden al usuario con un mensaje seguro.
-pub async fn atender_mensaje<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+pub async fn atender_mensaje<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     m: MensajeEntrante,
 ) -> AppResult<ResultadoTurno>
 where
@@ -336,6 +338,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     if s.sesiones.ya_procesado(&m.wamid).await? {
         return Ok(ResultadoTurno::Repetido);
@@ -407,8 +410,8 @@ where
     }
 }
 
-async fn conversar<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn conversar<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     m: &MensajeEntrante,
     turno: &mut Turno,
 ) -> AppResult<()>
@@ -422,6 +425,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let vinculos = s.directorio.vinculos_por_telefono(&m.telefono).await?;
     if vinculos.is_empty() {
@@ -488,8 +492,8 @@ where
 }
 
 /// Atiende el mensaje con el vínculo ya resuelto y deja en `estado` el paso siguiente.
-async fn procesar<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn procesar<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     m: &MensajeEntrante,
     estado: &mut EstadoChat,
     varios: bool,
@@ -505,6 +509,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let Some(vinculo) = estado.vinculo.clone() else {
         return Ok(());
@@ -573,8 +578,8 @@ fn texto_de(c: &ContenidoEntrante) -> Option<&str> {
 
 /// Atiende el mensaje en el paso actual y devuelve el siguiente paso.
 #[allow(clippy::too_many_lines)]
-async fn avanzar<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn avanzar<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     m: &MensajeEntrante,
     ctx: &Contexto,
     v: &VinculoTelefono,
@@ -592,6 +597,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let id = respuesta_id(&m.contenido);
     match paso {
@@ -1009,8 +1015,8 @@ fn preguntar_urgencia() -> ContenidoSaliente {
     }
 }
 
-async fn mostrar_faq<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn mostrar_faq<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx: &Contexto,
     turno: &mut Turno,
 ) -> AppResult<Paso>
@@ -1020,6 +1026,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let preguntas = listar_preguntas(s.unidad, s.reloj, ctx).await?;
     if preguntas.is_empty() {
@@ -1038,8 +1045,8 @@ where
     Ok(Paso::Faq)
 }
 
-async fn guardar_foto<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn guardar_foto<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx: &Contexto,
     media_id: &str,
 ) -> AppResult<ArchivoId>
@@ -1051,6 +1058,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let media = s.mensajeria.descargar_media(media_id).await?;
     let archivo = subir_archivo(
@@ -1069,8 +1077,8 @@ where
     Ok(archivo.id)
 }
 
-async fn contexto_cuenta<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn contexto_cuenta<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     v: &VinculoTelefono,
 ) -> AppResult<Contexto>
 where
@@ -1079,6 +1087,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let cuenta = v.cuenta_id.ok_or_else(|| {
         AppError::Validacion(
@@ -1091,8 +1100,8 @@ where
     Ok(Contexto::de_cuenta(v.tenant_id, cuenta, permisos))
 }
 
-async fn recursos_de<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn recursos_de<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     _ctx: &Contexto,
     v: &VinculoTelefono,
     tipo: TipoRecurso,
@@ -1104,6 +1113,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let ctx_cuenta = contexto_cuenta(s, v).await?;
     let recursos = listar_recursos(s.unidad, s.reloj, &ctx_cuenta, Some(tipo))
@@ -1120,8 +1130,8 @@ where
     Ok((ctx_cuenta, recursos))
 }
 
-async fn elegir_recurso<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn elegir_recurso<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx: &Contexto,
     v: &VinculoTelefono,
     tipo: TipoRecurso,
@@ -1134,6 +1144,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let (_, recursos) = recursos_de(s, ctx, v, tipo, visitantes).await?;
     if recursos.is_empty() {
@@ -1189,8 +1200,8 @@ fn inicios(
     v
 }
 
-async fn elegir_dia<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn elegir_dia<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx_cuenta: &Contexto,
     reserva: BorradorReserva,
     turno: &mut Turno,
@@ -1201,6 +1212,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let ahora = s.reloj.ahora();
     let tz = tz_de(s.unidad, ctx_cuenta).await?;
@@ -1251,8 +1263,8 @@ where
     Ok(Paso::ReservaDia { reserva })
 }
 
-async fn elegir_franja<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn elegir_franja<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx_cuenta: &Contexto,
     reserva: BorradorReserva,
     dia: NaiveDate,
@@ -1264,6 +1276,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let ahora = s.reloj.ahora();
     let tz = tz_de(s.unidad, ctx_cuenta).await?;
@@ -1301,8 +1314,8 @@ where
     Ok(Paso::ReservaFranja { reserva, dia })
 }
 
-async fn confirmar_reserva<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn confirmar_reserva<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx: &Contexto,
     reserva: BorradorReserva,
     turno: &mut Turno,
@@ -1313,6 +1326,7 @@ where
     R: Reloj,
     DA: DirectorioAsambleas,
     F: FirmaQr,
+    Q: GeneradorImagenQr,
 {
     let tz = tz_de(s.unidad, ctx).await?;
     let cuando = reserva
@@ -1351,8 +1365,8 @@ fn etiqueta_dia(d: NaiveDate, hoy: NaiveDate) -> String {
     }
 }
 
-async fn zona_de_chat<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn zona_de_chat<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx: &Contexto,
 ) -> AppResult<Tz>
 where
@@ -1364,8 +1378,8 @@ where
 }
 
 /// Pre-autoriza la visita para todo el día elegido (un ingreso) y envía el QR.
-async fn autorizar_visita<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn autorizar_visita<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx: &Contexto,
     v: &VinculoTelefono,
     nombre: &str,
@@ -1377,6 +1391,8 @@ where
     U::Transaccion: TxConversacional,
     R: Reloj,
     F: FirmaQr,
+    A: AlmacenArchivos,
+    Q: GeneradorImagenQr,
 {
     let tz = zona_de_chat(s, ctx).await?;
     let local = |d: NaiveDate| {
@@ -1420,14 +1436,70 @@ where
         dia.format("%d/%m/%Y"),
         v.codigo
     ));
+    match imagen_qr(s, ctx, &qr).await {
+        Ok(url) => turno.responder(ContenidoSaliente::Imagen {
+            url,
+            leyenda: Some(format!(
+                "QR de la visita de {}",
+                corto(&visita.visitante_nombre, 60)
+            )),
+        }),
+        Err(e) => {
+            tracing::warn!(error = %e, "no se pudo preparar la imagen del QR; se envía el texto")
+        }
+    }
     turno.texto(qr);
     turno.responder(boton_menu());
     Ok(())
 }
 
+/// Vigencia del enlace con el que Meta descarga la imagen del QR.
+const VIGENCIA_ENLACE_QR: Duration = Duration::hours(1);
+
+/// Guarda el PNG del QR como archivo de la PH y devuelve un enlace firmado de vida corta.
+async fn imagen_qr<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    texto: &str,
+) -> AppResult<String>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    A: AlmacenArchivos,
+    R: Reloj,
+    Q: GeneradorImagenQr,
+{
+    use crate::casos_uso::archivos::{borrar_huerfano, nuevo_archivo, registrar_en};
+    let subido = ArchivoSubido {
+        nombre_original: NombreArchivo::new("qr-visita.png")?,
+        clasificacion: ClasificacionArchivo::Personal,
+        contenido: s.qr.png(texto)?,
+    };
+    let tipo = domain::TipoArchivo::validar(&subido.contenido)?;
+    let archivo = nuevo_archivo(ctx, s.almacen, s.reloj, &subido, tipo);
+    s.almacen.guardar(&archivo.clave, &subido.contenido).await?;
+    let registro = async {
+        let mut tx = s.unidad.iniciar(ctx).await?;
+        registrar_en(&mut tx, &archivo).await?;
+        crate::puertos::Transaccion::confirmar(tx).await
+    }
+    .await;
+    if let Err(e) = registro {
+        borrar_huerfano(s.almacen, ctx, &archivo).await;
+        return Err(e);
+    }
+    s.almacen
+        .url_temporal(&crate::puertos::archivos::DescargaArchivo {
+            clave: archivo.clave,
+            tipo: archivo.tipo,
+            nombre: archivo.nombre_original,
+            vence_en: s.reloj.ahora() + VIGENCIA_ENLACE_QR,
+        })
+}
+
 /// Correspondencia que espera en portería para el bien.
-async fn mostrar_paquetes<U, S, D, M, A, R, DA, F>(
-    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F>,
+async fn mostrar_paquetes<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     ctx: &Contexto,
     v: &VinculoTelefono,
     turno: &mut Turno,
