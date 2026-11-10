@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO respuestas_censo (tenant_id, campana_id, persona_id, bien_privado_id,\n                 respuesta, detalle, respondida_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7)\n             ON CONFLICT (tenant_id, campana_id, persona_id, bien_privado_id) DO UPDATE\n             SET respuesta = EXCLUDED.respuesta, detalle = EXCLUDED.detalle,\n                 respondida_en = EXCLUDED.respondida_en, atendida_en = NULL, atendida_por = NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "12dd7951250a2552cd939e723b0ecff19518bdef93eacdcda6a770229205b886"
+}

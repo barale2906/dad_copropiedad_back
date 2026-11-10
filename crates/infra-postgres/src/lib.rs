@@ -25,6 +25,7 @@ mod acceso;
 mod archivos;
 mod asambleas;
 mod bienes_privados;
+mod campanas_censo;
 mod censo;
 mod chat;
 mod coeficientes;

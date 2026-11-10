@@ -1,5 +1,5 @@
 //! Pruebas funcionales del plan 10 (bloque 2) sobre el router completo con PostgreSQL real:
-//! «mis solicitudes» entre PH y comunicados de la administración.
+//! «mis solicitudes» entre PH, comunicados de la administración y campañas del censo.
 
 mod comun;
 
@@ -172,4 +172,71 @@ async fn un_comunicado_con_audiencia_invalida_responde_422(pool: PgPool) {
         .await;
     assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "{v}");
     assert_eq!(v["error"]["codigo"], "validacion");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_campana_del_censo_llega_al_representante_y_sus_cambios_se_atienden(pool: PgPool) {
+    let ph = ph(pool).await;
+    let (bien, persona) = ph.bien_con_dueno().await;
+    let (s, _) = ph.pedir(Method::POST, "/censo/campanas", None).await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "sin línea de WhatsApp");
+    sqlx::query(
+        "INSERT INTO lineas_whatsapp (id, phone_number_id, numero_visible, nombre)
+         VALUES (gen_random_uuid(), 'PNID', '+57 300', 'Línea')",
+    )
+    .execute(&ph.api.duenio)
+    .await
+    .expect("línea");
+    sqlx::query("UPDATE personas SET telefono = '573001112233' WHERE id = $1::uuid")
+        .bind(&persona)
+        .execute(&ph.api.duenio)
+        .await
+        .expect("teléfono");
+
+    let (s, c) = ph.pedir(Method::POST, "/censo/campanas", None).await;
+    assert_eq!(s, StatusCode::CREATED, "{c}");
+    assert_eq!(c["enviados"], 1, "el representante, porque nadie reside");
+    let campana = c["id"].as_str().expect("id").to_owned();
+    let plantilla: String = sqlx::query_scalar(
+        "SELECT payload->'contenido'->>'nombre' FROM outbox WHERE canal = 'whatsapp'",
+    )
+    .fetch_one(&ph.api.duenio)
+    .await
+    .expect("outbox");
+    assert_eq!(plantilla, "actualizar_datos");
+
+    // La respuesta llega por el chat del gateway; aquí se simula en la BD.
+    sqlx::query(
+        "INSERT INTO respuestas_censo (tenant_id, campana_id, persona_id, bien_privado_id,
+             respuesta, detalle, respondida_en)
+         VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'cambios', 'Carro nuevo ABC123', now())",
+    )
+    .bind(&ph.id)
+    .bind(&campana)
+    .bind(&persona)
+    .bind(&bien)
+    .execute(&ph.api.duenio)
+    .await
+    .expect("respuesta");
+    let (s, r) = ph
+        .pedir(
+            Method::GET,
+            &format!("/censo/campanas/{campana}/respuestas"),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{r}");
+    assert_eq!(r[0]["detalle"], "Carro nuevo ABC123");
+    assert_eq!(r[0]["nombre"], "Ana Dueña");
+    let (s, _) = ph
+        .pedir(
+            Method::POST,
+            &format!("/censo/campanas/{campana}/respuestas/{persona}/{bien}/atender"),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::NO_CONTENT);
+    let (_, lista) = ph.pedir(Method::GET, "/censo/campanas", None).await;
+    assert_eq!(lista[0]["con_cambios"], 1);
+    assert_eq!(lista[0]["por_atender"], 0);
 }

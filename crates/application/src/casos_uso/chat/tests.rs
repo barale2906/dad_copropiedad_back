@@ -663,3 +663,74 @@ async fn mis_paquetes_lista_la_correspondencia_pendiente() {
         matches!(&r[0], ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("Servientrega"))
     );
 }
+
+/// Campaña de actualización del censo ya lanzada para el segundo bien del teléfono.
+fn con_campana(e: &Entorno) -> crate::casos_uso::campanas_censo::BotonCampana {
+    let campana = domain::CampanaCensoId::nuevo();
+    e.unidad.con_datos(|d| {
+        d.campanas
+            .campanas
+            .push(crate::puertos::censo::CampanaCenso {
+                id: campana,
+                creada_por: None,
+                creada_en: ahora(),
+                enviados: 2,
+            });
+    });
+    crate::casos_uso::campanas_censo::BotonCampana {
+        tenant: e.tenant,
+        campana,
+        bien: e.directorio.0[1].bien_privado_id,
+        cambios: false,
+    }
+}
+
+#[tokio::test]
+async fn el_boton_esta_bien_confirma_sin_preguntar_por_cual_bien() {
+    let e = entorno(2);
+    let b = con_campana(&e);
+    let r = e.enviar(elige(&b.id())).await;
+
+    assert!(matches!(&r[0], ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("T1-101")));
+    let respuestas = e.unidad.datos().campanas.respuestas;
+    assert_eq!(respuestas.len(), 1);
+    assert_eq!(respuestas[0].bien, b.bien, "el bien del botón, no otro");
+    assert_eq!(
+        respuestas[0].respuesta,
+        domain::RespuestaCampanaCenso::Confirmado
+    );
+    assert_eq!(e.paso(), Some(Paso::Menu));
+}
+
+#[tokio::test]
+async fn hay_cambios_muestra_lo_registrado_y_guarda_el_texto() {
+    let e = entorno(2);
+    let b = crate::casos_uso::campanas_censo::BotonCampana {
+        cambios: true,
+        ..con_campana(&e)
+    };
+    let r = e.enviar(elige(&b.id())).await;
+    assert!(matches!(&r[0], ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("Residentes")));
+    assert!(matches!(e.paso(), Some(Paso::CensoCambios { .. })));
+
+    e.enviar(texto("Ya no vive Juan.\nCarro nuevo ABC123"))
+        .await;
+    let respuestas = e.unidad.datos().campanas.respuestas;
+    assert_eq!(
+        respuestas[0].detalle.as_deref(),
+        Some("Ya no vive Juan. Carro nuevo ABC123"),
+        "en una sola línea"
+    );
+    assert_eq!(e.paso(), Some(Paso::Menu));
+}
+
+#[tokio::test]
+async fn un_boton_de_campana_de_otro_bien_no_se_acepta() {
+    let e = entorno(1);
+    let b = crate::casos_uso::campanas_censo::BotonCampana {
+        bien: BienPrivadoId::nuevo(),
+        ..con_campana(&entorno(2))
+    };
+    e.enviar(elige(&b.id())).await;
+    assert!(e.unidad.datos().campanas.respuestas.is_empty());
+}

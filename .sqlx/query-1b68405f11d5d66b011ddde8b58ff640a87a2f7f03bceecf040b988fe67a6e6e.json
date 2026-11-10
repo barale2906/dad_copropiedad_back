@@ -1,0 +1,124 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT r.persona_id, r.bien_privado_id, r.respuesta, r.detalle, r.respondida_en,\n                    r.atendida_en, r.atendida_por, p.nombre, b.codigo\n             FROM respuestas_censo r\n             JOIN personas p ON p.tenant_id = r.tenant_id AND p.id = r.persona_id\n             JOIN bienes_privados b ON b.tenant_id = r.tenant_id AND b.id = r.bien_privado_id\n             WHERE r.campana_id = $1\n             ORDER BY (r.respuesta = 'cambios' AND r.atendida_en IS NULL) DESC, b.codigo",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "respuestas_censo",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "respuestas_censo",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "respuesta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "respuestas_censo",
+            "name": "respuesta"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "detalle",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "respuestas_censo",
+            "name": "detalle"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "respondida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "respuestas_censo",
+            "name": "respondida_en"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "atendida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "respuestas_censo",
+            "name": "atendida_en"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "atendida_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "respuestas_censo",
+            "name": "atendida_por"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "codigo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "1b68405f11d5d66b011ddde8b58ff640a87a2f7f03bceecf040b988fe67a6e6e"
+}

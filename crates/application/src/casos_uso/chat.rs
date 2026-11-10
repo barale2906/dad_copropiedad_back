@@ -25,6 +25,9 @@ use domain::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::casos_uso::campanas_censo::{
+    BotonCampana, registrar_respuesta_censo, resumen_censo_del_bien,
+};
 use crate::{
     AppError, AppResult, Contexto,
     casos_uso::{
@@ -122,6 +125,11 @@ pub enum Paso {
     VisitaDia {
         nombre: String,
     },
+    /// Campaña de actualización del censo: espera la descripción de los cambios del bien del
+    /// vínculo.
+    CensoCambios {
+        campana: domain::CampanaCensoId,
+    },
 }
 
 /// Reserva en construcción.
@@ -172,12 +180,24 @@ pub struct ServiciosChat<'a, U, S, D, M, A, R, DA, F, Q> {
 
 /// Puertos de la transacción de copropiedad que usa el chat.
 pub trait TxConversacional:
-    TxTickets + TxChat + RepositorioReservas + RepositorioArchivos + TxAcceso + TxAsambleas
+    TxTickets
+    + TxChat
+    + RepositorioReservas
+    + RepositorioArchivos
+    + TxAcceso
+    + TxAsambleas
+    + crate::puertos::RepositorioCampanasCenso
 {
 }
 
 impl<T> TxConversacional for T where
-    T: TxTickets + TxChat + RepositorioReservas + RepositorioArchivos + TxAcceso + TxAsambleas
+    T: TxTickets
+        + TxChat
+        + RepositorioReservas
+        + RepositorioArchivos
+        + TxAcceso
+        + TxAsambleas
+        + crate::puertos::RepositorioCampanasCenso
 {
 }
 
@@ -443,6 +463,18 @@ where
         .is_some_and(|v| !vinculos.contains(v))
     {
         estado = EstadoChat::default();
+    }
+    // Botón de la campaña de actualización del censo: el botón dice la PH y el bien.
+    if let Some(b) = respuesta_id(&m.contenido).and_then(BotonCampana::desde_id)
+        && let Some(v) = vinculos
+            .iter()
+            .find(|v| v.tenant_id == b.tenant && v.bien_privado_id == b.bien)
+    {
+        estado.vinculo = Some(v.clone());
+        let r = responder_campana(s, b, v, turno).await;
+        estado.paso = r.as_ref().map_or(Paso::Menu, Clone::clone);
+        turno.estado = Some(estado);
+        return r.map(|_| ());
     }
     if estado.vinculo.is_none() {
         if let [unico] = vinculos.as_slice() {
@@ -989,6 +1021,27 @@ where
                 Ok(Paso::VisitaNombre)
             }
         },
+        Paso::CensoCambios { campana } => match texto_de(&m.contenido) {
+            Some(t) => {
+                let b = BotonCampana {
+                    tenant: v.tenant_id,
+                    campana,
+                    bien: v.bien_privado_id,
+                    cambios: true,
+                };
+                registrar_respuesta_censo(s.unidad, s.reloj, ctx, b, v.persona_id, Some(t)).await?;
+                turno.texto(
+                    "Recibimos los cambios. La administración los revisará y actualizará el \
+                     censo.",
+                );
+                turno.responder(boton_menu());
+                Ok(Paso::Menu)
+            }
+            None => {
+                turno.texto("Escriba los cambios en un mensaje de texto (o «menú» para salir).");
+                Ok(Paso::CensoCambios { campana })
+            }
+        },
         Paso::VisitaDia { nombre } => {
             let dia = id
                 .and_then(|i| i.strip_prefix("vd:"))
@@ -1001,6 +1054,37 @@ where
             Ok(Paso::Menu)
         }
     }
+}
+
+/// «Están bien» registra la confirmación; «Hay cambios» muestra lo registrado del bien y pide
+/// describir los cambios.
+async fn responder_campana<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    b: BotonCampana,
+    v: &VinculoTelefono,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let ctx = Contexto::new(v.tenant_id);
+    if !b.cambios {
+        registrar_respuesta_censo(s.unidad, s.reloj, &ctx, b, v.persona_id, None).await?;
+        turno.texto(format!(
+            "¡Gracias! Registramos que los datos de {} están al día.",
+            v.codigo
+        ));
+        turno.responder(boton_menu());
+        return Ok(Paso::Menu);
+    }
+    turno.texto(resumen_censo_del_bien(s.unidad, &ctx, v.bien_privado_id).await?);
+    turno.texto(
+        "Escriba en un solo mensaje qué debemos cambiar (por ejemplo: «ya no vive Juan Pérez», \
+         «carro nuevo ABC123»). La administración lo revisará.",
+    );
+    Ok(Paso::CensoCambios { campana: b.campana })
 }
 
 fn preguntar_urgencia() -> ContenidoSaliente {

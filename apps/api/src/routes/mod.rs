@@ -19,6 +19,7 @@ pub(crate) mod asambleas;
 mod auditoria;
 mod auth;
 mod bienes_privados;
+mod campanas_censo;
 mod censo;
 mod coeficientes;
 mod comunicados;

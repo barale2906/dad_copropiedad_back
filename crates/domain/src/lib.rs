@@ -84,11 +84,11 @@ pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
     ActivoId, AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AsistenteBienId,
-    AsistenteId, AutorizacionAccesoId, AutorizacionId, BienPrivadoId, CambioCensoId, CargoId,
-    CategoriaTicketId, ComunicadoId, ConsentimientoBiometricoId, ContratoServicioId,
-    ConversacionId, CorrespondenciaId, CredencialId, CuadroCoeficientesId, CuentaId,
-    DispositivoAccesoId, DispositivoPushId, EventoAccesoId, FotoQuorumId, ImportacionId, MascotaId,
-    MensajeTicketId, MovimientoInventarioId, NovedadMinutaId, ObligacionId, OpcionId,
+    AsistenteId, AutorizacionAccesoId, AutorizacionId, BienPrivadoId, CambioCensoId,
+    CampanaCensoId, CargoId, CategoriaTicketId, ComunicadoId, ConsentimientoBiometricoId,
+    ContratoServicioId, ConversacionId, CorrespondenciaId, CredencialId, CuadroCoeficientesId,
+    CuentaId, DispositivoAccesoId, DispositivoPushId, EventoAccesoId, FotoQuorumId, ImportacionId,
+    MascotaId, MensajeTicketId, MovimientoInventarioId, NovedadMinutaId, ObligacionId, OpcionId,
     OrdenTrabajoId, OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId,
     PoliticaTratamientoId, PreguntaFrecuenteId, PreguntaId, PresenciaId, PuenteId, PuntoAccesoId,
     PuntoAtencionId, PuntoOrdenId, ReclamacionId, RecursoId, ReservaId, ResidenciaId,

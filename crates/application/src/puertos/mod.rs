@@ -33,7 +33,7 @@ pub use actas::GeneradorActas;
 pub use archivos::{AlmacenArchivos, RepositorioArchivos};
 pub use asambleas::{DirectorioAsambleas, RepositorioAsambleas, RepositorioLineasWhatsapp};
 pub use auditoria::LecturaAuditoria;
-pub use censo::RepositorioCenso;
+pub use censo::{RepositorioCampanasCenso, RepositorioCenso};
 pub use chat::{DirectorioTelefonos, RepositorioChat};
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
 pub use comunicados::RepositorioComunicados;

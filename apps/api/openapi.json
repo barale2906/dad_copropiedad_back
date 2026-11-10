@@ -5056,6 +5056,265 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/censo/campanas": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Campañas de actualización, de la más reciente a la más antigua (máximo 100).",
+        "operationId": "listar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campañas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResumenCampanaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Lanza una campaña: la plantilla `actualizar_datos` llega al responsable de cada bien con\nresidentes (o al representante de los titulares si nadie reside) que tenga teléfono.",
+        "operationId": "lanzar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Campaña lanzada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaCensoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No hay una línea de WhatsApp (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/censo/campanas/{campana_id}/respuestas": {
+      "get": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Respuestas de una campaña; primero las que tienen cambios por atender.",
+        "operationId": "respuestas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Respuestas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RespuestaCensoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `censo.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/censo/campanas/{campana_id}/respuestas/{persona_id}/{bien_privado_id}/atender": {
+      "post": {
+        "tags": [
+          "censo"
+        ],
+        "summary": "Marca atendida una respuesta con cambios (ya aplicados en el censo).",
+        "operationId": "atender",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona que respondió",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "path",
+            "description": "Bien privado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Atendida"
+          },
+          "403": {
+            "description": "Sin `censo.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No hay una respuesta con cambios (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/recursos": {
       "get": {
         "tags": [
@@ -21278,6 +21537,31 @@
           }
         }
       },
+      "CampanaCensoRespuesta": {
+        "type": "object",
+        "description": "Campaña lanzada.",
+        "required": [
+          "id",
+          "creada_en",
+          "enviados"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "enviados": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Plantillas `actualizar_datos` encoladas.",
+            "minimum": 0
+          }
+        }
+      },
       "CanalesRespuesta": {
         "type": "object",
         "description": "Participación por canal.",
@@ -30722,6 +31006,58 @@
           }
         }
       },
+      "RespuestaCensoRespuesta": {
+        "type": "object",
+        "description": "Respuesta de un responsable.",
+        "required": [
+          "persona_id",
+          "nombre",
+          "bien_privado_id",
+          "codigo",
+          "respuesta",
+          "respondida_en"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "T1-506"
+          },
+          "respuesta": {
+            "type": "string",
+            "description": "`confirmado` o `cambios`.",
+            "example": "cambios"
+          },
+          "detalle": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Cambios descritos por el responsable."
+          },
+          "respondida_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "atendida_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "RespuestaPeticion": {
         "type": "object",
         "description": "Respuesta de la administración.",
@@ -30882,6 +31218,37 @@
           "escrutinio": {
             "type": "object",
             "description": "Totales por opción por coeficiente y por unidades, habilitados, votantes, decisión y\nreparto de cupos (elecciones). Decimales como texto."
+          }
+        }
+      },
+      "ResumenCampanaRespuesta": {
+        "type": "object",
+        "description": "Campaña con sus contadores.",
+        "required": [
+          "campana",
+          "confirmados",
+          "con_cambios",
+          "por_atender"
+        ],
+        "properties": {
+          "campana": {
+            "$ref": "#/components/schemas/CampanaCensoRespuesta"
+          },
+          "confirmados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "con_cambios": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "por_atender": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Con cambios que aún no se aplican en el censo.",
+            "minimum": 0
           }
         }
       },

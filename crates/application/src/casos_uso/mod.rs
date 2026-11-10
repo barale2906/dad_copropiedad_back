@@ -7,6 +7,7 @@ pub mod auditoria;
 pub mod autenticacion;
 pub mod avisos;
 pub mod bienes_privados;
+pub mod campanas_censo;
 pub mod censo;
 pub mod chat;
 pub mod coeficientes;

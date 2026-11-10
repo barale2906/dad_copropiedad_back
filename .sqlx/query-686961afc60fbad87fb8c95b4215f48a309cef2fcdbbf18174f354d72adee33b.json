@@ -1,0 +1,83 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id, c.creada_por, c.creada_en, c.enviados,\n                      count(r.*) FILTER (WHERE r.respuesta = 'confirmado') AS confirmados,\n                      count(r.*) FILTER (WHERE r.respuesta = 'cambios') AS con_cambios,\n                      count(r.*) FILTER (WHERE r.respuesta = 'cambios' AND r.atendida_en IS NULL)\n                          AS por_atender\n               FROM campanas_censo c\n               LEFT JOIN respuestas_censo r ON r.tenant_id = c.tenant_id AND r.campana_id = c.id\n               GROUP BY c.id ORDER BY c.id DESC LIMIT 100",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "campanas_censo",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "campanas_censo",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "campanas_censo",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "enviados",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "campanas_censo",
+            "name": "enviados"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "confirmados",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "con_cambios",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "por_atender",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "686961afc60fbad87fb8c95b4215f48a309cef2fcdbbf18174f354d72adee33b"
+}

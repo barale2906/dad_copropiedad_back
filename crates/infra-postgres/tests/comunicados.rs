@@ -263,3 +263,20 @@ async fn el_envio_queda_en_el_outbox_con_concepto_y_aislado_por_tenant(pool: PgP
         .expect("conteo");
     assert_eq!(vistos, 0, "RLS: otra copropiedad no ve los comunicados");
 }
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_campana_del_censo_va_al_responsable_y_no_al_dueno_que_no_reside(pool: PgPool) {
+    let ph = preparar(&pool).await;
+    let app = pool_como_app(&pool).await;
+    let mut tx = infra_postgres::transaccion_tenant(&app, ph.tenant)
+        .await
+        .expect("tx");
+    let v: Vec<(Uuid, String)> =
+        sqlx::query_as("SELECT persona_id, codigo FROM destinatarios_campana_censo(now())")
+            .fetch_all(&mut *tx)
+            .await
+            .expect("destinatarios");
+    // A1: la responsable no tiene teléfono. B: la tenedora es la responsable; Bruno no reside.
+    assert_eq!(v, vec![(ph.tenedora_b, "B-201".to_owned())]);
+    assert!(!v.iter().any(|(p, _)| *p == ph.dueño_b || *p == ph.menor_a1));
+}
