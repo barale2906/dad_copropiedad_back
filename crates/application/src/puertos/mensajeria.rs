@@ -99,6 +99,12 @@ pub enum ContenidoSaliente {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         botones: Vec<String>,
     },
+    /// Imagen que Meta descarga de un enlace HTTPS (p. ej. el QR de una visita, con un enlace
+    /// firmado de vida corta). Solo dentro de la ventana de 24 h.
+    Imagen {
+        url: String,
+        leyenda: Option<String>,
+    },
 }
 
 impl ContenidoSaliente {

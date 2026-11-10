@@ -349,6 +349,16 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Campaña de actualización de datos del censo por WhatsApp.
+    CampanaCensoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Comunicado de la administración (cartelera digital).
+    ComunicadoId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

@@ -188,6 +188,9 @@ async fn atender_chat(
         mensajeria: &state.mensajeria,
         almacen: state.archivos.as_ref(),
         reloj: &RelojSistema,
+        asambleas: &state.asambleas,
+        firma: state.firma_qr.as_ref(),
+        qr: &infra_pdf::GeneradorQrPng,
     };
     let wamid = mensaje.wamid.clone();
     match atender_mensaje(&servicios, mensaje).await {
@@ -249,6 +252,9 @@ mod tests {
             mensajeria: crate::mensajeria::MensajeriaGateway::new(None),
             archivos: Arc::new(archivos),
             hay_salida: Arc::default(),
+            firma_qr: Arc::new(
+                infra_seguridad::FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
+            ),
             db,
             whatsapp: Arc::new(WhatsappConfig {
                 verify_token: "token-verificacion".into(),

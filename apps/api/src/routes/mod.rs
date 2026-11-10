@@ -19,8 +19,10 @@ pub(crate) mod asambleas;
 mod auditoria;
 mod auth;
 mod bienes_privados;
+mod campanas_censo;
 mod censo;
 mod coeficientes;
+mod comunicados;
 mod conversaciones;
 mod copropiedades;
 mod ficha;
@@ -73,7 +75,11 @@ pub fn router(state: AppState, config: &AppConfig) -> Router {
         app = app.merge(documentacion(api));
     }
 
-    app.layer(
+    app.layer(axum::middleware::from_fn_with_state(
+        state.clone(),
+        crate::idempotencia::capa,
+    ))
+    .layer(
         ServiceBuilder::new()
             .layer(SetRequestIdLayer::new(REQUEST_ID, MakeRequestUuid))
             .layer(

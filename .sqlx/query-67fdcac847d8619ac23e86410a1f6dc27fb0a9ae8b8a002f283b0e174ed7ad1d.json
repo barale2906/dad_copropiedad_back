@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM peticiones_idempotentes WHERE creada_en <= $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "67fdcac847d8619ac23e86410a1f6dc27fb0a9ae8b8a002f283b0e174ed7ad1d"
+}

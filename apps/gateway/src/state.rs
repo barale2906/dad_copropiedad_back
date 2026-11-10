@@ -24,4 +24,6 @@ pub struct GatewayState {
     pub archivos: Arc<AlmacenLocal>,
     /// Despierta al worker de salida apenas el chat encola respuestas.
     pub hay_salida: Arc<Notify>,
+    /// Firma de los QR de visitas que se autorizan desde el chat (`ACCESO_QR_SECRETO`).
+    pub firma_qr: Arc<infra_seguridad::FirmaQrEd25519>,
 }

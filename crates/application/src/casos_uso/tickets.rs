@@ -99,6 +99,31 @@ fn texto_estado(e: EstadoTicket) -> String {
     e.as_str().replace('_', " ")
 }
 
+/// Tickets de la cuenta autenticada en todas sus copropiedades, los movidos más recientemente
+/// primero («mis solicitudes» de la app).
+///
+/// # Errors
+///
+/// [`AppError::NoAutenticado`] sin cuenta; [`AppError::Validacion`] si `limite` no está entre 1
+/// y 100.
+pub async fn tickets_de_mi_cuenta<U>(
+    unidad: &U,
+    ctx: &crate::ContextoPlataforma,
+    limite: u32,
+) -> AppResult<Vec<crate::puertos::tickets::TicketDeCuenta>>
+where
+    U: crate::puertos::UnidadDeTrabajoPlataforma,
+    U::Transaccion: crate::puertos::tickets::RepositorioTicketsDeCuenta,
+{
+    let cuenta = ctx.actor_id.ok_or(AppError::NoAutenticado)?;
+    if !(1..=100).contains(&limite) {
+        return Err(AppError::Validacion("`limite` va de 1 a 100".into()));
+    }
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    crate::puertos::tickets::RepositorioTicketsDeCuenta::tickets_de_cuenta(&mut tx, cuenta, limite)
+        .await
+}
+
 // ---------------------------------------------------------------------------------------------
 // Configuración y categorías
 // ---------------------------------------------------------------------------------------------

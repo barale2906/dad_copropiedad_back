@@ -37,5 +37,11 @@ vive en cada bien privado, qué vehículos y mascotas tiene y quién responde an
 ## Consecuencias
 - Portería (plan 05) y parqueaderos (plan 04) consultan vehículos por placa y residentes por
   bien; ese plan decide qué ve el rol `vigilante` (hoy no tiene `censo.ver`).
-- Las campañas periódicas de actualización por WhatsApp quedan para la fase de autoservicio del
-  plan 07 (necesitan plantillas aprobadas por Meta y el envío del gateway).
+- **Campañas de actualización** (plan 10, fase 5; `casos_uso::campanas_censo`): la plantilla
+  `actualizar_datos` llega al responsable de cada bien con residentes o, si nadie reside, al
+  representante de los titulares (adultos con teléfono, `destinatarios_campana_censo`). En el
+  chat, «Están bien» confirma y «Hay cambios» muestra lo registrado y pide describirlos. Las
+  respuestas con cambios (`respuestas_censo`, `dato_personal`) las aplica la administración en el
+  censo y las marca atendidas: no entran como `cambios_censo`, que exigen cuenta y datos
+  estructurados (por WhatsApp muchos no tienen cuenta).
+- Los libros de propietarios y residentes también salen en PDF (`formato=pdf`, Typst).

@@ -51,6 +51,8 @@ pub const ETIQUETA_PROTECCION_DATOS: &str = "proteccion_datos";
 pub const ETIQUETA_AUDITORIA: &str = "auditoria";
 /// Etiqueta del control de acceso, visitas y correspondencia.
 pub const ETIQUETA_ACCESO: &str = "acceso";
+/// Etiqueta de los comunicados de la administración.
+pub const ETIQUETA_COMUNICADOS: &str = "comunicados";
 /// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
@@ -101,7 +103,12 @@ impl utoipa::Modify for EsquemaBearer {
                        - Puentes de acceso (token de máquina): `/api/v1/puentes/…`\n\n\
                        Errores: `{ \"error\": { \"codigo\": \"…\", \"mensaje\": \"…\" } }` \
                        (ver el esquema `CodigoError`). Listados: paginación por cursor con \
-                       `?limite=&despues=`."
+                       `?limite=&despues=`.\n\n\
+                       Reintentos seguros: los `POST` con sesión aceptan la cabecera \
+                       `Idempotency-Key` (1 a 200 caracteres). Durante 24 h, repetir la misma \
+                       petición con la misma clave devuelve la respuesta original con \
+                       `Idempotency-Replayed: true`; la misma clave con otra petición responde \
+                       422 `idempotencia_reusada`."
     ),
     tags(
         (name = ETIQUETA_SALUD, description = "Sondas de vida y disponibilidad del servicio"),
@@ -129,6 +136,11 @@ impl utoipa::Modify for EsquemaBearer {
         (name = ETIQUETA_CONVERSACIONES, description = "Chat de WhatsApp: preguntas frecuentes y \
                                                         bandeja de conversaciones escaladas a la \
                                                         administración (módulo `gestion_administrativa`)"),
+        (name = ETIQUETA_COMUNICADOS, description = "Comunicados de la administración: \
+            audiencia (toda la PH, propietarios, residentes, torres, bienes o roles), finalidad \
+            (Ley 1581), envío inmediato o programado por push, correo y WhatsApp (solo los \
+            importantes y a quien no tiene la app), cartelera con lectura y «Enterado» (módulo \
+            `gestion_administrativa`)"),
         (name = ETIQUETA_MANTENIMIENTO, description = "Inventario de activos con hoja de vida, planes \
                                                        preventivos, órdenes de trabajo y \
                                                        obligaciones periódicas (módulo \

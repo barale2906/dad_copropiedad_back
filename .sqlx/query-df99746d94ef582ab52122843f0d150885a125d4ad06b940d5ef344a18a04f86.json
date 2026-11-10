@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE comunicados SET titulo = $2, cuerpo = $3, finalidad = $4, audiencia = $5,\n                 importante = $6, requiere_confirmacion = $7, estado = $8, programado_para = $9,\n                 enviado_en = $10, actualizado_en = $11\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Bool",
+        "Bool",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "df99746d94ef582ab52122843f0d150885a125d4ad06b940d5ef344a18a04f86"
+}

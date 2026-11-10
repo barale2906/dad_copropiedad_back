@@ -76,6 +76,7 @@ async fn sin_el_modulo_no_hay_bienes_comunes(pool: PgPool) {
 async fn el_propietario_reserva_el_salon_y_la_administracion_aprueba(pool: PgPool) {
     let ph = ph(pool).await;
     ph.habilitar("bienes_comunes").await;
+    ph.habilitar("gestion_administrativa").await;
     let (bien, _) = ph.bien_con_dueno().await;
     let salon = salon(&ph).await;
     let dueno = ph.api.token("dueno").await;
@@ -166,6 +167,15 @@ async fn el_propietario_reserva_el_salon_y_la_administracion_aprueba(pool: PgPoo
         .await
         .expect("cargo");
     assert_eq!(cargo, "120000.00");
+    // La novedad radicó un ticket de mantenimiento ligado al salón (plan 10, fase 3).
+    let (tipo, recurso, clave): (String, Option<uuid::Uuid>, String) =
+        sqlx::query_as("SELECT tipo, recurso_id, idempotency_key FROM tickets")
+            .fetch_one(&ph.api.duenio)
+            .await
+            .expect("ticket");
+    assert_eq!(tipo, "solicitud_mantenimiento");
+    assert_eq!(recurso.map(|u| u.to_string()), Some(salon.clone()));
+    assert_eq!(clave, format!("reserva-novedad:{id}"));
     let (_, mias) = ph
         .api
         .pedir(

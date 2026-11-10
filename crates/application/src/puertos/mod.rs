@@ -11,8 +11,10 @@ pub mod auditoria;
 pub mod censo;
 pub mod chat;
 pub mod cola_salida;
+pub mod comunicados;
 pub mod copropiedades;
 pub mod correo;
+pub mod idempotencia;
 pub mod identidad;
 pub mod mantenimiento;
 pub mod mensajeria;
@@ -25,20 +27,23 @@ pub mod tickets;
 pub mod unidad_trabajo;
 
 pub use acceso::{
-    DirectorioAcceso, EnvioPush, FirmaQr, RepositorioAcceso, RepositorioDispositivosPush,
+    DirectorioAcceso, EnvioPush, FirmaQr, GeneradorImagenQr, RepositorioAcceso,
+    RepositorioDispositivosPush,
 };
 pub use actas::GeneradorActas;
 pub use archivos::{AlmacenArchivos, RepositorioArchivos};
 pub use asambleas::{DirectorioAsambleas, RepositorioAsambleas, RepositorioLineasWhatsapp};
 pub use auditoria::LecturaAuditoria;
-pub use censo::RepositorioCenso;
+pub use censo::{RepositorioCampanasCenso, RepositorioCenso};
 pub use chat::{DirectorioTelefonos, RepositorioChat};
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
+pub use comunicados::RepositorioComunicados;
 pub use copropiedades::{
     LectorPlanillas, RepositorioBienesPrivados, RepositorioCoeficientes, RepositorioCopropiedad,
     RepositorioImportaciones, RepositorioPersonas, RepositorioTitulares,
 };
 pub use correo::EnvioCorreo;
+pub use idempotencia::RegistroIdempotencia;
 pub use identidad::{
     HashContrasenas, RepositorioContratos, RepositorioCuentas, RepositorioOrganizaciones,
     RepositorioPlataforma, RepositorioRoles, RepositorioSesiones, SegundoFactor,

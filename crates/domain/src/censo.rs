@@ -339,6 +339,21 @@ enum_texto!(EstadoCambioCenso {
     Rechazado => "rechazado",
 });
 
+/// Respuesta a una campaña de actualización del censo (plan 10, fase 5).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RespuestaCampanaCenso {
+    /// «Mis datos están bien».
+    Confirmado,
+    /// Describió cambios que la administración revisa y aplica en el censo.
+    Cambios,
+}
+
+enum_texto!(RespuestaCampanaCenso {
+    Confirmado => "confirmado",
+    Cambios => "cambios",
+});
+
 impl EstadoCambioCenso {
     /// Una propuesta se resuelve una sola vez.
     ///

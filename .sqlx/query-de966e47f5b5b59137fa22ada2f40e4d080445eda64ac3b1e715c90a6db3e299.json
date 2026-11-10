@@ -1,0 +1,44 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT persona_id AS \"persona_id!\", bien_privado_id AS \"bien_privado_id!\",\n                      codigo AS \"codigo!\", telefono AS \"telefono!\"\n               FROM destinatarios_campana_censo($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "persona_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "codigo!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "telefono!",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "de966e47f5b5b59137fa22ada2f40e4d080445eda64ac3b1e715c90a6db3e299"
+}

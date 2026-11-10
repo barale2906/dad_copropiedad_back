@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT huella, estado, tipo, cuerpo FROM peticiones_idempotentes\n                 WHERE cuenta_id = $1 AND clave = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "huella",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "peticiones_idempotentes",
+            "name": "huella"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "estado",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "peticiones_idempotentes",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "peticiones_idempotentes",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "cuerpo",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "peticiones_idempotentes",
+            "name": "cuerpo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "c22cf96bb1ea35753e9cb57b9fa2073d31a91991b54362da87726549109312ab"
+}

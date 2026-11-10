@@ -272,6 +272,13 @@ pub fn payload(m: &MensajeSaliente) -> Value {
             }
             base("template", plantilla)
         }
+        ContenidoSaliente::Imagen { url, leyenda } => {
+            let mut imagen = json!({ "link": url });
+            if let Some(l) = leyenda {
+                imagen["caption"] = json!(recortar(l, 1024));
+            }
+            base("image", imagen)
+        }
     }
 }
 
@@ -320,6 +327,20 @@ mod tests {
                 .map(|t| t.chars().count()),
             Some(20)
         );
+    }
+
+    #[test]
+    fn payload_de_imagen_por_enlace() {
+        let i = payload(&mensaje(ContenidoSaliente::Imagen {
+            url: "https://api.dominio.co/api/v1/archivos/descarga?f=x".into(),
+            leyenda: Some("QR de la visita".into()),
+        }));
+        assert_eq!(i["type"], "image");
+        assert_eq!(
+            i["image"]["link"],
+            "https://api.dominio.co/api/v1/archivos/descarga?f=x"
+        );
+        assert_eq!(i["image"]["caption"], "QR de la visita");
     }
 
     #[test]

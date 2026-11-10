@@ -807,3 +807,11 @@ pub trait FirmaQr: Send + Sync {
     /// Clave pública de la PH (la recibe el puente para validar sin internet).
     fn clave_publica(&self, tenant: TenantId) -> [u8; 32];
 }
+
+/// Imagen PNG de un código QR (el de una visita, para enviarlo por WhatsApp).
+pub trait GeneradorImagenQr: Send + Sync {
+    /// # Errors
+    ///
+    /// [`crate::AppError::Validacion`] si el texto no cabe en un QR.
+    fn png(&self, texto: &str) -> AppResult<Vec<u8>>;
+}

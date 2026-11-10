@@ -1607,3 +1607,80 @@ async fn un_puente_retirado_ya_no_sincroniza() {
     let r = puentes::sincronizar(&e.unidad, &RelojFijo(t0()), &FirmaFalsa, &p, 0, None).await;
     assert!(matches!(r, Err(AppError::NoAutenticado)));
 }
+
+/// Tablet de la portería con la app: cuenta con `acceso.registrar` y un token push.
+fn con_tablet(e: &Entorno) -> String {
+    let cuenta = CuentaId::nuevo();
+    e.unidad.con_datos(|d| {
+        d.gestion.destinatarios.push((
+            Permiso::AccesoRegistrar,
+            crate::puertos::tickets::Destinatario {
+                cuenta_id: cuenta,
+                correo: None,
+                telefono: None,
+            },
+        ));
+        d.acceso.tokens.push((cuenta, "tablet-1".into()));
+    });
+    "tablet-1".into()
+}
+
+fn push_a(e: &Entorno, token: &str) -> Vec<crate::puertos::acceso::NotificacionPush> {
+    e.unidad
+        .outbox()
+        .into_iter()
+        .filter_map(|(_, ev)| match ev.mensaje {
+            MensajeOutbox::Push(p) if p.token == token => Some(p),
+            _ => None,
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn la_porteria_recibe_push_cuando_hay_que_llamar() {
+    let e = entorno();
+    let tablet = con_tablet(&e);
+    e.unidad.con_datos(|d| {
+        d.residencias.clear();
+        d.titularidades.clear();
+    });
+
+    let v = e.anunciar().await;
+
+    assert_eq!(v.estado, EstadoVisita::RequiereLlamada);
+    let p = push_a(&e, &tablet);
+    assert_eq!(p.len(), 1);
+    assert_eq!(p[0].datos["tipo"], "porteria_visita");
+    assert_eq!(p[0].datos["estado"], "requiere_llamada");
+    assert!(
+        p[0].respaldo.is_none(),
+        "la portería usa la app, sin WhatsApp"
+    );
+}
+
+#[tokio::test]
+async fn la_porteria_recibe_push_cuando_un_residente_decide() {
+    let e = entorno();
+    let tablet = con_tablet(&e);
+    let v = e.anunciar().await;
+    assert!(
+        push_a(&e, &tablet).is_empty(),
+        "anunciar no avisa a la portería"
+    );
+
+    visitas::decidir_visita(
+        &e.unidad,
+        &RelojFijo(t0() + TimeDelta::seconds(30)),
+        &e.residente(e.cuenta_responsable),
+        v.id,
+        false,
+        CanalRespuestaVisita::App,
+    )
+    .await
+    .expect("decidir");
+
+    let p = push_a(&e, &tablet);
+    assert_eq!(p.len(), 1);
+    assert_eq!(p[0].datos["estado"], "rechazada");
+    assert!(p[0].titulo.starts_with("Visita rechazada"));
+}

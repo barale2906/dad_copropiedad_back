@@ -825,6 +825,10 @@ pub struct DatosEntrega {
 /// Registra la entrega (aprobada → en curso) o el recibo (en curso → finalizada, o con novedad
 /// si hay novedad o daños; los daños quedan como cargo pendiente del bien privado).
 ///
+/// Un recibo con novedad radica además un ticket de mantenimiento (plan 10, fase 3) si la PH
+/// tiene la gestión administrativa: idempotente por reserva, con las fotos del recibo como
+/// adjuntos. Si no se puede radicar, el recibo igual queda registrado.
+///
 /// # Errors
 ///
 /// [`AppError::SinPermiso`] sin `reservas.entregas.registrar`; [`AppError::NoEncontrado`];
@@ -840,7 +844,7 @@ pub async fn registrar_entrega<U>(
 ) -> AppResult<Reserva>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioReservas + RepositorioModulos + RegistroAuditoria,
+    U::Transaccion: RepositorioReservas + crate::casos_uso::tickets::TxTickets,
 {
     ctx.exigir(Permiso::ReservasEntregasRegistrar)?;
     if datos.valor_danos.is_some_and(|v| v <= Decimal::ZERO)
@@ -868,7 +872,7 @@ where
         reserva_id: id,
         tipo,
         checklist: datos.checklist,
-        fotos: datos.fotos,
+        fotos: datos.fotos.clone(),
         novedad: novedad.clone(),
         valor_danos: datos.valor_danos,
         registrado_por: ctx.actor_id,
@@ -895,7 +899,86 @@ where
     tx.registrar(EventoAuditoria::ok(accion, "reserva", id.as_uuid()).con_detalle(detalle))
         .await?;
     tx.confirmar().await?;
+    if r.estado == EstadoReserva::ConNovedad {
+        let n = ticket_por_novedad(
+            &r,
+            &recurso.nombre,
+            novedad.as_deref(),
+            datos.valor_danos,
+            datos.fotos,
+        );
+        if let Err(e) = radicar_por_novedad(unidad, reloj, ctx, n).await {
+            tracing::warn!(tenant_id = %ctx.tenant_id, reserva_id = %id, error = %e, "no se radicó el ticket de la novedad");
+        }
+    }
     Ok(r)
+}
+
+/// Ticket de mantenimiento para la novedad del recibo de una reserva.
+fn ticket_por_novedad(
+    r: &Reserva,
+    recurso: &str,
+    novedad: Option<&str>,
+    valor_danos: Option<Decimal>,
+    fotos: Vec<ArchivoId>,
+) -> crate::casos_uso::tickets::NuevoTicket {
+    let mut descripcion = format!("Novedad al recibir «{recurso}» tras la reserva {}.", r.id);
+    if let Some(n) = novedad {
+        descripcion.push_str(&format!(" Novedad: {}", n.replace(char::is_control, " ")));
+    }
+    if let Some(v) = valor_danos {
+        descripcion.push_str(&format!(
+            " Daños estimados: {v} (cargo pendiente del bien privado)."
+        ));
+    }
+    crate::casos_uso::tickets::NuevoTicket {
+        tipo: domain::TipoTicket::SolicitudMantenimiento,
+        categoria_id: None,
+        prioridad: None,
+        canal: domain::CanalTicket::Presencial,
+        asunto: format!(
+            "Novedad en {}",
+            recurso.chars().take(100).collect::<String>()
+        ),
+        descripcion,
+        bien_privado_id: Some(r.bien_privado_id),
+        ubicacion: None,
+        recurso_id: Some(r.recurso_id),
+        activo_id: None,
+        adjuntos: fotos
+            .into_iter()
+            .take(crate::casos_uso::tickets::MAX_ADJUNTOS)
+            .collect(),
+        idempotency_key: format!("reserva-novedad:{}", r.id),
+        solicitante: None,
+    }
+}
+
+/// Radica el ticket a nombre de quien registró el recibo. Sin la gestión administrativa no se
+/// radica (no es un error).
+async fn radicar_por_novedad<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    n: crate::casos_uso::tickets::NuevoTicket,
+) -> AppResult<()>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: crate::casos_uso::tickets::TxTickets,
+{
+    if ctx.actor_id.is_none() {
+        return Ok(());
+    }
+    // Quien registra el recibo radica el ticket aunque su rol no tenga `tickets.crear`: es una
+    // consecuencia del recibo, no una solicitud suya.
+    let interno = Contexto {
+        permisos: domain::ConjuntoPermisos::todos(domain::Ambito::Copropiedad),
+        ..ctx.clone()
+    };
+    match crate::casos_uso::tickets::radicar_ticket(unidad, reloj, &interno, n).await {
+        Ok(_) | Err(AppError::ModuloNoHabilitado(_)) => Ok(()),
+        Err(e) => Err(e),
+    }
 }
 
 /// Marca que el solicitante no asistió a una reserva aprobada.
@@ -1566,6 +1649,97 @@ pub(crate) mod tests {
         )
         .await
         .expect("cabe una persona más");
+    }
+
+    /// Reserva aprobada y entregada del salón; devuelve el contexto de la administración (con
+    /// cuenta) y la reserva.
+    async fn reserva_en_curso(e: &Entorno) -> (Contexto, Reserva) {
+        let r = salon(e, PoliticaReserva::default(), false).await;
+        let b = solicitar_reserva(
+            &e.unidad,
+            &reloj(),
+            &e.dueno,
+            solicitud(e, &r, 20, 14, 16, "nov"),
+        )
+        .await
+        .expect("solicita");
+        let admin = Contexto::de_cuenta(
+            e.ctx.tenant_id,
+            domain::CuentaId::nuevo(),
+            domain::ConjuntoPermisos::todos(domain::Ambito::Copropiedad),
+        );
+        if b.estado == EstadoReserva::Solicitada {
+            resolver_reserva(&e.unidad, &reloj(), &admin, b.id, true, None)
+                .await
+                .expect("aprueba");
+        }
+        let b = registrar_entrega(
+            &e.unidad,
+            &reloj(),
+            &admin,
+            b.id,
+            TipoEntrega::Entrega,
+            DatosEntrega::default(),
+        )
+        .await
+        .expect("entrega");
+        (admin, b)
+    }
+
+    fn con_novedad() -> DatosEntrega {
+        DatosEntrega {
+            novedad: Some("Mesa rota".into()),
+            valor_danos: Some(dec!(80000)),
+            ..DatosEntrega::default()
+        }
+    }
+
+    #[tokio::test]
+    async fn la_novedad_del_recibo_radica_un_ticket_de_mantenimiento() {
+        let e = entorno().await;
+        e.unidad.habilitar(Modulo::GestionAdministrativa);
+        let (admin, b) = reserva_en_curso(&e).await;
+
+        registrar_entrega(
+            &e.unidad,
+            &reloj(),
+            &admin,
+            b.id,
+            TipoEntrega::Recibo,
+            con_novedad(),
+        )
+        .await
+        .expect("recibo");
+
+        let tickets = e.unidad.datos().gestion.tickets;
+        assert_eq!(tickets.len(), 1);
+        let t = &tickets[0];
+        assert_eq!(t.tipo, domain::TipoTicket::SolicitudMantenimiento);
+        assert_eq!(t.recurso_id, Some(b.recurso_id));
+        assert_eq!(t.bien_privado_id, Some(b.bien_privado_id));
+        assert_eq!(t.solicitante_cuenta_id, admin.actor_id);
+        assert!(t.descripcion.contains("Mesa rota") && t.descripcion.contains("80000"));
+        assert_eq!(t.idempotency_key, format!("reserva-novedad:{}", b.id));
+    }
+
+    #[tokio::test]
+    async fn sin_gestion_administrativa_el_recibo_queda_sin_ticket() {
+        let e = entorno().await;
+        let (admin, b) = reserva_en_curso(&e).await;
+
+        let r = registrar_entrega(
+            &e.unidad,
+            &reloj(),
+            &admin,
+            b.id,
+            TipoEntrega::Recibo,
+            con_novedad(),
+        )
+        .await
+        .expect("el recibo no falla");
+
+        assert_eq!(r.estado, EstadoReserva::ConNovedad);
+        assert!(e.unidad.datos().gestion.tickets.is_empty());
     }
 
     #[tokio::test]

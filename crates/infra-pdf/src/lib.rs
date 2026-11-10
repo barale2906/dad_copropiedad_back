@@ -1,5 +1,6 @@
 //! Generación de PDF con Typst (como librería): el acta de la asamblea y la hoja de rótulos de
-//! código de barras. Implementa [`application::puertos::GeneradorActas`].
+//! código de barras y los libros del censo (tabla). Implementa [`application::puertos::GeneradorActas`]. También genera el QR
+//! de las visitas en PNG ([`GeneradorQrPng`], puerto `GeneradorImagenQr`).
 //!
 //! Lineamientos:
 //! - Las plantillas Typst están versionadas en `plantillas/` y se embeben al compilar.
@@ -11,20 +12,23 @@
 
 mod code128;
 mod mundo;
+mod qr;
 
 use application::{
     AppError, AppResult,
     puertos::{
         GeneradorActas,
-        actas::{DatosActa, HojaRotulos},
+        actas::{DatosActa, HojaRotulos, TablaPdf},
     },
 };
 use serde_json::json;
 
 pub use code128::modulos as code128;
+pub use qr::GeneradorQrPng;
 
 const PLANTILLA_ACTA: &str = include_str!("../plantillas/acta.typ");
 const PLANTILLA_ROTULOS: &str = include_str!("../plantillas/rotulos.typ");
+const PLANTILLA_TABLA: &str = include_str!("../plantillas/tabla.typ");
 
 /// Generador de PDF con Typst.
 #[derive(Debug, Clone, Copy, Default)]
@@ -61,6 +65,14 @@ impl GeneradorActas for GeneradorTypst {
         compilar(
             PLANTILLA_ROTULOS,
             json!({ "titulo": hoja.titulo, "rotulos": rotulos }),
+        )
+        .await
+    }
+
+    async fn tabla(&self, tabla: &TablaPdf) -> AppResult<Vec<u8>> {
+        compilar(
+            PLANTILLA_TABLA,
+            serde_json::to_value(tabla).map_err(AppError::infra)?,
         )
         .await
     }
@@ -193,5 +205,26 @@ mod tests {
             GeneradorTypst.rotulos(&hoja).await,
             Err(AppError::Validacion(_))
         ));
+    }
+
+    #[tokio::test]
+    async fn genera_un_libro_en_tabla_aun_vacio() {
+        let mut t = TablaPdf {
+            titulo: "Libro de propietarios".into(),
+            copropiedad: "Conjunto Alameda".into(),
+            subtitulo: "Corte: 2026-11-10 10:00".into(),
+            columnas: vec!["Bien privado".into(), "Titular".into(), "Porcentaje".into()],
+            filas: vec![vec![
+                "T1-101".into(),
+                "Ana Dueña #1 *x*".into(),
+                "100".into(),
+            ]],
+            generada: "2026-11-10 10:00".into(),
+        };
+        let pdf = GeneradorTypst.tabla(&t).await.expect("compila");
+        assert!(pdf.starts_with(b"%PDF-"));
+        t.filas.clear();
+        let vacio = GeneradorTypst.tabla(&t).await.expect("compila vacío");
+        assert!(vacio.starts_with(b"%PDF-"));
     }
 }

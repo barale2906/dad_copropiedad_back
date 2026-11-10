@@ -223,6 +223,73 @@ pub(crate) async fn avisar_visita<T: TxAcceso>(
     Ok(n)
 }
 
+/// Qué pasó con la visita, para el aviso a la portería.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum NovedadPorteria {
+    /// Nadie respondió: hay que llamar.
+    Llamar,
+    /// Un residente decidió desde la app, la web o WhatsApp.
+    Decidida,
+}
+
+/// Push a la portería (cuentas con `acceso.registrar`, plan 10 fase 7): la tablet deja de
+/// depender de refrescar. Sin WhatsApp de respaldo: la portería usa la app. Devuelve a cuántos
+/// dispositivos se envió.
+pub(crate) async fn avisar_porteria<T: TxAcceso>(
+    tx: &mut T,
+    ctx: &Contexto,
+    v: &Visita,
+    novedad: NovedadPorteria,
+) -> AppResult<u32> {
+    let cuentas: Vec<domain::CuentaId> = tx
+        .destinatarios_con_permiso(Permiso::AccesoRegistrar)
+        .await?
+        .into_iter()
+        .map(|d| d.cuenta_id)
+        .collect();
+    if cuentas.is_empty() {
+        return Ok(0);
+    }
+    let tokens = tx.tokens_push(&cuentas).await?;
+    let codigo = codigo_bien(tx, v.bien_privado_id).await?;
+    let visitante = corto(&v.visitante_nombre, 60);
+    let (titulo, cuerpo) = match novedad {
+        NovedadPorteria::Llamar => (
+            format!("Llamar a {codigo}"),
+            format!("Nadie respondió por la visita de {visitante}."),
+        ),
+        NovedadPorteria::Decidida if v.estado == EstadoVisita::Autorizada => (
+            format!("Visita autorizada en {codigo}"),
+            format!("Puede ingresar {visitante}."),
+        ),
+        NovedadPorteria::Decidida => (
+            format!("Visita rechazada en {codigo}"),
+            format!("No se autorizó el ingreso de {visitante}."),
+        ),
+    };
+    let mut datos = std::collections::BTreeMap::new();
+    datos.insert("tipo".into(), "porteria_visita".into());
+    datos.insert("copropiedad_id".into(), ctx.tenant_id.to_string());
+    datos.insert("visita_id".into(), v.id.to_string());
+    datos.insert("estado".into(), v.estado.as_str().into());
+    let mut n = 0;
+    for (_, token) in tokens {
+        tx.encolar_aviso_acceso(&crate::outbox::EventoSaliente {
+            prioridad: PrioridadSalida::Confirmacion,
+            mensaje: crate::outbox::MensajeOutbox::Push(crate::puertos::acceso::NotificacionPush {
+                token,
+                titulo: titulo.clone(),
+                cuerpo: cuerpo.clone(),
+                datos: datos.clone(),
+                respaldo: None,
+            }),
+        })
+        .await?;
+        n += 1;
+    }
+    Ok(n)
+}
+
 /// Pasa la visita a `requiere_llamada`: la portería debe llamar.
 pub(crate) async fn pedir_llamada<T: TxAcceso>(
     tx: &mut T,
@@ -233,7 +300,9 @@ pub(crate) async fn pedir_llamada<T: TxAcceso>(
     v.estado = v.estado.transicionar(EstadoVisita::RequiereLlamada)?;
     v.siguiente_paso_en = None;
     tx.insertar_evento_visita(&evento(v, TipoEventoVisita::EscaladaLlamada, ctx, ahora))
-        .await
+        .await?;
+    avisar_porteria(tx, ctx, v, NovedadPorteria::Llamar).await?;
+    Ok(())
 }
 
 /// La portería anuncia una visita: aviso al primer respondiente y escalamiento programado. Si
@@ -319,6 +388,56 @@ pub(crate) fn texto_qr(
     ))
 }
 
+fn validar_ventana(p: &NuevaPreautorizacion, ahora: DateTime<Utc>) -> AppResult<()> {
+    if p.hasta <= p.desde || p.hasta <= ahora || p.hasta - p.desde > VENTANA_MAXIMA_PREAUTORIZACION
+    {
+        return Err(AppError::Validacion(
+            "la ventana debe terminar en el futuro, después de empezar, y durar a lo sumo 31 días"
+                .into(),
+        ));
+    }
+    if p.usos == 0 || p.usos > USOS_MAXIMOS_QR {
+        return Err(AppError::Validacion(format!(
+            "los usos van de 1 a {USOS_MAXIMOS_QR}"
+        )));
+    }
+    Ok(())
+}
+
+/// Crea la pre-autorización dentro de una transacción abierta.
+async fn preautorizar_en<T: TxAcceso>(
+    tx: &mut T,
+    firma: &impl FirmaQr,
+    ctx: &Contexto,
+    persona: PersonaId,
+    canal: CanalRespuestaVisita,
+    p: &NuevaPreautorizacion,
+    ahora: DateTime<Utc>,
+) -> AppResult<(Visita, String)> {
+    let mut v = visita_nueva(
+        ctx,
+        &p.visita,
+        OrigenVisita::Preautorizada,
+        EstadoVisita::Autorizada,
+        ahora,
+    )?;
+    v.decidida_por = Some(persona);
+    v.canal_decision = Some(canal);
+    v.decidida_en = Some(ahora);
+    v.ventana_desde = Some(p.desde);
+    v.ventana_hasta = Some(p.hasta);
+    v.usos_permitidos = p.usos;
+    v.siguiente_paso_en = Some(p.hasta);
+    tx.insertar_visita(&v).await?;
+    let mut e = evento(&v, TipoEventoVisita::Preautorizada, ctx, ahora);
+    e.persona_id = Some(persona);
+    e.canal = Some(canal);
+    tx.insertar_evento_visita(&e).await?;
+    auditar(tx, ACCION_PREAUTORIZAR, &v).await?;
+    let qr = texto_qr(firma, ctx, &v)?.ok_or(AppError::Validacion("visita sin ventana".into()))?;
+    Ok((v, qr))
+}
+
 /// Un residente pre-autoriza una visita: queda autorizada en su ventana y recibe un QR temporal
 /// firmado (lo comparte desde la app).
 ///
@@ -338,42 +457,63 @@ where
     U::Transaccion: TxAcceso,
 {
     let ahora = reloj.ahora();
-    if p.hasta <= p.desde || p.hasta <= ahora || p.hasta - p.desde > VENTANA_MAXIMA_PREAUTORIZACION
-    {
-        return Err(AppError::Validacion(
-            "la ventana debe terminar en el futuro, después de empezar, y durar a lo sumo 31 días"
-                .into(),
-        ));
-    }
-    if p.usos == 0 || p.usos > USOS_MAXIMOS_QR {
-        return Err(AppError::Validacion(format!(
-            "los usos van de 1 a {USOS_MAXIMOS_QR}"
-        )));
-    }
+    validar_ventana(&p, ahora)?;
     let mut tx = abrir(unidad, reloj, ctx).await?;
     let persona = persona_que_decide(&mut tx, ctx, p.visita.bien_privado_id, ahora).await?;
-    let mut v = visita_nueva(
+    let r = preautorizar_en(
+        &mut tx,
+        firma,
         ctx,
-        &p.visita,
-        OrigenVisita::Preautorizada,
-        EstadoVisita::Autorizada,
+        persona,
+        CanalRespuestaVisita::App,
+        &p,
         ahora,
-    )?;
-    v.decidida_por = Some(persona);
-    v.canal_decision = Some(CanalRespuestaVisita::App);
-    v.decidida_en = Some(ahora);
-    v.ventana_desde = Some(p.desde);
-    v.ventana_hasta = Some(p.hasta);
-    v.usos_permitidos = p.usos;
-    v.siguiente_paso_en = Some(p.hasta);
-    tx.insertar_visita(&v).await?;
-    let mut e = evento(&v, TipoEventoVisita::Preautorizada, ctx, ahora);
-    e.persona_id = Some(persona);
-    tx.insertar_evento_visita(&e).await?;
-    auditar(&mut tx, ACCION_PREAUTORIZAR, &v).await?;
-    let qr = texto_qr(firma, ctx, &v)?.ok_or(AppError::Validacion("visita sin ventana".into()))?;
+    )
+    .await?;
     tx.confirmar().await?;
-    Ok((v, qr))
+    Ok(r)
+}
+
+/// Pre-autorización desde el chat de WhatsApp: la persona ya la identificó el teléfono (no
+/// necesita cuenta en la plataforma). Exige que pueda decidir por el bien (residente adulto o,
+/// si no vive nadie de 18 a 59 años, propietario).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] si la persona no puede decidir por el bien; los de
+/// [`preautorizar_visita`].
+pub async fn preautorizar_para_persona<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    firma: &impl FirmaQr,
+    ctx: &Contexto,
+    persona: PersonaId,
+    p: NuevaPreautorizacion,
+) -> AppResult<(Visita, String)>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxAcceso,
+{
+    let ahora = reloj.ahora();
+    validar_ventana(&p, ahora)?;
+    let mut tx = abrir(unidad, reloj, ctx).await?;
+    let tz = zona_ph(&mut tx).await?;
+    let (residentes, titulares) = vinculados(&mut tx, p.visita.bien_privado_id).await?;
+    if !puede_decidir_visita(persona, &residentes, &titulares, hoy(ahora, tz)) {
+        return Err(AppError::SinPermiso(Permiso::AccesoVisitantesAutorizar));
+    }
+    let r = preautorizar_en(
+        &mut tx,
+        firma,
+        ctx,
+        persona,
+        CanalRespuestaVisita::Whatsapp,
+        &p,
+        ahora,
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(r)
 }
 
 /// Toma la decisión dentro de una transacción abierta (la usan la app, la web y WhatsApp).
@@ -415,6 +555,7 @@ pub(crate) async fn decidir_en<T: TxAcceso>(
     e.persona_id = persona;
     tx.insertar_evento_visita(&e).await?;
     auditar(tx, ACCION_DECIDIR, &v).await?;
+    avisar_porteria(tx, ctx, &v, NovedadPorteria::Decidida).await?;
     Ok(ResultadoDecision::Decidida(v))
 }
 

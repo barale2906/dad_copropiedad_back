@@ -36,3 +36,17 @@ un despliegue reproducible en el VPS. La protección de datos se completó en el
   credenciales del VPS en el CI.
 - `CONFIAR_PROXY=true` solo detrás de Nginx propio: expuesta directamente, la API confiaría en
   una cabecera del cliente.
+
+## Adenda (plan 10, fase 6): `Idempotency-Key`
+
+- Middleware de la API (`api::idempotencia`) para los `POST` con sesión y la cabecera
+  `Idempotency-Key`: la primera petición reserva la clave por cuenta (tabla de plataforma
+  `peticiones_idempotentes`, huella SHA-256 de método, ruta y cuerpo) y guarda su respuesta
+  (≤ 1 MB, nunca las 5xx). Un reintento recibe la respuesta original con
+  `Idempotency-Replayed: true`; otra petición con la misma clave, 422 `idempotencia_reusada`; si la
+  primera sigue en curso, 409. Las claves valen 24 h; el worker de gestión del gateway las purga.
+- Los votos (`…/votos`) quedan fuera del middleware: su clave es parte del voto (AGENTS.md §9,
+  invariante 2) y el reintento responde `registrado: false` desde la transacción.
+- Es general y no reemplaza las idempotencias de negocio ya existentes (`idempotency_key` de los
+  tickets, `wamid` de WhatsApp, clave del voto), que siguen siendo la garantía dentro de la BD.
+

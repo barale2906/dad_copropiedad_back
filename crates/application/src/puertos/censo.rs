@@ -209,3 +209,105 @@ pub trait RepositorioCenso: Send {
         &mut self,
     ) -> impl Future<Output = AppResult<Vec<PersonaId>>> + Send;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Campañas de actualización (plan 10, fase 5)
+// ---------------------------------------------------------------------------------------------
+
+/// Campaña de actualización del censo enviada por WhatsApp.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CampanaCenso {
+    pub id: domain::CampanaCensoId,
+    pub creada_por: Option<CuentaId>,
+    pub creada_en: DateTime<Utc>,
+    /// Plantillas encoladas.
+    pub enviados: u32,
+}
+
+/// Campaña con sus contadores de respuesta.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResumenCampanaCenso {
+    pub campana: CampanaCenso,
+    pub confirmados: u32,
+    pub con_cambios: u32,
+    /// Respuestas con cambios que la administración aún no atiende.
+    pub por_atender: u32,
+}
+
+/// Responsable de un bien a quien se envía la campaña.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DestinatarioCampanaCenso {
+    pub persona: PersonaId,
+    pub bien: BienPrivadoId,
+    pub codigo: String,
+    pub telefono: String,
+}
+
+/// Respuesta de una persona por un bien.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RespuestaCenso {
+    pub campana: domain::CampanaCensoId,
+    pub persona: PersonaId,
+    pub bien: BienPrivadoId,
+    pub respuesta: domain::RespuestaCampanaCenso,
+    /// Cambios descritos (solo con `cambios`).
+    pub detalle: Option<String>,
+    pub respondida_en: DateTime<Utc>,
+    pub atendida_en: Option<DateTime<Utc>>,
+    pub atendida_por: Option<CuentaId>,
+}
+
+/// Respuesta con el nombre de la persona y el código del bien (para la administración).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RespuestaCensoListada {
+    pub respuesta: RespuestaCenso,
+    pub nombre: String,
+    pub codigo: String,
+}
+
+/// Persistencia de las campañas de actualización del censo.
+pub trait RepositorioCampanasCenso: Send {
+    fn insertar_campana_censo(
+        &mut self,
+        c: &CampanaCenso,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    fn campana_censo(
+        &mut self,
+        id: domain::CampanaCensoId,
+    ) -> impl Future<Output = AppResult<Option<CampanaCenso>>> + Send;
+
+    /// Campañas de la más reciente a la más antigua, con sus contadores.
+    fn campanas_censo(
+        &mut self,
+    ) -> impl Future<Output = AppResult<Vec<ResumenCampanaCenso>>> + Send;
+
+    /// Responsable de cada bien con residentes o, si nadie reside, el representante de los
+    /// titulares; adultos con teléfono (función `destinatarios_campana_censo`).
+    fn destinatarios_campana_censo(
+        &mut self,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<Vec<DestinatarioCampanaCenso>>> + Send;
+
+    /// Guarda la respuesta; una nueva de la misma persona y bien reemplaza la anterior (y vuelve
+    /// a quedar sin atender).
+    fn guardar_respuesta_censo(
+        &mut self,
+        r: &RespuestaCenso,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    fn respuestas_censo(
+        &mut self,
+        campana: domain::CampanaCensoId,
+    ) -> impl Future<Output = AppResult<Vec<RespuestaCensoListada>>> + Send;
+
+    /// Marca atendida una respuesta con cambios. `false` si no existe o no tiene cambios.
+    fn atender_respuesta_censo(
+        &mut self,
+        campana: domain::CampanaCensoId,
+        persona: PersonaId,
+        bien: BienPrivadoId,
+        por: Option<CuentaId>,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+}

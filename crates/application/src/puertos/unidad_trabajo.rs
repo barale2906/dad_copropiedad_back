@@ -81,7 +81,9 @@ pub(crate) mod memoria {
 
     pub mod acceso;
     pub mod asambleas;
+    pub mod campanas;
     mod censo;
+    pub mod comunicados;
     mod copropiedades;
     pub mod gestion;
     mod reservas;
@@ -129,6 +131,10 @@ pub(crate) mod memoria {
         pub asambleas: asambleas::DatosAsambleas,
         /// Control de acceso, visitas y correspondencia (plan 05).
         pub acceso: acceso::DatosAcceso,
+        /// Comunicados de la administración (plan 10).
+        pub comunicados: comunicados::DatosComunicados,
+        /// Campañas de actualización del censo (plan 10).
+        pub campanas: campanas::DatosCampanas,
     }
 
     /// Plantillas con ids fijos (en la BD se derivan del código).

@@ -1,0 +1,179 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id, c.titulo, c.cuerpo, c.finalidad, c.audiencia, c.importante,\n                      c.requiere_confirmacion, c.estado, c.programado_para, c.enviado_en,\n                      coalesce((SELECT array_agg(a.archivo_id ORDER BY a.orden)\n                                FROM comunicado_adjuntos a WHERE a.comunicado_id = c.id),\n                               '{}') AS \"adjuntos!\",\n                      c.creado_por, c.creado_en, c.actualizado_en\n               FROM comunicados c WHERE c.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "titulo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "titulo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "cuerpo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "cuerpo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "finalidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "finalidad"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "audiencia",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "audiencia"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "importante",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "importante"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "requiere_confirmacion",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "requiere_confirmacion"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "programado_para",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "programado_para"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "enviado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "enviado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "adjuntos!",
+        "type_info": "UuidArray",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 11,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "actualizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comunicados",
+            "name": "actualizado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "d73f58bb71aae7cd05cdcf7a73d512a1b7b0069b19be901593d40c3f630e909a"
+}

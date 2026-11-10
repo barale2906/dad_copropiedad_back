@@ -36,6 +36,7 @@ use utoipa::ToSchema;
 /// | `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |
 /// | `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |
 /// | `validacion` | 422 | Datos bien formados que violan una regla de negocio. |
+/// | `idempotencia_reusada` | 422 | La `Idempotency-Key` ya se usó con otra petición (otro método, ruta o cuerpo). |
 /// | `coeficientes_no_suman_uno` | 422 | El cuadro de coeficientes no suma exactamente 1 (el mensaje trae la diferencia). |
 /// | `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |
 /// | `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |
@@ -72,6 +73,8 @@ pub enum CodigoError {
     ModuloNoHabilitado,
     /// 422 · Los datos son sintácticamente correctos pero violan una regla de negocio.
     Validacion,
+    /// 422 · La `Idempotency-Key` ya se usó con otra petición.
+    IdempotenciaReusada,
     /// 422 · El cuadro de coeficientes no suma exactamente 1; el mensaje indica la diferencia.
     CoeficientesNoSumanUno,
     /// 500 · Error inesperado; el detalle queda en los logs con el `x-request-id`.
@@ -119,6 +122,10 @@ pub enum ApiError {
     #[error("demasiadas peticiones; intente de nuevo en {segundos} s")]
     DemasiadasPeticiones { segundos: u64 },
 
+    /// La `Idempotency-Key` ya se usó con otra petición (plan 10, fase 6).
+    #[error("la clave `Idempotency-Key` ya se usó con otra petición; use una clave nueva")]
+    IdempotenciaReusada,
+
     /// Errores inesperados. El detalle se registra en logs y **no** se expone al cliente.
     #[error(transparent)]
     Interno(#[from] anyhow::Error),
@@ -153,6 +160,7 @@ impl ApiError {
     pub fn status_y_codigo(&self) -> (StatusCode, CodigoError) {
         use CodigoError as C;
         match self {
+            Self::IdempotenciaReusada => (StatusCode::UNPROCESSABLE_ENTITY, C::IdempotenciaReusada),
             Self::App(AppError::Dominio(d)) => match d {
                 DominioError::TransicionInvalida { .. }
                 | DominioError::PreguntaNoAbierta(_)

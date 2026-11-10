@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE respuestas_censo SET atendida_en = $4, atendida_por = $5\n             WHERE campana_id = $1 AND persona_id = $2 AND bien_privado_id = $3\n               AND respuesta = 'cambios'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "133b32fe5a649ad5ebdfc99454387f0d6d67be25381206134fd548a2b7473e64"
+}

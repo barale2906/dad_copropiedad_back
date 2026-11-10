@@ -23,6 +23,7 @@ pub mod bien_privado;
 pub mod calendario;
 pub mod censo;
 pub mod coeficiente;
+pub mod comunicado;
 pub mod copropiedad;
 pub mod correo;
 pub mod cuadro_coeficientes;
@@ -68,9 +69,10 @@ pub use bien_privado::{
 };
 pub use censo::{
     AlertaMascota, CalidadResidencia, EspecieMascota, EstadoCambioCenso, EstadoMascota, Placa,
-    TipoCambioCenso, TipoDocumento, TipoVehiculo,
+    RespuestaCampanaCenso, TipoCambioCenso, TipoDocumento, TipoVehiculo,
 };
 pub use coeficiente::Coeficiente;
+pub use comunicado::{Audiencia, CanalesComunicado, EstadoComunicado};
 pub use copropiedad::{
     AdvertenciaFicha, CodigoDane, EstadoCopropiedad, EstadoLegal, FormaCopropiedad, Telefono,
     TipoCopropiedad, TipoPuntoAtencion,
@@ -82,12 +84,12 @@ pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
     ActivoId, AgrupacionId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId, AsistenteBienId,
-    AsistenteId, AutorizacionAccesoId, AutorizacionId, BienPrivadoId, CambioCensoId, CargoId,
-    CategoriaTicketId, ConsentimientoBiometricoId, ContratoServicioId, ConversacionId,
-    CorrespondenciaId, CredencialId, CuadroCoeficientesId, CuentaId, DispositivoAccesoId,
-    DispositivoPushId, EventoAccesoId, FotoQuorumId, ImportacionId, MascotaId, MensajeTicketId,
-    MovimientoInventarioId, NovedadMinutaId, ObligacionId, OpcionId, OrdenTrabajoId,
-    OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId,
+    AsistenteId, AutorizacionAccesoId, AutorizacionId, BienPrivadoId, CambioCensoId,
+    CampanaCensoId, CargoId, CategoriaTicketId, ComunicadoId, ConsentimientoBiometricoId,
+    ContratoServicioId, ConversacionId, CorrespondenciaId, CredencialId, CuadroCoeficientesId,
+    CuentaId, DispositivoAccesoId, DispositivoPushId, EventoAccesoId, FotoQuorumId, ImportacionId,
+    MascotaId, MensajeTicketId, MovimientoInventarioId, NovedadMinutaId, ObligacionId, OpcionId,
+    OrdenTrabajoId, OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId,
     PoliticaTratamientoId, PreguntaFrecuenteId, PreguntaId, PresenciaId, PuenteId, PuntoAccesoId,
     PuntoAtencionId, PuntoOrdenId, ReclamacionId, RecursoId, ReservaId, ResidenciaId,
     RestriccionId, ReunionId, RolId, RotuloId, SesionId, SolicitudTitularId, SorteoId, TenantId,
