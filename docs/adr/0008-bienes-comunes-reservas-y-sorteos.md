@@ -46,5 +46,7 @@ atiende citas. Es un módulo vendible (`bienes_comunes`).
 - La semilla se guarda en la BD desde la creación del sorteo; la API no la muestra antes de
   ejecutarlo. Un administrador de la base podría leerla: riesgo aceptado (la auditoría registra
   el compromiso al crear y la semilla al ejecutar).
-- Las novedades del recibo generan cargo pendiente; el ticket asociado llegará con el plan 07b.
+- Las novedades del recibo generan cargo pendiente y, si la PH tiene la gestión administrativa,
+  un ticket de mantenimiento ligado al recurso, idempotente por reserva y a nombre de quien
+  registró el recibo (plan 10, fase 3). Si no se puede radicar, el recibo igual queda.
 - `chrono-tz` y la extensión `btree_gist` se incorporan al proyecto.
