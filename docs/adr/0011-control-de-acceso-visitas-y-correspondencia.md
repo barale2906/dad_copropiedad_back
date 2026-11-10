@@ -91,3 +91,12 @@ supervisor de seguridad reciben los de portería).
   código acompaña la imagen por si no se puede leer. Autorizar
   visitas desde el chat ya está (plan 10, fase 1): el gateway también necesita
   `ACCESO_QR_SECRETO`.
+
+## Adenda (plan 10, fase 7): avisos a la portería
+
+- Las cuentas con `acceso.registrar` (vigilantes y supervisores en la app Flutter) reciben push
+  cuando una visita pasa a `requiere_llamada` y cuando un residente la autoriza o la rechaza
+  desde la app, la web o WhatsApp (`visitas::avisar_porteria`, datos `tipo = porteria_visita`).
+  Sin WhatsApp de respaldo: la portería trabaja con la app (decisión P5 del plan 10). Las
+  decisiones por llamada no generan push: las registra la misma portería.
+

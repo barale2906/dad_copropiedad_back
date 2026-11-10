@@ -223,6 +223,73 @@ pub(crate) async fn avisar_visita<T: TxAcceso>(
     Ok(n)
 }
 
+/// Qué pasó con la visita, para el aviso a la portería.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum NovedadPorteria {
+    /// Nadie respondió: hay que llamar.
+    Llamar,
+    /// Un residente decidió desde la app, la web o WhatsApp.
+    Decidida,
+}
+
+/// Push a la portería (cuentas con `acceso.registrar`, plan 10 fase 7): la tablet deja de
+/// depender de refrescar. Sin WhatsApp de respaldo: la portería usa la app. Devuelve a cuántos
+/// dispositivos se envió.
+pub(crate) async fn avisar_porteria<T: TxAcceso>(
+    tx: &mut T,
+    ctx: &Contexto,
+    v: &Visita,
+    novedad: NovedadPorteria,
+) -> AppResult<u32> {
+    let cuentas: Vec<domain::CuentaId> = tx
+        .destinatarios_con_permiso(Permiso::AccesoRegistrar)
+        .await?
+        .into_iter()
+        .map(|d| d.cuenta_id)
+        .collect();
+    if cuentas.is_empty() {
+        return Ok(0);
+    }
+    let tokens = tx.tokens_push(&cuentas).await?;
+    let codigo = codigo_bien(tx, v.bien_privado_id).await?;
+    let visitante = corto(&v.visitante_nombre, 60);
+    let (titulo, cuerpo) = match novedad {
+        NovedadPorteria::Llamar => (
+            format!("Llamar a {codigo}"),
+            format!("Nadie respondió por la visita de {visitante}."),
+        ),
+        NovedadPorteria::Decidida if v.estado == EstadoVisita::Autorizada => (
+            format!("Visita autorizada en {codigo}"),
+            format!("Puede ingresar {visitante}."),
+        ),
+        NovedadPorteria::Decidida => (
+            format!("Visita rechazada en {codigo}"),
+            format!("No se autorizó el ingreso de {visitante}."),
+        ),
+    };
+    let mut datos = std::collections::BTreeMap::new();
+    datos.insert("tipo".into(), "porteria_visita".into());
+    datos.insert("copropiedad_id".into(), ctx.tenant_id.to_string());
+    datos.insert("visita_id".into(), v.id.to_string());
+    datos.insert("estado".into(), v.estado.as_str().into());
+    let mut n = 0;
+    for (_, token) in tokens {
+        tx.encolar_aviso_acceso(&crate::outbox::EventoSaliente {
+            prioridad: PrioridadSalida::Confirmacion,
+            mensaje: crate::outbox::MensajeOutbox::Push(crate::puertos::acceso::NotificacionPush {
+                token,
+                titulo: titulo.clone(),
+                cuerpo: cuerpo.clone(),
+                datos: datos.clone(),
+                respaldo: None,
+            }),
+        })
+        .await?;
+        n += 1;
+    }
+    Ok(n)
+}
+
 /// Pasa la visita a `requiere_llamada`: la portería debe llamar.
 pub(crate) async fn pedir_llamada<T: TxAcceso>(
     tx: &mut T,
@@ -233,7 +300,9 @@ pub(crate) async fn pedir_llamada<T: TxAcceso>(
     v.estado = v.estado.transicionar(EstadoVisita::RequiereLlamada)?;
     v.siguiente_paso_en = None;
     tx.insertar_evento_visita(&evento(v, TipoEventoVisita::EscaladaLlamada, ctx, ahora))
-        .await
+        .await?;
+    avisar_porteria(tx, ctx, v, NovedadPorteria::Llamar).await?;
+    Ok(())
 }
 
 /// La portería anuncia una visita: aviso al primer respondiente y escalamiento programado. Si
@@ -486,6 +555,7 @@ pub(crate) async fn decidir_en<T: TxAcceso>(
     e.persona_id = persona;
     tx.insertar_evento_visita(&e).await?;
     auditar(tx, ACCION_DECIDIR, &v).await?;
+    avisar_porteria(tx, ctx, &v, NovedadPorteria::Decidida).await?;
     Ok(ResultadoDecision::Decidida(v))
 }
 
