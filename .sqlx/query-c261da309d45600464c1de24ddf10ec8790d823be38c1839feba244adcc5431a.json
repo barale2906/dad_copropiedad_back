@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT codigo, padre, nombre, sinonimos, restringida, activa\n                 FROM categorias_publicidad WHERE activa AND NOT restringida\n                 ORDER BY coalesce(padre, codigo), padre NULLS FIRST, normalizar(nombre)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "categorias_publicidad",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "padre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "categorias_publicidad",
+            "name": "padre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "categorias_publicidad",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "sinonimos",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "categorias_publicidad",
+            "name": "sinonimos"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "restringida",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "categorias_publicidad",
+            "name": "restringida"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "activa",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "categorias_publicidad",
+            "name": "activa"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c261da309d45600464c1de24ddf10ec8790d823be38c1839feba244adcc5431a"
+}

@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, anunciante_id, cuenta_id, calificacion, texto, estado, creada_en,\n                    actualizada_en\n             FROM resenas WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "anunciante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "anunciante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "calificacion",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "calificacion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "texto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "texto"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "actualizada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "resenas",
+            "name": "actualizada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d1973184a2d610540608de37e1a030b525da2e5b0c825bbc21643f7cadf61d45"
+}

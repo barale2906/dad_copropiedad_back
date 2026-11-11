@@ -85,6 +85,7 @@ pub(crate) mod memoria {
     mod censo;
     pub mod comunicados;
     mod copropiedades;
+    pub mod directorio;
     pub mod gestion;
     mod reservas;
 
@@ -135,6 +136,8 @@ pub(crate) mod memoria {
         pub comunicados: comunicados::DatosComunicados,
         /// Campañas de actualización del censo (plan 10).
         pub campanas: campanas::DatosCampanas,
+        /// Directorio de comercios y servicios (plan 08).
+        pub directorio: directorio::DatosDirectorio,
     }
 
     /// Plantillas con ids fijos (en la BD se derivan del código).

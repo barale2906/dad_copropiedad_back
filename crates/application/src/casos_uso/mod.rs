@@ -15,6 +15,7 @@ pub mod comunicados;
 pub mod conversaciones;
 pub mod copropiedades;
 pub mod despachar_salida;
+pub mod directorio;
 pub mod importaciones;
 pub mod mantenimiento;
 pub mod modulos;

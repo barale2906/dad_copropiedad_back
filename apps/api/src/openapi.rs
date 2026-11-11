@@ -53,6 +53,8 @@ pub const ETIQUETA_AUDITORIA: &str = "auditoria";
 pub const ETIQUETA_ACCESO: &str = "acceso";
 /// Etiqueta de los comunicados de la administración.
 pub const ETIQUETA_COMUNICADOS: &str = "comunicados";
+/// Etiqueta del directorio de comercios y servicios (plan 08).
+pub const ETIQUETA_DIRECTORIO: &str = "directorio";
 /// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
@@ -141,6 +143,10 @@ impl utoipa::Modify for EsquemaBearer {
             (Ley 1581), envío inmediato o programado por push, correo y WhatsApp (solo los \
             importantes y a quien no tiene la app), cartelera con lectura y «Enterado» (módulo \
             `gestion_administrativa`)"),
+        (name = ETIQUETA_DIRECTORIO, description = "Directorio de comercios y servicios que \
+            alcanzan a la copropiedad (por cercanía, municipio o todo el país), con reseñas \
+            anónimas de residentes y propietarios; y, en `/plataforma/publicidad`, el catálogo de \
+            categorías, los anunciantes, sus fichas y la moderación (plan 08)"),
         (name = ETIQUETA_MANTENIMIENTO, description = "Inventario de activos con hoja de vida, planes \
                                                        preventivos, órdenes de trabajo y \
                                                        obligaciones periódicas (módulo \

@@ -44,6 +44,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(reclamaciones_pendientes))
         .routes(routes!(resolver_reclamacion))
         .merge(super::asambleas::lineas::rutas())
+        .merge(super::directorio::rutas_plataforma())
 }
 
 /// Copropiedad registrada.

@@ -1,0 +1,87 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT resena_id AS \"resena_id!\", tenant_id AS \"tenant_id!\",\n                      copropiedad AS \"copropiedad!\", anunciante_id AS \"anunciante_id!\",\n                      nombre_comercial AS \"nombre_comercial!\", calificacion AS \"calificacion!\",\n                      texto, reportes, motivos AS \"motivos!\", creada_en AS \"creada_en!\"\n               FROM resenas_reportadas($1, $2::int)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "resena_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "tenant_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "copropiedad!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "anunciante_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "nombre_comercial!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "calificacion!",
+        "type_info": "Int2",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "texto",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
+        "name": "reportes",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 8,
+        "name": "motivos!",
+        "type_info": "TextArray",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 9,
+        "name": "creada_en!",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "127dbac8effa92b5192ceaaa6495c5f3764d707996e328ac945434471d8598ea"
+}

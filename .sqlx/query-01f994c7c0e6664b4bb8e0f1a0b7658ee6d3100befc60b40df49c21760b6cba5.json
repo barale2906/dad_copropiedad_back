@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (\n                   SELECT 1 FROM asignaciones_rol a JOIN roles r ON r.id = a.rol_id\n                   WHERE a.cuenta_id = $1 AND r.es_plantilla\n                     AND r.codigo IN ('propietario', 'residente')\n                     AND a.origen IN ('propiedad', 'residencia')\n                     AND a.vigente_desde <= $2\n                     AND (a.vigente_hasta IS NULL OR a.vigente_hasta > $2)) AS \"vigente!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "vigente!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "01f994c7c0e6664b4bb8e0f1a0b7658ee6d3100befc60b40df49c21760b6cba5"
+}

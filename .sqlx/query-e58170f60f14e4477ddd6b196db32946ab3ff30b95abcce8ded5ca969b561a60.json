@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO categorias_publicidad (codigo, padre, nombre, sinonimos, restringida, activa)\n             VALUES ($1, $2, $3, $4, $5, $6)\n             ON CONFLICT (codigo) DO UPDATE\n                 SET padre = EXCLUDED.padre, nombre = EXCLUDED.nombre,\n                     sinonimos = EXCLUDED.sinonimos, restringida = EXCLUDED.restringida,\n                     activa = EXCLUDED.activa",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "TextArray",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e58170f60f14e4477ddd6b196db32946ab3ff30b95abcce8ded5ca969b561a60"
+}

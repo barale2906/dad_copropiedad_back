@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO fichas_directorio (anunciante_id, descripcion, cobertura, radio_km,\n                                            telefono, whatsapp, correo, sitio_web, horario,\n                                            destacada_hasta, publicada, actualizada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n             ON CONFLICT (anunciante_id) DO UPDATE\n                 SET descripcion = EXCLUDED.descripcion, cobertura = EXCLUDED.cobertura,\n                     radio_km = EXCLUDED.radio_km, telefono = EXCLUDED.telefono,\n                     whatsapp = EXCLUDED.whatsapp, correo = EXCLUDED.correo,\n                     sitio_web = EXCLUDED.sitio_web, horario = EXCLUDED.horario,\n                     destacada_hasta = EXCLUDED.destacada_hasta, publicada = EXCLUDED.publicada,\n                     actualizada_en = EXCLUDED.actualizada_en",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Int2",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4c5eb79ba651237d4b214722fc79b3efe5e06e28aa45b9392038f8f241be015f"
+}

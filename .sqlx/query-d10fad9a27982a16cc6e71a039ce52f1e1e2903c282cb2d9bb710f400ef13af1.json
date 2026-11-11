@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE resenas\n                 SET estado = 'oculta', motivo_moderacion = $2, moderada_por = $3, moderada_en = $4\n                 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d10fad9a27982a16cc6e71a039ce52f1e1e2903c282cb2d9bb710f400ef13af1"
+}

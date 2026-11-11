@@ -359,6 +359,16 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Anunciante del directorio y de la publicidad (plataforma, plan 08).
+    AnuncianteId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Reseña de un residente sobre un anunciante del directorio.
+    ResenaId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

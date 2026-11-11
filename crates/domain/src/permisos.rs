@@ -68,6 +68,8 @@ catalogo_permisos! {
     PlataformaModulosGestionar => "plataforma.modulos.gestionar", Plataforma;
     PlataformaAuditoriaVer => "plataforma.auditoria.ver", Plataforma;
     PlataformaPublicidadModerar => "plataforma.publicidad.moderar", Plataforma;
+    /// Dar de alta anunciantes del directorio, editar sus fichas y el catálogo de categorías.
+    PlataformaDirectorioGestionar => "plataforma.directorio.gestionar", Plataforma;
     PlataformaFacturacionVer => "plataforma.facturacion.ver", Plataforma;
     /// Líneas de WhatsApp (estado, franquicia) y tarifas de Meta.
     PlataformaWhatsappGestionar => "plataforma.whatsapp.gestionar", Plataforma;
@@ -184,6 +186,10 @@ catalogo_permisos! {
     /// Redactar, programar, enviar y anular comunicados; ver su tablero de lectura.
     ComunicadosGestionar => "comunicados.gestionar", Copropiedad;
     ContabilidadVer => "contabilidad.ver", Copropiedad;
+    /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
+    DirectorioVer => "directorio.ver", Copropiedad;
+    /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
+    DirectorioResenar => "directorio.resenar", Copropiedad;
 }
 
 impl TryFrom<String> for Permiso {
@@ -314,13 +320,17 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::PlataformaCopropiedadesCrear,
             P::PlataformaCopropiedadesVer,
             P::PlataformaModulosGestionar,
+            P::PlataformaDirectorioGestionar,
         ]),
     },
     RolPlantilla {
         codigo: "moderador_publicidad",
         nombre: "Moderador de publicidad",
         ambito: Ambito::Plataforma,
-        permisos: Some(&[P::PlataformaPublicidadModerar]),
+        permisos: Some(&[
+            P::PlataformaPublicidadModerar,
+            P::PlataformaDirectorioGestionar,
+        ]),
     },
     RolPlantilla {
         codigo: "facturacion",
@@ -372,6 +382,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AsambleasRegistrar,
             P::AccesoBitacoraVer,
             P::ComunicadosGestionar,
+            P::DirectorioVer,
         ]),
     },
     RolPlantilla {
@@ -412,6 +423,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::BienesComunesVer,
             P::AsambleasVer,
             P::ContabilidadVer,
+            P::DirectorioVer,
         ]),
     },
     RolPlantilla {
@@ -427,6 +439,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AsambleasConvocar,
             P::ContabilidadVer,
             P::TicketsVerTodos,
+            P::DirectorioVer,
         ]),
     },
     RolPlantilla {
@@ -452,6 +465,8 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TicketsCrear,
             P::AsambleasVer,
             P::AccesoVisitantesAutorizar,
+            P::DirectorioVer,
+            P::DirectorioResenar,
         ]),
     },
     RolPlantilla {
@@ -465,6 +480,8 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::ReservasCrear,
             P::TicketsCrear,
             P::AccesoVisitantesAutorizar,
+            P::DirectorioVer,
+            P::DirectorioResenar,
         ]),
     },
     RolPlantilla {

@@ -210,7 +210,10 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('entregas_correspondencia', 'tercero_documento'), ('minuta_porteria', 'texto'),
                ('eventos_acceso', 'placa'), ('dispositivos_push', 'token'),
                ('consentimientos_biometricos', 'persona_id'), ('solicitudes_titular', 'detalle'),
-               ('solicitudes_titular', 'respuesta'), ('respuestas_censo', 'detalle'), ('peticiones_idempotentes', 'cuerpo'))
+               ('solicitudes_titular', 'respuesta'), ('respuestas_censo', 'detalle'), ('peticiones_idempotentes', 'cuerpo'),
+               ('anunciantes', 'direccion'), ('fichas_directorio', 'telefono'),
+               ('fichas_directorio', 'whatsapp'), ('fichas_directorio', 'correo'),
+               ('resenas', 'texto'), ('reportes_resena', 'motivo'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

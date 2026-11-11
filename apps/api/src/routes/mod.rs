@@ -25,6 +25,7 @@ mod coeficientes;
 mod comunicados;
 mod conversaciones;
 mod copropiedades;
+mod directorio;
 mod ficha;
 mod health;
 mod importaciones;

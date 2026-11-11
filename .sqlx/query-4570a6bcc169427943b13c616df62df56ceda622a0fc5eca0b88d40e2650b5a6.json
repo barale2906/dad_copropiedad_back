@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO anunciantes (id, organizacion_id, nombre_comercial, direccion,\n                                      municipio_dane, latitud, longitud, estado_verificacion,\n                                      motivo_estado, creado_por, creado_en, actualizado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4570a6bcc169427943b13c616df62df56ceda622a0fc5eca0b88d40e2650b5a6"
+}

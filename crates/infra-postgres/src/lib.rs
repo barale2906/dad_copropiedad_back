@@ -32,6 +32,7 @@ mod coeficientes;
 mod cola_salida;
 mod comunicados;
 mod copropiedades;
+mod directorio;
 mod error;
 mod idempotencia;
 mod mantenimiento;

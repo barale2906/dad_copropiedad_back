@@ -1,0 +1,163 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, organizacion_id, nombre_comercial, direccion, municipio_dane, latitud,\n                    longitud, estado_verificacion, motivo_estado, creado_por, creado_en,\n                    actualizado_en\n             FROM anunciantes\n             WHERE ($1::text IS NULL OR estado_verificacion = $1)\n               AND ($2::text IS NULL OR normalizar(nombre_comercial) LIKE '%' || normalizar($2) || '%')\n               AND ($3::uuid IS NULL OR id > $3)\n             ORDER BY id LIMIT $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre_comercial",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "nombre_comercial"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "direccion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "direccion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "municipio_dane",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "municipio_dane"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "latitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "latitud"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "longitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "longitud"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "estado_verificacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "estado_verificacion"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "motivo_estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "motivo_estado"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "actualizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "actualizado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "0bfe475ec608135a6788c0517f5457cf92c8ceb2af608d6884a16f532beeda38"
+}

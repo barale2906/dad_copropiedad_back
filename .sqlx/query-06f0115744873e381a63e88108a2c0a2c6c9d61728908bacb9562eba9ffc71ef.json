@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE reportes_resena SET atendido_en = $2 WHERE resena_id = $1 AND atendido_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "06f0115744873e381a63e88108a2c0a2c6c9d61728908bacb9562eba9ffc71ef"
+}

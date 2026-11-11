@@ -1,0 +1,155 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT f.descripcion, f.cobertura, f.radio_km, f.telefono, f.whatsapp, f.correo,\n                      f.sitio_web, f.horario, f.destacada_hasta, f.publicada, f.actualizada_en,\n                      coalesce((SELECT array_agg(fc.categoria ORDER BY fc.orden)\n                                FROM ficha_categorias fc WHERE fc.anunciante_id = f.anunciante_id),\n                               '{}') AS \"categorias!\"\n               FROM fichas_directorio f WHERE f.anunciante_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "cobertura",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "cobertura"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "radio_km",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "radio_km"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "telefono",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "telefono"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "whatsapp",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "whatsapp"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "correo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "correo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "sitio_web",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "sitio_web"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "horario",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "horario"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "destacada_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "destacada_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "publicada",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "publicada"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "actualizada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "fichas_directorio",
+            "name": "actualizada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "categorias!",
+        "type_info": "TextArray",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "4e589767b5bc4f1264a861f4627533ec9ab3e46c5e9d90f66bee8bbaa219de70"
+}
