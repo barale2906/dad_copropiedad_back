@@ -63,7 +63,7 @@ where
         .await
 }
 
-fn validar_nueva(nueva: &NuevaOrganizacion) -> AppResult<()> {
+pub(crate) fn validar_nueva(nueva: &NuevaOrganizacion) -> AppResult<()> {
     let razon = nueva.razon_social.trim();
     if razon.is_empty() || razon.chars().count() > 200 {
         return Err(AppError::Validacion(

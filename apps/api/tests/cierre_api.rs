@@ -48,7 +48,7 @@ async fn el_titular_autoriza_consulta_y_reclama_y_la_administracion_responde(poo
         Method::POST,
         format!("/personas/{persona}/autorizaciones-tratamiento"),
         Some(json!({
-            "finalidades": ["comunicaciones", "publicidad"], "medio": "app"
+            "finalidades": ["comunicaciones", "control_acceso"], "medio": "app"
         })),
     )
     .await;
@@ -57,7 +57,7 @@ async fn el_titular_autoriza_consulta_y_reclama_y_la_administracion_responde(poo
         Method::POST,
         format!("/personas/{persona}/autorizaciones-tratamiento/revocacion"),
         Some(json!({
-            "finalidades": ["publicidad"]
+            "finalidades": ["control_acceso"]
         })),
     )
     .await;

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO ficha_categorias (anunciante_id, categoria, orden)\n             SELECT $1, c, (o - 1)::smallint FROM unnest($2::text[]) WITH ORDINALITY AS t (c, o)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f1f9714158445d767573a635172a812b45de989def8064b405d39c9104c151fb"
+}

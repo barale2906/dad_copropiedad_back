@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE creativos SET cupon_usos = cupon_usos + 1, actualizado_en = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c049007bfd2b1e76b0b6d07f6d18e623571257df8a561dafbf4e811a8ee93565"
+}

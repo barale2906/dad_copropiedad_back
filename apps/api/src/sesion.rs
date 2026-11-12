@@ -11,6 +11,9 @@
 //!   enviar `Authorization`): el token va en `Sec-WebSocket-Protocol: dad.v1, <token>`.
 //! - [`PapeletaVirtual`]: la papeleta del asistente (cabecera `X-Papeleta`): el token es la
 //!   credencial (como el enlace firmado de una descarga); no hay sesión.
+//! - [`EnlaceDirectorioPublico`]: el directorio público de la PH para los grupos de WhatsApp
+//!   (cabecera `X-Enlace-Directorio`); tampoco hay sesión.
+//! - [`PantallaLobby`]: la pantalla de publicidad del lobby de la PH (cabecera `X-Pantalla`).
 
 use application::{
     AppError, Contexto, ContextoPlataforma,
@@ -196,17 +199,64 @@ impl FromRequestParts<AppState> for PapeletaVirtual {
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
         let tenant = tenant_de_ruta(parts, state).await?;
-        let token = parts
-            .headers
-            .get(CABECERA_PAPELETA)
-            .and_then(|v| v.to_str().ok())
-            .map(str::trim)
-            .filter(|t| !t.is_empty() && t.len() <= 200)
-            .ok_or(ApiError::App(AppError::NoAutenticado))?
-            .to_owned();
         Ok(Self {
             ctx: Contexto::new(tenant).con_request_id(request_id(parts)),
-            token,
+            token: token_de_cabecera(parts, CABECERA_PAPELETA)?,
+        })
+    }
+}
+
+/// Token no vacío (hasta 200 caracteres) de una cabecera; si falta, `no_autenticado`.
+fn token_de_cabecera(parts: &Parts, cabecera: &str) -> Result<String, ApiError> {
+    parts
+        .headers
+        .get(cabecera)
+        .and_then(|v| v.to_str().ok())
+        .map(str::trim)
+        .filter(|t| !t.is_empty() && t.len() <= 200)
+        .map(str::to_owned)
+        .ok_or(ApiError::App(AppError::NoAutenticado))
+}
+
+/// Cabecera con el token del enlace público del directorio.
+pub const CABECERA_ENLACE_DIRECTORIO: &str = "x-enlace-directorio";
+
+/// Directorio público de una copropiedad: la copropiedad de la ruta y el token de su enlace
+/// (el caso de uso lo compara con el vigente).
+#[derive(Debug, Clone)]
+pub struct EnlaceDirectorioPublico {
+    pub tenant: TenantId,
+    pub token: String,
+}
+
+impl FromRequestParts<AppState> for EnlaceDirectorioPublico {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
+        Ok(Self {
+            tenant: tenant_de_ruta(parts, state).await?,
+            token: token_de_cabecera(parts, CABECERA_ENLACE_DIRECTORIO)?,
+        })
+    }
+}
+
+/// Cabecera con el token de la pantalla del lobby.
+pub const CABECERA_PANTALLA: &str = "x-pantalla";
+
+/// Pantalla del lobby de una copropiedad: la copropiedad de la ruta y su token.
+#[derive(Debug, Clone)]
+pub struct PantallaLobby {
+    pub tenant: TenantId,
+    pub token: String,
+}
+
+impl FromRequestParts<AppState> for PantallaLobby {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
+        Ok(Self {
+            tenant: tenant_de_ruta(parts, state).await?,
+            token: token_de_cabecera(parts, CABECERA_PANTALLA)?,
         })
     }
 }

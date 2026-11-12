@@ -734,3 +734,227 @@ async fn un_boton_de_campana_de_otro_bien_no_se_acepta() {
     e.enviar(elige(&b.id())).await;
     assert!(e.unidad.datos().campanas.respuestas.is_empty());
 }
+
+// --- Buscar un proveedor (plan 08, fase 2) ---
+
+const WHATSAPP_PROVEEDOR: &str = "573109998877";
+
+/// Entorno con una costurera en el directorio (con WhatsApp) y el celular de Ana en el censo.
+fn entorno_con_directorio() -> (Entorno, domain::AnuncianteId) {
+    use crate::puertos::directorio::{Categoria, Contacto, FichaDirectorio, ResumenCalificacion};
+    let e = entorno(1);
+    let anunciante = domain::AnuncianteId::nuevo();
+    let costura = domain::CodigoCategoria::new("costura").expect("válido");
+    e.unidad.con_datos(|d| {
+        d.directorio.categorias = vec![Categoria {
+            codigo: costura.clone(),
+            padre: None,
+            nombre: "Costura y modistería".into(),
+            sinonimos: vec!["costurera".into(), "modista".into()],
+            restringida: false,
+            activa: true,
+        }];
+        d.directorio.fichas = vec![FichaDirectorio {
+            anunciante_id: anunciante,
+            nombre_comercial: "Modistería Rosa".into(),
+            descripcion: None,
+            categorias: vec![costura],
+            contacto: Contacto {
+                whatsapp: Some(domain::Telefono::new(WHATSAPP_PROVEEDOR).expect("válido")),
+                ..Contacto::default()
+            },
+            horario: None,
+            direccion: None,
+            municipio: None,
+            destacada: false,
+            distancia_km: None,
+            calificacion: ResumenCalificacion::default(),
+        }];
+        d.personas[0].telefono = Some(domain::Telefono::new(TELEFONO).expect("válido"));
+    });
+    (e, anunciante)
+}
+
+fn cuerpo(c: &ContenidoSaliente) -> String {
+    match c {
+        ContenidoSaliente::Texto { cuerpo }
+        | ContenidoSaliente::Botones { cuerpo, .. }
+        | ContenidoSaliente::Lista { cuerpo, .. } => cuerpo.clone(),
+        _ => String::new(),
+    }
+}
+
+fn plantillas_en_outbox(e: &Entorno) -> Vec<String> {
+    e.unidad
+        .outbox()
+        .into_iter()
+        .filter_map(|(_, ev)| match ev.mensaje {
+            crate::outbox::MensajeOutbox::WhatsApp(MensajeSaliente {
+                contenido: ContenidoSaliente::Plantilla { nombre, .. },
+                ..
+            }) => Some(nombre),
+            _ => None,
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn el_menu_ofrece_buscar_un_proveedor() {
+    let e = entorno(1);
+    let r = e.enviar(texto("hola")).await;
+    assert!(ids(&r[0]).contains(&"m:proveedor".to_owned()));
+    assert!(ids(&r[0]).len() <= ContenidoSaliente::MAX_FILAS_LISTA);
+}
+
+#[tokio::test]
+async fn busco_costurera_responde_con_fichas_sin_compartir_el_telefono() {
+    let (e, _) = entorno_con_directorio();
+
+    // Lo que trae el enlace de los grupos: sin pasar por el menú.
+    let r = e.enviar(texto("Busco costurera")).await;
+
+    assert!(cuerpo(&r[0]).contains("Modistería Rosa"));
+    assert!(cuerpo(&r[0]).contains(WHATSAPP_PROVEEDOR));
+    assert_eq!(ids(&r[1]), ["p:si", "p:no"]);
+    assert!(matches!(e.paso(), Some(Paso::ProveedorContacto { .. })));
+    assert!(
+        e.unidad.outbox().is_empty(),
+        "nada sale hacia el proveedor sin el «Sí»"
+    );
+}
+
+#[tokio::test]
+async fn desde_el_menu_pide_que_busca_y_sin_resultados_deja_intentar_otra_vez() {
+    let (e, _) = entorno_con_directorio();
+    e.enviar(texto("hola")).await;
+
+    let r = e.enviar(elige("m:proveedor")).await;
+    assert!(cuerpo(&r[0]).contains("¿Qué necesita?"));
+    let r = e.enviar(texto("un cerrajero")).await;
+
+    assert!(cuerpo(&r[0]).contains("No encontramos"));
+    assert_eq!(e.paso(), Some(Paso::ProveedorBusqueda));
+}
+
+#[tokio::test]
+async fn con_el_si_se_comparte_el_contacto_y_se_programa_el_le_sirvio() {
+    let (e, _) = entorno_con_directorio();
+    e.enviar(texto("necesito una modista")).await;
+
+    let r = e.enviar(elige("p:si")).await;
+
+    assert!(cuerpo(&r[0]).contains("Modistería Rosa"));
+    assert_eq!(
+        plantillas_en_outbox(&e),
+        ["contacto_proveedor", "opinion_proveedor"]
+    );
+    assert_eq!(e.paso(), Some(Paso::Menu));
+}
+
+#[tokio::test]
+async fn con_el_no_no_se_comparte_nada() {
+    let (e, _) = entorno_con_directorio();
+    e.enviar(texto("busco costurera")).await;
+
+    let r = e.enviar(elige("p:no")).await;
+
+    assert!(cuerpo(&r[0]).contains("no compartimos"));
+    assert!(e.unidad.outbox().is_empty());
+    assert!(e.unidad.datos().directorio.contactos.is_empty());
+}
+
+/// Busca, autoriza y devuelve el botón «Calificar» del «¿Le sirvió?».
+async fn boton_le_sirvio(e: &Entorno) -> String {
+    e.enviar(texto("busco costurera")).await;
+    e.enviar(elige("p:si")).await;
+    e.unidad
+        .outbox()
+        .into_iter()
+        .find_map(|(_, ev)| match ev.mensaje {
+            crate::outbox::MensajeOutbox::WhatsApp(MensajeSaliente {
+                contenido: ContenidoSaliente::Plantilla { botones, .. },
+                ..
+            }) => botones.first().cloned(),
+            _ => None,
+        })
+        .expect("botón")
+}
+
+#[tokio::test]
+async fn el_le_sirvio_sin_cuenta_agradece_y_no_publica() {
+    let (e, _) = entorno_con_directorio();
+    let boton = boton_le_sirvio(&e).await;
+
+    let r = e.enviar(elige(&boton)).await;
+    assert_eq!(ids(&r[0])[0], "oc:5");
+    let r = e.enviar(elige("oc:5")).await;
+
+    assert!(cuerpo(&r[0]).contains("necesita una cuenta"));
+    assert!(e.unidad.datos().directorio.resenas.is_empty());
+}
+
+#[tokio::test]
+async fn el_le_sirvio_de_un_residente_con_cuenta_publica_la_resena() {
+    use domain::{AsignacionRolId, OrigenAsignacion, RolId, permisos::ROLES_PLANTILLA};
+    let (mut e, anunciante) = entorno_con_directorio();
+    let cuenta = CuentaId::nuevo();
+    e.directorio.0[0].cuenta_id = Some(cuenta);
+    let i = ROLES_PLANTILLA
+        .iter()
+        .position(|r| r.codigo == "residente")
+        .expect("plantilla");
+    let tenant = e.tenant;
+    e.unidad.con_datos(|d| {
+        d.directorio.residentes.push(cuenta);
+        d.asignaciones.push((
+            tenant,
+            crate::puertos::identidad::Asignacion {
+                id: AsignacionRolId::nuevo(),
+                cuenta_id: cuenta,
+                rol_id: RolId::from_uuid(uuid::Uuid::from_u128(i as u128 + 1)),
+                vigente_desde: ahora() - Duration::days(1),
+                vigente_hasta: None,
+                origen: OrigenAsignacion::Residencia,
+                origen_id: None,
+                asignado_por: None,
+            },
+        ));
+    });
+    let boton = boton_le_sirvio(&e).await;
+
+    e.enviar(elige(&boton)).await;
+    let r = e.enviar(elige("oc:4")).await;
+
+    assert!(cuerpo(&r[0]).contains("¡Gracias!"));
+    let resenas = e.unidad.datos().directorio.resenas;
+    assert_eq!(resenas.len(), 1);
+    assert_eq!(resenas[0].anunciante_id, anunciante);
+    assert_eq!(resenas[0].calificacion.valor(), 4);
+}
+
+#[tokio::test]
+async fn no_recibir_mas_revoca_la_autorizacion_de_publicidad() {
+    use crate::casos_uso::publicidad::entrega::BotonBaja;
+    use domain::{AutorizacionId, FinalidadTratamiento, MedioAutorizacion};
+    let e = entorno(1);
+    let persona = e.persona;
+    e.unidad.con_datos(|d| {
+        d.autorizaciones.push((
+            crate::puertos::proteccion_datos::Autorizacion {
+                id: AutorizacionId::nuevo(),
+                persona_id: persona,
+                politica_id: None,
+                finalidad: FinalidadTratamiento::Publicidad,
+                medio: MedioAutorizacion::App,
+                evidencia_archivo_id: None,
+                otorgada_en: ahora(),
+            },
+            None,
+        ));
+    });
+
+    let r = e.enviar(elige(&BotonBaja { tenant: e.tenant }.id())).await;
+
+    assert!(cuerpo(&r[0]).contains("no le enviaremos más publicidad"));
+    assert!(e.unidad.datos().autorizaciones[0].1.is_some(), "revocada");
+}

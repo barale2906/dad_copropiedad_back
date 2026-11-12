@@ -130,6 +130,25 @@ pub struct NuevaOrganizacionPeticion {
     pub telefono_contacto: Option<String>,
 }
 
+impl TryFrom<NuevaOrganizacionPeticion> for NuevaOrganizacion {
+    type Error = ApiError;
+
+    fn try_from(p: NuevaOrganizacionPeticion) -> Result<Self, ApiError> {
+        Ok(Self {
+            nit: Nit::new(&p.nit)?,
+            razon_social: p.razon_social,
+            naturaleza: NaturalezaOrganizacion::try_from(p.naturaleza.as_str())?,
+            tipos: p
+                .tipos
+                .iter()
+                .map(|t| TipoOrganizacion::try_from(t.as_str()))
+                .collect::<Result<_, _>>()?,
+            correo_contacto: p.correo_contacto,
+            telefono_contacto: p.telefono_contacto,
+        })
+    }
+}
+
 /// Organización creada o reutilizada.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct OrganizacionCreada {
@@ -156,19 +175,7 @@ pub async fn crear(
     en: EnCopropiedad,
     Json(p): Json<NuevaOrganizacionPeticion>,
 ) -> ApiResult<Json<OrganizacionCreada>> {
-    let nueva = NuevaOrganizacion {
-        nit: Nit::new(&p.nit)?,
-        razon_social: p.razon_social,
-        naturaleza: NaturalezaOrganizacion::try_from(p.naturaleza.as_str())?,
-        tipos: p
-            .tipos
-            .iter()
-            .map(|t| TipoOrganizacion::try_from(t.as_str()))
-            .collect::<Result<_, _>>()?,
-        correo_contacto: p.correo_contacto,
-        telefono_contacto: p.telefono_contacto,
-    };
-    let (id, creada) = uc::crear_organizacion(&state.unidad, &en.ctx, nueva).await?;
+    let (id, creada) = uc::crear_organizacion(&state.unidad, &en.ctx, p.try_into()?).await?;
     Ok(Json(OrganizacionCreada {
         id: id.as_uuid(),
         creada,

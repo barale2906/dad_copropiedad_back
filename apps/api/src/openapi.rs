@@ -53,6 +53,10 @@ pub const ETIQUETA_AUDITORIA: &str = "auditoria";
 pub const ETIQUETA_ACCESO: &str = "acceso";
 /// Etiqueta de los comunicados de la administración.
 pub const ETIQUETA_COMUNICADOS: &str = "comunicados";
+/// Etiqueta del directorio de comercios y servicios (plan 08).
+pub const ETIQUETA_DIRECTORIO: &str = "directorio";
+/// Etiqueta de la publicidad de la plataforma (plan 08, fases 3 a 6).
+pub const ETIQUETA_PUBLICIDAD: &str = "publicidad";
 /// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
@@ -141,6 +145,10 @@ impl utoipa::Modify for EsquemaBearer {
             (Ley 1581), envío inmediato o programado por push, correo y WhatsApp (solo los \
             importantes y a quien no tiene la app), cartelera con lectura y «Enterado» (módulo \
             `gestion_administrativa`)"),
+        (name = ETIQUETA_DIRECTORIO, description = "Directorio de comercios y servicios que \
+            alcanzan a la copropiedad (por cercanía, municipio o todo el país), con reseñas \
+            anónimas de residentes y propietarios; y, en `/plataforma/publicidad`, el catálogo de \
+            categorías, los anunciantes, sus fichas y la moderación (plan 08)"),
         (name = ETIQUETA_MANTENIMIENTO, description = "Inventario de activos con hoja de vida, planes \
                                                        preventivos, órdenes de trabajo y \
                                                        obligaciones periódicas (módulo \
@@ -161,6 +169,11 @@ impl utoipa::Modify for EsquemaBearer {
             consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»"),
         (name = ETIQUETA_AUDITORIA, description = "Consulta de la auditoría de la copropiedad \
             (solo lectura; nunca trae datos personales)"),
+        (name = ETIQUETA_PUBLICIDAD, description = "Publicidad de la plataforma (plan 08): portal \
+            del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en \
+            `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes \
+            solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni \
+            configuran pauta"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
     ),
     modifiers(&EsquemaBearer),

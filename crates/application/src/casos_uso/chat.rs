@@ -16,12 +16,19 @@
 //!   que en la web.
 //! - Autorizar una visita (QR temporal), ver los paquetes en portería y votar en una asamblea no
 //!   exigen cuenta: la persona ya la identificó su teléfono (plan 10, fase 1).
+//! - «Buscar un proveedor» (plan 08, fase 2): un texto que empieza por «busco» o «necesito»
+//!   busca sin pasar por el menú (es lo que trae el enlace de los grupos). El teléfono del
+//!   residente solo se comparte con los proveedores tras un «Sí» explícito; el «¿Le sirvió?»
+//!   llega días después con el botón `op:` y calificar sí exige cuenta (reseñas verificadas).
+//! - «No recibir más» (`baja:{tenant}`) de un mensaje de publicidad revoca la autorización de
+//!   publicidad de la persona en esa copropiedad (plan 08, fase 5).
 
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use domain::{
-    ArchivoId, CanalReserva, CanalTicket, CategoriaTicketId, ClasificacionArchivo, ConversacionId,
-    EstadoReserva, Franja, ModalidadCita, NaturalezaParqueadero, NombreArchivo, Placa,
-    PrioridadTicket, RecursoId, TipoRecurso, TipoTicket, reserva::Tz,
+    AnuncianteId, ArchivoId, CanalReserva, CanalSolicitud, CanalTicket, CategoriaTicketId,
+    ClasificacionArchivo, ConversacionId, EstadoReserva, Franja, ModalidadCita,
+    NaturalezaParqueadero, NombreArchivo, Placa, PrioridadTicket, RecursoId, SolicitudProveedorId,
+    TipoRecurso, TipoTicket, directorio::busqueda::es_busqueda, reserva::Tz,
 };
 use serde::{Deserialize, Serialize};
 
@@ -38,10 +45,15 @@ use crate::{
         },
         archivos::{ArchivoSubido, subir_archivo},
         asambleas::{TxAsambleas, whatsapp::reenviar_preguntas_abiertas},
+        busqueda_proveedores::{
+            BotonOpinion, NuevaBusqueda, ProveedorContactado, ResultadoBusqueda,
+            TxBusquedaProveedores, autorizar_contacto, buscar_proveedores, proveedores_contactados,
+        },
         conversaciones::{
             EntradaConversacion, TxChat, conversacion_sigue_abierta, listar_preguntas,
             registrar_entrante,
         },
+        directorio::resenar,
         reservas::{SolicitudReserva, disponibilidad, listar_recursos, solicitar_reserva, zona},
         roles::permisos_en_copropiedad,
         tickets::{NuevoTicket, TxTickets, listar_categorias, radicar_ticket, tickets_de_persona},
@@ -72,6 +84,8 @@ const ID_MENU: &str = "menu";
 const ID_SIN_FOTO: &str = "sin_foto";
 const ID_SI: &str = "si";
 const ID_NO: &str = "no";
+const ID_CONTACTAR: &str = "p:si";
+const ID_NO_CONTACTAR: &str = "p:no";
 
 /// Paso de la conversación (se serializa en la sesión).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -130,6 +144,21 @@ pub enum Paso {
     CensoCambios {
         campana: domain::CampanaCensoId,
     },
+    /// «Buscar un proveedor»: espera qué busca.
+    ProveedorBusqueda,
+    /// Mostró las sugerencias: espera el «Sí» (compartir el contacto) o el «No».
+    ProveedorContacto {
+        solicitud: SolicitudProveedorId,
+    },
+    /// «¿Le sirvió?»: elegir a cuál de los proveedores contactados calificar.
+    OpinionProveedor {
+        solicitud: SolicitudProveedorId,
+    },
+    /// «¿Le sirvió?»: espera la calificación de 1 a 5.
+    OpinionCalificacion {
+        anunciante: AnuncianteId,
+        nombre: String,
+    },
 }
 
 /// Reserva en construcción.
@@ -187,6 +216,8 @@ pub trait TxConversacional:
     + TxAcceso
     + TxAsambleas
     + crate::puertos::RepositorioCampanasCenso
+    + TxBusquedaProveedores
+    + crate::casos_uso::publicidad::TxPublicidad
 {
 }
 
@@ -198,6 +229,8 @@ impl<T> TxConversacional for T where
         + TxAcceso
         + TxAsambleas
         + crate::puertos::RepositorioCampanasCenso
+        + TxBusquedaProveedores
+        + crate::casos_uso::publicidad::TxPublicidad
 {
 }
 
@@ -289,6 +322,8 @@ fn menu(v: &VinculoTelefono, varios: bool, votar: bool) -> ContenidoSaliente {
         Eleccion::new("m:reportar", "Reportar un daño").con_descripcion("Con foto si quiere"),
         Eleccion::new("m:estado", "Mis solicitudes"),
         Eleccion::new("m:humano", "Contactar administración"),
+        Eleccion::new("m:proveedor", "Buscar un proveedor")
+            .con_descripcion("Técnicos, comercios y oficios cerca"),
         Eleccion::new("m:reservar", "Reservar bien común"),
         Eleccion::new("m:visitante", "Parqueadero visitante"),
         Eleccion::new("m:cita", "Cita con administración"),
@@ -472,6 +507,35 @@ where
     {
         estado.vinculo = Some(v.clone());
         let r = responder_campana(s, b, v, turno).await;
+        estado.paso = r.as_ref().map_or(Paso::Menu, Clone::clone);
+        turno.estado = Some(estado);
+        return r.map(|_| ());
+    }
+    // «No recibir más» de un mensaje de publicidad: revoca la autorización en esa PH.
+    if let Some(b) = respuesta_id(&m.contenido)
+        .and_then(crate::casos_uso::publicidad::entrega::BotonBaja::desde_id)
+        && let Some(v) = vinculos.iter().find(|v| v.tenant_id == b.tenant)
+    {
+        crate::casos_uso::publicidad::entrega::revocar_publicidad(
+            s.unidad,
+            s.reloj,
+            &Contexto::new(v.tenant_id),
+            Some(v.persona_id),
+        )
+        .await?;
+        turno.texto(
+            "Listo: no le enviaremos más publicidad. Puede volver a autorizarla en la app, en \
+             «Mis datos».",
+        );
+        turno.estado = Some(estado);
+        return Ok(());
+    }
+    // «Calificar» del «¿Le sirvió?»: el botón dice la PH y la solicitud.
+    if let Some(b) = respuesta_id(&m.contenido).and_then(BotonOpinion::desde_id)
+        && let Some(v) = vinculos.iter().find(|v| v.tenant_id == b.tenant)
+    {
+        estado.vinculo = Some(v.clone());
+        let r = pedir_opinion(s, b, v, turno).await;
         estado.paso = r.as_ref().map_or(Paso::Menu, Clone::clone);
         turno.estado = Some(estado);
         return r.map(|_| ());
@@ -723,6 +787,16 @@ where
             Some("m:cambiar") if varios => {
                 turno.texto("Escriba cualquier mensaje para elegir el bien privado.");
                 Ok(Paso::ElegirVinculo)
+            }
+            Some("m:proveedor") => {
+                turno.texto(
+                    "¿Qué necesita? Escríbalo en pocas palabras (por ejemplo «plomero», \
+                     «costurera» o «técnico de lavadoras»).",
+                );
+                Ok(Paso::ProveedorBusqueda)
+            }
+            None if texto_de(&m.contenido).is_some_and(es_busqueda) => {
+                buscar_en_chat(s, m, ctx, v, turno).await
             }
             _ => {
                 turno.responder(menu(v, varios, votacion_abierta(s, m).await));
@@ -1042,6 +1116,79 @@ where
                 Ok(Paso::CensoCambios { campana })
             }
         },
+        Paso::ProveedorBusqueda => match texto_de(&m.contenido) {
+            Some(_) => buscar_en_chat(s, m, ctx, v, turno).await,
+            None => {
+                turno.texto("Escriba qué busca en un mensaje de texto (o «menú» para salir).");
+                Ok(Paso::ProveedorBusqueda)
+            }
+        },
+        Paso::ProveedorContacto { solicitud } => match id {
+            Some(ID_CONTACTAR) => {
+                let c = autorizar_contacto(
+                    s.unidad,
+                    s.reloj,
+                    ctx,
+                    solicitud,
+                    v.persona_id,
+                    Some(m.linea.clone()),
+                )
+                .await?;
+                turno.texto(format!(
+                    "Listo: le compartimos su nombre y su celular a {} solo para esta solicitud. \
+                     Lo contactarán por WhatsApp.{}",
+                    c.proveedores.join(", "),
+                    if c.seguimiento {
+                        " En unos días le preguntaremos cómo le fue."
+                    } else {
+                        ""
+                    }
+                ));
+                turno.responder(boton_menu());
+                Ok(Paso::Menu)
+            }
+            Some(ID_NO_CONTACTAR) => {
+                turno.texto(
+                    "Entendido: no compartimos sus datos. Puede escribirles o llamarlos con los \
+                     datos de arriba.",
+                );
+                turno.responder(boton_menu());
+                Ok(Paso::Menu)
+            }
+            _ if texto_de(&m.contenido).is_some_and(es_busqueda) => {
+                buscar_en_chat(s, m, ctx, v, turno).await
+            }
+            _ => {
+                turno.responder(preguntar_contacto());
+                Ok(Paso::ProveedorContacto { solicitud })
+            }
+        },
+        Paso::OpinionProveedor { solicitud } => {
+            let contactados =
+                proveedores_contactados(s.unidad, s.reloj, ctx, solicitud, v.persona_id).await?;
+            match id.and_then(|i| i.strip_prefix("oa:")).and_then(|i| {
+                contactados
+                    .iter()
+                    .find(|p| p.anunciante_id.to_string() == i)
+            }) {
+                Some(p) => Ok(preguntar_calificacion(
+                    p.anunciante_id,
+                    &p.nombre_comercial,
+                    turno,
+                )),
+                None => Ok(elegir_proveedor_a_calificar(solicitud, &contactados, turno)),
+            }
+        }
+        Paso::OpinionCalificacion { anunciante, nombre } => {
+            let Some(n) = id
+                .and_then(|i| i.strip_prefix("oc:"))
+                .and_then(|n| n.parse::<u8>().ok())
+            else {
+                return Ok(preguntar_calificacion(anunciante, &nombre, turno));
+            };
+            calificar(s, v, anunciante, &nombre, n, turno).await?;
+            Ok(Paso::Menu)
+        }
         Paso::VisitaDia { nombre } => {
             let dia = id
                 .and_then(|i| i.strip_prefix("vd:"))
@@ -1085,6 +1232,214 @@ where
          «carro nuevo ABC123»). La administración lo revisará.",
     );
     Ok(Paso::CensoCambios { campana: b.campana })
+}
+
+fn preguntar_contacto() -> ContenidoSaliente {
+    ContenidoSaliente::Botones {
+        cuerpo: "¿Quiere que estos proveedores lo contacten? Les compartiremos su nombre y su \
+                 celular solo para esta solicitud."
+            .into(),
+        botones: vec![
+            Eleccion::new(ID_CONTACTAR, "Sí, que me contacten"),
+            Eleccion::new(ID_NO_CONTACTAR, "No, gracias"),
+        ],
+    }
+}
+
+/// Texto con las fichas sugeridas: nombre, calificación, distancia y contacto publicado.
+fn texto_sugerencias(r: &ResultadoBusqueda) -> String {
+    let titulo = r
+        .categoria
+        .as_ref()
+        .map_or_else(String::new, |c| format!(" de {}", c.nombre.to_lowercase()));
+    let mut t = format!("Proveedores{titulo} que llegan a su copropiedad:");
+    for (i, f) in r.sugerencias.iter().enumerate() {
+        t.push_str(&format!(
+            "\n\n{}. *{}*",
+            i + 1,
+            corto(&f.nombre_comercial, 60)
+        ));
+        if let Some(p) = f.calificacion.promedio {
+            t.push_str(&format!(" · ⭐ {p} ({})", f.calificacion.total));
+        }
+        if let Some(d) = f.distancia_km {
+            t.push_str(&format!(" · {d} km"));
+        }
+        if let Some(w) = &f.contacto.whatsapp {
+            t.push_str(&format!("\nWhatsApp: +{}", w.as_str()));
+        }
+        if let Some(tel) = &f.contacto.telefono {
+            t.push_str(&format!("\nTeléfono: +{}", tel.as_str()));
+        }
+        if let Some(h) = &f.horario {
+            t.push_str(&format!("\nHorario: {}", corto(h, 80)));
+        }
+    }
+    t
+}
+
+/// Busca con el texto del mensaje y muestra las sugerencias (idempotente por `wamid`).
+async fn buscar_en_chat<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    m: &MensajeEntrante,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let texto = texto_de(&m.contenido).unwrap_or_default();
+    let r = buscar_proveedores(
+        s.unidad,
+        s.reloj,
+        ctx,
+        NuevaBusqueda {
+            persona_id: v.persona_id,
+            canal: CanalSolicitud::Whatsapp,
+            texto: texto.to_owned(),
+            clave: m.wamid.clone(),
+        },
+    )
+    .await;
+    let r = match r {
+        Ok(r) => r,
+        Err(AppError::Dominio(_)) => {
+            turno.texto(
+                "Escriba qué busca en pocas palabras (por ejemplo «plomero» o «costurera»), o \
+                 «menú» para salir.",
+            );
+            return Ok(Paso::ProveedorBusqueda);
+        }
+        Err(e) => return Err(e),
+    };
+    if r.sugerencias.is_empty() {
+        turno.texto(
+            "No encontramos proveedores para eso que lleguen a su copropiedad. Pruebe con otra \
+             palabra (por ejemplo «plomero» o «costurera»), o escriba «menú».",
+        );
+        return Ok(Paso::ProveedorBusqueda);
+    }
+    turno.texto(texto_sugerencias(&r));
+    if r.hay_contactables() {
+        turno.responder(preguntar_contacto());
+        Ok(Paso::ProveedorContacto {
+            solicitud: r.solicitud.id,
+        })
+    } else {
+        turno.responder(boton_menu());
+        Ok(Paso::Menu)
+    }
+}
+
+/// «Calificar» del «¿Le sirvió?»: pide elegir el proveedor (o la calificación si fue uno).
+async fn pedir_opinion<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    b: BotonOpinion,
+    v: &VinculoTelefono,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let ctx = Contexto::new(v.tenant_id);
+    let contactados =
+        proveedores_contactados(s.unidad, s.reloj, &ctx, b.solicitud, v.persona_id).await?;
+    Ok(match contactados.as_slice() {
+        [] => {
+            turno.texto("Gracias por responder.");
+            turno.responder(boton_menu());
+            Paso::Menu
+        }
+        [p] => preguntar_calificacion(p.anunciante_id, &p.nombre_comercial, turno),
+        varios => elegir_proveedor_a_calificar(b.solicitud, varios, turno),
+    })
+}
+
+fn elegir_proveedor_a_calificar(
+    solicitud: SolicitudProveedorId,
+    contactados: &[ProveedorContactado],
+    turno: &mut Turno,
+) -> Paso {
+    if contactados.is_empty() {
+        turno.texto("Ya no hay proveedores por calificar en esta solicitud.");
+        turno.responder(boton_menu());
+        return Paso::Menu;
+    }
+    let filas = contactados
+        .iter()
+        .map(|p| {
+            Eleccion::new(
+                format!("oa:{}", p.anunciante_id),
+                corto(&p.nombre_comercial, 24),
+            )
+        })
+        .collect();
+    turno.responder(lista(
+        "¿A cuál de los proveedores quiere calificar?".into(),
+        "Elegir",
+        filas,
+    ));
+    Paso::OpinionProveedor { solicitud }
+}
+
+fn preguntar_calificacion(anunciante: AnuncianteId, nombre: &str, turno: &mut Turno) -> Paso {
+    let filas = [
+        (5, "⭐⭐⭐⭐⭐ Excelente"),
+        (4, "⭐⭐⭐⭐ Bueno"),
+        (3, "⭐⭐⭐ Regular"),
+        (2, "⭐⭐ Malo"),
+        (1, "⭐ Muy malo"),
+    ]
+    .into_iter()
+    .map(|(n, t)| Eleccion::new(format!("oc:{n}"), t))
+    .collect();
+    turno.responder(lista(
+        format!("¿Cómo le fue con {}?", corto(nombre, 60)),
+        "Calificar",
+        filas,
+    ));
+    Paso::OpinionCalificacion {
+        anunciante,
+        nombre: nombre.to_owned(),
+    }
+}
+
+/// Guarda la reseña con los permisos de la cuenta (solo propietarios y residentes vigentes).
+async fn calificar<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    v: &VinculoTelefono,
+    anunciante: AnuncianteId,
+    nombre: &str,
+    calificacion: u8,
+    turno: &mut Turno,
+) -> AppResult<()>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let Some(cuenta) = v.cuenta_id else {
+        turno.texto(
+            "Gracias. Para publicar calificaciones necesita una cuenta en la plataforma; pida a \
+             la administración que la vincule.",
+        );
+        turno.responder(boton_menu());
+        return Ok(());
+    };
+    let permisos = permisos_en_copropiedad(s.unidad, s.reloj, v.tenant_id, cuenta, false).await?;
+    let ctx = Contexto::de_cuenta(v.tenant_id, cuenta, permisos);
+    resenar(s.unidad, s.reloj, &ctx, anunciante, calificacion, None).await?;
+    turno.texto(format!(
+        "¡Gracias! Su calificación de {} ayuda a sus vecinos a elegir.",
+        corto(nombre, 60)
+    ));
+    turno.responder(boton_menu());
+    Ok(())
 }
 
 fn preguntar_urgencia() -> ContenidoSaliente {

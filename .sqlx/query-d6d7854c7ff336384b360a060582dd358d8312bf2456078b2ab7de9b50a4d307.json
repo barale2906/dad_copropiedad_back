@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, version, texto, vigente_desde, publicada_por, creada_en\n             FROM politicas_publicidad WHERE vigente_desde <= $1\n             ORDER BY version DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "politicas_publicidad",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "politicas_publicidad",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "texto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "politicas_publicidad",
+            "name": "texto"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "politicas_publicidad",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "publicada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "politicas_publicidad",
+            "name": "publicada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "politicas_publicidad",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "d6d7854c7ff336384b360a060582dd358d8312bf2456078b2ab7de9b50a4d307"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO campana_copropiedades (campana_id, tenant_id)\n             SELECT $1, unnest($2::uuid[])",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "234bbd7c11746482d4c87bc4dc642d21de726f4c47a6e8fac66a56cc0db9ae73"
+}

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT a.id, a.politica_id, a.finalidad, a.medio, a.evidencia_archivo_id, a.otorgada_en,\n                    a.revocada_en, p.version\n             FROM autorizaciones_tratamiento a\n             JOIN politicas_tratamiento p ON p.tenant_id = a.tenant_id AND p.id = a.politica_id\n             WHERE a.persona_id = $1 ORDER BY a.otorgada_en DESC, a.id",
+  "query": "SELECT a.id, a.politica_id, a.finalidad, a.medio, a.evidencia_archivo_id, a.otorgada_en,\n                    a.revocada_en, coalesce(p.version, pp.version) AS \"version!\"\n             FROM autorizaciones_tratamiento a\n             LEFT JOIN politicas_tratamiento p ON p.tenant_id = a.tenant_id AND p.id = a.politica_id\n             LEFT JOIN politicas_publicidad pp ON pp.id = a.politica_publicidad_id\n             WHERE a.persona_id = $1 ORDER BY a.otorgada_en DESC, a.id",
   "describe": {
     "columns": [
       {
@@ -82,14 +82,9 @@
       },
       {
         "ordinal": 7,
-        "name": "version",
+        "name": "version!",
         "type_info": "Int4",
-        "origin": {
-          "Table": {
-            "table": "politicas_tratamiento",
-            "name": "version"
-          }
-        }
+        "origin": "Expression"
       }
     ],
     "parameters": {
@@ -99,14 +94,14 @@
     },
     "nullable": [
       false,
-      false,
+      true,
       false,
       false,
       true,
       false,
       true,
-      false
+      null
     ]
   },
-  "hash": "31c2855b8a191c34c230d8065a7bd056aefbdaea31fb1c5211fb0efb8072ad91"
+  "hash": "fc8dd588b70bb568bd6b9bb5effed86c56bd7b609dd624abce17085215bebc82"
 }

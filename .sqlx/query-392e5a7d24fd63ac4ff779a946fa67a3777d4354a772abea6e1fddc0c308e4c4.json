@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE creativos SET formato = $2, titulo = $3, texto = $4, boton = $5, enlace = $6,\n                 condiciones = $7, es_promocion = $8, cupon_codigo = $9, cupon_limite = $10,\n                 plantilla_whatsapp = $11, estado = $12, motivo_estado = $13,\n                 actualizado_en = $14\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Text",
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "392e5a7d24fd63ac4ff779a946fa67a3777d4354a772abea6e1fddc0c308e4c4"
+}

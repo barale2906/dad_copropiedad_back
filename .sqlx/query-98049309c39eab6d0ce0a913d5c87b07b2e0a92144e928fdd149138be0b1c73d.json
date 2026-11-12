@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT solicitud_id AS \"solicitud_id!\", creado_en AS \"creado_en!\", categoria,\n                      nombre AS \"nombre!\", telefono\n               FROM leads_anunciante($1, $2, $3::int)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "solicitud_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "creado_en!",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "categoria",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "nombre!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "telefono",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "98049309c39eab6d0ce0a913d5c87b07b2e0a92144e928fdd149138be0b1c73d"
+}

@@ -762,6 +762,1448 @@
         ]
       }
     },
+    "/api/v1/plataforma/publicidad/categorias": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Todo el catálogo de categorías (incluidas las restringidas e inactivas).",
+        "operationId": "categorias_plataforma",
+        "responses": {
+          "200": {
+            "description": "Catálogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoriaDirectorioRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.directorio.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/categorias/{codigo}": {
+      "put": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Crea o edita una categoría del catálogo.",
+        "operationId": "guardar_categoria",
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "description": "Código (a-z, 0-9, _)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "costura"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoriaDirectorioPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Categoría guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoriaDirectorioRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.directorio.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos o rama que no existe (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/anunciantes": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Anunciantes de la plataforma, paginados.",
+        "operationId": "listar_anunciantes",
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "description": "`pendiente`, `verificado`, `rechazado` o `suspendido`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Fragmento del nombre comercial.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anunciantes (sin ficha)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_AnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.directorio.gestionar` ni `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Da de alta un anunciante (queda verificado: la plataforma lo revisa al darlo de alta).",
+        "operationId": "crear_anunciante",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoAnunciantePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Anunciante creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.directorio.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La organización no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La organización ya tiene un anunciante (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/anunciantes/{anunciante_id}": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Anunciante con su ficha.",
+        "operationId": "ver_anunciante",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anunciante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Edita nombre, dirección y ubicación del anunciante.",
+        "operationId": "editar_anunciante",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosAnunciantePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Anunciante actualizado (sin ficha)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos o la ubicación no sirve para la cobertura de la ficha (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/anunciantes/{anunciante_id}/ficha": {
+      "put": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Crea o reemplaza la ficha del directorio del anunciante.",
+        "operationId": "guardar_ficha",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FichaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ficha guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaAnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.directorio.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El anunciante no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Categoría restringida o inexistente, cobertura imposible o datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/anunciantes/{anunciante_id}/estado": {
+      "post": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Verifica, rechaza, suspende o reactiva un anunciante.",
+        "operationId": "cambiar_estado",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoAnunciantePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Estado cambiado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición no permitida (`transicion_invalida`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin motivo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/resenas": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Cola de moderación: reseñas publicadas con reportes sin atender, de todas las copropiedades.",
+        "operationId": "resenas_reportadas",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reseñas reportadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_ResenaReportadaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/resenas/{resena_id}": {
+      "post": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Atiende los reportes de una reseña: la oculta con motivo o la mantiene.",
+        "operationId": "moderar",
+        "parameters": [
+          {
+            "name": "resena_id",
+            "in": "path",
+            "description": "Reseña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModeracionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Moderada"
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe en esa copropiedad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Ocultar sin motivo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/creativos": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Creativos pendientes de moderación.",
+        "operationId": "creativos_pendientes",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pendientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_CreativoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/creativos/{creativo_id}": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Aprueba o rechaza un creativo.",
+        "operationId": "moderar_creativo",
+        "parameters": [
+          {
+            "name": "creativo_id",
+            "in": "path",
+            "description": "Creativo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Moderado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreativoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está pendiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/campanas": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Campañas en revisión (con el conflicto de interés marcado).",
+        "operationId": "campanas_en_revision",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "En revisión",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_CampanaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/campanas/{campana_id}": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Aprueba (fija la tarifa vigente) o rechaza una campaña.",
+        "operationId": "moderar_campana",
+        "parameters": [
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Moderada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Falta verificar al anunciante, aprobar creativos o una tarifa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/reportes": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Creativos con reportes sin atender, de todas las copropiedades.",
+        "operationId": "reportes_pendientes",
+        "parameters": [
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reportados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_CreativoReportadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/moderacion/reportes/{creativo_id}": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Atiende los reportes de un creativo: lo retira o lo mantiene.",
+        "operationId": "atender_reportes",
+        "parameters": [
+          {
+            "name": "creativo_id",
+            "in": "path",
+            "description": "Creativo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtenderReportesPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Atendidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportesAtendidosRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.moderar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/tarifas": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Todas las tarifas.",
+        "operationId": "tarifas",
+        "responses": {
+          "200": {
+            "description": "Tarifas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TarifaPublicidadDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.liquidar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Fija la tarifa de un modelo desde una fecha (hoy o futura).",
+        "operationId": "fijar_tarifa",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TarifaPublicidadDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Tarifa fijada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TarifaPublicidadDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.liquidar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay una tarifa del modelo desde ese día",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/politica": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Publica una versión nueva de la política de publicidad (rige desde ya).",
+        "operationId": "publicar_politica",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoliticaPublicidadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Publicada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaPublicidadRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.liquidar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/liquidaciones": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Liquidaciones de un mes.",
+        "operationId": "liquidaciones",
+        "parameters": [
+          {
+            "name": "mes",
+            "in": "query",
+            "description": "Cualquier día del mes.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liquidaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LiquidacionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.liquidar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Calcula o recalcula las liquidaciones de un mes ya cerrado.",
+        "operationId": "liquidar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MesQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Liquidaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LiquidacionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.liquidar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El mes no ha terminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/liquidaciones/{anunciante_id}/estado": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Marca la liquidación del anunciante facturada o pagada.",
+        "operationId": "estado_liquidacion",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoLiquidacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Estado cambiado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidacionRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.liquidar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/pantallas/{copropiedad_id}": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Genera el token de la pantalla del lobby de una copropiedad (reemplaza el anterior).",
+        "operationId": "generar_pantalla",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantallaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.modulos.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/yo": {
       "get": {
         "tags": [
@@ -1925,6 +3367,927 @@
           },
           "409": {
             "description": "Ya reclamada o con una pendiente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Anunciantes de la cuenta.",
+        "operationId": "mis_anunciantes",
+        "responses": {
+          "200": {
+            "description": "Anunciantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MiAnuncianteRespuesta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Registra la cuenta como anunciante (queda `pendiente` hasta que la moderación lo verifique).",
+        "operationId": "registrarse",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroAnunciantePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Anunciante registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La organización ya existe y no la administra, o ya tiene anunciante (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "El anunciante con su ficha.",
+        "operationId": "mi_anunciante",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Anunciante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es miembro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/ficha": {
+      "put": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "El anunciante edita su ficha del directorio (la fecha de destacada la gestiona la\nplataforma y se ignora).",
+        "operationId": "editar_ficha",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FichaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ficha guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaAnuncianteRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no la administra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Categoría restringida o datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/campanas": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Campañas del anunciante.",
+        "operationId": "listar_campanas",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campañas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_CampanaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es miembro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Crea una campaña en borrador.",
+        "operationId": "crear_campana",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampanaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Campaña creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no la administra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/campanas/{campana_id}": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Campaña con sus creativos.",
+        "operationId": "ver_campana",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaña",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaDetalleRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Edita la campaña (una aprobada o pausada vuelve a borrador y a moderación).",
+        "operationId": "editar_campana",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampanaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Campaña editada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos inválidos o estado que no lo permite",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/campanas/{campana_id}/estado": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Envía a revisión, activa, pausa o finaliza la campaña.",
+        "operationId": "cambiar_estado_campana",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccionCampanaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Estado cambiado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Transición no permitida (`dominio`) o falta algo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Agrega un creativo (queda pendiente de moderación).",
+        "operationId": "crear_creativo",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreativoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Creativo creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreativoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Campaña no editable o cupón repetido (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Contenido inválido (condiciones obligatorias en promociones)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}": {
+      "put": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Edita un creativo (si cambia, vuelve a moderación).",
+        "operationId": "editar_creativo",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "creativo_id",
+            "in": "path",
+            "description": "Creativo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreativoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Creativo guardado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreativoRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Campaña no editable (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/campanas/{campana_id}/metricas": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Métricas agregadas de la campaña.",
+        "operationId": "metricas",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campana_id",
+            "in": "path",
+            "description": "Campaña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métricas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricasRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/leads": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Contactos que los residentes autorizaron compartirle (nombre y celular, para esa\nsolicitud). El operario no los ve.",
+        "operationId": "leads",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contactos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_LeadRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no puede verlos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/anunciantes/{anunciante_id}/cupones/redimir": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Redime un cupón en el mostrador (también el operario).",
+        "operationId": "redimir",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedimirPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Redimido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RedencionRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Código desconocido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Oferta vencida o sin usos (`dominio`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -10830,6 +13193,1363 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Directorio de comercios y servicios que alcanzan a la copropiedad, paginado.",
+        "operationId": "consultar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "description": "Código de una categoría o de una rama (incluye sus subcategorías).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "servicios_tecnicos"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Texto libre: nombre, descripción, categoría o sinónimos («modista», «lavadora»).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "costurera"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fichas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_FichaDirectorioRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/destacadas": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Fichas destacadas vigentes (hasta 10). Vacío si la copropiedad no tiene el módulo\n`publicidad`.",
+        "operationId": "destacadas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "description": "Código de una categoría o de una rama.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Destacadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FichaDirectorioRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/categorias": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Categorías para filtrar el directorio (activas y no restringidas).",
+        "operationId": "categorias",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Categorías",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoriaDirectorioRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/anunciantes/{anunciante_id}": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Ficha de un anunciante que alcanza a la copropiedad.",
+        "operationId": "ficha",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ficha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaDirectorioRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no alcanza a la copropiedad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/anunciantes/{anunciante_id}/resenas": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Reseñas publicadas del anunciante en esta copropiedad, de la más reciente a la más antigua.",
+        "operationId": "resenas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reseñas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_ResenaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La ficha no alcanza a la copropiedad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/anunciantes/{anunciante_id}/resena": {
+      "put": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Califica (o vuelve a calificar) a un anunciante. Solo propietarios y residentes vigentes;\nuna reseña por cuenta y anunciante en la copropiedad.",
+        "operationId": "resenar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Anunciante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResenaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Reseña guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResenaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.resenar` o no es propietario ni residente vigente (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La ficha no alcanza a la copropiedad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La moderación ocultó su reseña anterior (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Calificación o texto inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/resenas/{resena_id}/reportes": {
+      "post": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Reporta una reseña publicada para que la modere la plataforma.",
+        "operationId": "reportar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "resena_id",
+            "in": "path",
+            "description": "Reseña",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReporteResenaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Reporte registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteResenaRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La reseña no existe o ya está oculta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin motivo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/busquedas": {
+      "post": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Busca proveedores que alcanzan a la copropiedad y registra la búsqueda (el texto se borra a\nlos 90 días). No comparte nada con los proveedores.",
+        "operationId": "buscar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusquedaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Sugerencias",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusquedaRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No se entiende qué busca o la cuenta no está en el censo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/busquedas/{solicitud_id}/contacto": {
+      "post": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Autoriza expresamente que los proveedores sugeridos en la búsqueda lo contacten: solo a\nellos y solo para esta solicitud se les comparte su nombre y su celular del censo (Ley\n1581). Repetirlo no vuelve a enviar nada.",
+        "operationId": "autorizar_contacto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "solicitud_id",
+            "in": "path",
+            "description": "Búsqueda",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contacto compartido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactoAutorizadoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La búsqueda no existe o es de otra persona",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin celular en el censo o ningún proveedor recibe WhatsApp (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/enlace-publico": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Estado del enlace público del directorio y el enlace `wa.me` para los grupos.",
+        "operationId": "estado_enlace",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoEnlaceRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.compartir` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Genera el enlace público del directorio para fijarlo en los grupos de WhatsApp de la PH. Si\nya había uno, el anterior deja de funcionar.",
+        "operationId": "generar_enlace",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Enlace generado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnlaceGeneradoRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.compartir` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Revoca el enlace público del directorio.",
+        "operationId": "revocar_enlace",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revocado"
+          },
+          "403": {
+            "description": "Sin `directorio.compartir` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No había enlace (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/directorio/publico": {
+      "get": {
+        "tags": [
+          "directorio"
+        ],
+        "summary": "Directorio de comercios y servicios de la copropiedad para los grupos de WhatsApp (sin\nsesión: el token del enlace en `X-Enlace-Directorio` es la credencial). Sin reseñas: solo\nel promedio.",
+        "operationId": "publico",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Enlace-Directorio",
+            "in": "header",
+            "description": "Token del enlace público",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "description": "Código de una categoría o de una rama (incluye sus subcategorías).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "servicios_tecnicos"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Texto libre: nombre, descripción, categoría o sinónimos («modista», «lavadora»).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "costurera"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Directorio",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirectorioPublicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token inválido o revocado (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones (`demasiadas_peticiones`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/publicidad/autorizacion": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "¿La cuenta autorizó recibir publicidad de la plataforma? Con la política vigente.",
+        "operationId": "estado_autorizacion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutorizacionPublicidadRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "La cuenta no está en el censo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "El titular autoriza recibir publicidad de la plataforma (solo él; la PH no puede).",
+        "operationId": "autorizar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutorizarPublicidadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Autorizada"
+          },
+          "422": {
+            "description": "Versión de la política no vigente o la cuenta no está en el censo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Retira la autorización de publicidad.",
+        "operationId": "revocar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revocada (o no había)"
+          },
+          "422": {
+            "description": "La cuenta no está en el censo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/publicidad/piezas": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Piezas para el residente (vacío si no autorizó la publicidad o la PH no tiene el módulo).",
+        "operationId": "piezas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Piezas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PiezaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `directorio.ver`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/publicidad/eventos": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Registra impresiones y clics de las piezas (solo de quien autorizó; hasta 100 por\ncontador).",
+        "operationId": "eventos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventosPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Aceptados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventosRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Demasiados eventos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/publicidad/creativos/{creativo_id}/cupon": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "El residente obtiene el código de una oferta para presentarlo en el comercio.",
+        "operationId": "cupon",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "creativo_id",
+            "in": "path",
+            "description": "Oferta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cupón",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuponRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La oferta no se muestra en la PH o no autorizó la publicidad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/publicidad/creativos/{creativo_id}/reporte": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Reporta un anuncio para la moderación de la plataforma.",
+        "operationId": "reportar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "creativo_id",
+            "in": "path",
+            "description": "Anuncio",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReporteAnuncioPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Reportado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReporteAnuncioRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin motivo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/publicidad/pantalla": {
+      "get": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Cartelera de la pantalla del lobby (sin sesión: el token de la pantalla en `X-Pantalla`).",
+        "operationId": "pantalla",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "X-Pantalla",
+            "in": "header",
+            "description": "Token de la pantalla",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Piezas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PiezaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token inválido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Demasiadas peticiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/asambleas": {
       "get": {
         "tags": [
@@ -19572,6 +23292,20 @@
   },
   "components": {
     "schemas": {
+      "AccionCampanaPeticion": {
+        "type": "object",
+        "description": "Cambio de estado de una campaña.",
+        "required": [
+          "accion"
+        ],
+        "properties": {
+          "accion": {
+            "type": "string",
+            "description": "`enviar_a_revision`, `activar`, `pausar` o `finalizar`.",
+            "example": "enviar_a_revision"
+          }
+        }
+      },
       "AccionPregunta": {
         "type": "string",
         "description": "Acción sobre la pregunta.",
@@ -20030,6 +23764,88 @@
           }
         }
       },
+      "AnuncianteRespuesta": {
+        "type": "object",
+        "description": "Anunciante del directorio.",
+        "required": [
+          "id",
+          "organizacion_id",
+          "nombre_comercial",
+          "estado",
+          "creado_en",
+          "actualizado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "organizacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre_comercial": {
+            "type": "string",
+            "example": "Modistería Rosa"
+          },
+          "direccion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "11001"
+          },
+          "latitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "4.711000"
+          },
+          "longitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "-74.072100"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`pendiente`, `verificado`, `rechazado` o `suspendido`."
+          },
+          "motivo_estado": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualizado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ficha": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/FichaAnuncianteRespuesta",
+                "description": "`null` si todavía no tiene ficha."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "AnunciarPeticion": {
         "type": "object",
         "description": "Visitante que anuncia la portería.",
@@ -20452,6 +24268,26 @@
           }
         }
       },
+      "AtenderReportesPeticion": {
+        "type": "object",
+        "description": "Cómo se atienden los reportes de un creativo.",
+        "required": [
+          "retirar"
+        ],
+        "properties": {
+          "retirar": {
+            "type": "boolean",
+            "description": "`true` lo retira (deja de entregarse); `false` lo mantiene."
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorio al retirarlo."
+          }
+        }
+      },
       "AudienciaDto": {
         "type": "object",
         "description": "Audiencia: el tipo y, si aplica, los destinos.",
@@ -20599,6 +24435,29 @@
           }
         }
       },
+      "AutorizacionPublicidadRespuesta": {
+        "type": "object",
+        "description": "Autorización de publicidad de la cuenta.",
+        "required": [
+          "autorizada"
+        ],
+        "properties": {
+          "autorizada": {
+            "type": "boolean"
+          },
+          "politica": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PoliticaPublicidadRespuesta",
+                "description": "Política de la plataforma que se acepta al autorizar."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
       "AutorizacionTratamientoRespuesta": {
         "type": "object",
         "description": "Autorización por finalidad.",
@@ -20645,6 +24504,28 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "AutorizarPublicidadPeticion": {
+        "type": "object",
+        "description": "Aceptación de la política de publicidad.",
+        "required": [
+          "version"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Versión de la política que leyó y acepta (debe ser la vigente).",
+            "minimum": 0
+          },
+          "medio": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`app` (por defecto) o `web`."
           }
         }
       },
@@ -20927,6 +24808,58 @@
             ],
             "description": "Fracción del cuadro vigente (`null` si aún no hay cuadro que lo incluya).",
             "example": "0.00523000"
+          }
+        }
+      },
+      "BusquedaPeticion": {
+        "type": "object",
+        "description": "Lo que busca el residente.",
+        "required": [
+          "texto"
+        ],
+        "properties": {
+          "texto": {
+            "type": "string",
+            "description": "Texto libre («busco costurera», «técnico de lavadoras»), hasta 100 caracteres útiles.",
+            "example": "busco costurera"
+          }
+        }
+      },
+      "BusquedaRespuesta": {
+        "type": "object",
+        "description": "Sugerencias para una búsqueda.",
+        "required": [
+          "solicitud_id",
+          "sugerencias",
+          "contactables"
+        ],
+        "properties": {
+          "solicitud_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Para autorizar el contacto con estos proveedores."
+          },
+          "categoria": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CategoriaDirectorioRespuesta",
+                "description": "Categoría reconocida en el texto, si la hubo."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sugerencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FichaDirectorioRespuesta"
+            },
+            "description": "Hasta 3 fichas: destacadas (solo con el módulo `publicidad`), mejor calificadas y más\ncercanas."
+          },
+          "contactables": {
+            "type": "boolean",
+            "description": "¿Alguna recibe contactos por WhatsApp? (solo entonces se ofrece autorizar el contacto)."
           }
         }
       },
@@ -21562,6 +25495,172 @@
           }
         }
       },
+      "CampanaDetalleRespuesta": {
+        "type": "object",
+        "description": "Campaña con sus creativos.",
+        "required": [
+          "campana",
+          "creativos"
+        ],
+        "properties": {
+          "campana": {
+            "$ref": "#/components/schemas/CampanaRespuesta"
+          },
+          "creativos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreativoRespuesta"
+            }
+          }
+        }
+      },
+      "CampanaPeticion": {
+        "type": "object",
+        "description": "Datos de una campaña.",
+        "required": [
+          "nombre",
+          "objetivo",
+          "categoria",
+          "inicio",
+          "fin",
+          "modelo",
+          "presupuesto_total"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Arreglos de noviembre"
+          },
+          "objetivo": {
+            "type": "string",
+            "description": "`visibilidad`, `trafico`, `cupones` o `leads`.",
+            "example": "trafico"
+          },
+          "categoria": {
+            "type": "string",
+            "description": "Una de las categorías de su ficha.",
+            "example": "costura"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modelo": {
+            "type": "string",
+            "description": "`tarifa_fija`, `cpm`, `cpc`, `por_redencion`, `por_lead` o `directorio_destacado`.",
+            "example": "cpc"
+          },
+          "presupuesto_total": {
+            "type": "string",
+            "description": "COP.",
+            "example": "200000"
+          },
+          "presupuesto_diario": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "20000"
+          },
+          "segmentacion": {
+            "$ref": "#/components/schemas/SegmentacionDto"
+          }
+        }
+      },
+      "CampanaRespuesta": {
+        "type": "object",
+        "description": "Campaña.",
+        "required": [
+          "id",
+          "anunciante_id",
+          "nombre",
+          "objetivo",
+          "categoria",
+          "inicio",
+          "fin",
+          "modelo",
+          "presupuesto_total",
+          "consumido",
+          "segmentacion",
+          "conflicto_interes",
+          "estado",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anunciante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "objetivo": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "modelo": {
+            "type": "string"
+          },
+          "presupuesto_total": {
+            "type": "string"
+          },
+          "presupuesto_diario": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tarifa": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Tarifa fijada al aprobarla."
+          },
+          "consumido": {
+            "type": "string"
+          },
+          "segmentacion": {
+            "$ref": "#/components/schemas/SegmentacionDto"
+          },
+          "conflicto_interes": {
+            "type": "boolean",
+            "description": "El anunciante presta servicio a una copropiedad alcanzada: la moderación lo revisa."
+          },
+          "estado": {
+            "type": "string",
+            "description": "`borrador`, `en_revision`, `aprobada`, `rechazada`, `activa`, `pausada` o `finalizada`."
+          },
+          "motivo_estado": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "CanalesRespuesta": {
         "type": "object",
         "description": "Participación por canal.",
@@ -21648,6 +25747,90 @@
           "vigente_desde": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "CategoriaDirectorioPeticion": {
+        "type": "object",
+        "description": "Datos de una categoría.",
+        "required": [
+          "nombre"
+        ],
+        "properties": {
+          "padre": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Rama (debe ser una categoría sin rama); se omite para crear una rama.",
+            "example": "oficios"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Costura y modistería"
+          },
+          "sinonimos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Otras formas de nombrarla (hasta 30, de hasta 60 caracteres)."
+          },
+          "restringida": {
+            "type": "boolean"
+          },
+          "activa": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "`true` si se omite."
+          }
+        }
+      },
+      "CategoriaDirectorioRespuesta": {
+        "type": "object",
+        "description": "Categoría del catálogo.",
+        "required": [
+          "codigo",
+          "nombre",
+          "sinonimos",
+          "restringida",
+          "activa"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "costura"
+          },
+          "padre": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Rama; `null` si es una rama.",
+            "example": "oficios"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Costura y modistería"
+          },
+          "sinonimos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "modista",
+              "arreglos de ropa"
+            ]
+          },
+          "restringida": {
+            "type": "boolean",
+            "description": "Licores, apuestas, salud con fórmula: no se pueden elegir en una ficha."
+          },
+          "activa": {
+            "type": "boolean"
           }
         }
       },
@@ -22314,6 +26497,63 @@
           }
         }
       },
+      "ContactoAutorizadoRespuesta": {
+        "type": "object",
+        "description": "Contacto compartido.",
+        "required": [
+          "proveedores",
+          "seguimiento"
+        ],
+        "properties": {
+          "proveedores": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Proveedores que recibirán su nombre y su celular por WhatsApp.",
+            "example": [
+              "Modistería Rosa"
+            ]
+          },
+          "seguimiento": {
+            "type": "boolean",
+            "description": "¿Se programó la pregunta «¿Le sirvió?» (en 7 días, por WhatsApp)?"
+          }
+        }
+      },
+      "ContactoFichaRespuesta": {
+        "type": "object",
+        "description": "Contacto publicado por el anunciante.",
+        "properties": {
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "573001234567"
+          },
+          "whatsapp": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "573001234567"
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sitio_web": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "https://modisteriarosa.co"
+          }
+        }
+      },
       "ContactoRespuesta": {
         "type": "object",
         "description": "Contacto para la llamada.",
@@ -22792,6 +27032,212 @@
           }
         }
       },
+      "CreativoPeticion": {
+        "type": "object",
+        "description": "Contenido de un creativo.",
+        "required": [
+          "formato",
+          "titulo",
+          "texto"
+        ],
+        "properties": {
+          "formato": {
+            "type": "string",
+            "description": "`banner`, `tarjeta_destacada`, `oferta_cupon`, `mensaje_whatsapp`, `boletin_correo` o\n`pantalla_lobby`.",
+            "example": "banner"
+          },
+          "titulo": {
+            "type": "string",
+            "example": "Arreglos en 24 horas"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "boton": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enlace": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo `https://`."
+          },
+          "condiciones": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorias en promociones y cupones (Ley 1480)."
+          },
+          "es_promocion": {
+            "type": "boolean"
+          },
+          "cupon_codigo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo en `oferta_cupon`: de 4 a 20 letras o dígitos."
+          },
+          "cupon_limite": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "plantilla_whatsapp": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo en `mensaje_whatsapp`: plantilla de marketing aprobada en Meta."
+          }
+        }
+      },
+      "CreativoReportadoRespuesta": {
+        "type": "object",
+        "description": "Creativo reportado por residentes.",
+        "required": [
+          "creativo_id",
+          "campana_id",
+          "anunciante_id",
+          "nombre_comercial",
+          "titulo",
+          "reportes",
+          "motivos",
+          "primero_en"
+        ],
+        "properties": {
+          "creativo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "campana_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anunciante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre_comercial": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "reportes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "primero_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreativoRespuesta": {
+        "type": "object",
+        "description": "Creativo con su estado de moderación.",
+        "required": [
+          "id",
+          "campana_id",
+          "formato",
+          "titulo",
+          "texto",
+          "es_promocion",
+          "cupon_usos",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "campana_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "formato": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "boton": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enlace": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "condiciones": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "es_promocion": {
+            "type": "boolean"
+          },
+          "cupon_codigo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cupon_limite": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "cupon_usos": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "plantilla_whatsapp": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estado": {
+            "type": "string",
+            "description": "`pendiente`, `aprobado` o `rechazado`."
+          },
+          "motivo_estado": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "CredencialRespuesta": {
         "type": "object",
         "description": "Credencial (sin el identificador: solo su huella).",
@@ -23063,6 +27509,75 @@
           }
         }
       },
+      "CuponRespuesta": {
+        "type": "object",
+        "description": "Cupón de una oferta.",
+        "required": [
+          "codigo",
+          "vence_en",
+          "nombre_comercial"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "ROSA10"
+          },
+          "condiciones": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vence_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nombre_comercial": {
+            "type": "string"
+          }
+        }
+      },
+      "DatosAnunciantePeticion": {
+        "type": "object",
+        "description": "Nombre, dirección y ubicación de un anunciante.",
+        "required": [
+          "nombre_comercial"
+        ],
+        "properties": {
+          "nombre_comercial": {
+            "type": "string",
+            "example": "Modistería Rosa"
+          },
+          "direccion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código DANE del municipio (5 dígitos).",
+            "example": "11001"
+          },
+          "latitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "4.711000"
+          },
+          "longitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "-74.072100"
+          }
+        }
+      },
       "DatosCopropiedadRespuesta": {
         "type": "object",
         "description": "Datos de la copropiedad.",
@@ -23245,6 +27760,27 @@
             "items": {
               "$ref": "#/components/schemas/SolicitudTitularRespuesta"
             }
+          }
+        }
+      },
+      "DecisionPeticion": {
+        "type": "object",
+        "description": "Decisión de la moderación.",
+        "required": [
+          "decision"
+        ],
+        "properties": {
+          "decision": {
+            "type": "string",
+            "description": "`aprobar` o `rechazar`.",
+            "example": "aprobar"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorio al rechazar."
           }
         }
       },
@@ -23517,6 +28053,31 @@
           "motivo": {
             "type": "string",
             "example": "Destinatario desconocido"
+          }
+        }
+      },
+      "DirectorioPublicoRespuesta": {
+        "type": "object",
+        "description": "Directorio público de la copropiedad.",
+        "required": [
+          "copropiedad",
+          "fichas"
+        ],
+        "properties": {
+          "copropiedad": {
+            "type": "string",
+            "example": "Conjunto Alameda"
+          },
+          "whatsapp_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Abre el chat de la PH con «Busco …» escrito (para pegarlo en el grupo).",
+            "example": "https://wa.me/573000000000?text=Busco%20"
+          },
+          "fichas": {
+            "$ref": "#/components/schemas/PaginaRespuesta_FichaDirectorioRespuesta"
           }
         }
       },
@@ -23800,6 +28361,31 @@
           }
         }
       },
+      "EnlaceGeneradoRespuesta": {
+        "type": "object",
+        "description": "Enlace recién generado.",
+        "required": [
+          "token",
+          "creado_en"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Token del enlace: se entrega **una sola vez** (el front arma la página pública con él)."
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "whatsapp_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "https://wa.me/573000000000?text=Busco%20"
+          }
+        }
+      },
       "EnlaceRespuesta": {
         "type": "object",
         "description": "Enlace temporal de descarga.",
@@ -24027,6 +28613,28 @@
           }
         }
       },
+      "EstadoAnunciantePeticion": {
+        "type": "object",
+        "description": "Cambio de estado de verificación.",
+        "required": [
+          "estado"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "description": "`verificado`, `rechazado`, `suspendido` o `pendiente`.",
+            "example": "suspendido"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorio para rechazar o suspender.",
+            "example": "Quejas por publicidad engañosa"
+          }
+        }
+      },
       "EstadoCopropiedadPeticion": {
         "type": "object",
         "description": "Estado nuevo de una copropiedad.",
@@ -24051,6 +28659,52 @@
           "estado": {
             "type": "string",
             "example": "activa"
+          }
+        }
+      },
+      "EstadoEnlaceRespuesta": {
+        "type": "object",
+        "description": "Estado del enlace público del directorio.",
+        "required": [
+          "activo"
+        ],
+        "properties": {
+          "activo": {
+            "type": "boolean",
+            "description": "¿Hay un enlace vigente?"
+          },
+          "creado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "whatsapp_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Enlace que abre el chat de la PH con «Busco …» escrito.",
+            "example": "https://wa.me/573000000000?text=Busco%20"
+          }
+        }
+      },
+      "EstadoLiquidacionPeticion": {
+        "type": "object",
+        "description": "Estado nuevo de una liquidación.",
+        "required": [
+          "mes",
+          "estado"
+        ],
+        "properties": {
+          "mes": {
+            "type": "string",
+            "format": "date"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`facturada` o `pagada`."
           }
         }
       },
@@ -24314,6 +28968,29 @@
           }
         }
       },
+      "EventoDto": {
+        "type": "object",
+        "description": "Eventos de una pieza.",
+        "required": [
+          "creativo_id"
+        ],
+        "properties": {
+          "creativo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "impresiones": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "clics": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
       "EventoManualPeticion": {
         "type": "object",
         "description": "Evento manual de la portería.",
@@ -24522,6 +29199,41 @@
           }
         }
       },
+      "EventosPeticion": {
+        "type": "object",
+        "description": "Lote de eventos (agregados, anónimos).",
+        "required": [
+          "eventos"
+        ],
+        "properties": {
+          "eventos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoDto"
+            }
+          }
+        }
+      },
+      "EventosRespuesta": {
+        "type": "object",
+        "description": "Eventos aceptados (dentro del presupuesto).",
+        "required": [
+          "impresiones",
+          "clics"
+        ],
+        "properties": {
+          "impresiones": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "clics": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
       "EvidenciaDto": {
         "type": "object",
         "description": "Evidencia de una orden.",
@@ -24572,6 +29284,72 @@
           }
         }
       },
+      "FichaAnuncianteRespuesta": {
+        "type": "object",
+        "description": "Ficha completa del anunciante (vista de la plataforma).",
+        "required": [
+          "categorias",
+          "cobertura",
+          "contacto",
+          "publicada",
+          "actualizada_en"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "categorias": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "costura",
+              "belleza_domicilio"
+            ]
+          },
+          "cobertura": {
+            "type": "string",
+            "description": "`nacional`, `municipio` o `radio`.",
+            "example": "radio"
+          },
+          "radio_km": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "example": 3,
+            "minimum": 0
+          },
+          "contacto": {
+            "$ref": "#/components/schemas/ContactoFichaRespuesta"
+          },
+          "horario": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "destacada_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "publicada": {
+            "type": "boolean"
+          },
+          "actualizada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "FichaBienRespuesta": {
         "type": "object",
         "description": "Ficha de un bien privado.",
@@ -24604,6 +29382,93 @@
               "$ref": "#/components/schemas/TitularidadRespuesta"
             },
             "description": "Vacío si no tiene `titulares.ver` (salvo que sea titular)."
+          }
+        }
+      },
+      "FichaDirectorioRespuesta": {
+        "type": "object",
+        "description": "Ficha del directorio vista desde la copropiedad.",
+        "required": [
+          "anunciante_id",
+          "nombre_comercial",
+          "categorias",
+          "contacto",
+          "destacada",
+          "resenas"
+        ],
+        "properties": {
+          "anunciante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre_comercial": {
+            "type": "string",
+            "example": "Modistería Rosa"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "categorias": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos de categoría; el primero es el principal.",
+            "example": [
+              "costura"
+            ]
+          },
+          "contacto": {
+            "$ref": "#/components/schemas/ContactoFichaRespuesta"
+          },
+          "horario": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Lunes a sábado de 8 a. m. a 6 p. m."
+          },
+          "direccion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "11001"
+          },
+          "destacada": {
+            "type": "boolean",
+            "description": "Destacada (solo donde la plataforma habilitó el módulo `publicidad`)."
+          },
+          "distancia_km": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Kilómetros hasta la copropiedad, si ambos están ubicados.",
+            "example": "1.2"
+          },
+          "calificacion_promedio": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Promedio de todas las copropiedades, con un decimal.",
+            "example": "4.5"
+          },
+          "resenas": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Reseñas publicadas en todas las copropiedades.",
+            "minimum": 0
           }
         }
       },
@@ -24642,6 +29507,96 @@
           "estado": {
             "type": "string",
             "description": "`sin_reclamar`, `reclamada` o `suspendida`."
+          }
+        }
+      },
+      "FichaPeticion": {
+        "type": "object",
+        "description": "Contenido de la ficha.",
+        "required": [
+          "categorias",
+          "cobertura"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hasta 1000 caracteres."
+          },
+          "categorias": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "De 1 a 5 códigos; el primero es el principal. Nunca una categoría restringida.",
+            "example": [
+              "costura"
+            ]
+          },
+          "cobertura": {
+            "type": "string",
+            "description": "`nacional`, `municipio` o `radio`.",
+            "example": "radio"
+          },
+          "radio_km": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Solo con `radio` (1 a 100 km).",
+            "example": 3,
+            "minimum": 0
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "573001234567"
+          },
+          "whatsapp": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "573001234567"
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sitio_web": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo `https://`."
+          },
+          "horario": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "destacada_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Destacada (suscripción `directorio_destacado`) hasta esta fecha."
+          },
+          "publicada": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "`true` si se omite; `false` la retira del directorio."
           }
         }
       },
@@ -25249,6 +30204,40 @@
           }
         }
       },
+      "LeadRespuesta": {
+        "type": "object",
+        "description": "Contacto que un residente autorizó compartirle para una solicitud.",
+        "required": [
+          "solicitud_id",
+          "creado_en",
+          "nombre"
+        ],
+        "properties": {
+          "solicitud_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "categoria": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "LineaPeticion": {
         "type": "object",
         "description": "Línea nueva (ya verificada en Meta).",
@@ -25337,6 +30326,61 @@
             "format": "int64",
             "description": "Franquicia que le queda: las conversaciones nuevas salen por la que tenga más.",
             "minimum": 0
+          }
+        }
+      },
+      "LiquidacionRespuesta": {
+        "type": "object",
+        "description": "Liquidación de un anunciante en un mes (sin reparto a las copropiedades).",
+        "required": [
+          "id",
+          "anunciante_id",
+          "periodo",
+          "variable",
+          "fijos",
+          "leads",
+          "valor_leads",
+          "valor",
+          "costo_whatsapp",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anunciante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodo": {
+            "type": "string",
+            "format": "date"
+          },
+          "variable": {
+            "type": "string"
+          },
+          "fijos": {
+            "type": "string"
+          },
+          "leads": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "valor_leads": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "string"
+          },
+          "costo_whatsapp": {
+            "type": "string",
+            "description": "Costo de WhatsApp para la plataforma (informativo)."
+          },
+          "estado": {
+            "type": "string",
+            "description": "`calculada`, `facturada` o `pagada`."
           }
         }
       },
@@ -25704,6 +30748,121 @@
           }
         }
       },
+      "MesQuery": {
+        "type": "object",
+        "description": "Mes a liquidar o consultar.",
+        "required": [
+          "mes"
+        ],
+        "properties": {
+          "mes": {
+            "type": "string",
+            "format": "date",
+            "description": "Cualquier día del mes."
+          }
+        }
+      },
+      "MetricaDiaRespuesta": {
+        "type": "object",
+        "description": "Métrica de un día y canal.",
+        "required": [
+          "dia",
+          "canal",
+          "impresiones",
+          "clics",
+          "redenciones",
+          "costo"
+        ],
+        "properties": {
+          "dia": {
+            "type": "string",
+            "format": "date"
+          },
+          "canal": {
+            "type": "string",
+            "description": "`app`, `pantalla`, `whatsapp` o `correo`."
+          },
+          "impresiones": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "clics": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "redenciones": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "costo": {
+            "type": "string"
+          }
+        }
+      },
+      "MetricasRespuesta": {
+        "type": "object",
+        "description": "Métricas agregadas de una campaña (sin personas ni nombres de copropiedades).",
+        "required": [
+          "alcance",
+          "impresiones",
+          "clics",
+          "redenciones",
+          "consumido",
+          "dias"
+        ],
+        "properties": {
+          "alcance": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Copropiedades que alcanza hoy.",
+            "minimum": 0
+          },
+          "impresiones": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "clics": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "redenciones": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "consumido": {
+            "type": "string"
+          },
+          "dias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetricaDiaRespuesta"
+            }
+          }
+        }
+      },
+      "MiAnuncianteRespuesta": {
+        "type": "object",
+        "description": "Anunciante de la cuenta con su papel en la organización.",
+        "required": [
+          "anunciante",
+          "rol"
+        ],
+        "properties": {
+          "anunciante": {
+            "$ref": "#/components/schemas/AnuncianteRespuesta"
+          },
+          "rol": {
+            "type": "string",
+            "description": "`dueno`, `gestor` u `operario` (solo redime cupones)."
+          }
+        }
+      },
       "MiembroPeticion": {
         "type": "object",
         "description": "Miembro de la organización.",
@@ -25720,6 +30879,32 @@
             "type": "string",
             "description": "`dueno`, `gestor` u `operario`.",
             "example": "operario"
+          }
+        }
+      },
+      "ModeracionPeticion": {
+        "type": "object",
+        "description": "Decisión sobre una reseña reportada.",
+        "required": [
+          "copropiedad_id",
+          "ocultar"
+        ],
+        "properties": {
+          "copropiedad_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Copropiedad de la reseña (viene en la cola de moderación)."
+          },
+          "ocultar": {
+            "type": "boolean",
+            "description": "`true` la oculta (exige `motivo`); `false` la mantiene. En ambos casos los reportes\nquedan atendidos."
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Lenguaje ofensivo"
           }
         }
       },
@@ -26147,6 +31332,38 @@
           }
         ],
         "description": "Residencia nueva."
+      },
+      "NuevoAnunciantePeticion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DatosAnunciantePeticion"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "organizacion_id": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "uuid",
+                "description": "Organización existente. Se envía esta **o** `organizacion`."
+              },
+              "organizacion": {
+                "oneOf": [
+                  {
+                    "$ref": "#/components/schemas/NuevaOrganizacionPeticion",
+                    "description": "Organización nueva (si el NIT ya existe, se reutiliza)."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Alta de un anunciante."
       },
       "NuevoBienPeticion": {
         "type": "object",
@@ -27079,6 +32296,109 @@
           }
         }
       },
+      "PaginaRespuesta_AnuncianteRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Anunciante del directorio.",
+              "required": [
+                "id",
+                "organizacion_id",
+                "nombre_comercial",
+                "estado",
+                "creado_en",
+                "actualizado_en"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "organizacion_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "nombre_comercial": {
+                  "type": "string",
+                  "example": "Modistería Rosa"
+                },
+                "direccion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "municipio_dane": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "11001"
+                },
+                "latitud": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "4.711000"
+                },
+                "longitud": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "-74.072100"
+                },
+                "estado": {
+                  "type": "string",
+                  "description": "`pendiente`, `verificado`, `rechazado` o `suspendido`."
+                },
+                "motivo_estado": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "creado_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "actualizado_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "ficha": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/FichaAnuncianteRespuesta",
+                      "description": "`null` si todavía no tiene ficha."
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_BienPrivadoRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -27174,6 +32494,117 @@
                   ],
                   "description": "Fracción del cuadro vigente (`null` si aún no hay cuadro que lo incluya).",
                   "example": "0.00523000"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_CampanaRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Campaña.",
+              "required": [
+                "id",
+                "anunciante_id",
+                "nombre",
+                "objetivo",
+                "categoria",
+                "inicio",
+                "fin",
+                "modelo",
+                "presupuesto_total",
+                "consumido",
+                "segmentacion",
+                "conflicto_interes",
+                "estado",
+                "creada_en"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "anunciante_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "nombre": {
+                  "type": "string"
+                },
+                "objetivo": {
+                  "type": "string"
+                },
+                "categoria": {
+                  "type": "string"
+                },
+                "inicio": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "fin": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "modelo": {
+                  "type": "string"
+                },
+                "presupuesto_total": {
+                  "type": "string"
+                },
+                "presupuesto_diario": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "tarifa": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Tarifa fijada al aprobarla."
+                },
+                "consumido": {
+                  "type": "string"
+                },
+                "segmentacion": {
+                  "$ref": "#/components/schemas/SegmentacionDto"
+                },
+                "conflicto_interes": {
+                  "type": "boolean",
+                  "description": "El anunciante presta servicio a una copropiedad alcanzada: la moderación lo revisa."
+                },
+                "estado": {
+                  "type": "string",
+                  "description": "`borrador`, `en_revision`, `aprobada`, `rechazada`, `activa`, `pausada` o `finalizada`."
+                },
+                "motivo_estado": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "creada_en": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               }
             },
@@ -27467,6 +32898,186 @@
           }
         }
       },
+      "PaginaRespuesta_CreativoReportadoRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Creativo reportado por residentes.",
+              "required": [
+                "creativo_id",
+                "campana_id",
+                "anunciante_id",
+                "nombre_comercial",
+                "titulo",
+                "reportes",
+                "motivos",
+                "primero_en"
+              ],
+              "properties": {
+                "creativo_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "campana_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "anunciante_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "nombre_comercial": {
+                  "type": "string"
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "reportes": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                "motivos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "primero_en": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_CreativoRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Creativo con su estado de moderación.",
+              "required": [
+                "id",
+                "campana_id",
+                "formato",
+                "titulo",
+                "texto",
+                "es_promocion",
+                "cupon_usos",
+                "estado"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "campana_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "formato": {
+                  "type": "string"
+                },
+                "titulo": {
+                  "type": "string"
+                },
+                "texto": {
+                  "type": "string"
+                },
+                "boton": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "enlace": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "condiciones": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "es_promocion": {
+                  "type": "boolean"
+                },
+                "cupon_codigo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "cupon_limite": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "format": "int32",
+                  "minimum": 0
+                },
+                "cupon_usos": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                "plantilla_whatsapp": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "estado": {
+                  "type": "string",
+                  "description": "`pendiente`, `aprobado` o `rechazado`."
+                },
+                "motivo_estado": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_EventoAccesoRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -27633,6 +33244,169 @@
                   "description": "Detalle sin datos personales."
                 },
                 "request_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_FichaDirectorioRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Ficha del directorio vista desde la copropiedad.",
+              "required": [
+                "anunciante_id",
+                "nombre_comercial",
+                "categorias",
+                "contacto",
+                "destacada",
+                "resenas"
+              ],
+              "properties": {
+                "anunciante_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "nombre_comercial": {
+                  "type": "string",
+                  "example": "Modistería Rosa"
+                },
+                "descripcion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "categorias": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Códigos de categoría; el primero es el principal.",
+                  "example": [
+                    "costura"
+                  ]
+                },
+                "contacto": {
+                  "$ref": "#/components/schemas/ContactoFichaRespuesta"
+                },
+                "horario": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "Lunes a sábado de 8 a. m. a 6 p. m."
+                },
+                "direccion": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "municipio_dane": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "11001"
+                },
+                "destacada": {
+                  "type": "boolean",
+                  "description": "Destacada (solo donde la plataforma habilitó el módulo `publicidad`)."
+                },
+                "distancia_km": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Kilómetros hasta la copropiedad, si ambos están ubicados.",
+                  "example": "1.2"
+                },
+                "calificacion_promedio": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Promedio de todas las copropiedades, con un decimal.",
+                  "example": "4.5"
+                },
+                "resenas": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "Reseñas publicadas en todas las copropiedades.",
+                  "minimum": 0
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_LeadRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Contacto que un residente autorizó compartirle para una solicitud.",
+              "required": [
+                "solicitud_id",
+                "creado_en",
+                "nombre"
+              ],
+              "properties": {
+                "solicitud_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "creado_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "categoria": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "nombre": {
+                  "type": "string"
+                },
+                "telefono": {
                   "type": [
                     "string",
                     "null"
@@ -27987,6 +33761,152 @@
                 "datos_sensibles_ocultos": {
                   "type": "boolean",
                   "description": "Se ocultaron los datos sensibles por falta de permiso."
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_ResenaReportadaRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Reseña con reportes sin atender.",
+              "required": [
+                "resena_id",
+                "copropiedad_id",
+                "copropiedad",
+                "anunciante_id",
+                "nombre_comercial",
+                "calificacion",
+                "reportes",
+                "motivos",
+                "creada_en"
+              ],
+              "properties": {
+                "resena_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "copropiedad_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "copropiedad": {
+                  "type": "string"
+                },
+                "anunciante_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "nombre_comercial": {
+                  "type": "string"
+                },
+                "calificacion": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                "texto": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "reportes": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                "motivos": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "creada_en": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_ResenaRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Reseña de un residente o propietario (sin autor).",
+              "required": [
+                "id",
+                "calificacion",
+                "propia",
+                "creada_en",
+                "actualizada_en"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "calificacion": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "De 1 a 5.",
+                  "example": 5,
+                  "minimum": 0
+                },
+                "texto": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "example": "Muy cumplida con los arreglos"
+                },
+                "propia": {
+                  "type": "boolean",
+                  "description": "`true` si es la reseña de quien consulta."
+                },
+                "creada_en": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "actualizada_en": {
+                  "type": "string",
+                  "format": "date-time"
                 }
               }
             },
@@ -28618,6 +34538,18 @@
           }
         }
       },
+      "PantallaRespuesta": {
+        "type": "object",
+        "description": "Token de una pantalla (se entrega una sola vez).",
+        "required": [
+          "token"
+        ],
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
       "PapeletaRespuesta": {
         "type": "object",
         "description": "Papeleta del asistente.",
@@ -28963,6 +34895,72 @@
           "datos_sensibles_ocultos": {
             "type": "boolean",
             "description": "Se ocultaron los datos sensibles por falta de permiso."
+          }
+        }
+      },
+      "PiezaRespuesta": {
+        "type": "object",
+        "description": "Pieza de publicidad para mostrar.",
+        "required": [
+          "creativo_id",
+          "anunciante_id",
+          "nombre_comercial",
+          "formato",
+          "titulo",
+          "texto",
+          "es_promocion",
+          "tiene_cupon",
+          "vence_en"
+        ],
+        "properties": {
+          "creativo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anunciante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre_comercial": {
+            "type": "string"
+          },
+          "formato": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "boton": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enlace": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "condiciones": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "es_promocion": {
+            "type": "boolean"
+          },
+          "tiene_cupon": {
+            "type": "boolean",
+            "description": "Si es una oferta con cupón (el código se pide con `…/cupon`)."
+          },
+          "vence_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -29361,6 +35359,41 @@
             ],
             "format": "date-time",
             "description": "Desde ahora si se omite (nunca en el pasado)."
+          }
+        }
+      },
+      "PoliticaPublicidadPeticion": {
+        "type": "object",
+        "description": "Texto de una versión nueva de la política.",
+        "required": [
+          "texto"
+        ],
+        "properties": {
+          "texto": {
+            "type": "string"
+          }
+        }
+      },
+      "PoliticaPublicidadRespuesta": {
+        "type": "object",
+        "description": "Política de publicidad de la plataforma.",
+        "required": [
+          "version",
+          "texto",
+          "vigente_desde"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "texto": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -30406,6 +36439,51 @@
           }
         }
       },
+      "RedencionRespuesta": {
+        "type": "object",
+        "description": "Cupón redimido.",
+        "required": [
+          "creativo_id",
+          "titulo",
+          "usos"
+        ],
+        "properties": {
+          "creativo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "usos": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "restantes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "`null` = sin límite.",
+            "minimum": 0
+          }
+        }
+      },
+      "RedimirPeticion": {
+        "type": "object",
+        "description": "Código del cupón que presenta el cliente.",
+        "required": [
+          "codigo"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "ROSA10"
+          }
+        }
+      },
       "RegistrarCorrespondenciaPeticion": {
         "type": "object",
         "description": "Correspondencia que recibe la portería.",
@@ -30475,6 +36553,26 @@
             "example": "Teléfono de Ana"
           }
         }
+      },
+      "RegistroAnunciantePeticion": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DatosAnunciantePeticion"
+          },
+          {
+            "type": "object",
+            "required": [
+              "organizacion"
+            ],
+            "properties": {
+              "organizacion": {
+                "$ref": "#/components/schemas/NuevaOrganizacionPeticion",
+                "description": "Si el NIT ya existe, la cuenta debe administrarla (o reclamarla antes)."
+              }
+            }
+          }
+        ],
+        "description": "Registro de un anunciante por su cuenta."
       },
       "RegistroAsistentePeticion": {
         "type": "object",
@@ -30675,6 +36773,32 @@
           }
         }
       },
+      "ReporteAnuncioPeticion": {
+        "type": "object",
+        "description": "Motivo del reporte de un anuncio.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "description": "Hasta 500 caracteres.",
+            "example": "Publicidad engañosa"
+          }
+        }
+      },
+      "ReporteAnuncioRespuesta": {
+        "type": "object",
+        "description": "¿Se registró el reporte? (`false` si ya lo había reportado).",
+        "required": [
+          "nuevo"
+        ],
+        "properties": {
+          "nuevo": {
+            "type": "boolean"
+          }
+        }
+      },
       "ReportePeticion": {
         "type": "object",
         "description": "Lote de eventos.",
@@ -30692,6 +36816,33 @@
               "format": "uuid"
             },
             "description": "Credenciales biométricas cuya plantilla ya se borró del equipo."
+          }
+        }
+      },
+      "ReporteResenaPeticion": {
+        "type": "object",
+        "description": "Motivo del reporte.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "description": "Hasta 500 caracteres.",
+            "example": "Lenguaje ofensivo"
+          }
+        }
+      },
+      "ReporteResenaRespuesta": {
+        "type": "object",
+        "description": "Resultado del reporte.",
+        "required": [
+          "nuevo"
+        ],
+        "properties": {
+          "nuevo": {
+            "type": "boolean",
+            "description": "`false` si ya la había reportado."
           }
         }
       },
@@ -30721,6 +36872,20 @@
           }
         }
       },
+      "ReportesAtendidosRespuesta": {
+        "type": "object",
+        "description": "Reportes atendidos.",
+        "required": [
+          "atendidos"
+        ],
+        "properties": {
+          "atendidos": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
       "RepresentantePeticion": {
         "type": "object",
         "description": "Representante ante la copropiedad.",
@@ -30731,6 +36896,133 @@
           "persona_id": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "ResenaPeticion": {
+        "type": "object",
+        "description": "Calificación de un anunciante.",
+        "required": [
+          "calificacion"
+        ],
+        "properties": {
+          "calificacion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "De 1 a 5.",
+            "example": 5,
+            "minimum": 0
+          },
+          "texto": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Hasta 1000 caracteres."
+          }
+        }
+      },
+      "ResenaReportadaRespuesta": {
+        "type": "object",
+        "description": "Reseña con reportes sin atender.",
+        "required": [
+          "resena_id",
+          "copropiedad_id",
+          "copropiedad",
+          "anunciante_id",
+          "nombre_comercial",
+          "calificacion",
+          "reportes",
+          "motivos",
+          "creada_en"
+        ],
+        "properties": {
+          "resena_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "copropiedad_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "copropiedad": {
+            "type": "string"
+          },
+          "anunciante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre_comercial": {
+            "type": "string"
+          },
+          "calificacion": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "texto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reportes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ResenaRespuesta": {
+        "type": "object",
+        "description": "Reseña de un residente o propietario (sin autor).",
+        "required": [
+          "id",
+          "calificacion",
+          "propia",
+          "creada_en",
+          "actualizada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "calificacion": {
+            "type": "integer",
+            "format": "int32",
+            "description": "De 1 a 5.",
+            "example": 5,
+            "minimum": 0
+          },
+          "texto": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "Muy cumplida con los arreglos"
+          },
+          "propia": {
+            "type": "boolean",
+            "description": "`true` si es la reseña de quien consulta."
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "actualizada_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -31761,6 +38053,78 @@
           }
         }
       },
+      "SegmentacionDto": {
+        "type": "object",
+        "description": "A qué copropiedades llega la campaña: solo atributos de la PH, nunca de personas. Cada\ncriterio vacío no restringe.",
+        "properties": {
+          "copropiedades": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Copropiedades elegidas una por una (vacío = todas las que cumplan lo demás).",
+            "default": []
+          },
+          "radio_km": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Radio en km desde el anunciante (1 a 100).",
+            "default": null,
+            "minimum": 0
+          },
+          "municipios": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos DANE de municipios.",
+            "example": [
+              "11001"
+            ],
+            "default": []
+          },
+          "tipos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "`residencial`, `comercial` o `mixta`.",
+            "default": []
+          },
+          "bienes_min": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "default": null,
+            "minimum": 0
+          },
+          "bienes_max": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "default": null,
+            "minimum": 0
+          },
+          "estratos": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "description": "Estratos de 1 a 6.",
+            "default": []
+          }
+        }
+      },
       "SegundoFactorPeticion": {
         "type": "object",
         "description": "Código TOTP para completar el inicio de sesión.",
@@ -32265,6 +38629,30 @@
           "valor": {
             "type": "string",
             "example": "2.95"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "TarifaPublicidadDto": {
+        "type": "object",
+        "description": "Tarifa de un modelo de cobro.",
+        "required": [
+          "modelo",
+          "valor",
+          "vigente_desde"
+        ],
+        "properties": {
+          "modelo": {
+            "type": "string",
+            "example": "cpc"
+          },
+          "valor": {
+            "type": "string",
+            "description": "COP.",
+            "example": "800"
           },
           "vigente_desde": {
             "type": "string",
@@ -33414,6 +39802,10 @@
       "description": "Comunicados de la administración: audiencia (toda la PH, propietarios, residentes, torres, bienes o roles), finalidad (Ley 1581), envío inmediato o programado por push, correo y WhatsApp (solo los importantes y a quien no tiene la app), cartelera con lectura y «Enterado» (módulo `gestion_administrativa`)"
     },
     {
+      "name": "directorio",
+      "description": "Directorio de comercios y servicios que alcanzan a la copropiedad (por cercanía, municipio o todo el país), con reseñas anónimas de residentes y propietarios; y, en `/plataforma/publicidad`, el catálogo de categorías, los anunciantes, sus fichas y la moderación (plan 08)"
+    },
+    {
       "name": "mantenimiento",
       "description": "Inventario de activos con hoja de vida, planes preventivos, órdenes de trabajo y obligaciones periódicas (módulo `gestion_administrativa`)"
     },
@@ -33436,6 +39828,10 @@
     {
       "name": "auditoria",
       "description": "Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)"
+    },
+    {
+      "name": "publicidad",
+      "description": "Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta"
     },
     {
       "name": "plataforma",

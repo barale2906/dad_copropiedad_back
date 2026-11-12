@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE organizaciones\n             SET tipos = array_append(tipos, 'anunciante'), actualizada_en = now()\n             WHERE id = $1 AND NOT ('anunciante' = ANY (tipos))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c4e4e56136904890e7e19f96a6ed069efa02c20066d0f333b6d3b0e3b9158076"
+}

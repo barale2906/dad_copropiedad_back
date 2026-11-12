@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO contactos_proveedor (tenant_id, solicitud_id, anunciante_id, creado_en)\n             VALUES ($1, $2, $3, $4)\n             ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7724b3d20d7aa718ca442bb6eac59f23dc12771fe76665a29b20414c0599e1a1"
+}

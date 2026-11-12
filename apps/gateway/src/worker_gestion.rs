@@ -1,18 +1,23 @@
 //! Worker de gestión administrativa: cada [`INTERVALO`] cierra los tickets resueltos cuyo plazo
 //! de reapertura pasó, alerta los vencidos, genera las órdenes preventivas de los planes, envía
 //! los comunicados programados cuya hora llegó (a lo sumo 10 min tarde) y purga las sesiones del
-//! chat y las claves `Idempotency-Key` de la API vencidas. Los avisos salen por el worker del outbox.
+//! chat, las claves `Idempotency-Key` de la API vencidas y el texto de las búsquedas de
+//! proveedores de más de 90 días. Los avisos salen por el worker del outbox.
 
 use std::{future::Future, time::Duration};
 
 use application::{
     casos_uso::{
+        busqueda_proveedores::RETENCION_SOLICITUDES_DIAS,
         comunicados::TxComunicados,
         mantenimiento::{TxMantenimiento, tareas_gestion},
     },
-    puertos::{DirectorioGestion, RegistroIdempotencia, Reloj, RelojSistema, UnidadDeTrabajo},
+    puertos::{
+        DirectorioGestion, PurgaDirectorio, RegistroIdempotencia, Reloj, RelojSistema,
+        UnidadDeTrabajo,
+    },
 };
-use infra_postgres::{IdempotenciaPg, SesionesChatPg};
+use infra_postgres::{IdempotenciaPg, PurgaDirectorioPg, SesionesChatPg};
 
 /// Cada cuánto se revisan las tareas.
 pub const INTERVALO: Duration = Duration::from_secs(10 * 60);
@@ -23,6 +28,7 @@ pub async fn ejecutar<D, U>(
     unidad: U,
     sesiones: SesionesChatPg,
     idempotencia: IdempotenciaPg,
+    purga: PurgaDirectorioPg,
     apagado: impl Future<Output = ()>,
 ) where
     D: DirectorioGestion,
@@ -57,6 +63,16 @@ pub async fn ejecutar<D, U>(
         }
         if let Err(e) = idempotencia.purgar(RelojSistema.ahora()).await {
             tracing::warn!(error = %e, "no se pudieron purgar las claves de idempotencia");
+        }
+        match purga
+            .purgar_solicitudes_proveedor(RETENCION_SOLICITUDES_DIAS)
+            .await
+        {
+            Ok(0) => {}
+            Ok(n) => tracing::info!(purgadas = n, "búsquedas de proveedores purgadas"),
+            Err(e) => {
+                tracing::warn!(error = %e, "no se pudieron purgar las búsquedas de proveedores");
+            }
         }
         tokio::select! {
             biased;

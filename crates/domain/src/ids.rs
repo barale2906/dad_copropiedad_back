@@ -359,6 +359,47 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Anunciante del directorio y de la publicidad (plataforma, plan 08).
+    AnuncianteId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Reseña de un residente sobre un anunciante del directorio.
+    ResenaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Búsqueda de un proveedor hecha por un residente (chat o app), con su autorización de
+    /// contacto si la dio.
+    SolicitudProveedorId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Campaña de publicidad de un anunciante (plataforma).
+    CampanaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Creativo (pieza) de una campaña de publicidad.
+    CreativoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Liquidación de pauta de un anunciante en un periodo.
+    LiquidacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Reporte de un anuncio hecho por un residente.
+    ReportePublicidadId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de la política de tratamiento de la plataforma para la finalidad `publicidad`.
+    PoliticaPublicidadId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4

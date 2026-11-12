@@ -29,7 +29,9 @@ pub struct PoliticaTratamiento {
 pub struct Autorizacion {
     pub id: AutorizacionId,
     pub persona_id: PersonaId,
-    pub politica_id: PoliticaTratamientoId,
+    /// Política de la copropiedad; `None` en la finalidad `publicidad`, que se autoriza frente
+    /// a la plataforma con su propia política (`politicas_publicidad`, ADR 0015).
+    pub politica_id: Option<PoliticaTratamientoId>,
     pub finalidad: FinalidadTratamiento,
     pub medio: MedioAutorizacion,
     /// Prueba de la autorización (formato firmado escaneado), si la hay.

@@ -1,0 +1,172 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT a.id, a.organizacion_id, a.nombre_comercial, a.direccion, a.municipio_dane,\n                    a.latitud, a.longitud, a.estado_verificacion, a.motivo_estado, a.creado_por,\n                    a.creado_en, a.actualizado_en, m.rol\n             FROM anunciantes a\n             JOIN organizaciones_miembros m ON m.organizacion_id = a.organizacion_id\n             WHERE m.cuenta_id = $1 ORDER BY a.nombre_comercial, a.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre_comercial",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "nombre_comercial"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "direccion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "direccion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "municipio_dane",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "municipio_dane"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "latitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "latitud"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "longitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "longitud"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "estado_verificacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "estado_verificacion"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "motivo_estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "motivo_estado"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "actualizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "actualizado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "rol",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "organizaciones_miembros",
+            "name": "rol"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e36b80ae5633864a3ad526dec0e1d2c0c0e845cc5b76593c23748e4bbe249182"
+}

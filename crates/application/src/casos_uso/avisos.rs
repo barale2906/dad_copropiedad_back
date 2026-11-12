@@ -43,7 +43,7 @@ pub struct Aviso {
     pub plantilla: Option<(&'static str, Vec<String>)>,
 }
 
-fn parametro(texto: &str) -> String {
+pub(crate) fn parametro(texto: &str) -> String {
     let limpio: String = texto
         .chars()
         .map(|c| if c.is_control() { ' ' } else { c })

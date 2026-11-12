@@ -113,6 +113,26 @@ impl Api {
         (status, json)
     }
 
+    /// GET sin sesión con una cabecera de credencial (p. ej. `x-enlace-directorio`).
+    pub async fn pedir_con_cabecera(
+        &self,
+        uri: &str,
+        cabecera: &str,
+        valor: &str,
+    ) -> (StatusCode, Value) {
+        let req = Request::get(uri)
+            .header(cabecera, valor)
+            .body(Body::empty())
+            .expect("petición");
+        let res = self.router.clone().oneshot(req).await.expect("router");
+        let status = res.status();
+        let bytes = to_bytes(res.into_body(), usize::MAX).await.expect("cuerpo");
+        (
+            status,
+            serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+        )
+    }
+
     /// GET que devuelve texto (CSV): estado, `Content-Type` y cuerpo.
     pub async fn pedir_texto(&self, uri: &str, token: &str) -> (StatusCode, String, String) {
         let req = Request::get(uri)
