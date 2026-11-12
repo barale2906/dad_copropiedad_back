@@ -276,6 +276,171 @@
         ]
       }
     },
+    "/api/v1/plataforma/copropiedades/{copropiedad_id}/modulos": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Habilita un módulo en una copropiedad (venta por módulo). Los endpoints del módulo dejan de\nresponder `modulo_no_habilitado` desde `desde`.",
+        "operationId": "habilitar_modulo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HabilitarModuloPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Periodo registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoModuloRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.modulos.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Módulo desconocido o `hasta` no posterior a `desde` (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/copropiedades/{copropiedad_id}/modulos/{modulo}": {
+      "delete": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Termina un módulo en una copropiedad desde ahora; el historial de periodos se conserva.",
+        "operationId": "terminar_modulo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "modulo",
+            "in": "path",
+            "description": "Módulo",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Modulo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Módulo terminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuloTerminadoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.modulos.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Módulo desconocido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/plataforma/roles": {
       "get": {
         "tags": [
@@ -37669,6 +37834,34 @@
           "meses"
         ]
       },
+      "HabilitarModuloPeticion": {
+        "type": "object",
+        "description": "Contrato de un módulo para una copropiedad.",
+        "required": [
+          "modulo"
+        ],
+        "properties": {
+          "modulo": {
+            "$ref": "#/components/schemas/Modulo"
+          },
+          "desde": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Desde cuándo (por defecto, ahora)."
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "Hasta cuándo, excluido (por defecto, sin fin)."
+          }
+        }
+      },
       "HojaDeVidaRespuesta": {
         "type": "object",
         "description": "Hoja de vida de un activo.",
@@ -38691,6 +38884,21 @@
           "gestion_administrativa",
           "publicidad"
         ]
+      },
+      "ModuloTerminadoRespuesta": {
+        "type": "object",
+        "description": "Periodos cerrados al terminar un módulo.",
+        "required": [
+          "terminados"
+        ],
+        "properties": {
+          "terminados": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cuántos periodos abiertos se cerraron (0 si el módulo no estaba habilitado).",
+            "minimum": 0
+          }
+        }
       },
       "MomentoEvidencia": {
         "type": "string",
@@ -42541,6 +42749,30 @@
               "$ref": "#/components/schemas/Permiso"
             },
             "description": "Permisos de plataforma (vacío para la mayoría de las cuentas)."
+          }
+        }
+      },
+      "PeriodoModuloRespuesta": {
+        "type": "object",
+        "description": "Periodo contratado de un módulo.",
+        "required": [
+          "modulo",
+          "desde"
+        ],
+        "properties": {
+          "modulo": {
+            "$ref": "#/components/schemas/Modulo"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },

@@ -142,4 +142,6 @@ sqlx migrate revert            # revertir la última
   falla si un ítem público no tiene `///`.
 - Contrato de la API REST: [`apps/api/openapi.json`](apps/api/openapi.json), generado con utoipa desde las rutas. Si cambias rutas o DTOs, `make openapi` lo regenera (una prueba falla si queda desactualizado).
 - Para el frontend: [`docs/guia-frontend.md`](docs/guia-frontend.md) (generar el cliente tipado, sesión y renovación, errores, reintentos, paginación, archivos y WebSocket).
+- Capacidad del servidor: `dad_carga` (`apps/carga`) siembra varias copropiedades por la API y mide
+  navegación y votación simultáneas; ver [`docs/despliegue.md`](docs/despliegue.md) §9.
 - [`docs/adr/`](docs/adr/): decisiones de arquitectura.

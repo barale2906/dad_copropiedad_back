@@ -22,7 +22,24 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
  && cp target/release/dad_copropiedad_api target/release/dad_copropiedad_gateway \
        target/release/dad_admin /salida/
 
-# --- Ejecución ---
+# --- Prueba de carga (solo con `docker build --target carga`; no va en la imagen de producción) ---
+FROM compilacion AS compilacion-carga
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/fuente/target \
+    cargo build --release --locked -p carga --bins \
+ && cp target/release/dad_carga /salida/
+
+FROM debian:bookworm-slim AS carga
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd --system --uid 10001 --home-dir /carga --create-home --shell /usr/sbin/nologin dad
+COPY --from=compilacion-carga /salida/dad_carga /usr/local/bin/
+WORKDIR /carga
+USER dad
+ENTRYPOINT ["/usr/local/bin/dad_carga"]
+
+# --- Ejecución (etapa final: la imagen por defecto) ---
 FROM debian:bookworm-slim AS ejecucion
 # TLS con rustls y raíces de webpki embebidas: no hace falta OpenSSL. `ca-certificates` solo por
 # si un proveedor SMTP usa una autoridad local; `tini` reenvía SIGTERM (apagado ordenado).

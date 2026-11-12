@@ -1,18 +1,20 @@
 //! Rutas globales de la plataforma: `/api/v1/plataforma/…`.
 //!
-//! Operaciones que no pertenecen a una copropiedad: alta de copropiedades, roles de plataforma,
-//! bloqueo de cuentas y revisión de reclamaciones de organizaciones. Exigen permisos de
+//! Operaciones que no pertenecen a una copropiedad: alta de copropiedades y de sus módulos
+//! contratados, roles de plataforma, bloqueo de cuentas y revisión de reclamaciones de
+//! organizaciones. Exigen permisos de
 //! plataforma y, salvo que se desactive en desarrollo, una sesión con segundo factor.
 
 use application::puertos::copropiedades::AltaCopropiedad;
 use application::{
-    casos_uso::{organizaciones as org, plataforma as uc},
+    casos_uso::{modulos, organizaciones as org, plataforma as uc},
     puertos::RelojSistema,
 };
 use axum::{extract::State, http::StatusCode};
+use chrono::{DateTime, Utc};
 use domain::{
-    AsignacionRolId, CuentaId, EstadoCopropiedad, FormaCopropiedad, Nit, ReclamacionId, RolId,
-    TenantId, TipoCopropiedad,
+    AsignacionRolId, CuentaId, EstadoCopropiedad, FormaCopropiedad, Modulo, Nit, ReclamacionId,
+    RolId, TenantId, TipoCopropiedad,
 };
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -36,6 +38,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(listar_copropiedades, crear_copropiedad))
         .routes(routes!(cambiar_estado_copropiedad))
+        .routes(routes!(habilitar_modulo))
+        .routes(routes!(terminar_modulo))
         .routes(routes!(listar_roles, crear_rol))
         .routes(routes!(editar_permisos_rol))
         .routes(routes!(asignar))
@@ -187,6 +191,107 @@ pub async fn cambiar_estado_copropiedad(
     )
     .await?;
     Ok(Json(EstadoCopropiedadRespuesta { estado }))
+}
+
+/// Contrato de un módulo para una copropiedad.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct HabilitarModuloPeticion {
+    #[schema(value_type = crate::esquemas::Modulo)]
+    pub modulo: String,
+    /// Desde cuándo (por defecto, ahora).
+    pub desde: Option<DateTime<Utc>>,
+    /// Hasta cuándo, excluido (por defecto, sin fin).
+    pub hasta: Option<DateTime<Utc>>,
+}
+
+/// Periodo contratado de un módulo.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PeriodoModuloRespuesta {
+    #[schema(value_type = crate::esquemas::Modulo)]
+    pub modulo: Modulo,
+    pub desde: DateTime<Utc>,
+    pub hasta: Option<DateTime<Utc>>,
+}
+
+/// Habilita un módulo en una copropiedad (venta por módulo). Los endpoints del módulo dejan de
+/// responder `modulo_no_habilitado` desde `desde`.
+#[utoipa::path(
+    post,
+    path = "/copropiedades/{copropiedad_id}/modulos",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    request_body = HabilitarModuloPeticion,
+    responses(
+        (status = CREATED, description = "Periodo registrado", body = PeriodoModuloRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.modulos.gestionar`", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "La copropiedad no existe", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Módulo desconocido o `hasta` no posterior a `desde` (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn habilitar_modulo(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Path(copropiedad_id): Path<Uuid>,
+    Json(p): Json<HabilitarModuloPeticion>,
+) -> ApiResult<(StatusCode, Json<PeriodoModuloRespuesta>)> {
+    let periodo = modulos::habilitar_modulo(
+        &state.unidad,
+        &RelojSistema,
+        &op.ctx,
+        TenantId::from_uuid(copropiedad_id),
+        Modulo::try_from(p.modulo.as_str())?,
+        p.desde,
+        p.hasta,
+    )
+    .await?;
+    Ok((
+        StatusCode::CREATED,
+        Json(PeriodoModuloRespuesta {
+            modulo: periodo.modulo,
+            desde: periodo.desde,
+            hasta: periodo.hasta,
+        }),
+    ))
+}
+
+/// Periodos cerrados al terminar un módulo.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ModuloTerminadoRespuesta {
+    /// Cuántos periodos abiertos se cerraron (0 si el módulo no estaba habilitado).
+    pub terminados: u64,
+}
+
+/// Termina un módulo en una copropiedad desde ahora; el historial de periodos se conserva.
+#[utoipa::path(
+    delete,
+    path = "/copropiedades/{copropiedad_id}/modulos/{modulo}",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    params(
+        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("modulo" = crate::esquemas::Modulo, Path, description = "Módulo"),
+    ),
+    responses(
+        (status = OK, description = "Módulo terminado", body = ModuloTerminadoRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.modulos.gestionar`", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Módulo desconocido (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn terminar_modulo(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Path((copropiedad_id, modulo)): Path<(Uuid, String)>,
+) -> ApiResult<Json<ModuloTerminadoRespuesta>> {
+    let terminados = modulos::terminar_modulo(
+        &state.unidad,
+        &RelojSistema,
+        &op.ctx,
+        TenantId::from_uuid(copropiedad_id),
+        Modulo::try_from(modulo.as_str())?,
+    )
+    .await?;
+    Ok(Json(ModuloTerminadoRespuesta { terminados }))
 }
 
 /// Roles de plataforma (plantillas y propios).

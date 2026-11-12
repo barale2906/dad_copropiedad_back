@@ -56,6 +56,7 @@ apps/
   api/             binario `dad_copropiedad_api`: REST para el front + WebSocket de resultados
   gateway/         binario `dad_copropiedad_gateway`: webhook WhatsApp (visitas, asamblea y chat), acuses, outbox (correo, WhatsApp, push), limitador 80 mps, workers (incl. publicidad masiva)
   puente-acceso/   binario `dad_puente_acceso`: equipo en sitio de la PH (cache de credenciales, decisión sin internet, cola de eventos)
+  carga/           binario `dad_carga`: prueba de carga por HTTP (siembra y escenario de varias PH); herramienta de operación, no va en la imagen de producción
 migrations/        migraciones SQLx reversibles (*.up.sql / *.down.sql)
 docker/            scripts de inicialización de PostgreSQL para desarrollo
 ```
@@ -67,7 +68,7 @@ domain  ←  application  ←  infra-*  ←  apps/*
 - `domain`: no depende de ningún crate interno ni de Tokio/SQLx/Axum/HTTP.
 - `application`: solo de `domain`. Define los puertos; no conoce SQL, HTTP ni WhatsApp.
 - `infra-*`: implementan puertos de `application`. Nunca dependen de `apps/*` ni entre sí.
-- `apps/*`: raíz de composición (conectan adaptadores con casos de uso). Handlers sin reglas de negocio.
+- `apps/*`: raíz de composición (conectan adaptadores con casos de uso). Handlers sin reglas de negocio. `apps/carga` es la excepción: herramienta de operación que solo habla HTTP con la API (no usa los crates de negocio).
 - ¿Dónde va el código? Regla de negocio → `domain`. Orquestación / "qué pasa cuando…" → `application`.
   Tecnología concreta → `infra-*`. Traducción HTTP/webhook ↔ caso de uso → `apps/*`.
 - `gateway` hace de worker al comienzo (envíos y actas); se separa solo si la carga lo pide.
@@ -111,10 +112,11 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Limitador | Propios, sin crate (`apps/gateway/src/mensajeria.rs` · `apps/api/src/limite.rs`) | En uso | 80 mensajes/s por línea de WhatsApp. API: ventana fija de un minuto por IP en los grupos `auth` y `publico` (extractores `LimiteAuth` / `LimitePublico`), 429 `demasiadas_peticiones` con `Retry-After`; IP de `X-Real-IP` solo con `CONFIAR_PROXY=true` (ADR 0012). Con varias instancias, `limit_req` de Nginx. |
 | OpenAPI | utoipa 6 + utoipa-axum + utoipa-scalar | En uso | Rutas registradas con `routes!` (contrato = rutas servidas). UI en `/docs` solo con `API_DOCS_HABILITADA=true`. Contrato versionado en `apps/api/openapi.json` (§7). |
 | Actas, rótulos, libros y QR | Typst 0.15 (`typst`, `typst-pdf`, `typst-layout`, `typst-assets` con fuentes embebidas) · `qrcode` 0.14 (sin extras) · `png` 0.18 | En uso | Crate `infra-pdf`: puerto `GeneradorImagenQr` (`GeneradorQrPng`: QR de las visitas en PNG que el chat envía como imagen con un enlace firmado de una hora) y puerto `GeneradorActas`: plantillas en `crates/infra-pdf/plantillas/` (acta, rótulos y tabla de los libros del censo), datos ya calculados como `datos.json`; Code 128 propio para los rótulos. Arrastra avisos RustSec transitivos: excepciones documentadas en `deny.toml` (revisar al actualizar Typst). |
-| Contenedores | Docker Compose · `Dockerfile` multi-stage | En uso | `docker-compose.yml` (desarrollo) y `docker-compose.prod.yml` (referencia del VPS: postgres, `migracion`, api, gateway). Imagen `rust:1.99-slim-bookworm` → `debian:bookworm-slim`, usuario no root, `tini`. |
+| Contenedores | Docker Compose · `Dockerfile` multi-stage | En uso | `docker-compose.yml` (desarrollo) y `docker-compose.prod.yml` (referencia del VPS: postgres ajustado por RAM con `PG_*`, `migracion`, api, gateway, límites de memoria y pools por variable). Imagen `rust:1.99-slim-bookworm` → `debian:bookworm-slim`, usuario no root, `tini`. Etapa opcional `--target carga` con `dad_carga`. |
 | CI/CD | GitHub Actions · GHCR | En uso | `.github/workflows/ci.yml`: fmt, clippy, pruebas con PostgreSQL, rustdoc, cargo-deny y job `imagen` (construye en cada PR; publica `ghcr.io/…:sha-<commit>` en `main`). El despliegue al VPS es manual con `docs/despliegue.md`. |
 | Despliegue | VPS Ubuntu + Nginx (HestiaCP) + Docker Compose | En uso | Guía en `docs/despliegue.md`: Nginx con TLS y `X-Real-IP`, migraciones como paso explícito (`dad_admin migrar`), respaldos. |
 | Calidad | rustfmt · clippy · nextest · llvm-cov · cargo-deny · cargo-audit · bacon | En uso | |
+| Prueba de carga | `apps/carga` (`dad_carga`, Rust + reqwest) | En uso | Solo HTTP contra un entorno de prueba (nunca producción): siembra N PH por la API y mide navegación y votación simultáneas (p50/p95/p99). Guía en `docs/despliegue.md` §9. |
 | Frontend (otro repo) | Vue 3 + TypeScript (Angular posible) | Externo | Consume el OpenAPI y genera su cliente tipado. |
 | Apps móviles (otro repo) | Flutter (Android + iOS) | Previsto | Mismo contrato OpenAPI que la web; push con FCM: registran el token en `/api/v1/yo/dispositivos-push`. |
 | IA / analítica (futuro) | Python | Externo | Servicios aparte; integración por API/eventos, nunca tablas compartidas. |
@@ -287,6 +289,7 @@ Una tarea está terminada solo si:
 | Ejecutar | `make api` · `make gateway` · `make dev` | `cargo api` · `cargo gateway` · `cargo puente` (puente de acceso; `PUENTE_*`) · `bacon` |
 | Primer superusuario | `make superusuario USUARIO=admin CORREO=a@b.co` | `DAD_ADMIN_CONTRASENA=… cargo run --bin dad_admin -- crear-superusuario --usuario admin` |
 | Migrar en producción | `docker compose -f docker-compose.prod.yml run --rm migracion` | `dad_admin migrar` (dueño en `DATABASE_URL`) |
+| Prueba de carga | — | `docker build --target carga -t dad_carga .` · `dad_carga sembrar …` / `dad_carga ejecutar …` (`docs/despliegue.md` §9) |
 | Revertir en producción | `docker compose -f docker-compose.prod.yml run --rm migracion dad_admin revertir --hasta <versión> --confirmar` | Tras un respaldo; ver `docs/despliegue.md` §5 |
 | Imagen de producción | — | `docker build -t dad_copropiedad:local .` |
 | Verificación completa | `make verificar` | `cargo fmt --all --check && cargo lint && cargo pruebas` |

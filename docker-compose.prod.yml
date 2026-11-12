@@ -17,10 +17,38 @@ x-app: &app
   volumes:
     - archivos:/app/datos/archivos
 
+# Los valores por defecto corresponden a un VPS de 4 GB compartido con HestiaCP. Para otro
+# tamaño, ajústelos en .env.produccion con la tabla de docs/despliegue.md §9.
 services:
   postgres:
     image: postgres:18-alpine
     restart: unless-stopped
+    # PostgreSQL de fábrica está pensado para una máquina mínima (128 MB de caché): se ajusta
+    # a la RAM disponible. `max_connections` cubre los pools de la API y el gateway, los
+    # comandos de `dad_admin` y un margen para psql y los respaldos.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-512MB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-1536MB}
+      - -c
+      - work_mem=${PG_WORK_MEM:-8MB}
+      - -c
+      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-128MB}
+      - -c
+      - max_connections=${PG_MAX_CONNECTIONS:-60}
+      - -c
+      - random_page_cost=1.1
+      - -c
+      - effective_io_concurrency=200
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - log_min_duration_statement=${PG_LOG_CONSULTAS_LENTAS_MS:-500}
+    # Memoria compartida para las consultas paralelas (Docker da 64 MB por defecto).
+    shm_size: ${PG_SHM_SIZE:-256mb}
+    mem_limit: ${LIMITE_MEMORIA_POSTGRES:-1536m}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
@@ -46,14 +74,21 @@ services:
   api:
     <<: *app
     command: ["dad_copropiedad_api"]
+    # El pool se comparte entre todas las copropiedades; sobreescribe el de .env.produccion.
+    environment:
+      DATABASE_MAX_CONNECTIONS: ${API_DB_CONEXIONES:-30}
+    mem_limit: ${LIMITE_MEMORIA_API:-512m}
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${API_PUERTO:-8080}:8080"
 
   gateway:
     <<: *app
     command: ["dad_copropiedad_gateway"]
+    environment:
+      DATABASE_MAX_CONNECTIONS: ${GATEWAY_DB_CONEXIONES:-15}
+    mem_limit: ${LIMITE_MEMORIA_GATEWAY:-512m}
     ports:
-      - "127.0.0.1:8081:8081"
+      - "127.0.0.1:${GATEWAY_PUERTO:-8081}:8081"
 
 volumes:
   pg_data:

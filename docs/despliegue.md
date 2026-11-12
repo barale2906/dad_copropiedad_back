@@ -158,3 +158,94 @@ publica a internet (solo lo ven la API, el gateway y `migracion` por la red inte
 - Logs JSON sin errores de arranque; el gateway informa los canales activos (correo, WhatsApp,
   push) y los workers iniciados.
 - Un inicio de sesión de prueba y, si se tocó el módulo, una visita anunciada de prueba.
+
+## 9. Rendimiento y prueba de carga
+
+### Qué determina la velocidad
+
+Docker no es el límite: los binarios corren nativos y los volúmenes escriben directo al disco.
+Lo que pesa, con varias copropiedades en el mismo servidor, es lo que todas comparten:
+
+1. **PostgreSQL**: `docker-compose.prod.yml` lo ajusta a la RAM con las variables `PG_*`
+   (de fábrica usa 128 MB de caché, pensado para una máquina mínima).
+2. **Pools de conexiones**: `API_DB_CONEXIONES` y `GATEWAY_DB_CONEXIONES` se reparten entre
+   **todas** las PH; con varias asambleas a la vez, un pool pequeño hace esperar turno.
+3. **Memoria compartida con HestiaCP**: Nginx, PHP, correo y, si están activos, ClamAV y
+   SpamAssassin consumen RAM. Los `LIMITE_MEMORIA_*` evitan que un pico de uno le quite memoria
+   a PostgreSQL.
+
+### Valores por tamaño del VPS
+
+Suponen HestiaCP en la misma máquina (reserva ~1,5 GB para el panel y sus servicios). Se
+definen en `.env.produccion`; lo que no se defina toma la columna de 4 GB.
+
+| Variable | 4 GB | 8 GB | 16 GB |
+|---|---|---|---|
+| `PG_SHARED_BUFFERS` | 512MB | 1GB | 2GB |
+| `PG_EFFECTIVE_CACHE_SIZE` | 1536MB | 3GB | 7GB |
+| `PG_WORK_MEM` | 8MB | 16MB | 16MB |
+| `PG_MAINTENANCE_WORK_MEM` | 128MB | 256MB | 512MB |
+| `PG_MAX_CONNECTIONS` | 60 | 80 | 120 |
+| `API_DB_CONEXIONES` | 30 | 40 | 60 |
+| `GATEWAY_DB_CONEXIONES` | 15 | 20 | 30 |
+| `LIMITE_MEMORIA_POSTGRES` | 1536m | 3g | 6g |
+| `LIMITE_MEMORIA_API` / `_GATEWAY` | 512m | 768m | 1g |
+
+`PG_MAX_CONNECTIONS` debe ser mayor que la suma de los dos pools más un margen para
+`dad_admin`, `psql` y los respaldos. `PG_LOG_CONSULTAS_LENTAS_MS` (500 por defecto) deja en el
+log de PostgreSQL las consultas lentas: es lo primero que se revisa si una operación se degrada.
+Los valores son un punto de partida: los confirma la prueba de carga.
+
+Ajuste opcional del host: con `"userland-proxy": false` en `/etc/docker/daemon.json`, Docker
+deja de pasar el tráfico Nginx → API por un proceso intermedio (ahorra decenas de microsegundos
+por petición). Exige reiniciar Docker: hágalo en una ventana de mantenimiento.
+
+### Prueba de carga (`dad_carga`)
+
+Mide cuántas copropiedades aguanta el servidor operando a la vez: en cada una, varias sesiones
+navegan (capacidades, bienes, tablero y quórum de la asamblea) mientras **todas** las asambleas
+votan al mismo tiempo. Informa p50, p95, p99, máximo, peticiones por segundo y errores por
+operación, y falla si se registran menos votos que asistentes o si los errores superan el tope.
+
+**Nunca contra producción**: la siembra crea copropiedades, cuentas y votos que no se pueden
+borrar (la auditoría y los votos son append-only). Se usa un entorno de prueba aislado, con
+la misma configuración, en un VPS igual o en el mismo VPS **antes de salir a producción** (o en
+una ventana de mantenimiento: la prueba compite por los mismos recursos).
+
+```bash
+# 1. Local: la herramienta en una imagen con la misma base que producción
+docker build --target carga -t dad_carga .
+docker save dad_carga | ssh usuario@vps docker load
+
+# 2. VPS: entorno de prueba aparte (otro proyecto, otros volúmenes, otros puertos). Sin gateway:
+#    no se envía nada. .env.carga es una copia de .env.produccion con API_PUERTO=18080,
+#    GATEWAY_PUERTO=18081 y LIMITE_AUTH_POR_MINUTO=0.
+alias dcc='docker compose -p dad_carga -f docker-compose.prod.yml --env-file .env.carga'
+dcc up -d postgres && dcc run --rm migracion && dcc up -d api
+read -rs -p "Contraseña del superusuario de prueba: " CARGA_ROOT_CONTRASENA; echo
+export CARGA_ROOT_CONTRASENA CARGA_ROOT_USUARIO=carga_root CARGA_CONTRASENA="$CARGA_ROOT_CONTRASENA"
+DAD_ADMIN_CONTRASENA="$CARGA_ROOT_CONTRASENA" dcc run --rm -e DAD_ADMIN_CONTRASENA api \
+  dad_admin crear-superusuario --usuario carga_root --nombre "Prueba de carga"
+
+# 3. Sembrar (una vez) y ejecutar (las veces que quiera)
+mkdir -p ~/carga && chmod 777 ~/carga
+correr() { docker run --rm --network host -v ~/carga:/carga \
+  -e CARGA_CONTRASENA -e CARGA_ROOT_USUARIO -e CARGA_ROOT_CONTRASENA -e CARGA_ROOT_TOTP dad_carga "$@"; }
+correr sembrar --api http://127.0.0.1:18080 --copropiedades 20 --bienes 300 --plan plan.json
+correr ejecutar --api http://127.0.0.1:18080 --plan plan.json \
+  --duracion 120 --usuarios 5 --concurrencia-votos 10 --salida informe.json
+
+# 4. Al terminar: borrar el entorno de prueba con sus volúmenes
+dcc down -v
+```
+
+Parámetros de `ejecutar`: `--duracion` (s), `--usuarios` (sesiones navegando por PH),
+`--pausa-ms` (pausa de cada sesión entre peticiones; 300), `--concurrencia-votos` (puestos de
+la mesa votando a la vez por PH), `--inicio-votacion` (s) y `--max-errores-por-mil` (10).
+Cada ejecución abre su propia pregunta y la cierra al terminar, así que se puede repetir sobre
+la misma siembra variando la carga.
+
+**Cómo leer el resultado.** Suba el número de copropiedades o de usuarios hasta que el p95 de
+`votar` o de `tablero` supere lo aceptable (orientativo: 500 ms) o aparezcan errores; esa es la
+capacidad del servidor con esa configuración. Si la CPU de PostgreSQL llega al tope, ajuste
+`PG_*` o aumente núcleos; si las peticiones esperan con la base ociosa, suba los pools.

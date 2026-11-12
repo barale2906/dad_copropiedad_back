@@ -23,6 +23,8 @@ infra-archivos = { path = "crates/infra-archivos" }
 infra-seguridad = { path = "crates/infra-seguridad" }
 infra-planillas = { path = "crates/infra-planillas" }
 infra-push = { path = "crates/infra-push" }
+# Solo para las pruebas de `apps/carga`, que levantan el router real de la API.
+api = { path = "apps/api" }
 
 # HTTP / async
 axum = { version = "0.8.9", features = ["macros", "ws"] }

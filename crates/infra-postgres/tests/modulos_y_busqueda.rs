@@ -2,7 +2,7 @@
 //! `dad_app`.
 
 use application::{
-    AppError, Contexto,
+    AppError, Contexto, ContextoPlataforma,
     casos_uso::modulos::{exigir_modulo, habilitar_modulo, terminar_modulo},
     puertos::RelojSistema,
 };
@@ -24,9 +24,17 @@ async fn modulo_habilitado_solo_en_su_copropiedad_y_hasta_terminarlo(pool: PgPoo
         exigir_modulo(&unidad, &RelojSistema, &ctx, Modulo::Asambleas).await,
         Err(AppError::ModuloNoHabilitado(Modulo::Asambleas))
     ));
-    habilitar_modulo(&unidad, &RelojSistema, &ctx, Modulo::Asambleas, None, None)
-        .await
-        .expect("habilita");
+    habilitar_modulo(
+        &unidad,
+        &RelojSistema,
+        &ContextoPlataforma::sistema(),
+        tenant,
+        Modulo::Asambleas,
+        None,
+        None,
+    )
+    .await
+    .expect("habilita");
     exigir_modulo(&unidad, &RelojSistema, &ctx, Modulo::Asambleas)
         .await
         .expect("habilitado");
@@ -37,9 +45,15 @@ async fn modulo_habilitado_solo_en_su_copropiedad_y_hasta_terminarlo(pool: PgPoo
         "RLS: otra copropiedad no lo tiene"
     );
 
-    let terminados = terminar_modulo(&unidad, &RelojSistema, &ctx, Modulo::Asambleas)
-        .await
-        .expect("termina");
+    let terminados = terminar_modulo(
+        &unidad,
+        &RelojSistema,
+        &ContextoPlataforma::sistema(),
+        tenant,
+        Modulo::Asambleas,
+    )
+    .await
+    .expect("termina");
 
     assert_eq!(terminados, 1);
     assert!(
