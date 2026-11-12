@@ -107,19 +107,19 @@ fn categorias(filas: Vec<FilaCategoria>) -> AppResult<Vec<Categoria>> {
     filas.into_iter().map(Categoria::try_from).collect()
 }
 
-struct FilaAnunciante {
-    id: Uuid,
-    organizacion_id: Uuid,
-    nombre_comercial: String,
-    direccion: Option<String>,
-    municipio_dane: Option<String>,
-    latitud: Option<Decimal>,
-    longitud: Option<Decimal>,
-    estado_verificacion: String,
-    motivo_estado: Option<String>,
-    creado_por: Option<Uuid>,
-    creado_en: DateTime<Utc>,
-    actualizado_en: DateTime<Utc>,
+pub(crate) struct FilaAnunciante {
+    pub(crate) id: Uuid,
+    pub(crate) organizacion_id: Uuid,
+    pub(crate) nombre_comercial: String,
+    pub(crate) direccion: Option<String>,
+    pub(crate) municipio_dane: Option<String>,
+    pub(crate) latitud: Option<Decimal>,
+    pub(crate) longitud: Option<Decimal>,
+    pub(crate) estado_verificacion: String,
+    pub(crate) motivo_estado: Option<String>,
+    pub(crate) creado_por: Option<Uuid>,
+    pub(crate) creado_en: DateTime<Utc>,
+    pub(crate) actualizado_en: DateTime<Utc>,
 }
 
 impl TryFrom<FilaAnunciante> for Anunciante {

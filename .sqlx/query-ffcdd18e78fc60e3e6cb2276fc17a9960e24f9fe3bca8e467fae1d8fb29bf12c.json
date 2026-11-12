@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO enlaces_directorio (tenant_id, token_hash, creado_por, creado_en)\n             VALUES ($1, $2, $3, $4)\n             ON CONFLICT (tenant_id) DO UPDATE\n                 SET token_hash = EXCLUDED.token_hash, creado_por = EXCLUDED.creado_por,\n                     creado_en = EXCLUDED.creado_en",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bytea",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ffcdd18e78fc60e3e6cb2276fc17a9960e24f9fe3bca8e467fae1d8fb29bf12c"
+}

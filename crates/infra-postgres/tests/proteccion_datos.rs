@@ -69,7 +69,7 @@ async fn autorizar_revocar_y_consultar_sobre_postgres(pool: PgPool) {
         &unidad,
         &RelojSistema,
         &ctx,
-        otorgada(persona, &[Comunicaciones, Publicidad]),
+        otorgada(persona, &[Comunicaciones, ControlAcceso]),
     )
     .await
     .expect("autoriza");
@@ -77,15 +77,15 @@ async fn autorizar_revocar_y_consultar_sobre_postgres(pool: PgPool) {
         &unidad,
         &RelojSistema,
         &ctx,
-        otorgada(persona, &[Publicidad]),
+        otorgada(persona, &[ControlAcceso]),
     )
     .await
     .expect("autoriza");
-    let revocadas = revocar_autorizacion(&unidad, &RelojSistema, &ctx, persona, &[Publicidad])
+    let revocadas = revocar_autorizacion(&unidad, &RelojSistema, &ctx, persona, &[ControlAcceso])
         .await
         .expect("revoca");
 
-    assert_eq!(nuevas, vec![Comunicaciones, Publicidad]);
+    assert_eq!(nuevas, vec![Comunicaciones, ControlAcceso]);
     assert!(repetidas.is_empty(), "no duplica una vigente");
     assert_eq!(revocadas, 1);
     assert!(
@@ -94,7 +94,7 @@ async fn autorizar_revocar_y_consultar_sobre_postgres(pool: PgPool) {
             .expect("consulta")
     );
     assert!(
-        !esta_autorizado(&unidad, &ctx, persona, Publicidad)
+        !esta_autorizado(&unidad, &ctx, persona, ControlAcceso)
             .await
             .expect("consulta")
     );
@@ -213,7 +213,8 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('solicitudes_titular', 'respuesta'), ('respuestas_censo', 'detalle'), ('peticiones_idempotentes', 'cuerpo'),
                ('anunciantes', 'direccion'), ('fichas_directorio', 'telefono'),
                ('fichas_directorio', 'whatsapp'), ('fichas_directorio', 'correo'),
-               ('resenas', 'texto'), ('reportes_resena', 'motivo'))
+               ('resenas', 'texto'), ('reportes_resena', 'motivo'),
+               ('solicitudes_proveedor', 'texto'), ('reportes_publicidad', 'motivo'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

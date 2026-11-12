@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO outbox (tenant_id, canal, prioridad, linea, destino, payload, concepto,\n                                 campana_id)\n             VALUES ($1, $2, $3, $4, $5, $6, 'publicidad', $7)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int2",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f70ab7297bede8cd456f7e168c546e9caf1bae2de830d5a8dd58e134ed4c32c4"
+}

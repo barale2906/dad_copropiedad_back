@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT dia, canal, sum(impresiones)::bigint AS \"impresiones!\",\n                      sum(clics)::bigint AS \"clics!\", sum(redenciones)::bigint AS \"redenciones!\",\n                      sum(costo) AS \"costo!\"\n               FROM entregas_publicidad WHERE campana_id = $1\n               GROUP BY dia, canal ORDER BY dia, canal",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "dia",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "entregas_publicidad",
+            "name": "dia"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "canal",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entregas_publicidad",
+            "name": "canal"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "impresiones!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "clics!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "redenciones!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "costo!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "10b2889554b8feb9a6167a1b221f66e68cf1055e703e33f1405af64726787c38"
+}

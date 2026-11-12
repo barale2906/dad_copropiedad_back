@@ -68,6 +68,8 @@ catalogo_permisos! {
     PlataformaModulosGestionar => "plataforma.modulos.gestionar", Plataforma;
     PlataformaAuditoriaVer => "plataforma.auditoria.ver", Plataforma;
     PlataformaPublicidadModerar => "plataforma.publicidad.moderar", Plataforma;
+    /// Tarifas de la pauta, política de publicidad de la plataforma y liquidaciones.
+    PlataformaPublicidadLiquidar => "plataforma.publicidad.liquidar", Plataforma;
     /// Dar de alta anunciantes del directorio, editar sus fichas y el catálogo de categorías.
     PlataformaDirectorioGestionar => "plataforma.directorio.gestionar", Plataforma;
     PlataformaFacturacionVer => "plataforma.facturacion.ver", Plataforma;
@@ -190,6 +192,8 @@ catalogo_permisos! {
     DirectorioVer => "directorio.ver", Copropiedad;
     /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
     DirectorioResenar => "directorio.resenar", Copropiedad;
+    /// Generar o revocar el enlace público del directorio para los grupos de WhatsApp.
+    DirectorioCompartir => "directorio.compartir", Copropiedad;
 }
 
 impl TryFrom<String> for Permiso {
@@ -321,6 +325,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::PlataformaCopropiedadesVer,
             P::PlataformaModulosGestionar,
             P::PlataformaDirectorioGestionar,
+            P::PlataformaPublicidadLiquidar,
         ]),
     },
     RolPlantilla {
@@ -336,7 +341,11 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
         codigo: "facturacion",
         nombre: "Facturación",
         ambito: Ambito::Plataforma,
-        permisos: Some(&[P::PlataformaCopropiedadesVer, P::PlataformaFacturacionVer]),
+        permisos: Some(&[
+            P::PlataformaCopropiedadesVer,
+            P::PlataformaFacturacionVer,
+            P::PlataformaPublicidadLiquidar,
+        ]),
     },
     RolPlantilla {
         codigo: CODIGO_ADMINISTRADOR,
@@ -383,6 +392,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AccesoBitacoraVer,
             P::ComunicadosGestionar,
             P::DirectorioVer,
+            P::DirectorioCompartir,
         ]),
     },
     RolPlantilla {

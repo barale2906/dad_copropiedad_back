@@ -79,7 +79,7 @@ fn codigos(v: &[CodigoCategoria]) -> Vec<String> {
 
 /// Categoría del catálogo.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct CategoriaRespuesta {
+pub struct CategoriaDirectorioRespuesta {
     #[schema(example = "costura")]
     pub codigo: String,
     /// Rama; `null` si es una rama.
@@ -94,7 +94,7 @@ pub struct CategoriaRespuesta {
     pub activa: bool,
 }
 
-impl From<Categoria> for CategoriaRespuesta {
+impl From<Categoria> for CategoriaDirectorioRespuesta {
     fn from(c: Categoria) -> Self {
         Self {
             codigo: c.codigo.as_str().to_owned(),
@@ -109,7 +109,7 @@ impl From<Categoria> for CategoriaRespuesta {
 
 /// Contacto publicado por el anunciante.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ContactoRespuesta {
+pub struct ContactoFichaRespuesta {
     #[schema(example = "573001234567")]
     pub telefono: Option<String>,
     #[schema(example = "573001234567")]
@@ -119,7 +119,7 @@ pub struct ContactoRespuesta {
     pub sitio_web: Option<String>,
 }
 
-impl From<Contacto> for ContactoRespuesta {
+impl From<Contacto> for ContactoFichaRespuesta {
     fn from(c: Contacto) -> Self {
         Self {
             telefono: texto_opcional(c.telefono.as_ref(), Telefono::as_str),
@@ -144,7 +144,7 @@ pub struct FichaDirectorioRespuesta {
     /// Códigos de categoría; el primero es el principal.
     #[schema(example = json!(["costura"]))]
     pub categorias: Vec<String>,
-    pub contacto: ContactoRespuesta,
+    pub contacto: ContactoFichaRespuesta,
     #[schema(example = "Lunes a sábado de 8 a. m. a 6 p. m.")]
     pub horario: Option<String>,
     pub direccion: Option<String>,
@@ -193,7 +193,7 @@ pub struct FiltroDirectorioQuery {
     pub q: Option<String>,
 }
 
-fn categoria(v: Option<&str>) -> Result<Option<CodigoCategoria>, ApiError> {
+pub(super) fn categoria(v: Option<&str>) -> Result<Option<CodigoCategoria>, ApiError> {
     Ok(v.map(CodigoCategoria::new).transpose()?)
 }
 
@@ -270,14 +270,14 @@ pub async fn destacadas(
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
-        (status = OK, description = "Categorías", body = Vec<CategoriaRespuesta>),
+        (status = OK, description = "Categorías", body = Vec<CategoriaDirectorioRespuesta>),
         (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn categorias(
     State(state): State<AppState>,
     en: EnCopropiedad,
-) -> ApiResult<Json<Vec<CategoriaRespuesta>>> {
+) -> ApiResult<Json<Vec<CategoriaDirectorioRespuesta>>> {
     let v = uc::categorias_directorio(&state.unidad, &en.ctx).await?;
     Ok(Json(v.into_iter().map(Into::into).collect()))
 }
@@ -422,7 +422,7 @@ pub async fn resenar(
 
 /// Motivo del reporte.
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct ReportePeticion {
+pub struct ReporteResenaPeticion {
     /// Hasta 500 caracteres.
     #[schema(example = "Lenguaje ofensivo")]
     pub motivo: String,
@@ -430,7 +430,7 @@ pub struct ReportePeticion {
 
 /// Resultado del reporte.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ReporteRespuesta {
+pub struct ReporteResenaRespuesta {
     /// `false` si ya la había reportado.
     pub nuevo: bool,
 }
@@ -445,9 +445,9 @@ pub struct ReporteRespuesta {
         ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
         ("resena_id" = Uuid, Path, description = "Reseña"),
     ),
-    request_body = ReportePeticion,
+    request_body = ReporteResenaPeticion,
     responses(
-        (status = OK, description = "Reporte registrado", body = ReporteRespuesta),
+        (status = OK, description = "Reporte registrado", body = ReporteResenaRespuesta),
         (status = NOT_FOUND, description = "La reseña no existe o ya está oculta", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin motivo (`validacion`)", body = ErrorRespuesta),
     )
@@ -456,8 +456,8 @@ pub async fn reportar(
     State(state): State<AppState>,
     en: EnCopropiedad,
     Path(ruta): Path<(Uuid, Uuid)>,
-    Json(p): Json<ReportePeticion>,
-) -> ApiResult<Json<ReporteRespuesta>> {
+    Json(p): Json<ReporteResenaPeticion>,
+) -> ApiResult<Json<ReporteResenaRespuesta>> {
     let nuevo = uc::reportar_resena(
         &state.unidad,
         &RelojSistema,
@@ -466,7 +466,7 @@ pub async fn reportar(
         &p.motivo,
     )
     .await?;
-    Ok(Json(ReporteRespuesta { nuevo }))
+    Ok(Json(ReporteResenaRespuesta { nuevo }))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -480,21 +480,21 @@ pub async fn reportar(
     tag = ETIQUETA_DIRECTORIO,
     security(("bearer" = [])),
     responses(
-        (status = OK, description = "Catálogo", body = Vec<CategoriaRespuesta>),
+        (status = OK, description = "Catálogo", body = Vec<CategoriaDirectorioRespuesta>),
         (status = FORBIDDEN, description = "Sin `plataforma.directorio.gestionar`", body = ErrorRespuesta),
     )
 )]
 pub async fn categorias_plataforma(
     State(state): State<AppState>,
     OperadorPlataforma(op): OperadorPlataforma,
-) -> ApiResult<Json<Vec<CategoriaRespuesta>>> {
+) -> ApiResult<Json<Vec<CategoriaDirectorioRespuesta>>> {
     let v = uc::categorias_plataforma(&state.plataforma, &op.ctx).await?;
     Ok(Json(v.into_iter().map(Into::into).collect()))
 }
 
 /// Datos de una categoría.
 #[derive(Debug, Deserialize, ToSchema)]
-pub struct CategoriaPeticion {
+pub struct CategoriaDirectorioPeticion {
     /// Rama (debe ser una categoría sin rama); se omite para crear una rama.
     #[schema(example = "oficios")]
     pub padre: Option<String>,
@@ -516,9 +516,9 @@ pub struct CategoriaPeticion {
     tag = ETIQUETA_DIRECTORIO,
     security(("bearer" = [])),
     params(("codigo" = String, Path, description = "Código (a-z, 0-9, _)", example = "costura")),
-    request_body = CategoriaPeticion,
+    request_body = CategoriaDirectorioPeticion,
     responses(
-        (status = OK, description = "Categoría guardada", body = CategoriaRespuesta),
+        (status = OK, description = "Categoría guardada", body = CategoriaDirectorioRespuesta),
         (status = FORBIDDEN, description = "Sin `plataforma.directorio.gestionar`", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos o rama que no existe (`validacion`)", body = ErrorRespuesta),
     )
@@ -527,8 +527,8 @@ pub async fn guardar_categoria(
     State(state): State<AppState>,
     OperadorPlataforma(op): OperadorPlataforma,
     Path(codigo): Path<String>,
-    Json(p): Json<CategoriaPeticion>,
-) -> ApiResult<Json<CategoriaRespuesta>> {
+    Json(p): Json<CategoriaDirectorioPeticion>,
+) -> ApiResult<Json<CategoriaDirectorioRespuesta>> {
     let c = Categoria {
         codigo: CodigoCategoria::new(&codigo)?,
         padre: categoria(p.padre.as_deref())?,
@@ -550,7 +550,7 @@ pub async fn guardar_categoria(
 
 /// Ficha completa del anunciante (vista de la plataforma).
 #[derive(Debug, Serialize, ToSchema)]
-pub struct FichaRespuesta {
+pub struct FichaAnuncianteRespuesta {
     pub descripcion: Option<String>,
     #[schema(example = json!(["costura", "belleza_domicilio"]))]
     pub categorias: Vec<String>,
@@ -559,14 +559,14 @@ pub struct FichaRespuesta {
     pub cobertura: String,
     #[schema(example = 3)]
     pub radio_km: Option<u16>,
-    pub contacto: ContactoRespuesta,
+    pub contacto: ContactoFichaRespuesta,
     pub horario: Option<String>,
     pub destacada_hasta: Option<DateTime<Utc>>,
     pub publicada: bool,
     pub actualizada_en: DateTime<Utc>,
 }
 
-impl From<Ficha> for FichaRespuesta {
+impl From<Ficha> for FichaAnuncianteRespuesta {
     fn from(f: Ficha) -> Self {
         Self {
             descripcion: f.descripcion,
@@ -602,10 +602,10 @@ pub struct AnuncianteRespuesta {
     pub creado_en: DateTime<Utc>,
     pub actualizado_en: DateTime<Utc>,
     /// `null` si todavía no tiene ficha.
-    pub ficha: Option<FichaRespuesta>,
+    pub ficha: Option<FichaAnuncianteRespuesta>,
 }
 
-fn anunciante_respuesta(a: Anunciante, ficha: Option<Ficha>) -> AnuncianteRespuesta {
+pub(super) fn anunciante_respuesta(a: Anunciante, ficha: Option<Ficha>) -> AnuncianteRespuesta {
     let c = a.ubicacion.coordenadas;
     AnuncianteRespuesta {
         id: a.id.as_uuid(),
@@ -873,7 +873,7 @@ impl TryFrom<FichaPeticion> for DatosFicha {
     params(("anunciante_id" = Uuid, Path, description = "Anunciante")),
     request_body = FichaPeticion,
     responses(
-        (status = OK, description = "Ficha guardada", body = FichaRespuesta),
+        (status = OK, description = "Ficha guardada", body = FichaAnuncianteRespuesta),
         (status = FORBIDDEN, description = "Sin `plataforma.directorio.gestionar`", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "El anunciante no existe", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Categoría restringida o inexistente, cobertura imposible o datos inválidos (`validacion`)", body = ErrorRespuesta),
@@ -884,7 +884,7 @@ pub async fn guardar_ficha(
     OperadorPlataforma(op): OperadorPlataforma,
     Path(id): Path<Uuid>,
     Json(p): Json<FichaPeticion>,
-) -> ApiResult<Json<FichaRespuesta>> {
+) -> ApiResult<Json<FichaAnuncianteRespuesta>> {
     let f = uc::guardar_ficha(
         &state.plataforma,
         &RelojSistema,

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT valor FROM tarifas_whatsapp\n             WHERE pais = 'CO' AND categoria = 'marketing' AND moneda = 'COP'\n               AND vigente_desde <= $1\n             ORDER BY vigente_desde DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tarifas_whatsapp",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8cbb699a5480da9f8fcde7179a40057fc28bb9c102e6276b33f6388456218a2d"
+}

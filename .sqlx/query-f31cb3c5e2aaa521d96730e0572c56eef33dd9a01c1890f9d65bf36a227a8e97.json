@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO liquidaciones (id, anunciante_id, periodo, variable, fijos, leads,\n                 valor_leads, valor, costo_whatsapp, estado, calculada_en, actualizada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n             ON CONFLICT (anunciante_id, periodo) DO UPDATE\n                 SET variable = EXCLUDED.variable, fijos = EXCLUDED.fijos,\n                     leads = EXCLUDED.leads, valor_leads = EXCLUDED.valor_leads,\n                     valor = EXCLUDED.valor, costo_whatsapp = EXCLUDED.costo_whatsapp,\n                     estado = EXCLUDED.estado, actualizada_en = EXCLUDED.actualizada_en",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Numeric",
+        "Numeric",
+        "Int4",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f31cb3c5e2aaa521d96730e0572c56eef33dd9a01c1890f9d65bf36a227a8e97"
+}

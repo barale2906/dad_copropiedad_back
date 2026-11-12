@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT aplicar_entrega_publicidad($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "aplicar_entrega_publicidad",
+        "type_info": "Void",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Numeric",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "42fa4cff87ccb50375ef80977a09dba2678ed883619b2c4f0458db359913c8e0"
+}

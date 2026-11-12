@@ -1,0 +1,160 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, anunciante_id, periodo, variable, fijos, leads, valor_leads, valor,\n                    costo_whatsapp, estado, calculada_en, actualizada_en\n             FROM liquidaciones WHERE periodo = $1 ORDER BY anunciante_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "anunciante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "anunciante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "periodo",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "periodo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "variable",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "variable"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "fijos",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "fijos"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "leads",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "leads"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "valor_leads",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "valor_leads"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "costo_whatsapp",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "costo_whatsapp"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "calculada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "calculada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "actualizada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "actualizada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f934af6f6189bdf9f4a1934accbb7285820f276f21ba63917b0df14c7e07db99"
+}

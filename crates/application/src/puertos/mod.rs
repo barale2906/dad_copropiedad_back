@@ -21,6 +21,7 @@ pub mod mantenimiento;
 pub mod mensajeria;
 pub mod modulos;
 pub mod proteccion_datos;
+pub mod publicidad;
 pub mod reloj;
 pub mod reservas;
 pub mod sesiones;
@@ -44,7 +45,10 @@ pub use copropiedades::{
     RepositorioImportaciones, RepositorioPersonas, RepositorioTitulares,
 };
 pub use correo::EnvioCorreo;
-pub use directorio::{RepositorioDirectorio, RepositorioDirectorioPlataforma};
+pub use directorio::{
+    PurgaDirectorio, RepositorioDirectorio, RepositorioDirectorioPlataforma,
+    RepositorioSolicitudesProveedor,
+};
 pub use idempotencia::RegistroIdempotencia;
 pub use identidad::{
     HashContrasenas, RepositorioContratos, RepositorioCuentas, RepositorioOrganizaciones,
@@ -55,6 +59,9 @@ pub use mantenimiento::RepositorioMantenimiento;
 pub use mensajeria::Mensajeria;
 pub use modulos::RepositorioModulos;
 pub use proteccion_datos::RepositorioProteccionDatos;
+pub use publicidad::{
+    DirectorioPublicidad, RepositorioPublicidad, RepositorioPublicidadPlataforma,
+};
 pub use reloj::{Reloj, RelojSistema};
 pub use reservas::{DirectorioRecordatorios, RepositorioReservas};
 pub use sesiones::SesionesConversacion;

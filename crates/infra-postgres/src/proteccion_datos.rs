@@ -95,7 +95,7 @@ impl RepositorioProteccionDatos for TransaccionPg {
             a.id.as_uuid(),
             self.ctx.tenant_id.as_uuid(),
             a.persona_id.as_uuid(),
-            a.politica_id.as_uuid(),
+            a.politica_id.map(|p| p.as_uuid()),
             a.finalidad.as_str(),
             a.medio.as_str(),
             a.evidencia_archivo_id.map(ArchivoId::as_uuid),
@@ -194,11 +194,12 @@ impl RepositorioProteccionDatos for TransaccionPg {
         persona_id: PersonaId,
     ) -> AppResult<Vec<AutorizacionRegistrada>> {
         sqlx::query!(
-            "SELECT a.id, a.politica_id, a.finalidad, a.medio, a.evidencia_archivo_id, a.otorgada_en,
-                    a.revocada_en, p.version
+            r#"SELECT a.id, a.politica_id, a.finalidad, a.medio, a.evidencia_archivo_id, a.otorgada_en,
+                    a.revocada_en, coalesce(p.version, pp.version) AS "version!"
              FROM autorizaciones_tratamiento a
-             JOIN politicas_tratamiento p ON p.tenant_id = a.tenant_id AND p.id = a.politica_id
-             WHERE a.persona_id = $1 ORDER BY a.otorgada_en DESC, a.id",
+             LEFT JOIN politicas_tratamiento p ON p.tenant_id = a.tenant_id AND p.id = a.politica_id
+             LEFT JOIN politicas_publicidad pp ON pp.id = a.politica_publicidad_id
+             WHERE a.persona_id = $1 ORDER BY a.otorgada_en DESC, a.id"#,
             persona_id.as_uuid(),
         )
         .fetch_all(&mut *self.tx)
@@ -210,7 +211,7 @@ impl RepositorioProteccionDatos for TransaccionPg {
                 autorizacion: Autorizacion {
                     id: AutorizacionId::from_uuid(f.id),
                     persona_id,
-                    politica_id: PoliticaTratamientoId::from_uuid(f.politica_id),
+                    politica_id: f.politica_id.map(PoliticaTratamientoId::from_uuid),
                     finalidad: FinalidadTratamiento::try_from(f.finalidad.as_str())?,
                     medio: MedioAutorizacion::try_from(f.medio.as_str())?,
                     evidencia_archivo_id: f.evidencia_archivo_id.map(ArchivoId::from_uuid),

@@ -19,6 +19,7 @@ pub(crate) mod asambleas;
 mod auditoria;
 mod auth;
 mod bienes_privados;
+mod busqueda_proveedores;
 mod campanas_censo;
 mod censo;
 mod coeficientes;
@@ -34,6 +35,7 @@ mod organizaciones;
 mod parqueaderos;
 mod plataforma;
 mod proteccion_datos;
+mod publicidad;
 mod reservas;
 mod roles;
 mod tickets;
@@ -133,6 +135,7 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .nest("/archivos", archivos::rutas())
         .nest("/auth", auth::rutas())
         .nest("/organizaciones", organizaciones::rutas_cuenta())
+        .nest("/anunciantes", publicidad::rutas_portal())
         .nest("/permisos", roles::rutas_catalogo())
         .nest(
             &format!("/copropiedades/{{{PARAMETRO_COPROPIEDAD}}}"),

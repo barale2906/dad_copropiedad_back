@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE campanas SET estado = 'finalizada', actualizada_en = $1\n             WHERE estado IN ('aprobada', 'activa', 'pausada') AND fin <= $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b8c7269182c9b65ee537f2cd7f904512559e8c2709ce920a7fa1093318448f83"
+}

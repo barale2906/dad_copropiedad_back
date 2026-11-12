@@ -253,6 +253,17 @@ where
             "indique al menos una finalidad".into(),
         ));
     }
+    // La publicidad es de la plataforma (ADR 0015): la autoriza el titular frente a ella, con
+    // la política de la plataforma; ni la administración ni la política de la PH la cubren.
+    if otorgada
+        .finalidades
+        .contains(&FinalidadTratamiento::Publicidad)
+    {
+        return Err(AppError::Validacion(
+            "la autorización de publicidad la da el titular a la plataforma, no la copropiedad"
+                .into(),
+        ));
+    }
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar(ctx).await?;
     exigir_titular_o_gestion(&mut tx, ctx, otorgada.persona_id).await?;
@@ -265,7 +276,7 @@ where
         let autorizacion = Autorizacion {
             id: AutorizacionId::nuevo(),
             persona_id: otorgada.persona_id,
-            politica_id: politica.id,
+            politica_id: Some(politica.id),
             finalidad,
             medio: otorgada.medio,
             evidencia_archivo_id: otorgada.evidencia_archivo_id,
@@ -766,6 +777,21 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn la_copropiedad_no_autoriza_publicidad_por_el_titular() {
+        let (unidad, ctx) = con_politica().await;
+
+        let r = registrar_autorizacion(
+            &unidad,
+            &RelojFijo,
+            &ctx,
+            otorgada(PersonaId::nuevo(), &[FinalidadTratamiento::Publicidad]),
+        )
+        .await;
+
+        assert!(matches!(r, Err(AppError::Validacion(_))));
+    }
+
+    #[tokio::test]
     async fn autorizacion_por_finalidad_sin_duplicados_y_auditada_sin_datos_personales() {
         let (unidad, ctx) = con_politica().await;
         let persona = PersonaId::nuevo();
@@ -783,21 +809,21 @@ mod tests {
             &unidad,
             &RelojFijo,
             &ctx,
-            otorgada(persona, &[Comunicaciones, Publicidad]),
+            otorgada(persona, &[Comunicaciones, ControlAcceso]),
         )
         .await
         .expect("autoriza");
 
         assert_eq!(primeras, vec![Administracion, Comunicaciones]);
-        assert_eq!(repetidas, vec![Publicidad], "comunicaciones ya estaba");
+        assert_eq!(repetidas, vec![ControlAcceso], "comunicaciones ya estaba");
         assert_eq!(unidad.datos().autorizaciones.len(), 3);
         assert!(
-            esta_autorizado(&unidad, &ctx, persona, Publicidad)
+            esta_autorizado(&unidad, &ctx, persona, ControlAcceso)
                 .await
                 .expect("consulta")
         );
         assert!(
-            !esta_autorizado(&unidad, &ctx, persona, ControlAcceso)
+            !esta_autorizado(&unidad, &ctx, persona, Publicidad)
                 .await
                 .expect("consulta")
         );
@@ -805,7 +831,7 @@ mod tests {
         assert_eq!(ultimo.accion, ACCION_OTORGAR);
         assert_eq!(
             ultimo.detalle.a_json()["finalidades"],
-            serde_json::json!(["publicidad"])
+            serde_json::json!(["control_acceso"])
         );
     }
 
@@ -818,21 +844,21 @@ mod tests {
             &unidad,
             &RelojFijo,
             &ctx,
-            otorgada(persona, &[Comunicaciones, Publicidad]),
+            otorgada(persona, &[Comunicaciones, ControlAcceso]),
         )
         .await
         .expect("autoriza");
 
-        let revocadas = revocar_autorizacion(&unidad, &RelojFijo, &ctx, persona, &[Publicidad])
+        let revocadas = revocar_autorizacion(&unidad, &RelojFijo, &ctx, persona, &[ControlAcceso])
             .await
             .expect("revoca");
-        let otra_vez = revocar_autorizacion(&unidad, &RelojFijo, &ctx, persona, &[Publicidad])
+        let otra_vez = revocar_autorizacion(&unidad, &RelojFijo, &ctx, persona, &[ControlAcceso])
             .await
             .expect("revoca");
 
         assert_eq!((revocadas, otra_vez), (1, 0));
         assert!(
-            !esta_autorizado(&unidad, &ctx, persona, Publicidad)
+            !esta_autorizado(&unidad, &ctx, persona, ControlAcceso)
                 .await
                 .expect("consulta")
         );
@@ -842,11 +868,15 @@ mod tests {
                 .expect("consulta")
         );
         // Se vuelve a autorizar después de revocar: queda una autorización nueva.
-        let nuevas =
-            registrar_autorizacion(&unidad, &RelojFijo, &ctx, otorgada(persona, &[Publicidad]))
-                .await
-                .expect("autoriza");
-        assert_eq!(nuevas, vec![Publicidad]);
+        let nuevas = registrar_autorizacion(
+            &unidad,
+            &RelojFijo,
+            &ctx,
+            otorgada(persona, &[ControlAcceso]),
+        )
+        .await
+        .expect("autoriza");
+        assert_eq!(nuevas, vec![ControlAcceso]);
     }
 
     #[tokio::test]
@@ -927,7 +957,7 @@ mod tests {
                 &unidad,
                 &RelojFijo,
                 &ajeno,
-                otorgada(persona, &[Publicidad]),
+                otorgada(persona, &[ControlAcceso]),
             )
             .await
             .map(|_| ()),

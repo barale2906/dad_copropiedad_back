@@ -1,0 +1,53 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT modelo, valor, vigente_desde FROM tarifas_publicidad\n             WHERE modelo = $1 AND vigente_desde <= $2\n             ORDER BY vigente_desde DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "modelo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tarifas_publicidad",
+            "name": "modelo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tarifas_publicidad",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "tarifas_publicidad",
+            "name": "vigente_desde"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4e1f19bca8a794b5b0e9c19190bbc7d56cb85814ee102663f7367f9fd943a1cb"
+}

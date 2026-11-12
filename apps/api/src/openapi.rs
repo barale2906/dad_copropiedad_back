@@ -55,6 +55,8 @@ pub const ETIQUETA_ACCESO: &str = "acceso";
 pub const ETIQUETA_COMUNICADOS: &str = "comunicados";
 /// Etiqueta del directorio de comercios y servicios (plan 08).
 pub const ETIQUETA_DIRECTORIO: &str = "directorio";
+/// Etiqueta de la publicidad de la plataforma (plan 08, fases 3 a 6).
+pub const ETIQUETA_PUBLICIDAD: &str = "publicidad";
 /// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 
@@ -167,6 +169,11 @@ impl utoipa::Modify for EsquemaBearer {
             consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»"),
         (name = ETIQUETA_AUDITORIA, description = "Consulta de la auditoría de la copropiedad \
             (solo lectura; nunca trae datos personales)"),
+        (name = ETIQUETA_PUBLICIDAD, description = "Publicidad de la plataforma (plan 08): portal \
+            del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en \
+            `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes \
+            solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni \
+            configuran pauta"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
     ),
     modifiers(&EsquemaBearer),

@@ -1,0 +1,232 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,\n                    condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                    plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en\n             FROM creativos WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "campana_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "campana_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "anunciante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "anunciante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "formato",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "formato"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "titulo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "titulo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "texto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "texto"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "boton",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "boton"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "enlace",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "enlace"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "condiciones",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "condiciones"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "es_promocion",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "es_promocion"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "cupon_codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "cupon_codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "cupon_limite",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "cupon_limite"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "cupon_usos",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "cupon_usos"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "plantilla_whatsapp",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "plantilla_whatsapp"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "motivo_estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "motivo_estado"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "actualizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "actualizado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "8cd3a1ab3274a084fc3bc3aed9eae2eb2137735c6d5a4681dbba3d52af38c2f5"
+}

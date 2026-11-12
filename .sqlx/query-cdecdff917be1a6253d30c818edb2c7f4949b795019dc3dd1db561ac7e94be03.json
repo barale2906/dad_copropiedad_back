@@ -1,0 +1,39 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO campanas (id, anunciante_id, nombre, objetivo, categoria, inicio, fin,\n                 modelo, presupuesto_total, presupuesto_diario, tarifa, consumido, seg_radio_km,\n                 seg_municipios, seg_tipos, seg_bienes_min, seg_bienes_max, seg_estratos,\n                 conflicto_interes, estado, motivo_estado, revisada_por, revisada_en, creada_por,\n                 creada_en, actualizada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19, $20, $21, $22, $23, $24, $25, $26)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Int2",
+        "TextArray",
+        "TextArray",
+        "Int4",
+        "Int4",
+        "Int2Array",
+        "Bool",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cdecdff917be1a6253d30c818edb2c7f4949b795019dc3dd1db561ac7e94be03"
+}

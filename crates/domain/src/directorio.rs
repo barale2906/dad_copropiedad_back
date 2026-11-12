@@ -12,6 +12,9 @@
 //!   municipio o todo el país).
 //! - [`validar_categorias`]: de 1 a [`MAXIMO_CATEGORIAS`] categorías, sin repetir y **nunca**
 //!   una `restringida` (licores, apuestas, salud con fórmula).
+//! - [`busqueda`]: búsqueda de proveedores desde el chat o la app (fase 2).
+
+pub mod busqueda;
 
 use std::collections::BTreeSet;
 

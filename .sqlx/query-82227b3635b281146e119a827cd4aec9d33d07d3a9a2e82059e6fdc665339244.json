@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE solicitudes_proveedor SET autorizado_en = $2\n             WHERE id = $1 AND autorizado_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "82227b3635b281146e119a827cd4aec9d33d07d3a9a2e82059e6fdc665339244"
+}

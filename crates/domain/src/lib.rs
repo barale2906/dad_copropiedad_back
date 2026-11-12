@@ -43,6 +43,7 @@ pub mod parqueadero;
 pub mod permisos;
 pub mod pregunta;
 pub mod proteccion_datos;
+pub mod publicidad;
 pub mod quorum;
 pub mod reserva;
 pub mod resultados;
@@ -83,23 +84,24 @@ pub use cuadro_coeficientes::{EstadoCuadro, RevisionCuadro, TipoCuadro};
 pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
 pub use directorio::{
     CategoriaElegible, Cobertura, CodigoCategoria, Coordenadas, EstadoResena, EstadoVerificacion,
-    TipoCobertura, Ubicacion,
+    TipoCobertura, Ubicacion, busqueda::CanalSolicitud,
 };
 pub use error::DominioError;
 pub use horario::{ExcepcionHorario, FranjaSemanal, Horario};
 pub use ids::{
     ActivoId, AgrupacionId, AnuncianteId, ArchivoId, AsignacionParqueaderoId, AsignacionRolId,
     AsistenteBienId, AsistenteId, AutorizacionAccesoId, AutorizacionId, BienPrivadoId,
-    CambioCensoId, CampanaCensoId, CargoId, CategoriaTicketId, ComunicadoId,
-    ConsentimientoBiometricoId, ContratoServicioId, ConversacionId, CorrespondenciaId,
+    CambioCensoId, CampanaCensoId, CampanaId, CargoId, CategoriaTicketId, ComunicadoId,
+    ConsentimientoBiometricoId, ContratoServicioId, ConversacionId, CorrespondenciaId, CreativoId,
     CredencialId, CuadroCoeficientesId, CuentaId, DispositivoAccesoId, DispositivoPushId,
-    EventoAccesoId, FotoQuorumId, ImportacionId, MascotaId, MensajeTicketId,
+    EventoAccesoId, FotoQuorumId, ImportacionId, LiquidacionId, MascotaId, MensajeTicketId,
     MovimientoInventarioId, NovedadMinutaId, ObligacionId, OpcionId, OrdenTrabajoId,
-    OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId,
+    OrganizacionId, ParticipacionId, PersonaId, PlanMantenimientoId, PoderId, PoliticaPublicidadId,
     PoliticaTratamientoId, PreguntaFrecuenteId, PreguntaId, PresenciaId, PuenteId, PuntoAccesoId,
-    PuntoAtencionId, PuntoOrdenId, ReclamacionId, RecursoId, ResenaId, ReservaId, ResidenciaId,
-    RestriccionId, ReunionId, RolId, RotuloId, SesionId, SolicitudTitularId, SorteoId, TenantId,
-    TicketId, TitularidadId, UsoExclusivoId, VehiculoId, VisitaId, VotoId,
+    PuntoAtencionId, PuntoOrdenId, ReclamacionId, RecursoId, ReportePublicidadId, ResenaId,
+    ReservaId, ResidenciaId, RestriccionId, ReunionId, RolId, RotuloId, SesionId,
+    SolicitudProveedorId, SolicitudTitularId, SorteoId, TenantId, TicketId, TitularidadId,
+    UsoExclusivoId, VehiculoId, VisitaId, VotoId,
 };
 pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
 pub use mantenimiento::{
@@ -124,6 +126,10 @@ pub use pregunta::{
 };
 pub use proteccion_datos::{
     EstadoSolicitudTitular, FinalidadTratamiento, MedioAutorizacion, TipoSolicitudTitular,
+};
+pub use publicidad::{
+    CanalPublicidad, CodigoCupon, EstadoCampana, EstadoCreativo, EstadoLiquidacion,
+    FormatoCreativo, ModeloCobro, ObjetivoCampana, Segmentacion,
 };
 pub use quorum::{Convocatoria, Quorum, QuorumReunion};
 pub use reserva::{

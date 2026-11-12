@@ -1,0 +1,336 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id, c.anunciante_id, c.nombre, c.objetivo, c.categoria, c.inicio, c.fin,\n                      c.modelo, c.presupuesto_total, c.presupuesto_diario, c.tarifa, c.consumido,\n                      c.seg_radio_km, c.seg_municipios, c.seg_tipos, c.seg_bienes_min,\n                      c.seg_bienes_max, c.seg_estratos,\n                      ARRAY(SELECT x.tenant_id FROM campana_copropiedades x\n                            WHERE x.campana_id = c.id ORDER BY 1) AS \"copropiedades!\",\n                      c.conflicto_interes, c.estado, c.motivo_estado, c.revisada_por,\n                      c.revisada_en, c.creada_por, c.creada_en, c.actualizada_en\n               FROM campanas c\n               WHERE c.estado = 'en_revision' AND ($1::uuid IS NULL OR c.id > $1)\n               ORDER BY c.id LIMIT $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "anunciante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "anunciante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "objetivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "objetivo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "categoria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "categoria"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "inicio",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "inicio"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "fin",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "fin"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "modelo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "modelo"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "presupuesto_total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "presupuesto_total"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "presupuesto_diario",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "presupuesto_diario"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "tarifa",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "tarifa"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "consumido",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "consumido"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "seg_radio_km",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "seg_radio_km"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "seg_municipios",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "seg_municipios"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "seg_tipos",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "seg_tipos"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "seg_bienes_min",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "seg_bienes_min"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "seg_bienes_max",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "seg_bienes_max"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "seg_estratos",
+        "type_info": "Int2Array",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "seg_estratos"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "copropiedades!",
+        "type_info": "UuidArray",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 19,
+        "name": "conflicto_interes",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "conflicto_interes"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "motivo_estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "motivo_estado"
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "revisada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "revisada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "revisada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "revisada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 24,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 25,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 26,
+        "name": "actualizada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "actualizada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false,
+      null,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "fe7557b695025bd84e6c7a37d2c5066f3690df8c51b1232f0d72652fe962d73f"
+}

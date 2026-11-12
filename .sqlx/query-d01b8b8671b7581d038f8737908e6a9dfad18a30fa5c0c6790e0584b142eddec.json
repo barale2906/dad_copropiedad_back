@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT cr.id FROM creativos cr JOIN campanas c ON c.id = cr.campana_id\n             WHERE cr.anunciante_id = $1 AND cr.cupon_codigo = $2\n             FOR UPDATE OF c, cr",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d01b8b8671b7581d038f8737908e6a9dfad18a30fa5c0c6790e0584b142eddec"
+}

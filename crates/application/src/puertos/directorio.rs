@@ -4,18 +4,24 @@
 //!   categorías, anunciantes, fichas y cola de moderación de reseñas).
 //! - [`RepositorioDirectorio`]: en la transacción de una **copropiedad** (fichas que la
 //!   alcanzan, por una función `SECURITY DEFINER`, y reseñas de sus residentes).
+//! - [`RepositorioSolicitudesProveedor`]: búsquedas de proveedores, contactos autorizados y el
+//!   enlace público del directorio (fase 2, ADR 0014), también por copropiedad.
+//! - [`PurgaDirectorio`]: borra el texto de las búsquedas vencidas en todas las copropiedades.
 
 use std::future::Future;
 
 use chrono::{DateTime, Utc};
 use domain::{
-    AnuncianteId, Calificacion, CategoriaElegible, Cobertura, CodigoCategoria, CodigoDane,
-    CuentaId, DireccionCorreo, EstadoResena, EstadoVerificacion, OrganizacionId, ResenaId,
-    Telefono, TenantId, Ubicacion,
+    AnuncianteId, Calificacion, CanalSolicitud, CategoriaElegible, Cobertura, CodigoCategoria,
+    CodigoDane, CuentaId, DireccionCorreo, EstadoResena, EstadoVerificacion, OrganizacionId,
+    PersonaId, ResenaId, SolicitudProveedorId, Telefono, TenantId, Ubicacion,
 };
 use rust_decimal::Decimal;
 
-use crate::{AppResult, Pagina, SolicitudPagina, puertos::identidad::NuevaOrganizacion};
+use crate::{
+    AppResult, Pagina, SolicitudPagina, outbox::EventoSaliente,
+    puertos::identidad::NuevaOrganizacion,
+};
 
 /// Categoría del catálogo (árbol de dos niveles).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -309,4 +315,102 @@ pub trait RepositorioDirectorio: Send {
         moderador: Option<CuentaId>,
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
+}
+
+/// Búsqueda de un proveedor hecha por un residente (chat o app).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SolicitudProveedor {
+    pub id: SolicitudProveedorId,
+    pub persona_id: PersonaId,
+    pub canal: CanalSolicitud,
+    /// `wamid` en WhatsApp; una clave por petición en la app.
+    pub clave_idempotencia: String,
+    /// Lo que escribió (dato personal). `None` después de la purga.
+    pub texto: Option<String>,
+    /// Categoría del catálogo que nombra la búsqueda, si se reconoció.
+    pub categoria: Option<CodigoCategoria>,
+    /// Fichas sugeridas, en el orden en que se mostraron.
+    pub sugeridos: Vec<AnuncianteId>,
+    /// Cuándo autorizó que esos proveedores lo contacten (Ley 1581, para esta solicitud).
+    pub autorizado_en: Option<DateTime<Utc>>,
+    pub creada_en: DateTime<Utc>,
+}
+
+/// Enlace público del directorio de la copropiedad (uno vigente).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnlaceDirectorio {
+    /// SHA-256 del token: el token solo se entrega al generarlo.
+    pub token_hash: Vec<u8>,
+    pub creado_por: Option<CuentaId>,
+    pub creado_en: DateTime<Utc>,
+}
+
+/// Búsquedas, contactos autorizados y enlace público en la transacción de una copropiedad.
+pub trait RepositorioSolicitudesProveedor: Send {
+    /// Inserta la solicitud. Si ya hay una con la misma clave (reintento), no inserta nada y
+    /// devuelve la existente.
+    fn insertar_solicitud_proveedor(
+        &mut self,
+        solicitud: &SolicitudProveedor,
+    ) -> impl Future<Output = AppResult<SolicitudProveedor>> + Send;
+
+    /// La solicitud, bloqueada para autorizarla (`FOR UPDATE`).
+    fn solicitud_proveedor(
+        &mut self,
+        id: SolicitudProveedorId,
+    ) -> impl Future<Output = AppResult<Option<SolicitudProveedor>>> + Send;
+
+    fn autorizar_contacto(
+        &mut self,
+        id: SolicitudProveedorId,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Registra que el contacto se compartió con el anunciante. `false` si ya estaba.
+    fn insertar_contacto_proveedor(
+        &mut self,
+        solicitud: SolicitudProveedorId,
+        anunciante: AnuncianteId,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// Anunciantes con quienes se compartió el contacto de la solicitud.
+    fn contactos_de_solicitud(
+        &mut self,
+        solicitud: SolicitudProveedorId,
+    ) -> impl Future<Output = AppResult<Vec<AnuncianteId>>> + Send;
+
+    /// Encola un mensaje del directorio (`concepto = 'directorio'`), opcionalmente para más
+    /// tarde (`disponible_en`).
+    fn encolar_directorio(
+        &mut self,
+        evento: &EventoSaliente,
+        disponible_en: Option<DateTime<Utc>>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    fn enlace_directorio(
+        &mut self,
+    ) -> impl Future<Output = AppResult<Option<EnlaceDirectorio>>> + Send;
+
+    /// Crea el enlace o reemplaza el vigente (el anterior deja de funcionar).
+    fn guardar_enlace_directorio(
+        &mut self,
+        enlace: &EnlaceDirectorio,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// `false` si no había enlace.
+    fn borrar_enlace_directorio(&mut self) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// Número visible de la línea de WhatsApp de los enlaces `wa.me` (`None` sin líneas).
+    fn numero_whatsapp_publico(&mut self)
+    -> impl Future<Output = AppResult<Option<String>>> + Send;
+}
+
+/// Purga de las búsquedas en todas las copropiedades (función `SECURITY DEFINER`).
+pub trait PurgaDirectorio: Send + Sync {
+    /// Borra el texto de las búsquedas con más de `dias` días. Devuelve cuántas purgó.
+    fn purgar_solicitudes_proveedor(
+        &self,
+        dias: u32,
+    ) -> impl Future<Output = AppResult<u64>> + Send;
 }

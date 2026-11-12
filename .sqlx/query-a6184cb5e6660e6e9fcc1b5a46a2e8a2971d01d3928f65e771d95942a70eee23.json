@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT anunciante_id FROM contactos_proveedor\n             WHERE solicitud_id = $1 ORDER BY creado_en, anunciante_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "anunciante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "contactos_proveedor",
+            "name": "anunciante_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a6184cb5e6660e6e9fcc1b5a46a2e8a2971d01d3928f65e771d95942a70eee23"
+}

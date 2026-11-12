@@ -171,7 +171,7 @@ pub struct DatosAnunciante {
 }
 
 impl DatosAnunciante {
-    fn validados(self) -> AppResult<Self> {
+    pub(crate) fn validados(self) -> AppResult<Self> {
         Ok(Self {
             nombre_comercial: texto_obligatorio("nombre_comercial", &self.nombre_comercial, 120)?,
             direccion: texto_opcional("direccion", self.direccion.as_deref(), 200)?,
@@ -359,6 +359,23 @@ where
     UP::Transaccion: RepositorioDirectorioPlataforma + RegistroAuditoria,
 {
     exigir_gestion(ctx)?;
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    let ficha = guardar_ficha_en(&mut tx, reloj.ahora(), id, datos).await?;
+    tx.confirmar().await?;
+    Ok(ficha)
+}
+
+/// Valida y guarda la ficha dentro de la transacción (también la usa el portal del
+/// anunciante, `casos_uso::publicidad::portal`).
+pub(crate) async fn guardar_ficha_en<T>(
+    tx: &mut T,
+    ahora: chrono::DateTime<chrono::Utc>,
+    id: AnuncianteId,
+    datos: DatosFicha,
+) -> AppResult<Ficha>
+where
+    T: RepositorioDirectorioPlataforma + RegistroAuditoria,
+{
     if datos.contacto.sitio_web.as_deref().is_some_and(|s| {
         !s.starts_with("https://") || s.chars().count() > 300 || s.contains(char::is_whitespace)
     }) {
@@ -369,7 +386,6 @@ where
     let descripcion = texto_resena(datos.descripcion.as_deref())
         .map_err(|_| AppError::Validacion("la descripción admite hasta 1000 caracteres".into()))?;
     let horario = texto_opcional("horario", datos.horario.as_deref(), 300)?;
-    let mut tx = unidad.iniciar_plataforma(ctx).await?;
     let anunciante = tx
         .anunciante_para_actualizar(id)
         .await?
@@ -391,7 +407,7 @@ where
         horario,
         destacada_hasta: datos.destacada_hasta,
         publicada: datos.publicada,
-        actualizada_en: reloj.ahora(),
+        actualizada_en: ahora,
     };
     tx.guardar_ficha(&ficha).await?;
     let detalle = DetalleAuditoria::vacio()
@@ -402,7 +418,6 @@ where
         EventoAuditoria::ok(ACCION_GUARDAR_FICHA, "anunciante", id.as_uuid()).con_detalle(detalle),
     )
     .await?;
-    tx.confirmar().await?;
     Ok(ficha)
 }
 
@@ -573,7 +588,7 @@ where
     Ok(pagina.mapear(|f| sin_pauta_si(con_pauta, f)))
 }
 
-fn sin_pauta_si(con_pauta: bool, f: FichaDirectorio) -> FichaDirectorio {
+pub(crate) fn sin_pauta_si(con_pauta: bool, f: FichaDirectorio) -> FichaDirectorio {
     FichaDirectorio {
         destacada: f.destacada && con_pauta,
         ..f
@@ -634,7 +649,7 @@ where
     Ok(sin_pauta_si(con_pauta, ficha))
 }
 
-async fn ficha_visible<T: RepositorioDirectorio>(
+pub(crate) async fn ficha_visible<T: RepositorioDirectorio>(
     tx: &mut T,
     id: AnuncianteId,
     ahora: chrono::DateTime<chrono::Utc>,

@@ -16,6 +16,8 @@
 //! - Control de acceso (`casos_uso::acceso`): botones «Autorizar» / «Rechazar» de las visitas
 //!   antes que la asamblea; escalamiento de visitas y correspondencia y retención
 //!   ([`worker_acceso`]); push a las apps con Firebase (respaldo por WhatsApp).
+//! - Publicidad de la plataforma ([`worker_publicidad`]): finaliza campañas vencidas y encola
+//!   los masivos (solo a quien autorizó, prioridad 9).
 
 mod mensajeria;
 mod routes;
@@ -23,6 +25,7 @@ mod state;
 mod worker_acceso;
 mod worker_asambleas;
 mod worker_gestion;
+mod worker_publicidad;
 mod worker_recordatorios;
 mod worker_salida;
 
@@ -151,6 +154,14 @@ async fn main() -> anyhow::Result<()> {
         UnidadDeTrabajoPg::new(db.clone()),
         SesionesChatPg::new(db.clone()),
         infra_postgres::IdempotenciaPg::new(db.clone()),
+        infra_postgres::PurgaDirectorioPg::new(db.clone()),
+        esperar_apagado(apagado.clone()),
+    ));
+
+    let publicidad = tokio::spawn(worker_publicidad::ejecutar(
+        infra_postgres::DirectorioPublicidadPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        infra_postgres::UnidadDeTrabajoPlataformaPg::new(db.clone()),
         esperar_apagado(apagado.clone()),
     ));
 
@@ -193,6 +204,10 @@ async fn main() -> anyhow::Result<()> {
 
     if let Err(e) = recordatorios.await {
         tracing::error!(error = %e, "el worker de recordatorios terminó con error");
+    }
+
+    if let Err(e) = publicidad.await {
+        tracing::error!(error = %e, "el worker de publicidad terminó con error");
     }
 
     if let Err(e) = gestion.await {

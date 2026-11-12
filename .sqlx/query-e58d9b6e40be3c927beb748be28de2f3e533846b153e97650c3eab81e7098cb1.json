@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT numero_whatsapp_publico()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "numero_whatsapp_publico",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "e58d9b6e40be3c927beb748be28de2f3e533846b153e97650c3eab81e7098cb1"
+}

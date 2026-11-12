@@ -29,6 +29,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(super::mantenimiento::rutas())
         .merge(super::comunicados::rutas())
         .merge(super::directorio::rutas())
+        .merge(super::busqueda_proveedores::rutas())
+        .merge(super::publicidad::rutas_copropiedad())
         .merge(super::asambleas::rutas())
         .merge(super::acceso::rutas())
         .merge(super::proteccion_datos::rutas())

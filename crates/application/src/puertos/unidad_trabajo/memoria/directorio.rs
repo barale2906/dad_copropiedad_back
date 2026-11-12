@@ -3,14 +3,18 @@
 //! `infra-postgres`); aquí solo se filtran por anunciante, categoría, texto y destacadas.
 
 use chrono::{DateTime, Utc};
-use domain::{AnuncianteId, CuentaId, EstadoResena, ResenaId};
+use domain::{AnuncianteId, CuentaId, EstadoResena, ResenaId, SolicitudProveedorId};
 
 use super::TransaccionEnMemoria;
 use crate::{
     AppError, AppResult, Pagina, SolicitudPagina,
+    outbox::EventoSaliente,
     puertos::{
-        RepositorioDirectorio,
-        directorio::{Categoria, FichaDirectorio, FiltroDirectorio, ReporteResena, Resena},
+        RepositorioDirectorio, RepositorioSolicitudesProveedor,
+        directorio::{
+            Categoria, EnlaceDirectorio, FichaDirectorio, FiltroDirectorio, ReporteResena, Resena,
+            SolicitudProveedor,
+        },
     },
 };
 
@@ -23,6 +27,15 @@ pub struct DatosDirectorio {
     pub resenas: Vec<Resena>,
     /// Reportes con la fecha en que se atendieron.
     pub reportes: Vec<(ReporteResena, Option<DateTime<Utc>>)>,
+    /// Búsquedas de proveedores (fase 2).
+    pub solicitudes: Vec<SolicitudProveedor>,
+    /// Contactos compartidos: (solicitud, anunciante).
+    pub contactos: Vec<(SolicitudProveedorId, AnuncianteId)>,
+    /// Mensajes del directorio encolados, con su hora de envío si es diferida.
+    pub encolados: Vec<(EventoSaliente, Option<DateTime<Utc>>)>,
+    pub enlace: Option<EnlaceDirectorio>,
+    /// Número visible de la línea de los enlaces `wa.me`.
+    pub numero_whatsapp: Option<String>,
 }
 
 impl RepositorioDirectorio for TransaccionEnMemoria {
@@ -160,5 +173,109 @@ impl RepositorioDirectorio for TransaccionEnMemoria {
             }
         }
         Ok(())
+    }
+}
+
+impl RepositorioSolicitudesProveedor for TransaccionEnMemoria {
+    async fn insertar_solicitud_proveedor(
+        &mut self,
+        s: &SolicitudProveedor,
+    ) -> AppResult<SolicitudProveedor> {
+        let v = &mut self.datos.directorio.solicitudes;
+        if let Some(x) = v
+            .iter()
+            .find(|x| x.clave_idempotencia == s.clave_idempotencia)
+        {
+            return Ok(x.clone());
+        }
+        v.push(s.clone());
+        Ok(s.clone())
+    }
+
+    async fn solicitud_proveedor(
+        &mut self,
+        id: SolicitudProveedorId,
+    ) -> AppResult<Option<SolicitudProveedor>> {
+        Ok(self
+            .datos
+            .directorio
+            .solicitudes
+            .iter()
+            .find(|s| s.id == id)
+            .cloned())
+    }
+
+    async fn autorizar_contacto(
+        &mut self,
+        id: SolicitudProveedorId,
+        ahora: DateTime<Utc>,
+    ) -> AppResult<()> {
+        let s = self
+            .datos
+            .directorio
+            .solicitudes
+            .iter_mut()
+            .find(|s| s.id == id)
+            .ok_or(AppError::NoEncontrado("solicitud de proveedor"))?;
+        s.autorizado_en = Some(ahora);
+        Ok(())
+    }
+
+    async fn insertar_contacto_proveedor(
+        &mut self,
+        solicitud: SolicitudProveedorId,
+        anunciante: AnuncianteId,
+        _ahora: DateTime<Utc>,
+    ) -> AppResult<bool> {
+        let v = &mut self.datos.directorio.contactos;
+        if v.contains(&(solicitud, anunciante)) {
+            return Ok(false);
+        }
+        v.push((solicitud, anunciante));
+        Ok(true)
+    }
+
+    async fn contactos_de_solicitud(
+        &mut self,
+        solicitud: SolicitudProveedorId,
+    ) -> AppResult<Vec<AnuncianteId>> {
+        Ok(self
+            .datos
+            .directorio
+            .contactos
+            .iter()
+            .filter(|(s, _)| *s == solicitud)
+            .map(|(_, a)| *a)
+            .collect())
+    }
+
+    async fn encolar_directorio(
+        &mut self,
+        evento: &EventoSaliente,
+        disponible_en: Option<DateTime<Utc>>,
+    ) -> AppResult<()> {
+        self.datos
+            .directorio
+            .encolados
+            .push((evento.clone(), disponible_en));
+        self.salientes.push(evento.clone());
+        Ok(())
+    }
+
+    async fn enlace_directorio(&mut self) -> AppResult<Option<EnlaceDirectorio>> {
+        Ok(self.datos.directorio.enlace.clone())
+    }
+
+    async fn guardar_enlace_directorio(&mut self, enlace: &EnlaceDirectorio) -> AppResult<()> {
+        self.datos.directorio.enlace = Some(enlace.clone());
+        Ok(())
+    }
+
+    async fn borrar_enlace_directorio(&mut self) -> AppResult<bool> {
+        Ok(self.datos.directorio.enlace.take().is_some())
+    }
+
+    async fn numero_whatsapp_publico(&mut self) -> AppResult<Option<String>> {
+        Ok(self.datos.directorio.numero_whatsapp.clone())
     }
 }

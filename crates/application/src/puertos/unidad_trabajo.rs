@@ -87,6 +87,7 @@ pub(crate) mod memoria {
     mod copropiedades;
     pub mod directorio;
     pub mod gestion;
+    pub mod publicidad;
     mod reservas;
 
     /// Datos de negocio en memoria. La transacción trabaja sobre una copia y la reemplaza
@@ -138,6 +139,8 @@ pub(crate) mod memoria {
         pub campanas: campanas::DatosCampanas,
         /// Directorio de comercios y servicios (plan 08).
         pub directorio: directorio::DatosDirectorio,
+        /// Publicidad en la copropiedad (plan 08, fases 4 a 6).
+        pub publicidad: publicidad::DatosPublicidad,
     }
 
     /// Plantillas con ids fijos (en la BD se derivan del código).
@@ -445,7 +448,7 @@ pub(crate) mod memoria {
                         autorizacion: a.clone(),
                         politica_version: politicas
                             .iter()
-                            .find(|p| p.id == a.politica_id)
+                            .find(|p| Some(p.id) == a.politica_id)
                             .map_or(0, |p| p.version),
                         revocada_en: *revocada,
                     },
