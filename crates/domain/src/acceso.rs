@@ -694,10 +694,12 @@ impl SoporteEntrega {
         Ok(Self { firma, foto })
     }
 
+    /// Archivo de la firma de quien recibió, si la entrega se soportó con firma.
     pub const fn firma(&self) -> Option<ArchivoId> {
         self.firma
     }
 
+    /// Archivo de la foto de la entrega, si se soportó con foto.
     pub const fn foto(&self) -> Option<ArchivoId> {
         self.foto
     }
@@ -884,6 +886,8 @@ enum_texto!(TipoDispositivoAcceso {
 });
 
 impl TipoDispositivoAcceso {
+    /// Si el dispositivo trata biometría (exige consentimiento vigente; la plantilla no sale del
+    /// equipo).
     pub const fn es_biometrico(self) -> bool {
         matches!(self, Self::BiometricoHuella | Self::BiometricoFacial)
     }

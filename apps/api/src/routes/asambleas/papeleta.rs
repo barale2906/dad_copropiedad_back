@@ -58,6 +58,7 @@ pub struct PapeletaRespuesta {
     responses(
         (status = OK, description = "Papeleta", body = PapeletaRespuesta),
         (status = UNAUTHORIZED, description = "Token inválido (`no_autenticado`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver(
@@ -92,6 +93,7 @@ pub async fn ver(
     responses(
         (status = OK, description = "Ingreso registrado", body = AsistenteRespuesta),
         (status = CONFLICT, description = "Presencial, no admite registro o ya está presente (`conflicto`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ingreso(
@@ -118,6 +120,7 @@ pub async fn ingreso(
     responses(
         (status = OK, description = "Salida registrada", body = AsistenteRespuesta),
         (status = CONFLICT, description = "No estaba presente (`conflicto`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn salida(
@@ -154,6 +157,7 @@ pub struct VotoPapeletaPeticion {
         (status = CREATED, description = "Voto registrado (o el original si se reintenta)", body = VotoRespuesta),
         (status = FORBIDDEN, description = "No está presente (`no_inscrito`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya votó (`ya_voto`) o la pregunta cerró (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn votar(

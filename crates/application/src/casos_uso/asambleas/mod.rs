@@ -52,29 +52,35 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR: AccionAuditoria = AccionAuditoria::new("asambleas.reunion.crear");
-pub const ACCION_EDITAR: AccionAuditoria = AccionAuditoria::new("asambleas.reunion.editar");
-pub const ACCION_TRANSICIONAR: AccionAuditoria =
+pub(crate) const ACCION_CREAR: AccionAuditoria = AccionAuditoria::new("asambleas.reunion.crear");
+pub(crate) const ACCION_EDITAR: AccionAuditoria = AccionAuditoria::new("asambleas.reunion.editar");
+pub(crate) const ACCION_TRANSICIONAR: AccionAuditoria =
     AccionAuditoria::new("asambleas.reunion.transicionar");
-pub const ACCION_CONVOCAR: AccionAuditoria = AccionAuditoria::new("asambleas.reunion.convocar");
-pub const ACCION_MOROSOS: AccionAuditoria = AccionAuditoria::new("asambleas.morosos.fijar");
-pub const ACCION_REGISTRAR: AccionAuditoria = AccionAuditoria::new("asambleas.asistente.registrar");
-pub const ACCION_SALIDA: AccionAuditoria = AccionAuditoria::new("asambleas.asistente.salir");
-pub const ACCION_REINGRESO: AccionAuditoria =
+pub(crate) const ACCION_CONVOCAR: AccionAuditoria =
+    AccionAuditoria::new("asambleas.reunion.convocar");
+pub(crate) const ACCION_MOROSOS: AccionAuditoria = AccionAuditoria::new("asambleas.morosos.fijar");
+pub(crate) const ACCION_REGISTRAR: AccionAuditoria =
+    AccionAuditoria::new("asambleas.asistente.registrar");
+pub(crate) const ACCION_SALIDA: AccionAuditoria = AccionAuditoria::new("asambleas.asistente.salir");
+pub(crate) const ACCION_REINGRESO: AccionAuditoria =
     AccionAuditoria::new("asambleas.asistente.reingresar");
-pub const ACCION_PODER: AccionAuditoria = AccionAuditoria::new("asambleas.poder.registrar");
-pub const ACCION_REVISAR_PODER: AccionAuditoria = AccionAuditoria::new("asambleas.poder.revisar");
-pub const ACCION_ROTULO: AccionAuditoria = AccionAuditoria::new("asambleas.rotulo.asignar");
-pub const ACCION_PREGUNTA: AccionAuditoria = AccionAuditoria::new("asambleas.pregunta.editar");
-pub const ACCION_ABRIR: AccionAuditoria = AccionAuditoria::new("asambleas.pregunta.abrir");
-pub const ACCION_CERRAR: AccionAuditoria = AccionAuditoria::new("asambleas.pregunta.cerrar");
-pub const ACCION_ANULAR: AccionAuditoria = AccionAuditoria::new("asambleas.pregunta.anular");
-pub const ACCION_VOTAR: AccionAuditoria = AccionAuditoria::new("asambleas.participacion.registrar");
-pub const ACCION_VER_DETALLE: AccionAuditoria = AccionAuditoria::new("asambleas.detalle.consultar");
-pub const ACCION_ROLES: AccionAuditoria = AccionAuditoria::new("asambleas.eleccion.aplicar");
-pub const ACCION_ACTA: AccionAuditoria = AccionAuditoria::new("asambleas.acta.editar");
-pub const ACCION_PUNTO: AccionAuditoria = AccionAuditoria::new("asambleas.punto.editar");
-pub const ACCION_LINEA: AccionAuditoria = AccionAuditoria::new("plataforma.linea.editar");
+pub(crate) const ACCION_PODER: AccionAuditoria = AccionAuditoria::new("asambleas.poder.registrar");
+pub(crate) const ACCION_REVISAR_PODER: AccionAuditoria =
+    AccionAuditoria::new("asambleas.poder.revisar");
+pub(crate) const ACCION_ROTULO: AccionAuditoria = AccionAuditoria::new("asambleas.rotulo.asignar");
+pub(crate) const ACCION_PREGUNTA: AccionAuditoria =
+    AccionAuditoria::new("asambleas.pregunta.editar");
+pub(crate) const ACCION_ABRIR: AccionAuditoria = AccionAuditoria::new("asambleas.pregunta.abrir");
+pub(crate) const ACCION_CERRAR: AccionAuditoria = AccionAuditoria::new("asambleas.pregunta.cerrar");
+pub(crate) const ACCION_ANULAR: AccionAuditoria = AccionAuditoria::new("asambleas.pregunta.anular");
+pub(crate) const ACCION_VOTAR: AccionAuditoria =
+    AccionAuditoria::new("asambleas.participacion.registrar");
+pub(crate) const ACCION_VER_DETALLE: AccionAuditoria =
+    AccionAuditoria::new("asambleas.detalle.consultar");
+pub(crate) const ACCION_ROLES: AccionAuditoria = AccionAuditoria::new("asambleas.eleccion.aplicar");
+pub(crate) const ACCION_ACTA: AccionAuditoria = AccionAuditoria::new("asambleas.acta.editar");
+pub(crate) const ACCION_PUNTO: AccionAuditoria = AccionAuditoria::new("asambleas.punto.editar");
+pub(crate) const ACCION_LINEA: AccionAuditoria = AccionAuditoria::new("plataforma.linea.editar");
 
 /// Puertos que usan los casos de uso de asambleas dentro de la transacción de la copropiedad.
 pub trait TxAsambleas:

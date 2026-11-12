@@ -42,6 +42,7 @@ pub struct ResumenEscalamiento {
 }
 
 impl ResumenEscalamiento {
+    /// Si la pasada hizo algo (para no llenar los logs con pasadas vacías).
     pub const fn hubo_trabajo(&self) -> bool {
         self.segundos_avisos
             + self.llamadas

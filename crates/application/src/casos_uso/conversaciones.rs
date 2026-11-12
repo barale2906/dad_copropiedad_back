@@ -22,11 +22,11 @@ use crate::{
     },
 };
 
-pub const ACCION_PREGUNTA: AccionAuditoria =
+pub(crate) const ACCION_PREGUNTA: AccionAuditoria =
     AccionAuditoria::new("conversaciones.pregunta_frecuente.editar");
-pub const ACCION_RESPONDER: AccionAuditoria =
+pub(crate) const ACCION_RESPONDER: AccionAuditoria =
     AccionAuditoria::new("conversaciones.conversacion.responder");
-pub const ACCION_CERRAR: AccionAuditoria =
+pub(crate) const ACCION_CERRAR: AccionAuditoria =
     AccionAuditoria::new("conversaciones.conversacion.cerrar");
 
 /// Puertos de estos casos de uso.

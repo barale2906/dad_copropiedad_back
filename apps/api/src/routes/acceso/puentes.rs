@@ -95,7 +95,7 @@ pub struct VentanaDto {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CredencialSincronizadaDto {
     pub id: Uuid,
-    #[schema(example = "tarjeta_rfid")]
+    #[schema(value_type = crate::esquemas::TipoCredencial)]
     pub tipo: String,
     /// SHA-256 de `tenant:tipo:identificador normalizado` (el puente la calcula igual al leer).
     pub huella: String,
@@ -176,6 +176,7 @@ pub struct SincronizacionRespuesta {
         (status = OK, description = "Cambios", body = SincronizacionRespuesta),
         (status = UNAUTHORIZED, description = "Token de máquina inválido o puente retirado (`no_autenticado`)", body = ErrorRespuesta),
         (status = FORBIDDEN, description = "La PH no tiene el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn sincronizacion(
@@ -215,9 +216,9 @@ pub struct EventoReportadoDto {
     pub credencial_id: Option<Uuid>,
     /// Visita del QR temporal usado (cuenta el uso).
     pub visita_id: Option<Uuid>,
-    #[schema(value_type = String, example = "entrada")]
+    #[schema(value_type = crate::esquemas::SentidoAcceso)]
     pub sentido: SentidoAcceso,
-    #[schema(value_type = String, example = "permitido")]
+    #[schema(value_type = crate::esquemas::ResultadoAcceso)]
     pub resultado: ResultadoAcceso,
     pub motivo: Option<String>,
     /// Placa leída por la cámara LPR.
@@ -256,6 +257,7 @@ pub struct ReporteRespuesta {
         (status = OK, description = "Reporte procesado", body = ReporteRespuesta),
         (status = UNAUTHORIZED, description = "Token de máquina inválido (`no_autenticado`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Lote demasiado grande o evento inválido (`validacion`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn eventos(
@@ -321,6 +323,7 @@ pub struct LatidoPeticion {
     responses(
         (status = NO_CONTENT, description = "Latido registrado"),
         (status = UNAUTHORIZED, description = "Token de máquina inválido (`no_autenticado`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn latido(

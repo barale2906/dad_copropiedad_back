@@ -5,7 +5,7 @@
 //! módulos es una operación de plataforma (roles de plataforma, plan 02).
 
 use chrono::{DateTime, Utc};
-use domain::Modulo;
+use domain::{ConjuntoPermisos, Modulo};
 
 use crate::{
     AppError, AppResult, Contexto,
@@ -16,8 +16,10 @@ use crate::{
     },
 };
 
-pub const ACCION_HABILITAR: AccionAuditoria = AccionAuditoria::new("plataforma.modulo.habilitar");
-pub const ACCION_TERMINAR: AccionAuditoria = AccionAuditoria::new("plataforma.modulo.terminar");
+pub(crate) const ACCION_HABILITAR: AccionAuditoria =
+    AccionAuditoria::new("plataforma.modulo.habilitar");
+pub(crate) const ACCION_TERMINAR: AccionAuditoria =
+    AccionAuditoria::new("plataforma.modulo.terminar");
 
 /// Como [`exigir_modulo`], pero dentro de una transacción ya abierta (los casos de uso de un
 /// módulo vendible lo verifican en su propia transacción).
@@ -124,6 +126,45 @@ where
     }
     tx.confirmar().await?;
     Ok(terminados)
+}
+
+/// Lo que la cuenta puede hacer en la copropiedad: con esto el frontend muestra u oculta
+/// opciones. El backend vuelve a exigir permisos y módulos en cada operación.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Capacidades {
+    /// Permisos efectivos de la cuenta (unión de sus roles vigentes).
+    pub permisos: ConjuntoPermisos,
+    /// Módulos habilitados ahora, en el orden de [`Modulo::TODOS`].
+    pub modulos: Vec<Modulo>,
+}
+
+/// Permisos de la cuenta del contexto y módulos habilitados de la copropiedad.
+///
+/// No exige un permiso: no lee datos de negocio, solo devuelve los permisos que el contexto ya
+/// trae (los de quien pregunta) y qué módulos tiene contratados su copropiedad.
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si falla la base de datos.
+pub async fn capacidades<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+) -> AppResult<Capacidades>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioModulos,
+{
+    let mut tx = unidad.iniciar(ctx).await?;
+    let habilitados = tx.modulos_habilitados(reloj.ahora()).await?;
+    Ok(Capacidades {
+        permisos: ctx.permisos.clone(),
+        modulos: Modulo::TODOS
+            .iter()
+            .copied()
+            .filter(|m| habilitados.contains(m))
+            .collect(),
+    })
 }
 
 fn evento(accion: AccionAuditoria, ctx: &Contexto) -> EventoAuditoria {
@@ -247,5 +288,49 @@ mod tests {
         .expect_err("inválido");
 
         assert!(matches!(err, AppError::Validacion(_)));
+    }
+
+    #[tokio::test]
+    async fn capacidades_son_los_permisos_de_la_cuenta_y_los_modulos_vigentes() {
+        let unidad = UnidadEnMemoria::default();
+        let tenant = TenantId::nuevo();
+        let sistema = Contexto::new(tenant);
+        for (modulo, desde, hasta) in [
+            (Modulo::Publicidad, dia(1), None),
+            (Modulo::Asambleas, dia(1), None),
+            (Modulo::ControlAcceso, dia(1), Some(dia(3))),
+        ] {
+            habilitar_modulo(
+                &unidad,
+                &RelojEn(dia(1)),
+                &sistema,
+                modulo,
+                Some(desde),
+                hasta,
+            )
+            .await
+            .expect("habilita");
+        }
+        let permisos: ConjuntoPermisos = [domain::Permiso::AsambleasVer].into_iter().collect();
+        let cuenta = Contexto::de_cuenta(tenant, domain::CuentaId::nuevo(), permisos.clone());
+
+        let c = capacidades(&unidad, &RelojEn(dia(6)), &cuenta)
+            .await
+            .expect("capacidades");
+
+        assert_eq!(c.permisos, permisos);
+        // El vencido no aparece; el orden es el de `Modulo::TODOS`, no el de alta.
+        assert_eq!(c.modulos, vec![Modulo::Asambleas, Modulo::Publicidad]);
+    }
+
+    #[tokio::test]
+    async fn sin_modulos_contratados_las_capacidades_no_traen_modulos() {
+        let unidad = UnidadEnMemoria::default();
+
+        let c = capacidades(&unidad, &RelojEn(dia(6)), &Contexto::new(TenantId::nuevo()))
+            .await
+            .expect("capacidades");
+
+        assert!(c.modulos.is_empty());
     }
 }

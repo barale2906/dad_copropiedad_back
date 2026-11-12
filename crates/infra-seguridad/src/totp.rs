@@ -21,6 +21,7 @@ pub fn codigo_totp(clave: &[u8], paso: i64) -> Option<String> {
 pub mod base32 {
     const ALFABETO: &[u8; 32] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
+    /// Codifica bytes en Base32 sin relleno.
     pub fn codificar(datos: &[u8]) -> String {
         let mut salida = String::new();
         let (mut buffer, mut bits) = (0u32, 0u32);
@@ -38,6 +39,7 @@ pub mod base32 {
         salida
     }
 
+    /// Decodifica Base32 (con o sin relleno, sin distinguir mayúsculas); `None` si no es válido.
     pub fn decodificar(texto: &str) -> Option<Vec<u8>> {
         let mut salida = Vec::new();
         let (mut buffer, mut bits) = (0u32, 0u32);

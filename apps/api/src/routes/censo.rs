@@ -8,7 +8,7 @@ use application::{
         NuevoVehiculo, PersonaVista, PropuestaCenso, ResidenciaConPersona,
     },
     puertos::{
-        RelojSistema,
+        Reloj as _, RelojSistema,
         censo::{CambioCenso, FilaLibroPropietarios, FilaLibroResidentes, Mascota, Vehiculo},
     },
 };
@@ -70,10 +70,10 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PersonaRespuesta {
     pub id: Uuid,
-    #[schema(value_type = String, example = "natural")]
+    #[schema(value_type = crate::esquemas::TipoPersona)]
     pub tipo: TipoPersona,
     pub nombre: String,
-    #[schema(value_type = Option<String>, example = "CC")]
+    #[schema(value_type = Option<crate::esquemas::TipoDocumento>)]
     pub tipo_documento: Option<TipoDocumento>,
     pub documento: Option<String>,
     pub telefono: Option<String>,
@@ -178,7 +178,7 @@ pub async fn ver_persona(
 #[derive(Debug, Default, Deserialize, ToSchema)]
 pub struct CambiosPersonaPeticion {
     pub nombre: Option<String>,
-    #[schema(value_type = Option<String>, example = "TI")]
+    #[schema(value_type = Option<crate::esquemas::TipoDocumento>)]
     pub tipo_documento: Option<TipoDocumento>,
     #[schema(value_type = Option<String>)]
     pub documento: Option<Documento>,
@@ -253,7 +253,7 @@ pub struct ResidenciaDatos {
     pub persona: Option<PersonaPeticion>,
     /// `propietario_residente`, `tenedor`, `familiar`, `huesped_temporal` o
     /// `empleado_domestico`.
-    #[schema(value_type = String, example = "tenedor")]
+    #[schema(value_type = crate::esquemas::CalidadResidencia)]
     pub calidad: CalidadResidencia,
     /// Cabeza del bien ante la copropiedad (a lo sumo uno vigente).
     #[serde(default)]
@@ -290,7 +290,7 @@ pub struct ResidenciaRespuesta {
     pub id: Uuid,
     pub bien_privado_id: Uuid,
     pub persona: PersonaRespuesta,
-    #[schema(value_type = String, example = "tenedor")]
+    #[schema(value_type = crate::esquemas::CalidadResidencia)]
     pub calidad: CalidadResidencia,
     pub es_responsable: bool,
     pub autorizado_por: Option<Uuid>,
@@ -433,7 +433,7 @@ pub async fn terminar_residencia(
 /// Datos de un vehículo (sin el bien privado).
 #[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct VehiculoDatos {
-    #[schema(value_type = String, example = "carro")]
+    #[schema(value_type = crate::esquemas::TipoVehiculo)]
     pub tipo: TipoVehiculo,
     /// Obligatoria para carros y motos; se normaliza (`abc-123` → `ABC123`).
     #[schema(value_type = Option<String>, example = "ABC123")]
@@ -471,7 +471,7 @@ pub struct VehiculoRespuesta {
     pub id: Uuid,
     pub bien_privado_id: Uuid,
     pub persona_id: Option<Uuid>,
-    #[schema(value_type = String, example = "carro")]
+    #[schema(value_type = crate::esquemas::TipoVehiculo)]
     pub tipo: TipoVehiculo,
     pub placa: Option<String>,
     pub marca: Option<String>,
@@ -605,7 +605,7 @@ pub async fn retirar_vehiculo(
 /// Datos de una mascota (sin el bien privado).
 #[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct MascotaDatos {
-    #[schema(value_type = String, example = "perro")]
+    #[schema(value_type = crate::esquemas::EspecieMascota)]
     pub especie: EspecieMascota,
     pub nombre: String,
     pub raza: Option<String>,
@@ -657,7 +657,7 @@ pub struct MascotaRespuesta {
     pub id: Uuid,
     pub bien_privado_id: Uuid,
     pub responsable_id: Option<Uuid>,
-    #[schema(value_type = String, example = "perro")]
+    #[schema(value_type = crate::esquemas::EspecieMascota)]
     pub especie: EspecieMascota,
     pub nombre: String,
     pub raza: Option<String>,
@@ -670,7 +670,7 @@ pub struct MascotaRespuesta {
     pub esterilizada: bool,
     pub foto_archivo_id: Option<Uuid>,
     /// `activa`, `fallecida` o `trasladada`.
-    #[schema(value_type = String, example = "activa")]
+    #[schema(value_type = crate::esquemas::EstadoMascota)]
     pub estado: EstadoMascota,
 }
 
@@ -765,7 +765,7 @@ pub struct CambiosMascotaPeticion {
     pub foto_archivo_id: Option<Uuid>,
     pub responsable_id: Option<Uuid>,
     /// `fallecida` o `trasladada` (desde `activa`).
-    #[schema(value_type = Option<String>)]
+    #[schema(value_type = Option<crate::esquemas::EstadoMascota>)]
     pub estado: Option<EstadoMascota>,
 }
 
@@ -823,7 +823,7 @@ pub async fn actualizar_mascota(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct PropuestaPeticion {
     pub bien_privado_id: Uuid,
-    #[schema(value_type = String, example = "vehiculo")]
+    #[schema(value_type = crate::esquemas::TipoCambioCenso)]
     pub tipo: TipoCambioCenso,
     #[schema(value_type = Object)]
     pub datos: serde_json::Value,
@@ -857,12 +857,12 @@ impl PropuestaPeticion {
 pub struct CambioRespuesta {
     pub id: Uuid,
     pub bien_privado_id: Uuid,
-    #[schema(value_type = String, example = "vehiculo")]
+    #[schema(value_type = crate::esquemas::TipoCambioCenso)]
     pub tipo: TipoCambioCenso,
     #[schema(value_type = Object)]
     pub datos: serde_json::Value,
     /// `pendiente`, `aprobado` o `rechazado`.
-    #[schema(value_type = String, example = "pendiente")]
+    #[schema(value_type = crate::esquemas::EstadoCambioCenso)]
     pub estado: EstadoCambioCenso,
     pub propuesto_por: Uuid,
     pub propuesto_en: DateTime<Utc>,
@@ -895,7 +895,7 @@ impl From<CambioCenso> for CambioRespuesta {
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroCambios {
-    #[param(value_type = Option<String>)]
+    #[param(value_type = Option<crate::esquemas::EstadoCambioCenso>)]
     pub estado: Option<EstadoCambioCenso>,
     /// Solo las propias (no exige `censo.aprobar`).
     #[serde(default)]
@@ -1113,7 +1113,7 @@ pub struct FilaPropietarioRespuesta {
     pub nombre: String,
     pub tipo_documento: Option<String>,
     pub documento: Option<String>,
-    #[schema(value_type = String, example = "propietario")]
+    #[schema(value_type = crate::esquemas::TipoTitularidad)]
     pub tipo: TipoTitularidad,
     #[schema(value_type = String)]
     pub porcentaje: Decimal,
@@ -1144,7 +1144,7 @@ pub struct FilaResidenteRespuesta {
     pub nombre: String,
     pub tipo_documento: Option<String>,
     pub documento: Option<String>,
-    #[schema(value_type = String, example = "tenedor")]
+    #[schema(value_type = crate::esquemas::CalidadResidencia)]
     pub calidad: CalidadResidencia,
     pub es_responsable: bool,
     pub vigente_desde: DateTime<Utc>,
@@ -1186,7 +1186,7 @@ pub async fn libro_propietarios(
     Query(p): Query<ParametrosLibro>,
 ) -> ApiResult<Response> {
     let formato = p.formato()?;
-    let corte = p.corte.unwrap_or_else(Utc::now);
+    let corte = p.corte.unwrap_or_else(|| RelojSistema.ahora());
     let filas: Vec<FilaPropietarioRespuesta> =
         uc::libro_propietarios(&state.unidad, &en.ctx, corte)
             .await?
@@ -1254,7 +1254,7 @@ pub async fn libro_residentes(
     Query(p): Query<ParametrosLibro>,
 ) -> ApiResult<Response> {
     let formato = p.formato()?;
-    let corte = p.corte.unwrap_or_else(Utc::now);
+    let corte = p.corte.unwrap_or_else(|| RelojSistema.ahora());
     let filas: Vec<FilaResidenteRespuesta> = uc::libro_residentes(&state.unidad, &en.ctx, corte)
         .await?
         .into_iter()
@@ -1305,7 +1305,7 @@ pub struct AlertaMascotaRespuesta {
     pub mascota: MascotaRespuesta,
     /// `vacunas_vencidas`, `vacunas_por_vencer`, `sin_registro_de_vacunas`, `sin_poliza`,
     /// `poliza_vencida` o `poliza_por_vencer`.
-    #[schema(value_type = Vec<String>)]
+    #[schema(value_type = Vec<crate::esquemas::AlertaMascota>)]
     pub alertas: Vec<AlertaMascota>,
 }
 

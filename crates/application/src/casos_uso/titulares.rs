@@ -27,10 +27,11 @@ use crate::{
     },
 };
 
-pub const ACCION_REGISTRAR: AccionAuditoria = AccionAuditoria::new("titulares.titularidad.crear");
-pub const ACCION_TRANSFERIR: AccionAuditoria =
+pub(crate) const ACCION_REGISTRAR: AccionAuditoria =
+    AccionAuditoria::new("titulares.titularidad.crear");
+pub(crate) const ACCION_TRANSFERIR: AccionAuditoria =
     AccionAuditoria::new("titulares.titularidad.transferir");
-pub const ACCION_REPRESENTANTE: AccionAuditoria =
+pub(crate) const ACCION_REPRESENTANTE: AccionAuditoria =
     AccionAuditoria::new("titulares.representante.designar");
 
 /// Código del rol plantilla que reciben los titulares con cuenta.

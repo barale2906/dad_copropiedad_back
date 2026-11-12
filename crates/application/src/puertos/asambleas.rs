@@ -257,6 +257,7 @@ pub struct PreguntaGuardada {
 }
 
 impl PreguntaGuardada {
+    /// Candidatos de una opción de elección (vacío si la opción no es de candidatos).
     pub fn candidatos_de(&self, opcion: OpcionId) -> &[PersonaId] {
         self.candidatos
             .iter()
@@ -310,14 +311,10 @@ pub enum CanalConvocatoria {
     Correo,
 }
 
-impl CanalConvocatoria {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Whatsapp => "whatsapp",
-            Self::Correo => "correo",
-        }
-    }
-}
+domain::enum_texto!(CanalConvocatoria {
+    Whatsapp => "whatsapp",
+    Correo => "correo",
+});
 
 /// Constancia de envío de la convocatoria a una persona.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -348,8 +345,10 @@ pub struct MensajesLinea {
 /// Persistencia de asambleas dentro de la transacción de una copropiedad.
 pub trait RepositorioAsambleas: Send {
     // --- Reuniones ---
+    /// Guarda una reunión nueva en borrador.
     fn insertar_reunion(&mut self, r: &Reunion) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de una reunión existente (datos, estado y configuración).
     fn actualizar_reunion(&mut self, r: &Reunion) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Reunión sin bloqueo (lecturas y votos).
@@ -373,11 +372,13 @@ pub trait RepositorioAsambleas: Send {
     fn actas_publicadas(&mut self) -> impl Future<Output = AppResult<Vec<Reunion>>> + Send;
 
     // --- Orden del día y documentos ---
+    /// Orden del día de la reunión, en su orden.
     fn puntos(
         &mut self,
         reunion: ReunionId,
     ) -> impl Future<Output = AppResult<Vec<PuntoOrden>>> + Send;
 
+    /// Crea (`nuevo`) o actualiza un punto del orden del día.
     fn guardar_punto(
         &mut self,
         reunion: ReunionId,
@@ -385,19 +386,23 @@ pub trait RepositorioAsambleas: Send {
         nuevo: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Elimina un punto del orden del día; `false` si no existía.
     fn eliminar_punto(&mut self, id: PuntoOrdenId) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Documentos adjuntos a la reunión (convocatoria, informes, soportes).
     fn documentos(
         &mut self,
         reunion: ReunionId,
     ) -> impl Future<Output = AppResult<Vec<DocumentoReunion>>> + Send;
 
+    /// Adjunta un archivo ya subido a la reunión.
     fn agregar_documento(
         &mut self,
         reunion: ReunionId,
         d: &DocumentoReunion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Quita un documento de la reunión; `false` si no estaba adjunto.
     fn quitar_documento(
         &mut self,
         reunion: ReunionId,
@@ -409,12 +414,15 @@ pub trait RepositorioAsambleas: Send {
     fn bienes_para_padron(&mut self)
     -> impl Future<Output = AppResult<Vec<BienParaPadron>>> + Send;
 
+    /// Fija el padrón al convocar: cada bien con su coeficiente vigente y su representante. No se
+    /// modifica después.
     fn insertar_padron(
         &mut self,
         reunion: ReunionId,
         bienes: &[BienParaPadron],
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Padrón fijado de la reunión.
     fn padron(
         &mut self,
         reunion: ReunionId,
@@ -437,38 +445,45 @@ pub trait RepositorioAsambleas: Send {
     ) -> impl Future<Output = AppResult<()>> + Send;
 
     // --- Asistentes ---
+    /// Registra un asistente con los bienes que representa.
     fn insertar_asistente(
         &mut self,
         a: &AsistenteNuevo,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Asistente por su id.
     fn asistente(
         &mut self,
         id: AsistenteId,
     ) -> impl Future<Output = AppResult<Option<Asistente>>> + Send;
 
+    /// Asistente vigente de una persona en la reunión, si ya se registró.
     fn asistente_de_persona(
         &mut self,
         reunion: ReunionId,
         persona: PersonaId,
     ) -> impl Future<Output = AppResult<Option<Asistente>>> + Send;
 
+    /// Asistentes de la reunión.
     fn asistentes(
         &mut self,
         reunion: ReunionId,
     ) -> impl Future<Output = AppResult<Vec<Asistente>>> + Send;
 
+    /// Asistente dueño de la papeleta virtual, por el hash de su token.
     fn asistente_por_token(
         &mut self,
         token_hash: &[u8],
     ) -> impl Future<Output = AppResult<Option<Asistente>>> + Send;
 
+    /// Asistente que tiene asignado el rótulo en la reunión.
     fn asistente_por_rotulo(
         &mut self,
         reunion: ReunionId,
         codigo: &CodigoRotulo,
     ) -> impl Future<Output = AppResult<Option<Asistente>>> + Send;
 
+    /// Asistentes (de cualquier reunión de la copropiedad) con ese teléfono de WhatsApp.
     fn asistentes_por_telefono(
         &mut self,
         telefono: &str,
@@ -484,6 +499,7 @@ pub trait RepositorioAsambleas: Send {
         confirmacion_outbox_id: Option<i64>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda el hash del token de la papeleta virtual del asistente (reemplaza el anterior).
     fn fijar_token(
         &mut self,
         id: AsistenteId,
@@ -511,16 +527,21 @@ pub trait RepositorioAsambleas: Send {
     ) -> impl Future<Output = AppResult<Option<AsistenteId>>> + Send;
 
     // --- Poderes ---
+    /// Registra un poder.
     fn insertar_poder(&mut self, p: &Poder) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Poder por su id.
     fn poder(&mut self, id: PoderId) -> impl Future<Output = AppResult<Option<Poder>>> + Send;
 
+    /// Guarda los cambios de un poder (revisión o revocación).
     fn actualizar_poder(&mut self, p: &Poder) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Poderes de la reunión.
     fn poderes(&mut self, reunion: ReunionId)
     -> impl Future<Output = AppResult<Vec<Poder>>> + Send;
 
     // --- Presencias y rótulos ---
+    /// Abre una presencia del asistente (entrada o reingreso).
     fn abrir_presencia(
         &mut self,
         reunion: ReunionId,
@@ -536,11 +557,13 @@ pub trait RepositorioAsambleas: Send {
         detalle: Option<&str>,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Presencias de la reunión, abiertas y cerradas.
     fn presencias(
         &mut self,
         reunion: ReunionId,
     ) -> impl Future<Output = AppResult<Vec<Presencia>>> + Send;
 
+    /// Bienes de los asistentes presentes ahora: base del quórum y de las preguntas que se abren.
     fn bienes_presentes(
         &mut self,
         reunion: ReunionId,
@@ -555,6 +578,7 @@ pub trait RepositorioAsambleas: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Libera el rótulo asignado al asistente; `false` si no tenía uno.
     fn liberar_rotulo(
         &mut self,
         asistente: AsistenteId,
@@ -562,12 +586,14 @@ pub trait RepositorioAsambleas: Send {
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
     // --- Quórum ---
+    /// Guarda una foto del quórum (append-only).
     fn insertar_foto(
         &mut self,
         reunion: ReunionId,
         f: &FotoQuorum,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Fotos del quórum de la reunión, en orden.
     fn fotos(
         &mut self,
         reunion: ReunionId,
@@ -581,6 +607,8 @@ pub trait RepositorioAsambleas: Send {
         nueva: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Elimina una pregunta en borrador con sus opciones y candidatos; `false` si no existía o ya
+    /// no estaba en borrador.
     fn eliminar_pregunta(&mut self, id: PreguntaId)
     -> impl Future<Output = AppResult<bool>> + Send;
 
@@ -596,6 +624,7 @@ pub trait RepositorioAsambleas: Send {
         id: PreguntaId,
     ) -> impl Future<Output = AppResult<Option<PreguntaGuardada>>> + Send;
 
+    /// Preguntas de la reunión con sus opciones, en orden.
     fn preguntas(
         &mut self,
         reunion: ReunionId,
@@ -627,6 +656,7 @@ pub trait RepositorioAsambleas: Send {
         desde: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Coeficiente y unidades de los bienes habilitados para votar la pregunta.
     fn conteo_habilitados(
         &mut self,
         pregunta: PreguntaId,
@@ -655,16 +685,19 @@ pub trait RepositorioAsambleas: Send {
     /// escritura; [`crate::AppError::Conflicto`] si un bien no está habilitado.
     fn registrar_voto(&mut self, v: &VotoEmitido) -> impl Future<Output = AppResult<u32>> + Send;
 
+    /// Totales de la pregunta por opción (coeficiente y unidades).
     fn conteo_votos(
         &mut self,
         pregunta: PreguntaId,
     ) -> impl Future<Output = AppResult<ConteoVotos>> + Send;
 
+    /// Detalle bien → opción. En votaciones reservadas solo se consulta con permiso y se audita.
     fn detalle_votos(
         &mut self,
         pregunta: PreguntaId,
     ) -> impl Future<Output = AppResult<Vec<DetalleVoto>>> + Send;
 
+    /// Participaciones de la pregunta con los datos que exige el acta (hora, canal, apoderado).
     fn participaciones(
         &mut self,
         pregunta: PreguntaId,
@@ -688,6 +721,7 @@ pub trait RepositorioAsambleas: Send {
         evento: &EventoSaliente,
     ) -> impl Future<Output = AppResult<i64>> + Send;
 
+    /// Constancia de la convocatoria enviada a una persona por un canal (append-only).
     fn registrar_envio_convocatoria(
         &mut self,
         reunion: ReunionId,
@@ -696,6 +730,7 @@ pub trait RepositorioAsambleas: Send {
         outbox_id: i64,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Constancias de envío de la convocatoria con su acuse.
     fn envios_convocatoria(
         &mut self,
         reunion: ReunionId,
@@ -707,6 +742,7 @@ pub trait RepositorioAsambleas: Send {
         outbox: &[i64],
     ) -> impl Future<Output = AppResult<Vec<(i64, Option<String>)>>> + Send;
 
+    /// Mensajes de WhatsApp de la reunión por línea y tipo, para su costo.
     fn mensajes_whatsapp(
         &mut self,
         reunion: ReunionId,
@@ -755,15 +791,19 @@ pub struct AcuseEntrega {
 
 /// Consultas entre copropiedades que usa el gateway (funciones `SECURITY DEFINER`).
 pub trait DirectorioAsambleas: Send + Sync {
+    /// Asistencias vigentes ligadas a un teléfono en todas las copropiedades (SECURITY DEFINER).
     fn asistencias_por_telefono(
         &self,
         telefono: &str,
     ) -> impl Future<Output = AppResult<Vec<AsistenciaTelefono>>> + Send;
 
+    /// Copropiedades con preguntas cuyo temporizador venció o consultas por escrito con el plazo
+    /// cumplido: el worker las cierra. Solo devuelve ids de tenant (SECURITY DEFINER).
     fn copropiedades_con_asambleas_pendientes(
         &self,
     ) -> impl Future<Output = AppResult<Vec<TenantId>>> + Send;
 
+    /// Guarda el acuse de entrega de un mensaje (`statuses` del webhook de Meta).
     fn registrar_acuse(&self, acuse: &AcuseEntrega) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Calidad de una línea según Meta (por su número visible).
@@ -791,29 +831,11 @@ pub enum EstadoLinea {
     Pausada,
 }
 
-impl EstadoLinea {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Activa => "activa",
-            Self::Degradada => "degradada",
-            Self::Pausada => "pausada",
-        }
-    }
-
-    /// # Errors
-    ///
-    /// [`crate::AppError::Validacion`] si el texto no es un estado.
-    pub fn desde(texto: &str) -> AppResult<Self> {
-        match texto {
-            "activa" => Ok(Self::Activa),
-            "degradada" => Ok(Self::Degradada),
-            "pausada" => Ok(Self::Pausada),
-            _ => Err(crate::AppError::Validacion(
-                "estado de línea desconocido".into(),
-            )),
-        }
-    }
-}
+domain::enum_texto!(EstadoLinea {
+    Activa => "activa",
+    Degradada => "degradada",
+    Pausada => "pausada",
+});
 
 /// Línea de WhatsApp de la plataforma con su uso del mes.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -851,10 +873,14 @@ pub struct TarifaWhatsapp {
 
 /// Líneas y tarifas en una transacción de plataforma.
 pub trait RepositorioLineasWhatsapp: Send {
+    /// Líneas de WhatsApp de la plataforma con su uso del mes.
     fn lineas(&mut self) -> impl Future<Output = AppResult<Vec<LineaWhatsapp>>> + Send;
 
+    /// Registra una línea de WhatsApp.
     fn insertar_linea(&mut self, l: &LineaWhatsapp) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Cambia el estado, el límite de mensajes por segundo y la franquicia de una línea; `false` si
+    /// no existe.
     fn actualizar_linea(
         &mut self,
         id: uuid::Uuid,
@@ -863,7 +889,9 @@ pub trait RepositorioLineasWhatsapp: Send {
         franquicia: u32,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Tarifas de Meta por tipo de conversación.
     fn tarifas(&mut self) -> impl Future<Output = AppResult<Vec<TarifaWhatsapp>>> + Send;
 
+    /// Crea o actualiza una tarifa de Meta.
     fn guardar_tarifa(&mut self, t: &TarifaWhatsapp) -> impl Future<Output = AppResult<()>> + Send;
 }

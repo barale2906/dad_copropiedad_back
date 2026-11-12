@@ -32,15 +32,18 @@ use crate::{
     seguridad::token_aleatorio,
 };
 
-pub const ACCION_EMITIR: AccionAuditoria = AccionAuditoria::new("acceso.credencial.emitir");
-pub const ACCION_ESTADO: AccionAuditoria = AccionAuditoria::new("acceso.credencial.cambiar_estado");
-pub const ACCION_AUTORIZAR: AccionAuditoria = AccionAuditoria::new("acceso.autorizacion.crear");
-pub const ACCION_REVOCAR_AUTORIZACION: AccionAuditoria =
+pub(crate) const ACCION_EMITIR: AccionAuditoria = AccionAuditoria::new("acceso.credencial.emitir");
+pub(crate) const ACCION_ESTADO: AccionAuditoria =
+    AccionAuditoria::new("acceso.credencial.cambiar_estado");
+pub(crate) const ACCION_AUTORIZAR: AccionAuditoria =
+    AccionAuditoria::new("acceso.autorizacion.crear");
+pub(crate) const ACCION_REVOCAR_AUTORIZACION: AccionAuditoria =
     AccionAuditoria::new("acceso.autorizacion.revocar");
-pub const ACCION_VERIFICAR: AccionAuditoria = AccionAuditoria::new("acceso.credencial.verificar");
-pub const ACCION_CONSENTIMIENTO: AccionAuditoria =
+pub(crate) const ACCION_VERIFICAR: AccionAuditoria =
+    AccionAuditoria::new("acceso.credencial.verificar");
+pub(crate) const ACCION_CONSENTIMIENTO: AccionAuditoria =
     AccionAuditoria::new("acceso.consentimiento_biometrico.registrar");
-pub const ACCION_REVOCAR_CONSENTIMIENTO: AccionAuditoria =
+pub(crate) const ACCION_REVOCAR_CONSENTIMIENTO: AccionAuditoria =
     AccionAuditoria::new("acceso.consentimiento_biometrico.revocar");
 
 /// Credencial nueva.
@@ -435,7 +438,7 @@ where
             Some(_) => (ResultadoAcceso::Permitido, "visita autorizada"),
         };
         if resultado == ResultadoAcceso::Denegado {
-            registrar_intento(&mut tx, ctx, punto, None, None, resultado, motivo, ahora).await?;
+            registrar_intento(&mut tx, ctx, punto, None, resultado, motivo, ahora).await?;
             tx.confirmar().await?;
         }
         return Ok(Verificacion {
@@ -478,7 +481,7 @@ where
         }
     };
     let id = credencial.as_ref().map(|c| c.id);
-    registrar_intento(&mut tx, ctx, punto, id, None, resultado, motivo, ahora).await?;
+    registrar_intento(&mut tx, ctx, punto, id, resultado, motivo, ahora).await?;
     tx.confirmar().await?;
     Ok(Verificacion {
         resultado,
@@ -488,13 +491,11 @@ where
     })
 }
 
-#[allow(clippy::too_many_arguments)]
 async fn registrar_intento<T: TxAcceso>(
     tx: &mut T,
     ctx: &Contexto,
     punto: PuntoAccesoId,
     credencial: Option<CredencialId>,
-    visita: Option<VisitaId>,
     resultado: ResultadoAcceso,
     motivo: &str,
     ahora: DateTime<Utc>,
@@ -506,7 +507,7 @@ async fn registrar_intento<T: TxAcceso>(
         puente_id: None,
         id_local: None,
         credencial_id: credencial,
-        visita_id: visita,
+        visita_id: None,
         sentido: SentidoAcceso::Entrada,
         resultado,
         motivo: Some(motivo.to_owned()),

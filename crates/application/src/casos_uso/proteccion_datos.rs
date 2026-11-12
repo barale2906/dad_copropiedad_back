@@ -40,21 +40,21 @@ use crate::{
     },
 };
 
-pub const ACCION_PUBLICAR_POLITICA: AccionAuditoria =
+pub(crate) const ACCION_PUBLICAR_POLITICA: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.politica.publicar");
-pub const ACCION_OTORGAR: AccionAuditoria =
+pub(crate) const ACCION_OTORGAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.autorizacion.otorgar");
-pub const ACCION_REVOCAR: AccionAuditoria =
+pub(crate) const ACCION_REVOCAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.autorizacion.revocar");
-pub const ACCION_RADICAR: AccionAuditoria =
+pub(crate) const ACCION_RADICAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.solicitud.radicar");
-pub const ACCION_TRAMITAR: AccionAuditoria =
+pub(crate) const ACCION_TRAMITAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.solicitud.tramitar");
-pub const ACCION_PRORROGAR: AccionAuditoria =
+pub(crate) const ACCION_PRORROGAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.solicitud.prorrogar");
-pub const ACCION_RESPONDER: AccionAuditoria =
+pub(crate) const ACCION_RESPONDER: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.solicitud.responder");
-pub const ACCION_CONSULTAR: AccionAuditoria =
+pub(crate) const ACCION_CONSULTAR: AccionAuditoria =
     AccionAuditoria::new("proteccion_datos.titular.consultar");
 
 /// Puertos que usan los casos de uso de protección de datos.

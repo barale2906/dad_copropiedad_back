@@ -368,3 +368,68 @@ async fn sin_rol_en_la_copropiedad_no_se_ve_nada(pool: PgPool) {
         assert_eq!(s, StatusCode::NOT_FOUND, "{ruta}");
     }
 }
+
+/// Permisos de una respuesta de `/capacidades`.
+fn permisos_de(v: &Value) -> Vec<String> {
+    v["permisos"]
+        .as_array()
+        .expect("permisos")
+        .iter()
+        .map(|p| p.as_str().expect("código").to_owned())
+        .collect()
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn capacidades_dan_los_permisos_de_cada_cuenta_y_los_modulos_contratados(pool: PgPool) {
+    let ph = ph(pool).await;
+    ph.habilitar("asambleas").await;
+    ph.bien_con_dueno().await;
+    let dueno = ph.api.token("dueno").await;
+
+    let (s, admin) = ph.pedir(Method::GET, "/capacidades", None).await;
+    assert_eq!(s, StatusCode::OK, "{admin}");
+    assert_eq!(admin["modulos"], json!(["asambleas"]));
+    let (s, propietario) = ph
+        .api
+        .pedir(
+            Method::GET,
+            &format!("{}/capacidades", ph.base),
+            Some(&dueno),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{propietario}");
+
+    let (de_admin, de_propietario) = (permisos_de(&admin), permisos_de(&propietario));
+    assert!(
+        de_admin.contains(&"roles.asignar".to_owned()),
+        "{de_admin:?}"
+    );
+    // Cada cuenta ve solo sus permisos: el propietario no administra roles.
+    assert!(
+        !de_propietario.is_empty(),
+        "el propietario tiene permisos propios"
+    );
+    assert!(!de_propietario.contains(&"roles.asignar".to_owned()));
+    assert!(de_propietario.iter().all(|p| de_admin.contains(p)));
+    assert_eq!(propietario["modulos"], admin["modulos"]);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn capacidades_de_otra_copropiedad_no_se_revelan(pool: PgPool) {
+    let ph = ph(pool).await;
+    ph.api.registrar("ajena").await;
+    let ajena = ph.api.token("ajena").await;
+    let ruta = format!("{}/capacidades", ph.base);
+
+    let (s, v) = ph.api.pedir(Method::GET, &ruta, Some(&ajena), None).await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::NOT_FOUND, &json!("no_encontrado"))
+    );
+    let (s, v) = ph.api.pedir(Method::GET, &ruta, None, None).await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::UNAUTHORIZED, &json!("no_autenticado"))
+    );
+}

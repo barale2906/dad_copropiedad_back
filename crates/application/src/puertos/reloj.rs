@@ -1,7 +1,10 @@
+//! Puerto del tiempo: los casos de uso nunca leen el reloj del sistema directamente.
+
 use chrono::{DateTime, Utc};
 
 /// Fuente de tiempo. Inyectable para que las pruebas sean deterministas.
 pub trait Reloj: Send + Sync {
+    /// Instante actual en UTC.
     fn ahora(&self) -> DateTime<Utc>;
 }
 

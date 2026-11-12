@@ -45,6 +45,7 @@ enum_texto!(NaturalezaOrganizacion {
     NaturalConRut => "natural_con_rut",
 });
 
+/// Estado de una organización en la plataforma.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EstadoOrganizacion {
@@ -83,6 +84,7 @@ impl RolOrganizacion {
     }
 }
 
+/// Estado de la reclamación de una organización por su empresa.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EstadoReclamacion {
@@ -97,6 +99,7 @@ enum_texto!(EstadoReclamacion {
     Rechazada => "rechazada",
 });
 
+/// Estado de un contrato de servicio con una copropiedad.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EstadoContrato {

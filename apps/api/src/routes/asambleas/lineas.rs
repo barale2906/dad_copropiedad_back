@@ -19,7 +19,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
-    error::{ApiError, ApiResult, ErrorRespuesta},
+    error::{ApiResult, ErrorRespuesta},
     extractores::{Json, Path},
     openapi::ETIQUETA_PLATAFORMA,
     sesion::OperadorPlataforma,
@@ -43,6 +43,7 @@ pub struct LineaRespuesta {
     pub nombre: String,
     pub limite_mps: u32,
     /// `activa`, `degradada` (Meta bajó su calidad) o `pausada`.
+    #[schema(value_type = crate::esquemas::EstadoLinea)]
     pub estado: &'static str,
     pub calidad: Option<String>,
     /// Mensajes de servicio gratuitos al mes.
@@ -134,7 +135,7 @@ pub async fn crear(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ActualizarLineaPeticion {
     /// `activa`, `degradada` o `pausada`.
-    #[schema(example = "activa")]
+    #[schema(value_type = crate::esquemas::EstadoLinea)]
     pub estado: String,
     #[schema(example = 80)]
     pub limite_mps: u32,
@@ -161,7 +162,7 @@ pub async fn actualizar(
     Path(id): Path<Uuid>,
     Json(p): Json<ActualizarLineaPeticion>,
 ) -> ApiResult<StatusCode> {
-    let estado = EstadoLinea::desde(&p.estado).map_err(ApiError::App)?;
+    let estado = EstadoLinea::try_from(p.estado.as_str())?;
     uc::actualizar_linea(
         &state.plataforma,
         &op.0.ctx,

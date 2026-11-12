@@ -110,6 +110,7 @@ pub struct TablaPdf {
     pub generada: String,
 }
 
+/// Generación de documentos PDF (actas, rótulos, libros del censo).
 pub trait GeneradorActas: Send + Sync {
     /// PDF del acta.
     fn generar(&self, datos: &DatosActa) -> impl Future<Output = AppResult<Vec<u8>>> + Send;

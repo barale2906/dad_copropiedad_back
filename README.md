@@ -138,6 +138,8 @@ sqlx migrate revert            # revertir la última
 
 ## Estándares y documentación
 - [`AGENTS.md`](AGENTS.md): **estándares obligatorios** (arquitectura, reutilización, pruebas, documentación, invariantes). Lo leen todas las herramientas: Claude Code (`CLAUDE.md`), Cursor (`.cursor/rules`), VS Code Copilot (`.github/copilot-instructions.md`), opencode y Codex.
-- `make doc`: documentación del código con rustdoc (`target/doc`).
+- `make doc`: documentación del código con rustdoc (`target/doc`); antes corre `make doc-items`, que
+  falla si un ítem público no tiene `///`.
 - Contrato de la API REST: [`apps/api/openapi.json`](apps/api/openapi.json), generado con utoipa desde las rutas. Si cambias rutas o DTOs, `make openapi` lo regenera (una prueba falla si queda desactualizado).
+- Para el frontend: [`docs/guia-frontend.md`](docs/guia-frontend.md) (generar el cliente tipado, sesión y renovación, errores, reintentos, paginación, archivos y WebSocket).
 - [`docs/adr/`](docs/adr/): decisiones de arquitectura.

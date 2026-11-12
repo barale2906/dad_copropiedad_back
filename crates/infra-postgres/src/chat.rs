@@ -44,6 +44,7 @@ pub struct SesionesChatPg {
 }
 
 impl SesionesChatPg {
+    /// Sesiones sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
@@ -199,6 +200,7 @@ pub struct DirectorioTelefonosPg {
 }
 
 impl DirectorioTelefonosPg {
+    /// Directorio sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
@@ -251,15 +253,7 @@ impl TryFrom<FilaConversacion> for Conversacion {
             linea: f.linea,
             telefono: f.telefono,
             persona_id: f.persona_id.map(PersonaId::from_uuid),
-            estado: match f.estado.as_str() {
-                "abierta" => EstadoConversacion::Abierta,
-                "cerrada" => EstadoConversacion::Cerrada,
-                otro => {
-                    return Err(AppError::Validacion(format!(
-                        "estado de conversación desconocido: {otro}"
-                    )));
-                }
-            },
+            estado: EstadoConversacion::try_from(f.estado.as_str())?,
             atendida_por: f.atendida_por.map(CuentaId::from_uuid),
             abierta_en: f.abierta_en,
             ultimo_entrante_en: f.ultimo_entrante_en,
@@ -523,6 +517,7 @@ pub struct DirectorioGestionPg {
 }
 
 impl DirectorioGestionPg {
+    /// Directorio sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }

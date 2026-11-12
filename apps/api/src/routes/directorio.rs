@@ -597,6 +597,7 @@ pub struct AnuncianteRespuesta {
     #[schema(value_type = Option<String>, example = "-74.072100")]
     pub longitud: Option<Decimal>,
     /// `pendiente`, `verificado`, `rechazado` o `suspendido`.
+    #[schema(value_type = crate::esquemas::EstadoVerificacion)]
     pub estado: String,
     pub motivo_estado: Option<String>,
     pub creado_en: DateTime<Utc>,
@@ -628,6 +629,7 @@ pub(super) fn anunciante_respuesta(a: Anunciante, ficha: Option<Ficha>) -> Anunc
 #[into_params(parameter_in = Query)]
 pub struct FiltroAnunciantesQuery {
     /// `pendiente`, `verificado`, `rechazado` o `suspendido`.
+    #[param(value_type = Option<crate::esquemas::EstadoVerificacion>)]
     pub estado: Option<String>,
     /// Fragmento del nombre comercial.
     pub q: Option<String>,
@@ -820,7 +822,7 @@ pub struct FichaPeticion {
     #[schema(example = json!(["costura"]))]
     pub categorias: Vec<String>,
     /// `nacional`, `municipio` o `radio`.
-    #[schema(example = "radio")]
+    #[schema(value_type = crate::esquemas::TipoCobertura)]
     pub cobertura: String,
     /// Solo con `radio` (1 a 100 km).
     #[schema(example = 3)]
@@ -900,7 +902,7 @@ pub async fn guardar_ficha(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EstadoAnunciantePeticion {
     /// `verificado`, `rechazado`, `suspendido` o `pendiente`.
-    #[schema(example = "suspendido")]
+    #[schema(value_type = crate::esquemas::EstadoVerificacion)]
     pub estado: String,
     /// Obligatorio para rechazar o suspender.
     #[schema(example = "Quejas por publicidad engañosa")]

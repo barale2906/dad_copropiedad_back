@@ -71,7 +71,8 @@ pub const RUTA_DOCS: &str = "/docs";
 
 /// Router HTTP completo, con middlewares y estado.
 pub fn router(state: AppState, config: &AppConfig) -> Router {
-    let (rutas, api) = rutas().split_for_parts();
+    let (rutas, mut api) = rutas().split_for_parts();
+    crate::openapi::completar_respuestas_comunes(&mut api);
 
     let mut app = rutas.fallback(ruta_no_encontrada);
     if config.docs_api_habilitada {
@@ -114,7 +115,9 @@ pub fn router(state: AppState, config: &AppConfig) -> Router {
 
 /// Contrato OpenAPI generado a partir de las rutas registradas.
 pub fn openapi() -> utoipa::openapi::OpenApi {
-    rutas().split_for_parts().1
+    let mut api = rutas().split_for_parts().1;
+    crate::openapi::completar_respuestas_comunes(&mut api);
+    api
 }
 
 /// Todas las rutas documentadas, sin middlewares ni estado.

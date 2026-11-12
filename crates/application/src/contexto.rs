@@ -1,3 +1,6 @@
+//! Contexto de una operación: la copropiedad (tenant), quién actúa y sus permisos. Los casos
+//! de uso lo reciben y exigen permisos con `exigir`; `Contexto::new` es el del sistema.
+
 use domain::{Ambito, ConjuntoPermisos, CuentaId, Permiso, TenantId};
 
 use crate::{AppError, AppResult};

@@ -46,7 +46,7 @@ pub struct PerfilRespuesta {
     /// Acceso total a la plataforma y a todas las copropiedades.
     pub es_superusuario: bool,
     /// Permisos de plataforma (vacío para la mayoría de las cuentas).
-    #[schema(value_type = Vec<String>)]
+    #[schema(value_type = Vec<crate::esquemas::Permiso>)]
     pub permisos_plataforma: Vec<Permiso>,
 }
 
@@ -300,9 +300,9 @@ pub struct TicketDeCuentaRespuesta {
     pub ticket_id: Uuid,
     #[schema(example = "PQR-2026-00042")]
     pub numero: String,
-    #[schema(example = "solicitud_mantenimiento")]
+    #[schema(value_type = crate::esquemas::TipoTicket)]
     pub tipo: String,
-    #[schema(example = "en_progreso")]
+    #[schema(value_type = crate::esquemas::EstadoTicket)]
     pub estado: String,
     pub asunto: String,
     pub creado_en: chrono::DateTime<chrono::Utc>,

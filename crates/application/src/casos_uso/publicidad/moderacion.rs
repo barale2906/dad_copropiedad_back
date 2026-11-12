@@ -21,10 +21,14 @@ use crate::{
     seguridad::token_aleatorio,
 };
 
-pub const ACCION_CREATIVO: AccionAuditoria = AccionAuditoria::new("publicidad.creativo.moderar");
-pub const ACCION_CAMPANA: AccionAuditoria = AccionAuditoria::new("publicidad.campana.moderar");
-pub const ACCION_REPORTES: AccionAuditoria = AccionAuditoria::new("publicidad.reporte.atender");
-pub const ACCION_PANTALLA: AccionAuditoria = AccionAuditoria::new("publicidad.pantalla.generar");
+pub(crate) const ACCION_CREATIVO: AccionAuditoria =
+    AccionAuditoria::new("publicidad.creativo.moderar");
+pub(crate) const ACCION_CAMPANA: AccionAuditoria =
+    AccionAuditoria::new("publicidad.campana.moderar");
+pub(crate) const ACCION_REPORTES: AccionAuditoria =
+    AccionAuditoria::new("publicidad.reporte.atender");
+pub(crate) const ACCION_PANTALLA: AccionAuditoria =
+    AccionAuditoria::new("publicidad.pantalla.generar");
 
 /// Decisión de la moderación.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,3 +1,5 @@
+//! Estado compartido de la API: adaptadores ya construidos que reciben los handlers.
+
 use std::sync::Arc;
 
 use infra_archivos::AlmacenLocal;

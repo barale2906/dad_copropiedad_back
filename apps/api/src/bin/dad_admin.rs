@@ -14,6 +14,14 @@
 //!
 //! Aplica las migraciones pendientes con el **dueño del esquema** (`DATABASE_URL`). Es el paso
 //! explícito del despliegue: la API y el gateway nunca migran al arrancar en producción.
+//!
+//! ```text
+//! DATABASE_URL=postgres://dueno… dad_admin revertir --hasta 20261112000230 --confirmar
+//! ```
+//!
+//! Deshace las migraciones posteriores a `--hasta` (sus `.down.sql`) para volver a una versión
+//! anterior de la imagen. Es destructivo (un `.down.sql` puede borrar datos): exige la versión
+//! destino explícita y `--confirmar`, y se ejecuta después de un respaldo.
 
 use anyhow::{Context, bail};
 use application::{
@@ -44,9 +52,11 @@ async fn main() -> anyhow::Result<()> {
     match args.first().map(String::as_str) {
         Some("crear-superusuario") => {}
         Some("migrar") => return migrar().await,
+        Some("revertir") => return revertir(&args).await,
         _ => bail!(
             "uso: dad_admin crear-superusuario --usuario U --correo C --nombre N \
-             (contraseña en DAD_ADMIN_CONTRASENA) | dad_admin migrar (dueño en DATABASE_URL)"
+             (contraseña en DAD_ADMIN_CONTRASENA) | dad_admin migrar | \
+             dad_admin revertir --hasta VERSION --confirmar (dueño en DATABASE_URL)"
         ),
     }
     let usuario = NombreUsuario::new(&argumento(&args, "--usuario").context("falta --usuario")?)?;
@@ -113,5 +123,27 @@ async fn migrar() -> anyhow::Result<()> {
         .await
         .context("no se pudieron aplicar las migraciones")?;
     eprintln!("migraciones aplicadas");
+    Ok(())
+}
+
+/// Revierte las migraciones posteriores a `--hasta` con el dueño del esquema.
+async fn revertir(args: &[String]) -> anyhow::Result<()> {
+    let hasta: i64 = argumento(args, "--hasta")
+        .context("indique --hasta <versión>: la última migración que debe quedar aplicada")?
+        .parse()
+        .context("--hasta es el número de versión de una migración (p. ej. 20261112000230)")?;
+    if !args.iter().any(|a| a == "--confirmar") {
+        bail!(
+            "revertir es destructivo (los .down.sql pueden borrar datos): haga un respaldo y \
+             repita con --confirmar"
+        );
+    }
+    let _ = dotenvy::dotenv();
+    let url = std::env::var("DATABASE_URL")
+        .context("defina DATABASE_URL con el dueño del esquema (no el rol dad_app)")?;
+    infra_postgres::revertir_hasta(&url, hasta)
+        .await
+        .context("no se pudieron revertir las migraciones")?;
+    eprintln!("migraciones posteriores a {hasta} revertidas");
     Ok(())
 }

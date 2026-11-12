@@ -37,6 +37,7 @@ pub struct EnVivo {
 }
 
 impl EnVivo {
+    /// Hub sin suscriptores.
     pub fn new() -> Self {
         Self::default()
     }
@@ -86,13 +87,22 @@ impl EnVivo {
     }
 }
 
-/// Tablero de la reunión en JSON (contexto del sistema: quien se conecta ya fue autorizado).
+/// Tablero de la reunión en JSON.
+///
+/// La conexión inicial pasa el contexto de la cuenta (el caso de uso exige `asambleas.ver`);
+/// la difusión periódica usa el del sistema, porque cada suscriptor ya fue autorizado al
+/// conectarse.
+///
+/// # Errors
+///
+/// Los del caso de uso [`tablero_en_vivo`] (sin permiso, reunión inexistente, módulo no
+/// habilitado) o de serialización.
 pub async fn tablero_json(
     unidad: &UnidadDeTrabajoPg,
-    tenant: TenantId,
+    ctx: &Contexto,
     reunion: ReunionId,
 ) -> AppResult<String> {
-    let t = tablero_en_vivo(unidad, &RelojSistema, &Contexto::new(tenant), reunion).await?;
+    let t = tablero_en_vivo(unidad, &RelojSistema, ctx, reunion).await?;
     serde_json::to_string(&TableroRespuesta::from(t)).map_err(application::AppError::infra)
 }
 
@@ -140,7 +150,7 @@ pub async fn emitir(
             _ = intervalo.tick() => {}
         }
         for ((tenant, reunion), tx) in hub.pendientes() {
-            match tablero_json(&unidad, tenant, reunion).await {
+            match tablero_json(&unidad, &Contexto::new(tenant), reunion).await {
                 Ok(json) => {
                     let _ = tx.send(json.into());
                 }

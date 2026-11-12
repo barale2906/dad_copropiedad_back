@@ -1,3 +1,4 @@
+/// Errores del adaptador de PostgreSQL.
 #[derive(Debug, thiserror::Error)]
 pub enum InfraPgError {
     #[error(transparent)]

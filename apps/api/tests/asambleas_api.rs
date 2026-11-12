@@ -91,6 +91,11 @@ async fn ok(
 
 /// Reunión convocada y con el registro abierto.
 async fn en_registro(ph: &Ph) -> String {
+    en_registro_con(ph, json!({ "max_bienes_apoderado": 2 }), &[]).await
+}
+
+/// Como [`en_registro`], con otra configuración y el listado de morosos (fijado al convocar).
+async fn en_registro_con(ph: &Ph, configuracion: Value, morosos: &[&str]) -> String {
     let fecha = (chrono::Utc::now() + chrono::Duration::days(20)).to_rfc3339();
     let r = ok(
         ph,
@@ -99,7 +104,7 @@ async fn en_registro(ph: &Ph) -> String {
         Some(json!({
             "titulo": "Asamblea ordinaria 2027", "tipo": "ordinaria", "modalidad": "presencial",
             "fecha_programada": fecha, "lugar": "Salón comunal",
-            "configuracion": { "max_bienes_apoderado": 2 }
+            "configuracion": configuracion
         })),
         StatusCode::CREATED,
     )
@@ -122,6 +127,16 @@ async fn en_registro(ph: &Ph) -> String {
     )
     .await;
     assert_eq!(c["bienes_padron"], 3);
+    if !morosos.is_empty() {
+        ok(
+            ph,
+            Method::PUT,
+            &format!("/asambleas/{r}/morosos"),
+            Some(json!({ "codigos": morosos })),
+            StatusCode::OK,
+        )
+        .await;
+    }
     ok(
         ph,
         Method::POST,
@@ -521,4 +536,455 @@ async fn lineas_de_whatsapp_de_la_plataforma(pool: PgPool) {
         StatusCode::FORBIDDEN,
         "el administrador de una PH no gestiona líneas"
     );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Mora, poderes, anulación, suspensión, cancelación y papeleta virtual
+// ---------------------------------------------------------------------------------------------
+
+/// Registra en la mesa al propietario `i` con su bien y el rótulo `R-000i`; devuelve
+/// (asistente, token de la papeleta).
+async fn registrar_propietario(
+    ph: &Ph,
+    r: &str,
+    personas: &[String],
+    bienes: &[String],
+    i: usize,
+) -> (String, String) {
+    let v = ok(
+        ph,
+        Method::POST,
+        &format!("/asambleas/{r}/asistentes"),
+        Some(json!({
+            "persona_id": personas[i], "bienes_propios": [bienes[i]], "rotulo": format!("r-000{i}")
+        })),
+        StatusCode::CREATED,
+    )
+    .await;
+    (
+        id(&v["asistente"]),
+        v["token_papeleta"].as_str().expect("token").to_owned(),
+    )
+}
+
+async fn transicion(ph: &Ph, r: &str, accion: &str) -> (StatusCode, Value) {
+    ph.pedir(
+        Method::POST,
+        &format!("/asambleas/{r}/transiciones"),
+        Some(json!({ "accion": accion, "motivo": "prueba" })),
+    )
+    .await
+}
+
+/// Pregunta sí/no abierta; devuelve (ruta de votos, id, opción «sí»).
+async fn pregunta_abierta(ph: &Ph, r: &str) -> (String, String, Value) {
+    let p = ok(
+        ph,
+        Method::POST,
+        &format!("/asambleas/{r}/preguntas"),
+        Some(json!({ "enunciado": "¿Aprueba el presupuesto?", "tipo": "si_no" })),
+        StatusCode::CREATED,
+    )
+    .await;
+    let pid = id(&p);
+    ok(
+        ph,
+        Method::PUT,
+        &format!("/asambleas/{r}/preguntas/{pid}/estado"),
+        Some(json!({ "accion": "abrir" })),
+        StatusCode::OK,
+    )
+    .await;
+    (
+        format!("/asambleas/{r}/preguntas/{pid}/votos"),
+        pid,
+        p["opciones"][0]["id"].clone(),
+    )
+}
+
+async fn voto_rotulo(
+    ph: &Ph,
+    ruta: &str,
+    i: usize,
+    si: &Value,
+    clave: &str,
+) -> (StatusCode, Value) {
+    let cuerpo = json!({ "rotulo": format!("R-000{i}"), "opciones": [si], "canal": "rotulo" });
+    votar(ph, &ph.admin, ruta, clave, cuerpo).await
+}
+
+/// Reunión instalada con los tres propietarios presentes.
+async fn instalada_con_todos(
+    ph: &Ph,
+    configuracion: Value,
+    morosos: &[&str],
+    personas: &[String],
+    bienes: &[String],
+) -> (String, Vec<(String, String)>) {
+    let r = en_registro_con(ph, configuracion, morosos).await;
+    let mut papeletas = Vec::new();
+    for i in 0..3 {
+        papeletas.push(registrar_propietario(ph, &r, personas, bienes, i).await);
+    }
+    let (s, v) = transicion(ph, &r, "instalar").await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    (r, papeletas)
+}
+
+async fn unidades_presentes(ph: &Ph, r: &str) -> Value {
+    ok(
+        ph,
+        Method::GET,
+        &format!("/asambleas/{r}/quorum"),
+        None,
+        StatusCode::OK,
+    )
+    .await["unidades_presentes"]
+        .clone()
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn con_efecto_sin_voto_el_moroso_hace_quorum_pero_no_vota(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let (r, _) = instalada_con_todos(
+        &ph,
+        json!({ "efecto_mora": "sin_voto" }),
+        &["B-0001"],
+        &personas,
+        &bienes,
+    )
+    .await;
+    assert_eq!(unidades_presentes(&ph, &r).await, 3);
+    let (ruta, _, si) = pregunta_abierta(&ph, &r).await;
+
+    let (s, v) = voto_rotulo(&ph, &ruta, 1, &si, "moroso").await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto")),
+        "{v}"
+    );
+    let (s, v) = voto_rotulo(&ph, &ruta, 0, &si, "al-dia").await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn con_efecto_sin_voto_ni_quorum_el_moroso_tampoco_cuenta_presente(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let (r, _) = instalada_con_todos(
+        &ph,
+        json!({ "efecto_mora": "sin_voto_ni_quorum" }),
+        &["B-0001"],
+        &personas,
+        &bienes,
+    )
+    .await;
+
+    assert_eq!(unidades_presentes(&ph, &r).await, 2);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn con_efecto_informativo_el_moroso_vota(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let (r, _) = instalada_con_todos(
+        &ph,
+        json!({ "efecto_mora": "informativo" }),
+        &["B-0001"],
+        &personas,
+        &bienes,
+    )
+    .await;
+    let (ruta, _, si) = pregunta_abierta(&ph, &r).await;
+
+    let (s, v) = voto_rotulo(&ph, &ruta, 1, &si, "moroso").await;
+
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn un_poder_rechazado_deja_al_bien_sin_representar(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let r = en_registro_con(&ph, json!({ "max_bienes_apoderado": 1 }), &[]).await;
+    let (asistente, _) = registrar_propietario(&ph, &r, &personas, &bienes, 0).await;
+    let poder = |bien: &str| json!({ "bien_privado_id": bien });
+
+    ok(
+        &ph,
+        Method::POST,
+        &format!("/asambleas/{r}/asistentes/{asistente}/poderes"),
+        Some(poder(&bienes[1])),
+        StatusCode::CREATED,
+    )
+    .await;
+    assert_eq!(unidades_presentes(&ph, &r).await, 2);
+    let poderes = ok(
+        &ph,
+        Method::GET,
+        &format!("/asambleas/{r}/poderes"),
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    let poder_id = id(&poderes[0]);
+    // El tope de bienes por apoderado (1) impide un segundo poder.
+    let (s, v) = ph
+        .pedir(
+            Method::POST,
+            &format!("/asambleas/{r}/asistentes/{asistente}/poderes"),
+            Some(poder(&bienes[2])),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "{v}");
+
+    let rechazo = ok(
+        &ph,
+        Method::PUT,
+        &format!("/asambleas/{r}/poderes/{poder_id}/estado"),
+        Some(json!({ "estado": "rechazado", "motivo": "firma ilegible" })),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(rechazo["estado"], "rechazado");
+    assert_eq!(unidades_presentes(&ph, &r).await, 1);
+    let poderes = ok(
+        &ph,
+        Method::GET,
+        &format!("/asambleas/{r}/poderes"),
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(poderes[0]["estado"], "rechazado");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn anular_una_pregunta_la_cierra_sin_resultado_y_no_admite_votos(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let (r, _) = instalada_con_todos(&ph, json!({}), &[], &personas, &bienes).await;
+    let (ruta, pid, si) = pregunta_abierta(&ph, &r).await;
+    assert_eq!(
+        voto_rotulo(&ph, &ruta, 0, &si, "antes").await.0,
+        StatusCode::CREATED
+    );
+
+    let anulada = ok(
+        &ph,
+        Method::PUT,
+        &format!("/asambleas/{r}/preguntas/{pid}/estado"),
+        Some(json!({ "accion": "anular", "motivo": "enunciado equivocado" })),
+        StatusCode::OK,
+    )
+    .await;
+
+    assert_eq!(anulada["estado"], "anulada");
+    let (s, v) = voto_rotulo(&ph, &ruta, 1, &si, "despues").await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto_estado"))
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_receso_exige_cerrar_las_preguntas_y_suspendida_no_se_vota(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let (r, _) = instalada_con_todos(&ph, json!({}), &[], &personas, &bienes).await;
+    let (_, pid, _) = pregunta_abierta(&ph, &r).await;
+
+    // Con una pregunta abierta no hay receso: los votos quedarían a medias.
+    let (s, v) = transicion(&ph, &r, "suspender").await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto"))
+    );
+    ok(
+        &ph,
+        Method::PUT,
+        &format!("/asambleas/{r}/preguntas/{pid}/estado"),
+        Some(json!({ "accion": "cerrar" })),
+        StatusCode::OK,
+    )
+    .await;
+    assert_eq!(transicion(&ph, &r, "suspender").await.0, StatusCode::OK);
+
+    // Suspendida no se abre ninguna pregunta.
+    let p = ok(
+        &ph,
+        Method::POST,
+        &format!("/asambleas/{r}/preguntas"),
+        Some(json!({ "enunciado": "¿Aprueba el informe?", "tipo": "si_no" })),
+        StatusCode::CREATED,
+    )
+    .await;
+    let (s, v) = ph
+        .pedir(
+            Method::PUT,
+            &format!("/asambleas/{r}/preguntas/{}/estado", id(&p)),
+            Some(json!({ "accion": "abrir" })),
+        )
+        .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto_estado")),
+        "{v}"
+    );
+
+    assert_eq!(transicion(&ph, &r, "reanudar").await.0, StatusCode::OK);
+    let (ruta, _, si) = pregunta_abierta(&ph, &r).await;
+    assert_eq!(
+        voto_rotulo(&ph, &ruta, 0, &si, "reanudada").await.0,
+        StatusCode::CREATED
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_reunion_cancelada_no_se_instala(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let r = en_registro(&ph).await;
+    registrar_propietario(&ph, &r, &personas, &bienes, 0).await;
+    registrar_propietario(&ph, &r, &personas, &bienes, 1).await;
+
+    let (s, v) = transicion(&ph, &r, "cancelar").await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v["estado"], "cancelada");
+    let (s, v) = transicion(&ph, &r, "instalar").await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto_estado"))
+    );
+}
+
+/// Petición de la papeleta virtual: el token en `X-Papeleta` es la credencial.
+async fn papeleta(
+    ph: &Ph,
+    metodo: Method,
+    ruta: &str,
+    token: &str,
+    clave: Option<&str>,
+    cuerpo: Option<Value>,
+) -> (StatusCode, Value) {
+    let mut req = Request::builder()
+        .method(metodo)
+        .uri(format!("{}/papeleta{ruta}", ph.base))
+        .header("x-papeleta", token);
+    if let Some(c) = clave {
+        req = req.header("idempotency-key", c);
+    }
+    let body = match cuerpo {
+        Some(v) => {
+            req = req.header(header::CONTENT_TYPE, "application/json");
+            Body::from(v.to_string())
+        }
+        None => Body::empty(),
+    };
+    let res = ph
+        .api
+        .router
+        .clone()
+        .oneshot(req.body(body).expect("petición"))
+        .await
+        .expect("router");
+    let s = res.status();
+    let b = to_bytes(res.into_body(), usize::MAX).await.expect("cuerpo");
+    (s, serde_json::from_slice(&b).unwrap_or(Value::Null))
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_asistente_vota_desde_su_papeleta_una_vez_y_solo_presente(pool: PgPool) {
+    let (ph, bienes, personas) = ph_con_bienes(pool, 3, "0.3").await;
+    let (r, papeletas) = instalada_con_todos(&ph, json!({}), &[], &personas, &bienes).await;
+    let (_, pid, si) = pregunta_abierta(&ph, &r).await;
+    let token = &papeletas[0].1;
+    let voto = json!({ "pregunta_id": pid, "opciones": [si] });
+
+    let (s, v) = papeleta(
+        &ph,
+        Method::POST,
+        "/votos",
+        token,
+        Some("web-1"),
+        Some(voto.clone()),
+    )
+    .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    assert_eq!(v["registrado"], true);
+    // Reintento con la misma clave: el resultado original, sin votos nuevos.
+    let (s, v) = papeleta(
+        &ph,
+        Method::POST,
+        "/votos",
+        token,
+        Some("web-1"),
+        Some(voto.clone()),
+    )
+    .await;
+    assert_eq!(
+        (s, &v["registrado"]),
+        (StatusCode::CREATED, &json!(false)),
+        "{v}"
+    );
+    let (s, v) = papeleta(
+        &ph,
+        Method::POST,
+        "/votos",
+        token,
+        Some("web-2"),
+        Some(voto.clone()),
+    )
+    .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("ya_voto"))
+    );
+    let (s, _) = papeleta(&ph, Method::POST, "/votos", token, None, Some(voto)).await;
+    assert_eq!(s, StatusCode::BAD_REQUEST, "sin Idempotency-Key");
+
+    // Quien salió no vota hasta volver a ingresar (§9.7: solo asistentes presentes).
+    let (_, pid2, si2) = pregunta_abierta(&ph, &r).await;
+    let otra = json!({ "pregunta_id": pid2, "opciones": [si2] });
+    let (asistente_ausente, ausente) = &papeletas[1];
+    assert_eq!(
+        papeleta(&ph, Method::POST, "/salida", ausente, None, None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+    let (s, v) = papeleta(
+        &ph,
+        Method::POST,
+        "/votos",
+        ausente,
+        Some("web-3"),
+        Some(otra.clone()),
+    )
+    .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::FORBIDDEN, &json!("no_inscrito"))
+    );
+    let (s, v) = papeleta(&ph, Method::POST, "/salida", ausente, None, None).await;
+    assert_eq!(s, StatusCode::CONFLICT, "ya había salido: {v}");
+
+    // En una reunión presencial el reingreso lo registra la mesa, no la propia papeleta.
+    let (s, v) = papeleta(&ph, Method::POST, "/ingreso", ausente, None, None).await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto"))
+    );
+    ok(
+        &ph,
+        Method::POST,
+        &format!("/asambleas/{r}/asistentes/{asistente_ausente}/reingreso"),
+        None,
+        StatusCode::OK,
+    )
+    .await;
+    let (s, v) = papeleta(
+        &ph,
+        Method::POST,
+        "/votos",
+        ausente,
+        Some("web-4"),
+        Some(otra),
+    )
+    .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
 }

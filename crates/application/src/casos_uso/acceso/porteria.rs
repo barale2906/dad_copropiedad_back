@@ -25,9 +25,11 @@ use crate::{
     },
 };
 
-pub const ACCION_CONFIGURAR: AccionAuditoria = AccionAuditoria::new("acceso.configuracion.editar");
-pub const ACCION_MINUTA: AccionAuditoria = AccionAuditoria::new("acceso.minuta.registrar");
-pub const ACCION_EVENTO_MANUAL: AccionAuditoria = AccionAuditoria::new("acceso.evento.registrar");
+pub(crate) const ACCION_CONFIGURAR: AccionAuditoria =
+    AccionAuditoria::new("acceso.configuracion.editar");
+pub(crate) const ACCION_MINUTA: AccionAuditoria = AccionAuditoria::new("acceso.minuta.registrar");
+pub(crate) const ACCION_EVENTO_MANUAL: AccionAuditoria =
+    AccionAuditoria::new("acceso.evento.registrar");
 
 /// Adjuntos máximos de una novedad de la minuta.
 pub const MAX_ADJUNTOS_MINUTA: usize = 5;

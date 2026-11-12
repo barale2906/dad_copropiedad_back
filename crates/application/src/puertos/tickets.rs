@@ -208,16 +208,12 @@ pub enum SerieConsecutivo {
     OrdenTrabajo,
 }
 
-impl SerieConsecutivo {
-    /// Texto de `consecutivos.serie`.
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Ticket => "ticket",
-            Self::OrdenTrabajo => "orden_trabajo",
-        }
-    }
-}
+domain::enum_texto!(SerieConsecutivo {
+    Ticket => "ticket",
+    OrdenTrabajo => "orden_trabajo",
+});
 
+/// Persistencia de tickets (ADR 0009): consecutivos, categorías, mensajes, adjuntos y eventos.
 pub trait RepositorioTickets: Send {
     /// Siguiente número de la serie en el año (atómico dentro de la transacción).
     fn siguiente_consecutivo(
@@ -237,6 +233,7 @@ pub trait RepositorioTickets: Send {
         c: &ConfiguracionTickets,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Categorías de ticket de la copropiedad.
     fn categorias_ticket(&mut self)
     -> impl Future<Output = AppResult<Vec<CategoriaTicket>>> + Send;
 
@@ -249,6 +246,7 @@ pub trait RepositorioTickets: Send {
         nueva: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Ticket por su id.
     fn ticket(&mut self, id: TicketId) -> impl Future<Output = AppResult<Option<Ticket>>> + Send;
 
     /// Ticket ya radicado con esa clave de idempotencia (o `wamid`).
@@ -262,6 +260,7 @@ pub trait RepositorioTickets: Send {
     /// [`crate::AppError::Conflicto`] si la clave de idempotencia ya existe.
     fn insertar_ticket(&mut self, t: &Ticket) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de un ticket.
     fn actualizar_ticket(&mut self, t: &Ticket) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Tickets visibles que cumplen el filtro, más recientes primero (cursor por `id`
@@ -273,6 +272,7 @@ pub trait RepositorioTickets: Send {
         pagina: SolicitudPagina,
     ) -> impl Future<Output = AppResult<Pagina<Ticket>>> + Send;
 
+    /// Agrega un mensaje al ticket (append-only).
     fn insertar_mensaje_ticket(
         &mut self,
         m: &MensajeTicket,
@@ -285,23 +285,27 @@ pub trait RepositorioTickets: Send {
         incluir_internos: bool,
     ) -> impl Future<Output = AppResult<Vec<MensajeTicket>>> + Send;
 
+    /// Adjunta un archivo al ticket.
     fn insertar_adjunto_ticket(
         &mut self,
         ticket: TicketId,
         a: &AdjuntoTicket,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Adjuntos del ticket (los internos, solo si se piden).
     fn adjuntos_ticket(
         &mut self,
         ticket: TicketId,
         incluir_internos: bool,
     ) -> impl Future<Output = AppResult<Vec<AdjuntoTicket>>> + Send;
 
+    /// Agrega un evento al historial del ticket (append-only).
     fn insertar_evento_ticket(
         &mut self,
         e: &EventoTicket,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Historial del ticket, en orden.
     fn eventos_ticket(
         &mut self,
         ticket: TicketId,
@@ -319,6 +323,7 @@ pub trait RepositorioTickets: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Vec<Ticket>>> + Send;
 
+    /// Indicadores del tablero de tickets en el instante.
     fn tablero_tickets(
         &mut self,
         ahora: DateTime<Utc>,
@@ -358,6 +363,8 @@ pub trait RepositorioTickets: Send {
 /// Copropiedades con tareas pendientes del worker de gestión (función `SECURITY DEFINER`
 /// `copropiedades_con_gestion_pendiente`: solo devuelve ids de tenant).
 pub trait DirectorioGestion: Send + Sync {
+    /// Copropiedades con tareas del worker de gestión: tickets por cerrar o vencidos,
+    /// preventivos, obligaciones y comunicados programados (solo ids de tenant).
     fn copropiedades_con_gestion_pendiente(
         &self,
     ) -> impl Future<Output = AppResult<Vec<TenantId>>> + Send;
@@ -380,6 +387,7 @@ pub struct TicketDeCuenta {
 /// Tickets de una cuenta en todas sus copropiedades (transacción de plataforma, función
 /// `SECURITY DEFINER` `tickets_de_cuenta`).
 pub trait RepositorioTicketsDeCuenta: Send {
+    /// Tickets de la cuenta en todas sus copropiedades, los más recientes primero.
     fn tickets_de_cuenta(
         &mut self,
         cuenta: CuentaId,

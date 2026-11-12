@@ -17,7 +17,7 @@ SHELL := /bin/bash
 .PHONY: help herramientas env setup \
 	    up down reiniciar-bd ps logs psql \
 	    api gateway dev superusuario \
-	    check fmt fmt-check lint test test-rapido cov verificar doc doc-abrir openapi \
+	    check fmt fmt-check lint test test-rapido cov verificar doc doc-items doc-abrir openapi \
 	    migrar migracion revertir migraciones sqlx-prepare \
 	    deny audit build release limpiar
 
@@ -108,8 +108,18 @@ cov: ## Reporte de cobertura HTML (target/llvm-cov/html/index.html)
 verificar: fmt-check lint test ## Lo que debe pasar antes de dar una tarea por terminada
 
 ##@ Documentación
-doc: ## Genera la documentación del código (rustdoc) sin advertencias → target/doc
+doc: doc-items ## Genera la documentación del código (rustdoc) sin advertencias → target/doc
 	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --workspace --no-deps
+
+# `missing_docs` no permite excluir campos ni variantes: se corre como aviso y se rechaza solo lo
+# que AGENTS.md §7 exige (todo ítem `pub` con `///`; campos y variantes cuando no son evidentes).
+doc-items: ## Falla si algún ítem público (fn, trait, struct, enum, const, módulo) no tiene `///`
+	@faltan=$$($(CARGO) clippy --workspace --lib --bins --quiet -- -W missing_docs 2>&1 \
+	    | grep -A1 -E '^warning: missing documentation for ' \
+	    | grep -vE '^--$$' | paste - - \
+	    | grep -vE 'for (a struct field|a variant)[[:space:]]' \
+	    | sed -E 's/^warning: //; s/[[:space:]]+-->[[:space:]]+/ → /'); \
+	if [ -n "$$faltan" ]; then echo "Ítems públicos sin documentar:"; echo "$$faltan"; exit 1; fi
 
 doc-abrir: ## Genera y abre la documentación en el navegador
 	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --workspace --no-deps --open

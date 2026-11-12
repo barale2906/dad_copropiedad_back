@@ -171,9 +171,10 @@ pub async fn publicar_politica(
 pub struct AutorizacionTratamientoRespuesta {
     pub id: Uuid,
     /// `administracion`, `comunicaciones`, `control_acceso` o `publicidad`.
-    #[schema(example = "comunicaciones")]
+    #[schema(value_type = crate::esquemas::FinalidadTratamiento)]
     pub finalidad: String,
     /// `web`, `app`, `whatsapp` o `escrito`.
+    #[schema(value_type = crate::esquemas::MedioAutorizacion)]
     pub medio: String,
     pub politica_version: u32,
     pub evidencia_archivo_id: Option<Uuid>,
@@ -202,10 +203,10 @@ pub struct SolicitudTitularRespuesta {
     pub id: Uuid,
     pub persona_id: Uuid,
     /// `consulta`, `actualizacion`, `rectificacion`, `supresion` o `revocatoria`.
-    #[schema(example = "consulta")]
+    #[schema(value_type = crate::esquemas::TipoSolicitudTitular)]
     pub tipo: String,
     /// `radicada`, `en_tramite` o `respondida`.
-    #[schema(example = "radicada")]
+    #[schema(value_type = crate::esquemas::EstadoSolicitudTitular)]
     pub estado: String,
     pub detalle: Option<String>,
     pub radicada_en: DateTime<Utc>,
@@ -326,10 +327,10 @@ pub async fn autorizaciones(
 /// Finalidades que se autorizan.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct OtorgarPeticion {
-    #[schema(value_type = Vec<String>, example = json!(["administracion", "comunicaciones"]))]
+    #[schema(value_type = Vec<crate::esquemas::FinalidadTratamiento>, example = json!(["administracion", "comunicaciones"]))]
     pub finalidades: BTreeSet<FinalidadTratamiento>,
     /// `web`, `app`, `whatsapp` o `escrito`.
-    #[schema(value_type = String, example = "app")]
+    #[schema(value_type = crate::esquemas::MedioAutorizacion)]
     pub medio: MedioAutorizacion,
     /// Formato firmado escaneado (autorizaciones por escrito), ya subido con `/archivos`.
     pub evidencia_archivo_id: Option<Uuid>,
@@ -384,7 +385,7 @@ pub async fn otorgar(
 /// Finalidades que se revocan.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RevocarPeticion {
-    #[schema(value_type = Vec<String>, example = json!(["publicidad"]))]
+    #[schema(value_type = Vec<crate::esquemas::FinalidadTratamiento>, example = json!(["publicidad"]))]
     pub finalidades: Vec<FinalidadTratamiento>,
 }
 
@@ -428,7 +429,7 @@ pub async fn revocar(
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroSolicitudesQuery {
-    #[param(value_type = Option<String>, example = "radicada")]
+    #[param(value_type = Option<crate::esquemas::EstadoSolicitudTitular>)]
     pub estado: Option<EstadoSolicitudTitular>,
     pub persona_id: Option<Uuid>,
     /// Sin responder que vencen (con prórroga) hasta esta fecha, p. ej. hoy para las vencidas.
@@ -467,7 +468,7 @@ pub async fn listar_solicitudes(
 pub struct RadicarSolicitudPeticion {
     /// El titular (su `persona_id` sale de `/proteccion-datos/mis-datos`).
     pub persona_id: Uuid,
-    #[schema(value_type = String, example = "rectificacion")]
+    #[schema(value_type = crate::esquemas::TipoSolicitudTitular)]
     pub tipo: TipoSolicitudTitular,
     #[schema(example = "Mi número de celular cambió")]
     pub detalle: Option<String>,

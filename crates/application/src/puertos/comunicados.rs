@@ -107,6 +107,7 @@ pub trait RepositorioComunicados: Send {
         c: &Comunicado,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Comunicado por su id.
     fn comunicado(
         &mut self,
         id: ComunicadoId,
@@ -125,6 +126,7 @@ pub trait RepositorioComunicados: Send {
         pagina: SolicitudPagina,
     ) -> impl Future<Output = AppResult<Pagina<ComunicadoConResumen>>> + Send;
 
+    /// Contadores de entrega y lectura del comunicado.
     fn resumen_lectura(
         &mut self,
         id: ComunicadoId,
@@ -145,6 +147,7 @@ pub trait RepositorioComunicados: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Vec<DestinatarioComunicado>>> + Send;
 
+    /// Guarda la audiencia fijada al enviar el comunicado y sus canales.
     fn insertar_entregas(
         &mut self,
         id: ComunicadoId,
@@ -164,6 +167,7 @@ pub trait RepositorioComunicados: Send {
         pagina: SolicitudPagina,
     ) -> impl Future<Output = AppResult<Pagina<ComunicadoRecibido>>> + Send;
 
+    /// Comunicado recibido por la persona, si está en su audiencia.
     fn recibido(
         &mut self,
         persona: PersonaId,

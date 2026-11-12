@@ -67,14 +67,14 @@ pub struct VisitaRespuesta {
     pub id: Uuid,
     pub bien_privado_id: Uuid,
     /// `anuncio_porteria` o `preautorizada`.
-    #[schema(example = "anuncio_porteria")]
+    #[schema(value_type = crate::esquemas::OrigenVisita)]
     pub origen: String,
     /// `visita`, `domicilio`, `proveedor`, `trasteo` o `servicio_domestico`.
-    #[schema(example = "domicilio")]
+    #[schema(value_type = crate::esquemas::TipoVisita)]
     pub tipo: String,
     /// `anunciada`, `requiere_llamada`, `autorizada`, `rechazada`, `sin_respuesta`, `ingresada`,
     /// `finalizada`, `vencida` o `cancelada`.
-    #[schema(example = "anunciada")]
+    #[schema(value_type = crate::esquemas::EstadoVisita)]
     pub estado: String,
     pub visitante_nombre: String,
     pub visitante_documento: Option<String>,
@@ -125,7 +125,7 @@ impl From<Visita> for VisitaRespuesta {
 /// Hecho del historial de una visita.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct EventoVisitaRespuesta {
-    #[schema(example = "aviso_enviado")]
+    #[schema(value_type = crate::esquemas::TipoEventoVisita)]
     pub tipo: String,
     pub canal: Option<String>,
     pub persona_id: Option<Uuid>,
@@ -155,10 +155,10 @@ pub struct CorrespondenciaRespuesta {
     pub id: Uuid,
     pub bien_privado_id: Uuid,
     /// `paquete`, `sobre`, `recibo` u `otro`.
-    #[schema(example = "paquete")]
+    #[schema(value_type = crate::esquemas::TipoCorrespondencia)]
     pub tipo: String,
     /// `recibida`, `entregada` o `devuelta`.
-    #[schema(example = "recibida")]
+    #[schema(value_type = crate::esquemas::EstadoCorrespondencia)]
     pub estado: String,
     pub remitente: Option<String>,
     pub guia: Option<String>,
@@ -230,9 +230,10 @@ pub struct EventoAccesoRespuesta {
     pub credencial_id: Option<Uuid>,
     pub visita_id: Option<Uuid>,
     /// `entrada`, `salida` o `ambos`.
+    #[schema(value_type = crate::esquemas::SentidoAcceso)]
     pub sentido: String,
     /// `permitido`, `denegado`, `forzado` o `manual`.
-    #[schema(example = "permitido")]
+    #[schema(value_type = crate::esquemas::ResultadoAcceso)]
     pub resultado: String,
     pub motivo: Option<String>,
     pub placa: Option<String>,

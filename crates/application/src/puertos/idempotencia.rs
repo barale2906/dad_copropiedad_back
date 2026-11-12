@@ -39,6 +39,7 @@ pub enum Reserva {
     OtraPeticion,
 }
 
+/// Respuestas guardadas de las peticiones con `Idempotency-Key` (tabla de plataforma, 24 h).
 pub trait RegistroIdempotencia: Send + Sync {
     /// Reserva `clave` para la petición con `huella` (borra antes una reserva vencida).
     fn reservar(

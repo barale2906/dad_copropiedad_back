@@ -159,6 +159,7 @@ pub trait RepositorioPublicidadPlataforma: Send {
         cuenta: CuentaId,
     ) -> impl Future<Output = AppResult<Vec<(Anunciante, RolOrganizacion)>>> + Send;
 
+    /// Guarda una campaña nueva.
     fn insertar_campana(&mut self, c: &Campana) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Guarda todos los datos de la campaña (incluida la segmentación).
@@ -171,12 +172,14 @@ pub trait RepositorioPublicidadPlataforma: Send {
         bloquear: bool,
     ) -> impl Future<Output = AppResult<Option<Campana>>> + Send;
 
+    /// Campañas del anunciante, paginadas por cursor.
     fn campanas_de_anunciante(
         &mut self,
         anunciante: AnuncianteId,
         pagina: SolicitudPagina,
     ) -> impl Future<Output = AppResult<Pagina<Campana>>> + Send;
 
+    /// Campañas en espera de moderación, paginadas por cursor.
     fn campanas_en_revision(
         &mut self,
         pagina: SolicitudPagina,
@@ -188,20 +191,25 @@ pub trait RepositorioPublicidadPlataforma: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<u64>> + Send;
 
+    /// Guarda un creativo nuevo.
     fn insertar_creativo(&mut self, c: &Creativo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de un creativo.
     fn actualizar_creativo(&mut self, c: &Creativo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Creativo por su id.
     fn creativo(
         &mut self,
         id: CreativoId,
     ) -> impl Future<Output = AppResult<Option<Creativo>>> + Send;
 
+    /// Creativos de la campaña.
     fn creativos_de_campana(
         &mut self,
         campana: CampanaId,
     ) -> impl Future<Output = AppResult<Vec<Creativo>>> + Send;
 
+    /// Creativos en espera de moderación, paginados por cursor.
     fn creativos_pendientes(
         &mut self,
         pagina: SolicitudPagina,
@@ -232,6 +240,7 @@ pub trait RepositorioPublicidadPlataforma: Send {
     /// Cuántas copropiedades con el módulo alcanza hoy (sin decir cuáles).
     fn alcance(&mut self, campana: CampanaId) -> impl Future<Output = AppResult<u64>> + Send;
 
+    /// Tarifa del modelo de cobro vigente en el día.
     fn tarifa_vigente(
         &mut self,
         modelo: ModeloCobro,
@@ -251,6 +260,7 @@ pub trait RepositorioPublicidadPlataforma: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Métricas agregadas de la campaña (sin datos de residentes).
     fn metricas_campana(
         &mut self,
         campana: CampanaId,
@@ -276,6 +286,7 @@ pub trait RepositorioPublicidadPlataforma: Send {
         dia: NaiveDate,
     ) -> impl Future<Output = AppResult<Option<Decimal>>> + Send;
 
+    /// Liquidación del anunciante en el periodo, si existe.
     fn liquidacion(
         &mut self,
         anunciante: AnuncianteId,
@@ -288,11 +299,13 @@ pub trait RepositorioPublicidadPlataforma: Send {
         l: &Liquidacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Liquidaciones del periodo.
     fn liquidaciones(
         &mut self,
         periodo: NaiveDate,
     ) -> impl Future<Output = AppResult<Vec<Liquidacion>>> + Send;
 
+    /// Creativos reportados por residentes pendientes de atender, paginados por cursor.
     fn reportes_pendientes(
         &mut self,
         pagina: SolicitudPagina,
@@ -305,13 +318,16 @@ pub trait RepositorioPublicidadPlataforma: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<u64>> + Send;
 
+    /// Política de publicidad vigente en el instante.
     fn politica_publicidad_vigente(
         &mut self,
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Option<PoliticaPublicidad>>> + Send;
 
+    /// Última versión publicada de la política (0 si no hay ninguna).
     fn ultima_version_politica(&mut self) -> impl Future<Output = AppResult<u32>> + Send;
 
+    /// Publica una versión nueva de la política de publicidad.
     fn insertar_politica_publicidad(
         &mut self,
         p: &PoliticaPublicidad,
@@ -382,6 +398,7 @@ pub trait RepositorioPublicidad: Send {
         finalizar: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Política de publicidad vigente en el instante (la otorga el titular frente a la plataforma).
     fn politica_publicidad_vigente(
         &mut self,
         ahora: DateTime<Utc>,
@@ -414,6 +431,7 @@ pub trait RepositorioPublicidad: Send {
         limite: u32,
     ) -> impl Future<Output = AppResult<Vec<DestinatarioMasivo>>> + Send;
 
+    /// Registra el envío de una pieza masiva a una persona (tope de frecuencia).
     fn registrar_envio_publicidad(
         &mut self,
         campana: CampanaId,
@@ -429,8 +447,10 @@ pub trait RepositorioPublicidad: Send {
         campana: CampanaId,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Pantalla del lobby de la copropiedad, si tiene una.
     fn pantalla(&mut self) -> impl Future<Output = AppResult<Option<PantallaPublicidad>>> + Send;
 
+    /// Crea o reemplaza la pantalla del lobby (nuevo token).
     fn guardar_pantalla(
         &mut self,
         p: &PantallaPublicidad,
@@ -439,6 +459,7 @@ pub trait RepositorioPublicidad: Send {
 
 /// Copropiedades con el módulo `publicidad` habilitado (función `SECURITY DEFINER`).
 pub trait DirectorioPublicidad: Send + Sync {
+    /// Copropiedades activas con el módulo `publicidad` (worker de envíos masivos).
     fn copropiedades_con_publicidad(
         &self,
         ahora: DateTime<Utc>,

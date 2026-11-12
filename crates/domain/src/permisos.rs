@@ -231,6 +231,7 @@ impl ConjuntoPermisos {
         )
     }
 
+    /// Si el conjunto tiene el permiso.
     pub fn contiene(&self, permiso: Permiso) -> bool {
         self.0.contains(&permiso)
     }
@@ -241,10 +242,12 @@ impl ConjuntoPermisos {
         otro.0.is_subset(&self.0)
     }
 
+    /// Si el conjunto no tiene permisos.
     pub fn es_vacio(&self) -> bool {
         self.0.is_empty()
     }
 
+    /// Permisos del conjunto.
     pub fn iter(&self) -> impl Iterator<Item = Permiso> + '_ {
         self.0.iter().copied()
     }

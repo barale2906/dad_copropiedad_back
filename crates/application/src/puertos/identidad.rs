@@ -23,8 +23,10 @@ use crate::{AppResult, ContextoPlataforma, puertos::Transaccion};
 
 /// Abre transacciones de plataforma.
 pub trait UnidadDeTrabajoPlataforma: Send + Sync {
+    /// Transacción del ámbito de plataforma que entrega [`Self::iniciar_plataforma`].
     type Transaccion: Transaccion;
 
+    /// Abre una transacción con `app.plataforma = on` (cuentas, sesiones, roles de plataforma).
     fn iniciar_plataforma(
         &self,
         ctx: &ContextoPlataforma,
@@ -60,14 +62,10 @@ pub enum PropositoCodigo {
     RecuperarContrasena,
 }
 
-impl PropositoCodigo {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::VerificarCorreo => "verificar_correo",
-            Self::RecuperarContrasena => "recuperar_contrasena",
-        }
-    }
-}
+domain::enum_texto!(PropositoCodigo {
+    VerificarCorreo => "verificar_correo",
+    RecuperarContrasena => "recuperar_contrasena",
+});
 
 /// Código de un solo uso guardado (solo el hash).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -81,17 +79,20 @@ pub struct CodigoVerificacion {
     pub creado_en: DateTime<Utc>,
 }
 
+/// Cuentas de personas y sus códigos de un solo uso.
 pub trait RepositorioCuentas: Send {
     /// # Errors
     ///
     /// [`crate::AppError::Conflicto`] si el usuario o el correo ya existen.
     fn insertar_cuenta(&mut self, cuenta: &Cuenta) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Cuenta por correo o nombre de usuario exactos.
     fn cuenta_por_identificador(
         &mut self,
         identificador: &Identificador,
     ) -> impl Future<Output = AppResult<Option<Cuenta>>> + Send;
 
+    /// Cuenta por su id.
     fn cuenta_por_id(
         &mut self,
         id: CuentaId,
@@ -112,6 +113,7 @@ pub trait RepositorioCuentas: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Reemplaza el hash de la contraseña.
     fn cambiar_contrasena(
         &mut self,
         id: CuentaId,
@@ -119,6 +121,7 @@ pub trait RepositorioCuentas: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Marca el correo de la cuenta como verificado.
     fn marcar_correo_verificado(
         &mut self,
         id: CuentaId,
@@ -133,12 +136,14 @@ pub trait RepositorioCuentas: Send {
         activado_en: Option<DateTime<Utc>>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Cambia el estado de la cuenta.
     fn cambiar_estado(
         &mut self,
         id: CuentaId,
         estado: EstadoCuenta,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda un código de un solo uso (solo su hash).
     fn insertar_codigo(
         &mut self,
         codigo: &CodigoVerificacion,
@@ -152,8 +157,10 @@ pub trait RepositorioCuentas: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Option<CodigoVerificacion>>> + Send;
 
+    /// Suma un intento fallido al código.
     fn registrar_intento_codigo(&mut self, id: Uuid) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Marca el código como usado: ya no sirve otra vez.
     fn marcar_codigo_usado(
         &mut self,
         id: Uuid,
@@ -192,14 +199,18 @@ pub struct HashesTokens {
     pub refresh: Option<String>,
 }
 
+/// Sesiones de las cuentas (tokens opacos de acceso y renovación).
 pub trait RepositorioSesiones: Send {
+    /// Guarda una sesión nueva.
     fn insertar_sesion(&mut self, sesion: &Sesion) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Sesión por el hash del token de acceso.
     fn sesion_por_acceso(
         &mut self,
         hash: &str,
     ) -> impl Future<Output = AppResult<Option<Sesion>>> + Send;
 
+    /// Sesión por el hash del token de renovación.
     fn sesion_por_refresh(
         &mut self,
         hash: &str,
@@ -227,6 +238,7 @@ pub trait RepositorioSesiones: Send {
         nuevos: &HashesTokens,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Revoca la sesión con su motivo.
     fn revocar_sesion(
         &mut self,
         id: SesionId,
@@ -276,6 +288,7 @@ pub struct Asignacion {
 }
 
 impl Asignacion {
+    /// Si la asignación está vigente en ese instante (empezó y no ha terminado).
     pub fn vigente_en(&self, ahora: DateTime<Utc>) -> bool {
         self.vigente_desde <= ahora && self.vigente_hasta.is_none_or(|h| ahora < h)
     }
@@ -296,6 +309,7 @@ pub trait RepositorioRoles: Send {
     /// Un rol visible en la copropiedad (plantilla de copropiedad o propio).
     fn rol(&mut self, id: RolId) -> impl Future<Output = AppResult<Option<Rol>>> + Send;
 
+    /// Rol de la copropiedad o plantilla por su código.
     fn rol_por_codigo(
         &mut self,
         codigo: &str,
@@ -306,17 +320,20 @@ pub trait RepositorioRoles: Send {
     /// [`crate::AppError::Conflicto`] si ya hay un rol con ese código.
     fn insertar_rol(&mut self, rol: &Rol) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Reemplaza todos los permisos del rol.
     fn reemplazar_permisos(
         &mut self,
         rol: RolId,
         permisos: &ConjuntoPermisos,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda una asignación de rol.
     fn insertar_asignacion(
         &mut self,
         asignacion: &Asignacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Asignación de rol por su id.
     fn asignacion(
         &mut self,
         id: AsignacionRolId,
@@ -356,6 +373,7 @@ pub trait RepositorioRoles: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<u64>> + Send;
 
+    /// Cuenta por usuario o correo exactos, con lo mínimo para asignarle un rol.
     fn buscar_cuenta(
         &mut self,
         identificador: &Identificador,
@@ -407,6 +425,7 @@ pub trait RepositorioPlataforma: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<(ConjuntoPermisos, bool)>> + Send;
 
+    /// Copropiedades donde la cuenta tiene roles vigentes.
     fn membresias(
         &mut self,
         cuenta: CuentaId,
@@ -415,31 +434,38 @@ pub trait RepositorioPlataforma: Send {
     /// Roles de plataforma (plantillas y propios).
     fn roles_plataforma(&mut self) -> impl Future<Output = AppResult<Vec<Rol>>> + Send;
 
+    /// Rol de plataforma por su id.
     fn rol_plataforma(&mut self, id: RolId) -> impl Future<Output = AppResult<Option<Rol>>> + Send;
 
+    /// Rol de plataforma por su código.
     fn rol_plataforma_por_codigo(
         &mut self,
         codigo: &str,
     ) -> impl Future<Output = AppResult<Option<Rol>>> + Send;
 
+    /// Crea un rol de plataforma.
     fn insertar_rol_plataforma(&mut self, rol: &Rol) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Reemplaza todos los permisos de un rol de plataforma.
     fn reemplazar_permisos_plataforma(
         &mut self,
         rol: RolId,
         permisos: &ConjuntoPermisos,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda una asignación de rol de plataforma.
     fn insertar_asignacion_plataforma(
         &mut self,
         asignacion: &AsignacionPlataforma,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Asignación de rol de plataforma por su id.
     fn asignacion_plataforma(
         &mut self,
         id: AsignacionRolId,
     ) -> impl Future<Output = AppResult<Option<AsignacionPlataforma>>> + Send;
 
+    /// Termina una asignación de rol de plataforma.
     fn terminar_asignacion_plataforma(
         &mut self,
         id: AsignacionRolId,
@@ -452,6 +478,7 @@ pub trait RepositorioPlataforma: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<u64>> + Send;
 
+    /// Copropiedades registradas en la plataforma.
     fn copropiedades(&mut self) -> impl Future<Output = AppResult<Vec<CopropiedadResumen>>> + Send;
 }
 
@@ -525,6 +552,7 @@ pub struct Reclamacion {
 /// Organizaciones vistas desde una copropiedad (búsqueda y alta por funciones de la BD) y sus
 /// contratos (transacción del tenant).
 pub trait RepositorioContratos: Send {
+    /// Organización por su NIT (para no duplicarla al contratarla).
     fn buscar_organizacion_por_nit(
         &mut self,
         nit: &Nit,
@@ -538,18 +566,22 @@ pub trait RepositorioContratos: Send {
         creada_por: Option<CuentaId>,
     ) -> impl Future<Output = AppResult<(OrganizacionId, bool)>> + Send;
 
+    /// Guarda un contrato de servicio con una organización.
     fn insertar_contrato(
         &mut self,
         contrato: &ContratoServicio,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Contrato de servicio por su id.
     fn contrato(
         &mut self,
         id: ContratoServicioId,
     ) -> impl Future<Output = AppResult<Option<ContratoServicio>>> + Send;
 
+    /// Contratos de servicio de la copropiedad.
     fn contratos(&mut self) -> impl Future<Output = AppResult<Vec<ContratoServicio>>> + Send;
 
+    /// Termina un contrato de servicio.
     fn terminar_contrato(
         &mut self,
         id: ContratoServicioId,
@@ -559,11 +591,13 @@ pub trait RepositorioContratos: Send {
 
 /// Organizaciones en el ámbito de plataforma: ficha, miembros y reclamaciones.
 pub trait RepositorioOrganizaciones: Send {
+    /// Organización por su id.
     fn organizacion(
         &mut self,
         id: OrganizacionId,
     ) -> impl Future<Output = AppResult<Option<Organizacion>>> + Send;
 
+    /// Papel de la cuenta en la organización, si es miembro.
     fn rol_miembro(
         &mut self,
         organizacion: OrganizacionId,
@@ -578,6 +612,7 @@ pub trait RepositorioOrganizaciones: Send {
         rol: RolOrganizacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Actualiza los datos de la ficha de la organización.
     fn actualizar_ficha(
         &mut self,
         id: OrganizacionId,
@@ -585,6 +620,7 @@ pub trait RepositorioOrganizaciones: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Cambia el estado de la organización.
     fn cambiar_estado_organizacion(
         &mut self,
         id: OrganizacionId,
@@ -599,15 +635,18 @@ pub trait RepositorioOrganizaciones: Send {
         reclamacion: &Reclamacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Reclamación de una organización por su id.
     fn reclamacion(
         &mut self,
         id: ReclamacionId,
     ) -> impl Future<Output = AppResult<Option<Reclamacion>>> + Send;
 
+    /// Reclamaciones pendientes de revisión.
     fn reclamaciones_pendientes(
         &mut self,
     ) -> impl Future<Output = AppResult<Vec<Reclamacion>>> + Send;
 
+    /// Aprueba o rechaza una reclamación, con quién la revisó y el motivo.
     fn resolver_reclamacion(
         &mut self,
         id: ReclamacionId,
@@ -625,6 +664,7 @@ pub trait RepositorioOrganizaciones: Send {
 /// Hash de contraseñas (Argon2id). Es costoso a propósito: el adaptador lo ejecuta fuera del
 /// hilo de Tokio.
 pub trait HashContrasenas: Send + Sync {
+    /// Calcula el hash Argon2id de una contraseña nueva.
     fn hash(&self, contrasena: &ContrasenaNueva) -> impl Future<Output = AppResult<String>> + Send;
 
     /// ¿La contraseña corresponde al hash? `false` también si el hash no es válido.

@@ -106,7 +106,7 @@ pub struct ImportacionRespuesta {
     pub id: Uuid,
     pub archivo_id: Uuid,
     /// `validada` (se puede confirmar), `con_errores` o `aplicada`.
-    #[schema(value_type = String, example = "validada")]
+    #[schema(value_type = crate::esquemas::EstadoImportacion)]
     pub estado: EstadoImportacion,
     pub total_filas: u32,
     pub filas_validas: u32,
@@ -138,7 +138,7 @@ pub struct FilaVistaPreviaRespuesta {
     pub fila: u32,
     #[schema(example = "T3-506")]
     pub codigo: String,
-    #[schema(value_type = String, example = "apartamento")]
+    #[schema(value_type = crate::esquemas::TipoBienPrivado)]
     pub tipo: TipoBienPrivado,
     pub agrupacion: Option<String>,
     /// La agrupación no existe y se creará.

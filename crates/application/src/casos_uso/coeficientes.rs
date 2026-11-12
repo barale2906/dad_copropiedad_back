@@ -26,11 +26,11 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR: AccionAuditoria =
+pub(crate) const ACCION_CREAR: AccionAuditoria =
     AccionAuditoria::new("bienes_privados.cuadro_coeficientes.crear");
-pub const ACCION_CARGAR: AccionAuditoria =
+pub(crate) const ACCION_CARGAR: AccionAuditoria =
     AccionAuditoria::new("bienes_privados.cuadro_coeficientes.cargar");
-pub const ACCION_ACTIVAR: AccionAuditoria =
+pub(crate) const ACCION_ACTIVAR: AccionAuditoria =
     AccionAuditoria::new("bienes_privados.cuadro_coeficientes.activar");
 
 /// Datos de un borrador nuevo.

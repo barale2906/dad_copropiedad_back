@@ -261,6 +261,7 @@ pub struct PurgaDirectorioPg {
 }
 
 impl PurgaDirectorioPg {
+    /// Purga sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }

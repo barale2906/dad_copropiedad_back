@@ -50,6 +50,7 @@ impl NombreUsuario {
         }
     }
 
+    /// Nombre de usuario normalizado en minúsculas.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -99,7 +100,9 @@ impl Identificador {
 pub struct ContrasenaNueva(String);
 
 impl ContrasenaNueva {
+    /// Caracteres mínimos de una contraseña.
     pub const LONGITUD_MINIMA: usize = 10;
+    /// Caracteres máximos de una contraseña.
     pub const LONGITUD_MAXIMA: usize = 128;
 
     /// # Errors
@@ -117,6 +120,7 @@ impl ContrasenaNueva {
         }
     }
 
+    /// Texto de la contraseña, solo para calcular su hash. Nunca se loguea ni se guarda.
     pub fn expose(&self) -> &str {
         &self.0
     }

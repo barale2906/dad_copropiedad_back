@@ -2,6 +2,7 @@
 
 use std::{env, net::SocketAddr, str::FromStr, time::Duration};
 
+/// Configuración ausente o inválida.
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     #[error("falta la variable de entorno obligatoria `{0}`")]
@@ -10,6 +11,7 @@ pub enum ConfigError {
     Invalid { var: &'static str, detail: String },
 }
 
+/// Formato de los logs (`LOG_FORMAT`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogFormat {
     /// Legible para humanos (desarrollo local).
@@ -101,6 +103,11 @@ impl AppConfig {
         Ok(config)
     }
 
+    /// Dirección donde escucha el servidor.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError::Invalid`] si `APP_HOST` y el puerto no forman una dirección.
     pub fn socket_addr(&self) -> Result<SocketAddr, ConfigError> {
         format!("{}:{}", self.host, self.port)
             .parse()
@@ -143,6 +150,11 @@ impl std::fmt::Debug for WhatsappConfig {
 }
 
 impl WhatsappConfig {
+    /// Configuración de WhatsApp desde las variables `WHATSAPP_*`.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si falta una variable obligatoria o es inválida.
     pub fn from_env() -> Result<Self, ConfigError> {
         let _ = dotenvy::dotenv();
         Ok(Self {

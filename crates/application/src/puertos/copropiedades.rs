@@ -120,13 +120,16 @@ pub trait RepositorioCopropiedad: Send {
         ficha: &FichaCopropiedad,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Cargos vigentes (roles de órgano o de administración asignados).
     fn cargos_vigentes(&mut self) -> impl Future<Output = AppResult<Vec<CargoVigente>>> + Send;
 
     /// Bienes privados activos sin contar parqueaderos ni depósitos (art. 53).
     fn bienes_para_consejo(&mut self) -> impl Future<Output = AppResult<u64>> + Send;
 
+    /// Puntos de atención de la copropiedad.
     fn puntos_atencion(&mut self) -> impl Future<Output = AppResult<Vec<PuntoAtencion>>> + Send;
 
+    /// Guarda un punto de atención nuevo.
     fn insertar_punto_atencion(
         &mut self,
         punto: &PuntoAtencion,
@@ -198,6 +201,7 @@ pub struct UsoExclusivo {
     pub vigente_hasta: Option<DateTime<Utc>>,
 }
 
+/// Persistencia de bienes privados, agrupaciones y usos exclusivos.
 pub trait RepositorioBienesPrivados: Send {
     /// Todas las agrupaciones, ordenadas por `orden` y nombre.
     fn agrupaciones(&mut self) -> impl Future<Output = AppResult<Vec<Agrupacion>>> + Send;
@@ -210,6 +214,7 @@ pub trait RepositorioBienesPrivados: Send {
         agrupacion: &Agrupacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Bien privado por su id.
     fn bien(
         &mut self,
         id: BienPrivadoId,
@@ -218,6 +223,7 @@ pub trait RepositorioBienesPrivados: Send {
     /// Todos los bienes privados (activos e inactivos), ordenados por código.
     fn todos_los_bienes(&mut self) -> impl Future<Output = AppResult<Vec<BienPrivado>>> + Send;
 
+    /// Bienes privados que cumplen el filtro, paginados por cursor.
     fn listar_bienes(
         &mut self,
         filtro: &FiltroBienes,
@@ -243,6 +249,7 @@ pub trait RepositorioBienesPrivados: Send {
         principal: BienPrivadoId,
     ) -> impl Future<Output = AppResult<Vec<BienPrivado>>> + Send;
 
+    /// Usos exclusivos de bienes comunes asignados al bien.
     fn usos_exclusivos(
         &mut self,
         bien: BienPrivadoId,
@@ -283,10 +290,12 @@ pub struct CuadroCoeficientes {
     pub creado_en: DateTime<Utc>,
 }
 
+/// Persistencia de los cuadros de coeficientes (ADR 0006).
 pub trait RepositorioCoeficientes: Send {
     /// Cuadros de la copropiedad, del más reciente al más antiguo.
     fn cuadros(&mut self) -> impl Future<Output = AppResult<Vec<CuadroCoeficientes>>> + Send;
 
+    /// Cuadro de coeficientes por su id.
     fn cuadro(
         &mut self,
         id: CuadroCoeficientesId,
@@ -300,11 +309,13 @@ pub trait RepositorioCoeficientes: Send {
     /// Última versión usada (0 si no hay cuadros).
     fn ultima_version(&mut self) -> impl Future<Output = AppResult<u32>> + Send;
 
+    /// Guarda un cuadro nuevo en borrador.
     fn insertar_cuadro(
         &mut self,
         cuadro: &CuadroCoeficientes,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Coeficiente de cada bien en el cuadro.
     fn coeficientes(
         &mut self,
         cuadro: CuadroCoeficientesId,
@@ -398,10 +409,13 @@ pub struct Titularidad {
     pub soporte_archivo_id: Option<ArchivoId>,
 }
 
+/// Persistencia de las personas del censo.
 pub trait RepositorioPersonas: Send {
+    /// Persona por su id.
     fn persona(&mut self, id: PersonaId)
     -> impl Future<Output = AppResult<Option<Persona>>> + Send;
 
+    /// Persona por su documento de identidad.
     fn persona_por_documento(
         &mut self,
         documento: &Documento,
@@ -444,6 +458,7 @@ pub trait RepositorioPersonas: Send {
     ) -> impl Future<Output = AppResult<Pagina<Persona>>> + Send;
 }
 
+/// Persistencia de las titularidades de los bienes privados.
 pub trait RepositorioTitulares: Send {
     /// Titulares vigentes del bien privado.
     fn titulares_vigentes(
@@ -457,6 +472,7 @@ pub trait RepositorioTitulares: Send {
         bien: BienPrivadoId,
     ) -> impl Future<Output = AppResult<Vec<Titularidad>>> + Send;
 
+    /// Guarda una titularidad (el rol `propietario` se deriva de ella).
     fn insertar_titularidad(
         &mut self,
         titularidad: &Titularidad,
@@ -515,17 +531,21 @@ pub struct Importacion {
     pub aplicada_en: Option<DateTime<Utc>>,
 }
 
+/// Persistencia de las importaciones masivas (ADR 0006).
 pub trait RepositorioImportaciones: Send {
+    /// Guarda una importación validada en vista previa.
     fn insertar_importacion(
         &mut self,
         importacion: &Importacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Importación por su id.
     fn importacion(
         &mut self,
         id: ImportacionId,
     ) -> impl Future<Output = AppResult<Option<Importacion>>> + Send;
 
+    /// Marca la importación como aplicada con su resumen.
     fn marcar_aplicada(
         &mut self,
         id: ImportacionId,

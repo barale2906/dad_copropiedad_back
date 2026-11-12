@@ -30,13 +30,16 @@ use crate::{
     seguridad::{hash_secreto, token_aleatorio},
 };
 
-pub const ACCION_PUNTO: AccionAuditoria = AccionAuditoria::new("acceso.punto.editar");
-pub const ACCION_PUENTE: AccionAuditoria = AccionAuditoria::new("acceso.puente.registrar");
-pub const ACCION_PUENTE_CREDENCIAL: AccionAuditoria =
+pub(crate) const ACCION_PUNTO: AccionAuditoria = AccionAuditoria::new("acceso.punto.editar");
+pub(crate) const ACCION_PUENTE: AccionAuditoria = AccionAuditoria::new("acceso.puente.registrar");
+pub(crate) const ACCION_PUENTE_CREDENCIAL: AccionAuditoria =
     AccionAuditoria::new("acceso.puente.rotar_credencial");
-pub const ACCION_PUENTE_RETIRAR: AccionAuditoria = AccionAuditoria::new("acceso.puente.retirar");
-pub const ACCION_DISPOSITIVO: AccionAuditoria = AccionAuditoria::new("acceso.dispositivo.editar");
-pub const ACCION_REPORTE: AccionAuditoria = AccionAuditoria::new("acceso.puente.reportar_eventos");
+pub(crate) const ACCION_PUENTE_RETIRAR: AccionAuditoria =
+    AccionAuditoria::new("acceso.puente.retirar");
+pub(crate) const ACCION_DISPOSITIVO: AccionAuditoria =
+    AccionAuditoria::new("acceso.dispositivo.editar");
+pub(crate) const ACCION_REPORTE: AccionAuditoria =
+    AccionAuditoria::new("acceso.puente.reportar_eventos");
 
 /// Eventos máximos por reporte.
 pub const MAX_EVENTOS_POR_REPORTE: usize = 500;

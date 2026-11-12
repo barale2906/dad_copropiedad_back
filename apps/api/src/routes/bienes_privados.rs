@@ -63,7 +63,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 pub struct AgrupacionRespuesta {
     pub id: Uuid,
     /// `edificio`, `etapa`, `bloque`, `manzana`, `interior` o `sector`.
-    #[schema(value_type = String, example = "edificio")]
+    #[schema(value_type = crate::esquemas::TipoAgrupacion)]
     pub tipo: TipoAgrupacion,
     #[schema(example = "Torre 3")]
     pub nombre: String,
@@ -95,7 +95,7 @@ pub struct BienPrivadoRespuesta {
     pub codigo: CodigoBienPrivado,
     /// `apartamento`, `casa`, `local`, `oficina`, `consultorio`, `parqueadero`, `deposito`,
     /// `bodega`, `lote`, `finca` u `otro`.
-    #[schema(value_type = String, example = "apartamento")]
+    #[schema(value_type = crate::esquemas::TipoBienPrivado)]
     pub tipo: TipoBienPrivado,
     pub agrupacion_id: Option<Uuid>,
     #[schema(value_type = Option<String>, example = "506")]
@@ -105,7 +105,7 @@ pub struct BienPrivadoRespuesta {
     pub area_privada_m2: Option<Decimal>,
     pub matricula_inmobiliaria: Option<String>,
     pub cedula_catastral: Option<String>,
-    #[schema(value_type = String, example = "residencial")]
+    #[schema(value_type = crate::esquemas::UsoBienPrivado)]
     pub uso: UsoBienPrivado,
     pub activo: bool,
     /// Bien al que está vinculado como anexo.
@@ -195,7 +195,7 @@ pub async fn arbol(
 /// Agrupación nueva.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct NuevaAgrupacionPeticion {
-    #[schema(value_type = String, example = "edificio")]
+    #[schema(value_type = crate::esquemas::TipoAgrupacion)]
     pub tipo: TipoAgrupacion,
     /// Etiqueta que elige la PH.
     #[schema(example = "Torre 3")]
@@ -255,7 +255,7 @@ pub struct FiltroBienesParams {
     pub q: Option<String>,
     pub agrupacion_id: Option<Uuid>,
     /// Tipo de bien privado.
-    #[param(value_type = Option<String>)]
+    #[param(value_type = Option<crate::esquemas::TipoBienPrivado>)]
     pub tipo: Option<TipoBienPrivado>,
     /// Incluir los inactivos.
     #[serde(default)]
@@ -298,7 +298,7 @@ pub async fn listar(
 /// Bien privado nuevo.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct NuevoBienPeticion {
-    #[schema(value_type = String, example = "apartamento")]
+    #[schema(value_type = crate::esquemas::TipoBienPrivado)]
     pub tipo: TipoBienPrivado,
     pub agrupacion_id: Option<Uuid>,
     #[schema(value_type = Option<String>, example = "506")]
@@ -312,7 +312,7 @@ pub struct NuevoBienPeticion {
     pub matricula_inmobiliaria: Option<String>,
     pub cedula_catastral: Option<String>,
     #[serde(default = "uso_residencial")]
-    #[schema(value_type = String, example = "residencial")]
+    #[schema(value_type = crate::esquemas::UsoBienPrivado)]
     pub uso: UsoBienPrivado,
 }
 
@@ -363,7 +363,7 @@ pub async fn crear(
 #[derive(Debug, Serialize, ToSchema)]
 pub struct UsoExclusivoRespuesta {
     pub id: Uuid,
-    #[schema(value_type = String, example = "parqueadero")]
+    #[schema(value_type = crate::esquemas::TipoUsoExclusivo)]
     pub tipo: TipoUsoExclusivo,
     #[schema(example = "Parqueadero 45")]
     pub codigo: String,
@@ -391,7 +391,7 @@ pub struct TitularidadRespuesta {
     pub id: Uuid,
     pub persona_id: Uuid,
     /// `propietario`, `nudo_propietario`, `usufructuario`, `fideicomiso` o `leasing`.
-    #[schema(value_type = String, example = "propietario")]
+    #[schema(value_type = crate::esquemas::TipoTitularidad)]
     pub tipo: TipoTitularidad,
     #[schema(value_type = String, example = "50")]
     pub porcentaje: Decimal,
@@ -473,7 +473,7 @@ pub async fn ficha(
 /// coeficiente no se edita aquí: lo fija la activación de un cuadro.
 #[derive(Debug, Default, Deserialize, ToSchema)]
 pub struct CambiosBienPeticion {
-    #[schema(value_type = Option<String>)]
+    #[schema(value_type = Option<crate::esquemas::TipoBienPrivado>)]
     pub tipo: Option<TipoBienPrivado>,
     pub agrupacion_id: Option<Uuid>,
     #[schema(value_type = Option<String>)]
@@ -486,7 +486,7 @@ pub struct CambiosBienPeticion {
     pub area_privada_m2: Option<Decimal>,
     pub matricula_inmobiliaria: Option<String>,
     pub cedula_catastral: Option<String>,
-    #[schema(value_type = Option<String>)]
+    #[schema(value_type = Option<crate::esquemas::UsoBienPrivado>)]
     pub uso: Option<UsoBienPrivado>,
 }
 
@@ -603,7 +603,7 @@ pub async fn vincular(
 /// Asignación de un bien común en uso exclusivo.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct NuevoUsoPeticion {
-    #[schema(value_type = String, example = "parqueadero")]
+    #[schema(value_type = crate::esquemas::TipoUsoExclusivo)]
     pub tipo: TipoUsoExclusivo,
     /// Identificación del bien común.
     #[schema(example = "Parqueadero 45")]
@@ -694,7 +694,7 @@ pub struct TitularRespuesta {
     pub titularidad: TitularidadRespuesta,
     pub nombre: String,
     /// `natural` o `juridica`.
-    #[schema(value_type = String, example = "natural")]
+    #[schema(value_type = crate::esquemas::TipoPersona)]
     pub tipo_persona: TipoPersona,
     pub documento: Option<String>,
     pub telefono: Option<String>,
@@ -746,14 +746,14 @@ pub async fn listar_titulares(
 #[derive(Debug, Clone, Deserialize, ToSchema)]
 pub struct PersonaPeticion {
     #[serde(default = "persona_natural")]
-    #[schema(value_type = String, example = "natural")]
+    #[schema(value_type = crate::esquemas::TipoPersona)]
     pub tipo: TipoPersona,
     #[schema(example = "Ana Pérez")]
     pub nombre: String,
     #[schema(value_type = String, example = "52123456")]
     pub documento: Documento,
     /// `CC`, `CE`, `TI`, `RC`, `PA`, `PPT` o `NIT`.
-    #[schema(value_type = Option<String>, example = "CC")]
+    #[schema(value_type = Option<crate::esquemas::TipoDocumento>)]
     pub tipo_documento: Option<TipoDocumento>,
     #[schema(value_type = Option<String>, example = "573001234567")]
     pub telefono: Option<Telefono>,
@@ -774,7 +774,7 @@ pub struct TitularPeticion {
     pub persona_id: Option<Uuid>,
     pub persona: Option<PersonaPeticion>,
     #[serde(default = "propietario")]
-    #[schema(value_type = String, example = "propietario")]
+    #[schema(value_type = crate::esquemas::TipoTitularidad)]
     pub tipo: TipoTitularidad,
     /// Porcentaje de propiedad (suma 100 por clase de derecho).
     #[schema(value_type = String, example = "100")]

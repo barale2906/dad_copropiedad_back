@@ -26,19 +26,21 @@ use crate::{
     seguridad::{codigo_numerico, hash_secreto, iguales, token_aleatorio},
 };
 
-pub const ACCION_REGISTRAR: AccionAuditoria = AccionAuditoria::new("cuentas.cuenta.registrar");
-pub const ACCION_VERIFICAR_CORREO: AccionAuditoria =
+pub(crate) const ACCION_REGISTRAR: AccionAuditoria =
+    AccionAuditoria::new("cuentas.cuenta.registrar");
+pub(crate) const ACCION_VERIFICAR_CORREO: AccionAuditoria =
     AccionAuditoria::new("cuentas.correo.verificar");
-pub const ACCION_INICIAR_SESION: AccionAuditoria = AccionAuditoria::new("cuentas.sesion.iniciar");
-pub const ACCION_REUTILIZACION: AccionAuditoria =
+pub(crate) const ACCION_INICIAR_SESION: AccionAuditoria =
+    AccionAuditoria::new("cuentas.sesion.iniciar");
+pub(crate) const ACCION_REUTILIZACION: AccionAuditoria =
     AccionAuditoria::new("cuentas.sesion.reutilizacion_detectada");
-pub const ACCION_CERRAR_SESIONES: AccionAuditoria =
+pub(crate) const ACCION_CERRAR_SESIONES: AccionAuditoria =
     AccionAuditoria::new("cuentas.sesion.cerrar_todas");
-pub const ACCION_CAMBIAR_CONTRASENA: AccionAuditoria =
+pub(crate) const ACCION_CAMBIAR_CONTRASENA: AccionAuditoria =
     AccionAuditoria::new("cuentas.contrasena.cambiar");
-pub const ACCION_RESTABLECER_CONTRASENA: AccionAuditoria =
+pub(crate) const ACCION_RESTABLECER_CONTRASENA: AccionAuditoria =
     AccionAuditoria::new("cuentas.contrasena.restablecer");
-pub const ACCION_ACTIVAR_SEGUNDO_FACTOR: AccionAuditoria =
+pub(crate) const ACCION_ACTIVAR_SEGUNDO_FACTOR: AccionAuditoria =
     AccionAuditoria::new("cuentas.segundo_factor.activar");
 
 /// Vida del token de acceso.
@@ -53,6 +55,7 @@ pub const VIDA_DESAFIO: Duration = Duration::minutes(5);
 pub const VIDA_CODIGO: Duration = Duration::minutes(30);
 /// Intentos fallidos de contraseña antes del bloqueo temporal.
 pub const MAX_INTENTOS: u32 = 5;
+/// Cuánto dura el bloqueo temporal tras [`MAX_INTENTOS`] contraseñas fallidas.
 pub const DURACION_BLOQUEO: Duration = Duration::minutes(15);
 /// Intentos para escribir bien un código.
 pub const MAX_INTENTOS_CODIGO: u32 = 5;

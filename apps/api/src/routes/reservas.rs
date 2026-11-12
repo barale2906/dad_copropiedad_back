@@ -68,7 +68,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct PoliticaDto {
     /// `libre`, `franja_inmediata`, `franja_con_aprobacion`, `sorteo` o `turno_rotativo`.
-    #[schema(value_type = String, example = "franja_con_aprobacion")]
+    #[schema(value_type = crate::esquemas::ModoAsignacion)]
     pub modo: ModoAsignacion,
     #[schema(example = 60)]
     pub duracion_minima_min: u32,
@@ -83,7 +83,7 @@ pub struct PoliticaDto {
     pub max_simultaneas: Option<u32>,
     pub alistamiento_min: u32,
     /// `propietario`, `residente` o `ambos`.
-    #[schema(value_type = String, example = "ambos")]
+    #[schema(value_type = crate::esquemas::QuienReserva)]
     pub quien: QuienReserva,
     /// Los tenedores necesitan la autorización del propietario.
     pub tenedor_requiere_autorizacion: bool,
@@ -92,7 +92,7 @@ pub struct PoliticaDto {
     #[schema(value_type = String, example = "150000")]
     pub tarifa: Decimal,
     /// `reserva` u `hora`.
-    #[schema(value_type = String, example = "reserva")]
+    #[schema(value_type = crate::esquemas::CobroPor)]
     pub cobro_por: CobroPor,
     #[schema(value_type = Option<String>)]
     pub tarifa_festivo: Option<Decimal>,
@@ -103,7 +103,7 @@ pub struct PoliticaDto {
     pub penalidad_porcentaje: Decimal,
     pub max_invitados: u32,
     /// `sin_entrega`, `entrega_llaves`, `entrega_con_inventario` o `acceso_automatico`.
-    #[schema(value_type = String, example = "entrega_con_inventario")]
+    #[schema(value_type = crate::esquemas::MetodoEntrega)]
     pub metodo_entrega: MetodoEntrega,
 }
 
@@ -164,7 +164,7 @@ impl From<PoliticaDto> for PoliticaReserva {
 /// Detalle de un bien común.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct BienComunDto {
-    #[schema(value_type = String, example = "salon_social")]
+    #[schema(value_type = crate::esquemas::CategoriaBienComun)]
     pub categoria: CategoriaBienComun,
     #[schema(value_type = Option<String>)]
     pub area_m2: Option<Decimal>,
@@ -203,9 +203,9 @@ impl From<DetalleBienComun> for BienComunDto {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ParqueaderoDto {
     pub codigo: String,
-    #[schema(value_type = String, example = "carro")]
+    #[schema(value_type = crate::esquemas::TipoParqueadero)]
     pub tipo_vehiculo: TipoParqueadero,
-    #[schema(value_type = String, example = "comunal")]
+    #[schema(value_type = crate::esquemas::NaturalezaParqueadero)]
     pub naturaleza: NaturalezaParqueadero,
     pub bien_privado_id: Option<Uuid>,
 }
@@ -226,11 +226,11 @@ impl From<DetalleParqueadero> for ParqueaderoDto {
 pub struct RecursoRespuesta {
     pub id: Uuid,
     /// `bien_comun`, `parqueadero`, `agenda_administracion` o `herramienta`.
-    #[schema(value_type = String, example = "bien_comun")]
+    #[schema(value_type = crate::esquemas::TipoRecurso)]
     pub tipo: TipoRecurso,
     pub nombre: String,
     /// `disponible`, `en_mantenimiento`, `fuera_de_servicio` o `inactivo`.
-    #[schema(value_type = String, example = "disponible")]
+    #[schema(value_type = crate::esquemas::EstadoRecurso)]
     pub estado: EstadoRecurso,
     pub ubicacion: Option<String>,
     pub descripcion: Option<String>,
@@ -261,7 +261,7 @@ impl From<Recurso> for RecursoRespuesta {
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroRecursos {
-    #[param(value_type = Option<String>)]
+    #[param(value_type = Option<crate::esquemas::TipoRecurso>)]
     pub tipo: Option<TipoRecurso>,
 }
 
@@ -290,7 +290,7 @@ pub async fn listar_recursos(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct NuevoRecursoPeticion {
     /// `bien_comun`, `agenda_administracion` o `herramienta`.
-    #[schema(value_type = String, example = "bien_comun")]
+    #[schema(value_type = crate::esquemas::TipoRecurso)]
     pub tipo: TipoRecurso,
     #[schema(example = "Salón social")]
     pub nombre: String,
@@ -424,7 +424,7 @@ pub async fn editar_recurso(
 /// Estado nuevo de un recurso.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EstadoRecursoPeticion {
-    #[schema(value_type = String, example = "en_mantenimiento")]
+    #[schema(value_type = crate::esquemas::EstadoRecurso)]
     pub estado: EstadoRecurso,
     pub motivo: Option<String>,
 }
@@ -546,7 +546,7 @@ pub struct ReservaRespuesta {
     pub invitados: u32,
     /// `solicitada`, `aprobada`, `rechazada`, `en_curso`, `finalizada`, `con_novedad`,
     /// `cancelada` o `no_asistio`.
-    #[schema(value_type = String, example = "aprobada")]
+    #[schema(value_type = crate::esquemas::EstadoReserva)]
     pub estado: EstadoReserva,
     #[schema(value_type = String, example = "150000.00")]
     pub valor: Decimal,
@@ -555,11 +555,11 @@ pub struct ReservaRespuesta {
     #[schema(value_type = String)]
     pub penalidad: Decimal,
     /// `no_aplica`, `pendiente`, `pagado` o `exonerado`.
-    #[schema(value_type = String, example = "pendiente")]
+    #[schema(value_type = crate::esquemas::EstadoPago)]
     pub estado_pago: EstadoPago,
-    #[schema(value_type = String, example = "web")]
+    #[schema(value_type = crate::esquemas::CanalReserva)]
     pub canal: CanalReserva,
-    #[schema(value_type = Option<String>)]
+    #[schema(value_type = Option<crate::esquemas::ModalidadCita>)]
     pub modalidad: Option<ModalidadCita>,
     pub motivo: Option<String>,
     pub placa_visitante: Option<String>,
@@ -601,7 +601,7 @@ pub struct FiltroReservasParams {
     pub mias: bool,
     pub recurso_id: Option<Uuid>,
     pub bien_privado_id: Option<Uuid>,
-    #[param(value_type = Option<String>)]
+    #[param(value_type = Option<crate::esquemas::EstadoReserva>)]
     pub estado: Option<EstadoReserva>,
     pub desde: Option<DateTime<Utc>>,
     pub hasta: Option<DateTime<Utc>>,
@@ -658,10 +658,10 @@ pub struct SolicitudPeticion {
     #[schema(example = "2b0c6a4e-…")]
     pub idempotency_key: String,
     #[serde(default = "canal_web")]
-    #[schema(value_type = String, example = "web")]
+    #[schema(value_type = crate::esquemas::CanalReserva)]
     pub canal: CanalReserva,
     /// Citas: `presencial`, `llamada` o `videollamada`.
-    #[schema(value_type = Option<String>)]
+    #[schema(value_type = Option<crate::esquemas::ModalidadCita>)]
     pub modalidad: Option<ModalidadCita>,
     pub motivo: Option<String>,
     /// Obligatoria en parqueaderos de visitantes.
@@ -715,7 +715,7 @@ pub async fn solicitar(
 /// Entrega o recibo registrado.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct EntregaRespuesta {
-    #[schema(value_type = String, example = "recibo")]
+    #[schema(value_type = crate::esquemas::TipoEntrega)]
     pub tipo: TipoEntrega,
     pub checklist: Vec<ChecklistDto>,
     pub fotos: Vec<Uuid>,
@@ -1034,7 +1034,7 @@ pub async fn no_asistio(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct PagoPeticion {
     /// `pagado` o `exonerado`.
-    #[schema(value_type = String, example = "pagado")]
+    #[schema(value_type = crate::esquemas::EstadoPago)]
     pub estado_pago: EstadoPago,
 }
 

@@ -673,7 +673,6 @@ fn texto_de(c: &ContenidoEntrante) -> Option<&str> {
 }
 
 /// Atiende el mensaje en el paso actual y devuelve el siguiente paso.
-#[allow(clippy::too_many_lines)]
 async fn avanzar<U, S, D, M, A, R, DA, F, Q>(
     s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
     m: &MensajeEntrante,
@@ -697,158 +696,12 @@ where
 {
     let id = respuesta_id(&m.contenido);
     match paso {
-        Paso::Menu | Paso::ElegirVinculo => match id {
-            Some("m:info") => mostrar_faq(s, ctx, turno).await,
-            Some("m:reportar") => {
-                let categorias = listar_categorias(s.unidad, s.reloj, ctx).await?;
-                let mut filas: Vec<Eleccion> = categorias
-                    .iter()
-                    .take(FILAS - 1)
-                    .map(|c| Eleccion::new(format!("c:{}", c.id), corto(&c.nombre, 24)))
-                    .collect();
-                filas.push(Eleccion::new("c:otro", "Otro"));
-                turno.responder(lista(
-                    "¿Qué tipo de daño quiere reportar?".into(),
-                    "Elegir",
-                    filas,
-                ));
-                Ok(Paso::ReporteCategoria)
-            }
-            Some("m:estado") => {
-                let tickets = tickets_de_persona(s.unidad, s.reloj, ctx, v.persona_id, 5).await?;
-                if tickets.is_empty() {
-                    turno.texto("No tiene solicitudes radicadas.");
-                } else {
-                    let lineas: Vec<String> = tickets
-                        .iter()
-                        .map(|t| {
-                            format!(
-                                "• {} · {} · {}",
-                                t.numero,
-                                t.estado.as_str().replace('_', " "),
-                                corto(&t.asunto, 60)
-                            )
-                        })
-                        .collect();
-                    turno.texto(format!("Sus últimas solicitudes:\n{}", lineas.join("\n")));
-                }
-                turno.responder(boton_menu());
-                Ok(Paso::Menu)
-            }
-            Some("m:reservar") => {
-                elegir_recurso(s, ctx, v, TipoRecurso::BienComun, false, turno).await
-            }
-            Some("m:visitante") => {
-                elegir_recurso(s, ctx, v, TipoRecurso::Parqueadero, true, turno).await
-            }
-            Some("m:cita") => {
-                elegir_recurso(s, ctx, v, TipoRecurso::AgendaAdministracion, false, turno).await
-            }
-            Some("m:humano") => {
-                let c = registrar_entrante(
-                    s.unidad,
-                    s.reloj,
-                    ctx,
-                    EntradaConversacion {
-                        linea: m.linea.clone(),
-                        telefono: m.telefono.clone(),
-                        persona_id: Some(v.persona_id),
-                        wamid: m.wamid.clone(),
-                        texto: None,
-                    },
-                )
-                .await?;
-                turno.texto(
-                    "Escriba su mensaje: la administración le responderá por aquí en su horario \
-                     de atención. Escriba «menú» para volver a las opciones.",
-                );
-                Ok(Paso::Humano { conversacion: c.id })
-            }
-            Some("m:visita") => {
-                turno.texto(
-                    "Escriba el nombre de la persona que lo visita (como aparece en su documento).",
-                );
-                Ok(Paso::VisitaNombre)
-            }
-            Some("m:paquetes") => {
-                mostrar_paquetes(s, ctx, v, turno).await?;
-                Ok(Paso::Menu)
-            }
-            Some("m:votar") => {
-                let n = reenviar_preguntas_abiertas(s.unidad, s.asambleas, s.reloj, m).await?;
-                if n == 0 {
-                    turno.texto("No tiene preguntas abiertas por votar en este momento.");
-                    turno.responder(boton_menu());
-                } else {
-                    turno.texto(format!("Le enviamos {n} pregunta(s) para votar."));
-                }
-                Ok(Paso::Menu)
-            }
-            Some("m:cambiar") if varios => {
-                turno.texto("Escriba cualquier mensaje para elegir el bien privado.");
-                Ok(Paso::ElegirVinculo)
-            }
-            Some("m:proveedor") => {
-                turno.texto(
-                    "¿Qué necesita? Escríbalo en pocas palabras (por ejemplo «plomero», \
-                     «costurera» o «técnico de lavadoras»).",
-                );
-                Ok(Paso::ProveedorBusqueda)
-            }
-            None if texto_de(&m.contenido).is_some_and(es_busqueda) => {
-                buscar_en_chat(s, m, ctx, v, turno).await
-            }
-            _ => {
-                turno.responder(menu(v, varios, votacion_abierta(s, m).await));
-                Ok(Paso::Menu)
-            }
-        },
-        Paso::Faq => {
-            let preguntas = listar_preguntas(s.unidad, s.reloj, ctx).await?;
-            match id
-                .and_then(|i| i.strip_prefix("f:"))
-                .and_then(|i| preguntas.iter().find(|p| p.id.to_string() == i))
-            {
-                Some(p) => {
-                    turno.texto(p.respuesta.clone());
-                    turno.responder(ContenidoSaliente::Botones {
-                        cuerpo: "¿Algo más?".into(),
-                        botones: vec![
-                            Eleccion::new("m:info", "Otra pregunta"),
-                            Eleccion::new(ID_MENU, "Volver al menú"),
-                        ],
-                    });
-                    Ok(Paso::Menu)
-                }
-                None => mostrar_faq(s, ctx, turno).await,
-            }
-        }
-        Paso::ReporteCategoria => {
-            let elegido = id.and_then(|i| i.strip_prefix("c:"));
-            let categorias = listar_categorias(s.unidad, s.reloj, ctx).await?;
-            let (categoria, nombre) = match elegido {
-                Some("otro") => (None, None),
-                Some(i) => match categorias.iter().find(|c| c.id.to_string() == i) {
-                    Some(c) => (Some(c.id), Some(c.nombre.clone())),
-                    None => (None, None),
-                },
-                None => {
-                    turno.texto("Elija una opción de la lista o escriba «menú».");
-                    return Ok(Paso::ReporteCategoria);
-                }
-            };
-            turno.texto(
-                "Describa el daño y dónde está (torre, piso, zona común). Sea lo más preciso \
-                 posible.",
-            );
-            Ok(Paso::ReporteDescripcion { categoria, nombre })
-        }
+        Paso::Menu | Paso::ElegirVinculo => elegir_del_menu(s, m, ctx, v, varios, turno).await,
+        Paso::Faq => responder_faq(s, ctx, id, turno).await,
+        Paso::ReporteCategoria => elegir_categoria_reporte(s, ctx, id, turno).await,
         Paso::ReporteDescripcion { categoria, nombre } => match texto_de(&m.contenido) {
             Some(t) => {
-                turno.responder(ContenidoSaliente::Botones {
-                    cuerpo: "Si quiere, envíe ahora una foto del daño.".into(),
-                    botones: vec![Eleccion::new(ID_SIN_FOTO, "Sin foto")],
-                });
+                turno.responder(pedir_foto("Si quiere, envíe ahora una foto del daño."));
                 Ok(Paso::ReporteFoto {
                     categoria,
                     nombre,
@@ -871,10 +724,7 @@ where
                 }
                 ContenidoEntrante::Respuesta { id, .. } if id == ID_SIN_FOTO => None,
                 _ => {
-                    turno.responder(ContenidoSaliente::Botones {
-                        cuerpo: "Envíe una foto o toque «Sin foto».".into(),
-                        botones: vec![Eleccion::new(ID_SIN_FOTO, "Sin foto")],
-                    });
+                    turno.responder(pedir_foto("Envíe una foto o toque «Sin foto»."));
                     return Ok(Paso::ReporteFoto {
                         categoria,
                         nombre,
@@ -896,113 +746,36 @@ where
             descripcion,
             foto,
         } => {
-            let urgente = match id {
-                Some(ID_SI) => true,
-                Some(ID_NO) => false,
+            let reporte = ReporteDanio {
+                categoria,
+                nombre,
+                descripcion,
+                foto,
+            };
+            match id {
+                Some(ID_SI) => radicar_reporte(s, m, ctx, v, reporte, true, turno).await,
+                Some(ID_NO) => radicar_reporte(s, m, ctx, v, reporte, false, turno).await,
                 _ => {
                     turno.responder(preguntar_urgencia());
-                    return Ok(Paso::ReporteUrgente {
-                        categoria,
-                        nombre,
-                        descripcion,
-                        foto,
-                    });
+                    Ok(reporte.pendiente_de_urgencia())
                 }
-            };
-            let ticket = radicar_ticket(
-                s.unidad,
-                s.reloj,
-                ctx,
-                NuevoTicket {
-                    tipo: TipoTicket::SolicitudMantenimiento,
-                    categoria_id: categoria,
-                    prioridad: Some(if urgente {
-                        PrioridadTicket::Urgente
-                    } else {
-                        PrioridadTicket::Media
-                    }),
-                    canal: CanalTicket::Whatsapp,
-                    asunto: corto(
-                        &match &nombre {
-                            Some(n) => format!("Daño: {n}"),
-                            None => "Reporte de daño".into(),
-                        },
-                        120,
-                    ),
-                    descripcion,
-                    bien_privado_id: Some(v.bien_privado_id),
-                    ubicacion: None,
-                    recurso_id: None,
-                    activo_id: None,
-                    adjuntos: foto.into_iter().collect(),
-                    idempotency_key: m.wamid.clone(),
-                    solicitante: Some(v.persona_id),
-                },
-            )
-            .await?;
-            turno.texto(format!(
-                "Radicamos su reporte {}.{} Puede consultar el estado en «Mis solicitudes».",
-                ticket.numero,
-                if urgente {
-                    " Avisamos de inmediato al personal encargado."
-                } else {
-                    ""
-                }
-            ));
-            turno.responder(boton_menu());
-            Ok(Paso::Menu)
+            }
         }
         Paso::ReservaRecurso { tipo, visitantes } => {
-            let Some(rid) = id.and_then(|i| i.strip_prefix("r:")) else {
-                return elegir_recurso(s, ctx, v, tipo, visitantes, turno).await;
-            };
-            let (ctx_cuenta, recursos) = recursos_de(s, ctx, v, tipo, visitantes).await?;
-            let Some(r) = recursos.into_iter().find(|r| r.id.to_string() == rid) else {
-                return elegir_recurso(s, ctx, v, tipo, visitantes, turno).await;
-            };
-            let reserva = BorradorReserva {
-                recurso: r.id,
-                nombre: r.nombre.clone(),
-                tipo,
-                visitantes,
-                duracion_min: r.politica.duracion_minima_min,
-                granularidad_min: r.politica.granularidad_min.max(1),
-                inicio: None,
-                placa: None,
-                motivo: None,
-            };
-            elegir_dia(s, &ctx_cuenta, reserva, turno).await
+            reservar_recurso(s, ctx, v, id, tipo, visitantes, turno).await
         }
         Paso::ReservaDia { reserva } => {
-            let Some(dia) = id
+            let ctx_cuenta = contexto_cuenta(s, v).await?;
+            match id
                 .and_then(|i| i.strip_prefix("d:"))
                 .and_then(|d| d.parse::<NaiveDate>().ok())
-            else {
-                let ctx_cuenta = contexto_cuenta(s, v).await?;
-                return elegir_dia(s, &ctx_cuenta, reserva, turno).await;
-            };
-            let ctx_cuenta = contexto_cuenta(s, v).await?;
-            elegir_franja(s, &ctx_cuenta, reserva, dia, turno).await
-        }
-        Paso::ReservaFranja { mut reserva, dia } => {
-            let Some(inicio) = id
-                .and_then(|i| i.strip_prefix("h:"))
-                .and_then(|h| DateTime::parse_from_rfc3339(h).ok())
-                .map(|h| h.with_timezone(&Utc))
-            else {
-                let ctx_cuenta = contexto_cuenta(s, v).await?;
-                return elegir_franja(s, &ctx_cuenta, reserva, dia, turno).await;
-            };
-            reserva.inicio = Some(inicio);
-            if reserva.visitantes {
-                turno.texto("Escriba la placa del vehículo del visitante.");
-                Ok(Paso::ReservaPlaca { reserva })
-            } else if reserva.tipo == TipoRecurso::AgendaAdministracion {
-                turno.texto("Cuéntenos brevemente el motivo de la cita.");
-                Ok(Paso::ReservaMotivo { reserva })
-            } else {
-                confirmar_reserva(s, ctx, reserva, turno).await
+            {
+                Some(dia) => elegir_franja(s, &ctx_cuenta, reserva, dia, turno).await,
+                None => elegir_dia(s, &ctx_cuenta, reserva, turno).await,
             }
+        }
+        Paso::ReservaFranja { reserva, dia } => {
+            reservar_franja(s, ctx, v, id, reserva, dia, turno).await
         }
         Paso::ReservaPlaca { mut reserva } => match texto_de(&m.contenido).map(Placa::new) {
             Some(Ok(p)) => {
@@ -1025,46 +798,7 @@ where
             }
         },
         Paso::ReservaConfirmar { reserva } => match id {
-            Some(ID_SI) => {
-                let ctx_cuenta = contexto_cuenta(s, v).await?;
-                let inicio = reserva
-                    .inicio
-                    .ok_or_else(|| AppError::Validacion("falta la hora".into()))?;
-                let franja = Franja::new(
-                    inicio,
-                    inicio + Duration::minutes(i64::from(reserva.duracion_min)),
-                )?;
-                let placa = reserva.placa.as_deref().map(Placa::new).transpose()?;
-                let hecha = solicitar_reserva(
-                    s.unidad,
-                    s.reloj,
-                    &ctx_cuenta,
-                    SolicitudReserva {
-                        recurso_id: reserva.recurso,
-                        bien_privado_id: v.bien_privado_id,
-                        franja,
-                        invitados: 0,
-                        idempotency_key: m.wamid.clone(),
-                        canal: CanalReserva::Whatsapp,
-                        modalidad: (reserva.tipo == TipoRecurso::AgendaAdministracion)
-                            .then_some(ModalidadCita::Presencial),
-                        motivo: reserva.motivo.clone(),
-                        placa_visitante: placa,
-                    },
-                )
-                .await?;
-                turno.texto(if hecha.estado == EstadoReserva::Aprobada {
-                    format!("Listo: su reserva de {} quedó confirmada.", reserva.nombre)
-                } else {
-                    format!(
-                        "Su solicitud de {} quedó registrada; la administración la revisará y le \
-                         avisará.",
-                        reserva.nombre
-                    )
-                });
-                turno.responder(boton_menu());
-                Ok(Paso::Menu)
-            }
+            Some(ID_SI) => solicitar_reserva_del_chat(s, m, v, &reserva, turno).await,
             Some(ID_NO) => {
                 turno.texto("Cancelamos la solicitud.");
                 turno.responder(menu(v, varios, votacion_abierta(s, m).await));
@@ -1075,42 +809,26 @@ where
         Paso::Humano { conversacion } => Ok(Paso::Humano { conversacion }),
         Paso::VisitaNombre => match texto_de(&m.contenido) {
             Some(nombre) if (2..=120).contains(&nombre.chars().count()) => {
-                let tz = zona_de_chat(s, ctx).await?;
-                let hoy = s.reloj.ahora().with_timezone(&tz).date_naive();
-                let filas = (0..DIAS_VISITA)
-                    .filter_map(|i| hoy.checked_add_days(chrono::Days::new(i)))
-                    .map(|d| Eleccion::new(format!("vd:{d}"), etiqueta_dia(d, hoy)))
-                    .collect();
-                turno.responder(lista(
-                    format!("¿Qué día llega {}?", corto(nombre, 60)),
-                    "Elegir día",
-                    filas,
-                ));
-                Ok(Paso::VisitaDia {
-                    nombre: nombre.to_owned(),
-                })
+                preguntar_dia_visita(s, ctx, nombre, turno).await
             }
             _ => {
                 turno.texto("Escriba solo el nombre del visitante (o «menú» para salir).");
                 Ok(Paso::VisitaNombre)
             }
         },
+        Paso::VisitaDia { nombre } => {
+            let dia = id
+                .and_then(|i| i.strip_prefix("vd:"))
+                .and_then(|d| d.parse::<NaiveDate>().ok());
+            let Some(dia) = dia else {
+                turno.texto("Elija el día de la lista.");
+                return Ok(Paso::VisitaDia { nombre });
+            };
+            autorizar_visita(s, ctx, v, &nombre, dia, turno).await?;
+            Ok(Paso::Menu)
+        }
         Paso::CensoCambios { campana } => match texto_de(&m.contenido) {
-            Some(t) => {
-                let b = BotonCampana {
-                    tenant: v.tenant_id,
-                    campana,
-                    bien: v.bien_privado_id,
-                    cambios: true,
-                };
-                registrar_respuesta_censo(s.unidad, s.reloj, ctx, b, v.persona_id, Some(t)).await?;
-                turno.texto(
-                    "Recibimos los cambios. La administración los revisará y actualizará el \
-                     censo.",
-                );
-                turno.responder(boton_menu());
-                Ok(Paso::Menu)
-            }
+            Some(t) => recibir_cambios_censo(s, ctx, v, campana, t, turno).await,
             None => {
                 turno.texto("Escriba los cambios en un mensaje de texto (o «menú» para salir).");
                 Ok(Paso::CensoCambios { campana })
@@ -1124,29 +842,7 @@ where
             }
         },
         Paso::ProveedorContacto { solicitud } => match id {
-            Some(ID_CONTACTAR) => {
-                let c = autorizar_contacto(
-                    s.unidad,
-                    s.reloj,
-                    ctx,
-                    solicitud,
-                    v.persona_id,
-                    Some(m.linea.clone()),
-                )
-                .await?;
-                turno.texto(format!(
-                    "Listo: le compartimos su nombre y su celular a {} solo para esta solicitud. \
-                     Lo contactarán por WhatsApp.{}",
-                    c.proveedores.join(", "),
-                    if c.seguimiento {
-                        " En unos días le preguntaremos cómo le fue."
-                    } else {
-                        ""
-                    }
-                ));
-                turno.responder(boton_menu());
-                Ok(Paso::Menu)
-            }
+            Some(ID_CONTACTAR) => compartir_con_proveedor(s, m, ctx, v, solicitud, turno).await,
             Some(ID_NO_CONTACTAR) => {
                 turno.texto(
                     "Entendido: no compartimos sus datos. Puede escribirles o llamarlos con los \
@@ -1189,18 +885,544 @@ where
             calificar(s, v, anunciante, &nombre, n, turno).await?;
             Ok(Paso::Menu)
         }
-        Paso::VisitaDia { nombre } => {
-            let dia = id
-                .and_then(|i| i.strip_prefix("vd:"))
-                .and_then(|d| d.parse::<NaiveDate>().ok());
-            let Some(dia) = dia else {
-                turno.texto("Elija el día de la lista.");
-                return Ok(Paso::VisitaDia { nombre });
-            };
-            autorizar_visita(s, ctx, v, &nombre, dia, turno).await?;
+    }
+}
+
+/// Opción elegida en el menú principal (o texto libre: una búsqueda de proveedor o el menú).
+async fn elegir_del_menu<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    m: &MensajeEntrante,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    varios: bool,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    S: SesionesConversacion,
+    D: DirectorioTelefonos,
+    M: Mensajeria,
+    A: AlmacenArchivos,
+    R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
+    Q: GeneradorImagenQr,
+{
+    match respuesta_id(&m.contenido) {
+        Some("m:info") => mostrar_faq(s, ctx, turno).await,
+        Some("m:reportar") => {
+            let categorias = listar_categorias(s.unidad, s.reloj, ctx).await?;
+            let mut filas: Vec<Eleccion> = categorias
+                .iter()
+                .take(FILAS - 1)
+                .map(|c| Eleccion::new(format!("c:{}", c.id), corto(&c.nombre, 24)))
+                .collect();
+            filas.push(Eleccion::new("c:otro", "Otro"));
+            turno.responder(lista(
+                "¿Qué tipo de daño quiere reportar?".into(),
+                "Elegir",
+                filas,
+            ));
+            Ok(Paso::ReporteCategoria)
+        }
+        Some("m:estado") => {
+            mostrar_solicitudes(s, ctx, v, turno).await?;
+            Ok(Paso::Menu)
+        }
+        Some("m:reservar") => elegir_recurso(s, ctx, v, TipoRecurso::BienComun, false, turno).await,
+        Some("m:visitante") => {
+            elegir_recurso(s, ctx, v, TipoRecurso::Parqueadero, true, turno).await
+        }
+        Some("m:cita") => {
+            elegir_recurso(s, ctx, v, TipoRecurso::AgendaAdministracion, false, turno).await
+        }
+        Some("m:humano") => {
+            let c = registrar_entrante(
+                s.unidad,
+                s.reloj,
+                ctx,
+                EntradaConversacion {
+                    linea: m.linea.clone(),
+                    telefono: m.telefono.clone(),
+                    persona_id: Some(v.persona_id),
+                    wamid: m.wamid.clone(),
+                    texto: None,
+                },
+            )
+            .await?;
+            turno.texto(
+                "Escriba su mensaje: la administración le responderá por aquí en su horario \
+                 de atención. Escriba «menú» para volver a las opciones.",
+            );
+            Ok(Paso::Humano { conversacion: c.id })
+        }
+        Some("m:visita") => {
+            turno.texto(
+                "Escriba el nombre de la persona que lo visita (como aparece en su documento).",
+            );
+            Ok(Paso::VisitaNombre)
+        }
+        Some("m:paquetes") => {
+            mostrar_paquetes(s, ctx, v, turno).await?;
+            Ok(Paso::Menu)
+        }
+        Some("m:votar") => {
+            let n = reenviar_preguntas_abiertas(s.unidad, s.asambleas, s.reloj, m).await?;
+            if n == 0 {
+                turno.texto("No tiene preguntas abiertas por votar en este momento.");
+                turno.responder(boton_menu());
+            } else {
+                turno.texto(format!("Le enviamos {n} pregunta(s) para votar."));
+            }
+            Ok(Paso::Menu)
+        }
+        Some("m:cambiar") if varios => {
+            turno.texto("Escriba cualquier mensaje para elegir el bien privado.");
+            Ok(Paso::ElegirVinculo)
+        }
+        Some("m:proveedor") => {
+            turno.texto(
+                "¿Qué necesita? Escríbalo en pocas palabras (por ejemplo «plomero», \
+                 «costurera» o «técnico de lavadoras»).",
+            );
+            Ok(Paso::ProveedorBusqueda)
+        }
+        None if texto_de(&m.contenido).is_some_and(es_busqueda) => {
+            buscar_en_chat(s, m, ctx, v, turno).await
+        }
+        _ => {
+            turno.responder(menu(v, varios, votacion_abierta(s, m).await));
             Ok(Paso::Menu)
         }
     }
+}
+
+/// «Mis solicitudes»: las últimas cinco del residente con su estado.
+async fn mostrar_solicitudes<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    turno: &mut Turno,
+) -> AppResult<()>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let tickets = tickets_de_persona(s.unidad, s.reloj, ctx, v.persona_id, 5).await?;
+    if tickets.is_empty() {
+        turno.texto("No tiene solicitudes radicadas.");
+    } else {
+        let lineas: Vec<String> = tickets
+            .iter()
+            .map(|t| {
+                format!(
+                    "• {} · {} · {}",
+                    t.numero,
+                    t.estado.as_str().replace('_', " "),
+                    corto(&t.asunto, 60)
+                )
+            })
+            .collect();
+        turno.texto(format!("Sus últimas solicitudes:\n{}", lineas.join("\n")));
+    }
+    turno.responder(boton_menu());
+    Ok(())
+}
+
+/// Respuesta de la pregunta frecuente elegida, o de nuevo la lista si no se reconoce.
+async fn responder_faq<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    id: Option<&str>,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    S: SesionesConversacion,
+    D: DirectorioTelefonos,
+    M: Mensajeria,
+    A: AlmacenArchivos,
+    R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
+    Q: GeneradorImagenQr,
+{
+    let preguntas = listar_preguntas(s.unidad, s.reloj, ctx).await?;
+    match id
+        .and_then(|i| i.strip_prefix("f:"))
+        .and_then(|i| preguntas.iter().find(|p| p.id.to_string() == i))
+    {
+        Some(p) => {
+            turno.texto(p.respuesta.clone());
+            turno.responder(ContenidoSaliente::Botones {
+                cuerpo: "¿Algo más?".into(),
+                botones: vec![
+                    Eleccion::new("m:info", "Otra pregunta"),
+                    Eleccion::new(ID_MENU, "Volver al menú"),
+                ],
+            });
+            Ok(Paso::Menu)
+        }
+        None => mostrar_faq(s, ctx, turno).await,
+    }
+}
+
+/// Categoría del daño elegida en la lista («Otro» o una desconocida quedan sin categoría).
+async fn elegir_categoria_reporte<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    id: Option<&str>,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let Some(elegido) = id.and_then(|i| i.strip_prefix("c:")) else {
+        turno.texto("Elija una opción de la lista o escriba «menú».");
+        return Ok(Paso::ReporteCategoria);
+    };
+    let categorias = listar_categorias(s.unidad, s.reloj, ctx).await?;
+    let (categoria, nombre) = categorias
+        .iter()
+        .find(|c| elegido != "otro" && c.id.to_string() == elegido)
+        .map_or((None, None), |c| (Some(c.id), Some(c.nombre.clone())));
+    turno.texto(
+        "Describa el daño y dónde está (torre, piso, zona común). Sea lo más preciso \
+         posible.",
+    );
+    Ok(Paso::ReporteDescripcion { categoria, nombre })
+}
+
+fn pedir_foto(cuerpo: &str) -> ContenidoSaliente {
+    ContenidoSaliente::Botones {
+        cuerpo: cuerpo.into(),
+        botones: vec![Eleccion::new(ID_SIN_FOTO, "Sin foto")],
+    }
+}
+
+/// Reporte de daño completo, a falta de saber si es urgente.
+struct ReporteDanio {
+    categoria: Option<CategoriaTicketId>,
+    nombre: Option<String>,
+    descripcion: String,
+    foto: Option<ArchivoId>,
+}
+
+impl ReporteDanio {
+    fn pendiente_de_urgencia(self) -> Paso {
+        Paso::ReporteUrgente {
+            categoria: self.categoria,
+            nombre: self.nombre,
+            descripcion: self.descripcion,
+            foto: self.foto,
+        }
+    }
+}
+
+/// Radica el reporte como ticket de mantenimiento (idempotente por `wamid`).
+async fn radicar_reporte<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    m: &MensajeEntrante,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    reporte: ReporteDanio,
+    urgente: bool,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let asunto = match &reporte.nombre {
+        Some(n) => format!("Daño: {n}"),
+        None => "Reporte de daño".into(),
+    };
+    let ticket = radicar_ticket(
+        s.unidad,
+        s.reloj,
+        ctx,
+        NuevoTicket {
+            tipo: TipoTicket::SolicitudMantenimiento,
+            categoria_id: reporte.categoria,
+            prioridad: Some(if urgente {
+                PrioridadTicket::Urgente
+            } else {
+                PrioridadTicket::Media
+            }),
+            canal: CanalTicket::Whatsapp,
+            asunto: corto(&asunto, 120),
+            descripcion: reporte.descripcion,
+            bien_privado_id: Some(v.bien_privado_id),
+            ubicacion: None,
+            recurso_id: None,
+            activo_id: None,
+            adjuntos: reporte.foto.into_iter().collect(),
+            idempotency_key: m.wamid.clone(),
+            solicitante: Some(v.persona_id),
+        },
+    )
+    .await?;
+    turno.texto(format!(
+        "Radicamos su reporte {}.{} Puede consultar el estado en «Mis solicitudes».",
+        ticket.numero,
+        if urgente {
+            " Avisamos de inmediato al personal encargado."
+        } else {
+            ""
+        }
+    ));
+    turno.responder(boton_menu());
+    Ok(Paso::Menu)
+}
+
+/// Recurso elegido de la lista: arma el borrador y pregunta el día (o repite la lista).
+async fn reservar_recurso<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    id: Option<&str>,
+    tipo: TipoRecurso,
+    visitantes: bool,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    S: SesionesConversacion,
+    D: DirectorioTelefonos,
+    M: Mensajeria,
+    A: AlmacenArchivos,
+    R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
+    Q: GeneradorImagenQr,
+{
+    let Some(rid) = id.and_then(|i| i.strip_prefix("r:")) else {
+        return elegir_recurso(s, ctx, v, tipo, visitantes, turno).await;
+    };
+    let (ctx_cuenta, recursos) = recursos_de(s, ctx, v, tipo, visitantes).await?;
+    let Some(r) = recursos.into_iter().find(|r| r.id.to_string() == rid) else {
+        return elegir_recurso(s, ctx, v, tipo, visitantes, turno).await;
+    };
+    let reserva = BorradorReserva {
+        recurso: r.id,
+        nombre: r.nombre.clone(),
+        tipo,
+        visitantes,
+        duracion_min: r.politica.duracion_minima_min,
+        granularidad_min: r.politica.granularidad_min.max(1),
+        inicio: None,
+        placa: None,
+        motivo: None,
+    };
+    elegir_dia(s, &ctx_cuenta, reserva, turno).await
+}
+
+/// Franja elegida: pide la placa (visitantes), el motivo (citas) o confirma.
+async fn reservar_franja<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    id: Option<&str>,
+    mut reserva: BorradorReserva,
+    dia: NaiveDate,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    S: SesionesConversacion,
+    D: DirectorioTelefonos,
+    M: Mensajeria,
+    A: AlmacenArchivos,
+    R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
+    Q: GeneradorImagenQr,
+{
+    let Some(inicio) = id
+        .and_then(|i| i.strip_prefix("h:"))
+        .and_then(|h| DateTime::parse_from_rfc3339(h).ok())
+        .map(|h| h.with_timezone(&Utc))
+    else {
+        let ctx_cuenta = contexto_cuenta(s, v).await?;
+        return elegir_franja(s, &ctx_cuenta, reserva, dia, turno).await;
+    };
+    reserva.inicio = Some(inicio);
+    if reserva.visitantes {
+        turno.texto("Escriba la placa del vehículo del visitante.");
+        Ok(Paso::ReservaPlaca { reserva })
+    } else if reserva.tipo == TipoRecurso::AgendaAdministracion {
+        turno.texto("Cuéntenos brevemente el motivo de la cita.");
+        Ok(Paso::ReservaMotivo { reserva })
+    } else {
+        confirmar_reserva(s, ctx, reserva, turno).await
+    }
+}
+
+/// «Sí» a la confirmación: solicita la reserva con la cuenta del residente (idempotente por
+/// `wamid`).
+async fn solicitar_reserva_del_chat<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    m: &MensajeEntrante,
+    v: &VinculoTelefono,
+    reserva: &BorradorReserva,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    S: SesionesConversacion,
+    D: DirectorioTelefonos,
+    M: Mensajeria,
+    A: AlmacenArchivos,
+    R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
+    Q: GeneradorImagenQr,
+{
+    let ctx_cuenta = contexto_cuenta(s, v).await?;
+    let inicio = reserva
+        .inicio
+        .ok_or_else(|| AppError::Validacion("falta la hora".into()))?;
+    let franja = Franja::new(
+        inicio,
+        inicio + Duration::minutes(i64::from(reserva.duracion_min)),
+    )?;
+    let placa = reserva.placa.as_deref().map(Placa::new).transpose()?;
+    let hecha = solicitar_reserva(
+        s.unidad,
+        s.reloj,
+        &ctx_cuenta,
+        SolicitudReserva {
+            recurso_id: reserva.recurso,
+            bien_privado_id: v.bien_privado_id,
+            franja,
+            invitados: 0,
+            idempotency_key: m.wamid.clone(),
+            canal: CanalReserva::Whatsapp,
+            modalidad: (reserva.tipo == TipoRecurso::AgendaAdministracion)
+                .then_some(ModalidadCita::Presencial),
+            motivo: reserva.motivo.clone(),
+            placa_visitante: placa,
+        },
+    )
+    .await?;
+    turno.texto(if hecha.estado == EstadoReserva::Aprobada {
+        format!("Listo: su reserva de {} quedó confirmada.", reserva.nombre)
+    } else {
+        format!(
+            "Su solicitud de {} quedó registrada; la administración la revisará y le \
+             avisará.",
+            reserva.nombre
+        )
+    });
+    turno.responder(boton_menu());
+    Ok(Paso::Menu)
+}
+
+/// Nombre del visitante recibido: pregunta el día de llegada (los próximos días, hora local).
+async fn preguntar_dia_visita<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    nombre: &str,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    S: SesionesConversacion,
+    D: DirectorioTelefonos,
+    M: Mensajeria,
+    A: AlmacenArchivos,
+    R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
+    Q: GeneradorImagenQr,
+{
+    let tz = zona_de_chat(s, ctx).await?;
+    let hoy = s.reloj.ahora().with_timezone(&tz).date_naive();
+    let filas = (0..DIAS_VISITA)
+        .filter_map(|i| hoy.checked_add_days(chrono::Days::new(i)))
+        .map(|d| Eleccion::new(format!("vd:{d}"), etiqueta_dia(d, hoy)))
+        .collect();
+    turno.responder(lista(
+        format!("¿Qué día llega {}?", corto(nombre, 60)),
+        "Elegir día",
+        filas,
+    ));
+    Ok(Paso::VisitaDia {
+        nombre: nombre.to_owned(),
+    })
+}
+
+/// Cambios del censo escritos por el residente: quedan como respuesta de la campaña.
+async fn recibir_cambios_censo<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    campana: domain::CampanaCensoId,
+    texto: &str,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let b = BotonCampana {
+        tenant: v.tenant_id,
+        campana,
+        bien: v.bien_privado_id,
+        cambios: true,
+    };
+    registrar_respuesta_censo(s.unidad, s.reloj, ctx, b, v.persona_id, Some(texto)).await?;
+    turno.texto("Recibimos los cambios. La administración los revisará y actualizará el censo.");
+    turno.responder(boton_menu());
+    Ok(Paso::Menu)
+}
+
+/// «Sí» a compartir los datos: autoriza el contacto con los proveedores sugeridos.
+async fn compartir_con_proveedor<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    m: &MensajeEntrante,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    solicitud: SolicitudProveedorId,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    let c = autorizar_contacto(
+        s.unidad,
+        s.reloj,
+        ctx,
+        solicitud,
+        v.persona_id,
+        Some(m.linea.clone()),
+    )
+    .await?;
+    turno.texto(format!(
+        "Listo: le compartimos su nombre y su celular a {} solo para esta solicitud. \
+         Lo contactarán por WhatsApp.{}",
+        c.proveedores.join(", "),
+        if c.seguimiento {
+            " En unos días le preguntaremos cómo le fue."
+        } else {
+            ""
+        }
+    ));
+    turno.responder(boton_menu());
+    Ok(Paso::Menu)
 }
 
 /// «Están bien» registra la confirmación; «Hay cambios» muestra lo registrado del bien y pide

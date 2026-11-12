@@ -155,6 +155,7 @@ impl CodigoAgrupacion {
         }
     }
 
+    /// Código normalizado.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -196,6 +197,7 @@ impl NumeroBienPrivado {
         }
     }
 
+    /// Número normalizado.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -238,6 +240,7 @@ impl CodigoBienPrivado {
         Ok(Self(v.to_owned()))
     }
 
+    /// Código normalizado.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -318,6 +321,7 @@ impl PlantillaNomenclatura {
         Ok(Self(v.to_owned()))
     }
 
+    /// Plantilla tal como se configuró.
     pub fn as_str(&self) -> &str {
         &self.0
     }

@@ -186,6 +186,7 @@ pub struct FiltroMinuta {
 // Infraestructura de acceso: puntos, puentes, dispositivos
 // ---------------------------------------------------------------------------------------------
 
+/// Puerta, portería o talanquera donde se controla el paso.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PuntoAcceso {
     pub id: PuntoAccesoId,
@@ -210,6 +211,7 @@ pub struct Puente {
     pub creado_en: DateTime<Utc>,
 }
 
+/// Lector o actuador (lector de QR, de placas, cerradura) conectado a un puente.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DispositivoAcceso {
     pub id: DispositivoAccesoId,
@@ -244,6 +246,7 @@ impl TitularAcceso {
         }
     }
 
+    /// Titular a partir de las columnas `persona_id` / `vehiculo_id` de la BD (la persona primero).
     pub fn desde_columnas(p: Option<PersonaId>, v: Option<VehiculoId>) -> Option<Self> {
         p.map(Self::Persona).or_else(|| v.map(Self::Vehiculo))
     }
@@ -391,12 +394,14 @@ pub enum AlertaAcceso {
 // Repositorio de la copropiedad
 // ---------------------------------------------------------------------------------------------
 
+/// Persistencia del control de acceso de la copropiedad.
 pub trait RepositorioAcceso: Send {
     /// Configuración de la PH o la predeterminada.
     fn configuracion_acceso(
         &mut self,
     ) -> impl Future<Output = AppResult<ConfiguracionAcceso>> + Send;
 
+    /// Crea o reemplaza la configuración de acceso de la copropiedad.
     fn guardar_configuracion_acceso(
         &mut self,
         c: &ConfiguracionAcceso,
@@ -404,6 +409,7 @@ pub trait RepositorioAcceso: Send {
 
     // --- Visitas ---
 
+    /// Guarda una visita nueva.
     fn insertar_visita(&mut self, v: &Visita) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Guarda estado, decisión, avisos, siguiente paso, usos e ingreso/salida.
@@ -416,6 +422,7 @@ pub trait RepositorioAcceso: Send {
         id: VisitaId,
     ) -> impl Future<Output = AppResult<Option<Visita>>> + Send;
 
+    /// Visita por su id.
     fn visita(&mut self, id: VisitaId) -> impl Future<Output = AppResult<Option<Visita>>> + Send;
 
     /// Más recientes primero (cursor por `id` descendente).
@@ -431,11 +438,13 @@ pub trait RepositorioAcceso: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Vec<Visita>>> + Send;
 
+    /// Agrega un evento al historial de la visita.
     fn insertar_evento_visita(
         &mut self,
         e: &EventoVisita,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Historial de la visita, en orden.
     fn eventos_visita(
         &mut self,
         id: VisitaId,
@@ -443,11 +452,13 @@ pub trait RepositorioAcceso: Send {
 
     // --- Correspondencia ---
 
+    /// Guarda una correspondencia recibida en portería.
     fn insertar_correspondencia(
         &mut self,
         c: &Correspondencia,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de una correspondencia (estado, avisos, entrega o devolución).
     fn actualizar_correspondencia(
         &mut self,
         c: &Correspondencia,
@@ -459,11 +470,13 @@ pub trait RepositorioAcceso: Send {
         id: CorrespondenciaId,
     ) -> impl Future<Output = AppResult<Option<Correspondencia>>> + Send;
 
+    /// Correspondencia por su id.
     fn correspondencia(
         &mut self,
         id: CorrespondenciaId,
     ) -> impl Future<Output = AppResult<Option<Correspondencia>>> + Send;
 
+    /// Correspondencias que cumplen el filtro, paginadas por cursor.
     fn correspondencias(
         &mut self,
         filtro: &FiltroCorrespondencia,
@@ -485,6 +498,7 @@ pub trait RepositorioAcceso: Send {
         e: &EntregaCorrespondencia,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Entrega registrada de una correspondencia, si ya se entregó.
     fn entrega(
         &mut self,
         id: CorrespondenciaId,
@@ -505,9 +519,11 @@ pub trait RepositorioAcceso: Send {
 
     // --- Minuta ---
 
+    /// Agrega una novedad a la minuta de portería.
     fn insertar_novedad(&mut self, n: &NovedadMinuta)
     -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Novedades de la minuta que cumplen el filtro, paginadas por cursor.
     fn novedades(
         &mut self,
         filtro: &FiltroMinuta,
@@ -538,29 +554,36 @@ pub trait RepositorioAcceso: Send {
 
     // --- Puntos, puentes y dispositivos ---
 
+    /// Crea (`nuevo`) o actualiza un punto de acceso.
     fn guardar_punto_acceso(
         &mut self,
         p: &PuntoAcceso,
         nuevo: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Puntos de acceso de la copropiedad.
     fn puntos_acceso(&mut self) -> impl Future<Output = AppResult<Vec<PuntoAcceso>>> + Send;
 
+    /// Registra un puente de acceso.
     fn insertar_puente(&mut self, p: &Puente) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Guarda estado, versión, latido y huella de la credencial de máquina.
     fn actualizar_puente(&mut self, p: &Puente) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Puente por su id.
     fn puente(&mut self, id: PuenteId) -> impl Future<Output = AppResult<Option<Puente>>> + Send;
 
+    /// Puentes de la copropiedad.
     fn puentes(&mut self) -> impl Future<Output = AppResult<Vec<Puente>>> + Send;
 
+    /// Crea (`nuevo`) o actualiza un dispositivo.
     fn guardar_dispositivo(
         &mut self,
         d: &DispositivoAcceso,
         nuevo: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Dispositivos de la copropiedad, o solo los de un puente.
     fn dispositivos(
         &mut self,
         puente: Option<PuenteId>,
@@ -580,6 +603,7 @@ pub trait RepositorioAcceso: Send {
         c: &Credencial,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Credencial por su id.
     fn credencial(
         &mut self,
         id: CredencialId,
@@ -591,22 +615,26 @@ pub trait RepositorioAcceso: Send {
         huella: &str,
     ) -> impl Future<Output = AppResult<Option<Credencial>>> + Send;
 
+    /// Credenciales del titular.
     fn credenciales_de(
         &mut self,
         titular: TitularAcceso,
     ) -> impl Future<Output = AppResult<Vec<Credencial>>> + Send;
 
+    /// Guarda una autorización de acceso.
     fn insertar_autorizacion_acceso(
         &mut self,
         a: &AutorizacionAcceso,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Revoca la autorización; `false` si no existía o ya estaba revocada.
     fn revocar_autorizacion_acceso(
         &mut self,
         id: AutorizacionAccesoId,
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Autorizaciones del titular (las revocadas, solo si se piden).
     fn autorizaciones_de(
         &mut self,
         titular: TitularAcceso,
@@ -640,6 +668,7 @@ pub trait RepositorioAcceso: Send {
         e: &EventoAcceso,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Asocia la foto de un evento (placa o rostro) con la fecha en que se purga.
     fn adjuntar_foto_evento(
         &mut self,
         evento: EventoAccesoId,
@@ -647,6 +676,7 @@ pub trait RepositorioAcceso: Send {
         purgar_en: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Eventos de acceso que cumplen el filtro, paginados por cursor.
     fn eventos_acceso(
         &mut self,
         filtro: &FiltroEventosAcceso,
@@ -659,6 +689,7 @@ pub trait RepositorioAcceso: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Vec<(EventoAccesoId, ArchivoId)>>> + Send;
 
+    /// Marca como purgada la foto del evento (el archivo ya se borró).
     fn marcar_foto_evento_purgada(
         &mut self,
         evento: EventoAccesoId,
@@ -677,16 +708,19 @@ pub trait RepositorioAcceso: Send {
 
     // --- Biometría ---
 
+    /// Guarda un consentimiento biométrico.
     fn insertar_consentimiento(
         &mut self,
         c: &ConsentimientoBiometrico,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Consentimiento biométrico vigente de la persona.
     fn consentimiento_vigente(
         &mut self,
         persona: PersonaId,
     ) -> impl Future<Output = AppResult<Option<ConsentimientoBiometrico>>> + Send;
 
+    /// Revoca el consentimiento biométrico.
     fn revocar_consentimiento(
         &mut self,
         id: ConsentimientoBiometricoId,
@@ -746,6 +780,7 @@ pub trait RepositorioDispositivosPush: Send {
         d: &DispositivoPush,
     ) -> impl Future<Output = AppResult<DispositivoPush>> + Send;
 
+    /// Dispositivos push activos de la cuenta.
     fn dispositivos_push(
         &mut self,
         cuenta: CuentaId,
@@ -800,8 +835,10 @@ pub trait EnvioPush: Send + Sync {
 
 /// Firma y verificación de los QR temporales con la clave Ed25519 de cada PH.
 pub trait FirmaQr: Send + Sync {
+    /// Firma la carga del QR con la clave de la copropiedad.
     fn firmar(&self, tenant: TenantId, carga: &[u8]) -> Vec<u8>;
 
+    /// Si la firma corresponde a la carga con la clave de la copropiedad.
     fn verificar(&self, tenant: TenantId, carga: &[u8], firma: &[u8]) -> bool;
 
     /// Clave pública de la PH (la recibe el puente para validar sin internet).

@@ -28,16 +28,18 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR_AGRUPACION: AccionAuditoria =
+pub(crate) const ACCION_CREAR_AGRUPACION: AccionAuditoria =
     AccionAuditoria::new("bienes_privados.agrupacion.crear");
-pub const ACCION_CREAR: AccionAuditoria = AccionAuditoria::new("bienes_privados.bien.crear");
-pub const ACCION_EDITAR: AccionAuditoria = AccionAuditoria::new("bienes_privados.bien.editar");
-pub const ACCION_INACTIVAR: AccionAuditoria =
+pub(crate) const ACCION_CREAR: AccionAuditoria = AccionAuditoria::new("bienes_privados.bien.crear");
+pub(crate) const ACCION_EDITAR: AccionAuditoria =
+    AccionAuditoria::new("bienes_privados.bien.editar");
+pub(crate) const ACCION_INACTIVAR: AccionAuditoria =
     AccionAuditoria::new("bienes_privados.bien.inactivar");
-pub const ACCION_VINCULAR: AccionAuditoria = AccionAuditoria::new("bienes_privados.bien.vincular");
-pub const ACCION_USO_EXCLUSIVO: AccionAuditoria =
+pub(crate) const ACCION_VINCULAR: AccionAuditoria =
+    AccionAuditoria::new("bienes_privados.bien.vincular");
+pub(crate) const ACCION_USO_EXCLUSIVO: AccionAuditoria =
     AccionAuditoria::new("bienes_privados.uso_exclusivo.asignar");
-pub const ACCION_TERMINAR_USO: AccionAuditoria =
+pub(crate) const ACCION_TERMINAR_USO: AccionAuditoria =
     AccionAuditoria::new("bienes_privados.uso_exclusivo.terminar");
 
 /// Cadena de agrupaciones desde la raíz hasta `id` (incluida).

@@ -28,8 +28,8 @@ use crate::{
     },
 };
 
-pub const ACCION_LANZAR: AccionAuditoria = AccionAuditoria::new("censo.campana.lanzar");
-pub const ACCION_ATENDER: AccionAuditoria = AccionAuditoria::new("censo.campana.atender");
+pub(crate) const ACCION_LANZAR: AccionAuditoria = AccionAuditoria::new("censo.campana.lanzar");
+pub(crate) const ACCION_ATENDER: AccionAuditoria = AccionAuditoria::new("censo.campana.atender");
 
 /// Plantilla de WhatsApp (aprobar en Meta): «{{1}} está actualizando el censo. ¿Los datos de
 /// {{2}} (residentes, vehículos y mascotas) siguen igual?» con los botones «Están bien» y «Hay

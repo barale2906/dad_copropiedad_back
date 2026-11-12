@@ -45,10 +45,10 @@ pub struct PuntoDto {
     #[schema(example = "Portería principal")]
     pub nombre: String,
     /// `peatonal`, `vehicular`, `mixto` o `interno`.
-    #[schema(value_type = String, example = "peatonal")]
+    #[schema(value_type = crate::esquemas::TipoPuntoAcceso)]
     pub tipo: TipoPuntoAcceso,
     /// `entrada`, `salida` o `ambos`.
-    #[schema(value_type = String, example = "ambos")]
+    #[schema(value_type = crate::esquemas::SentidoAcceso)]
     pub sentido: SentidoAcceso,
     /// Bien común al que da acceso (reservas con acceso automático).
     pub recurso_id: Option<Uuid>,
@@ -164,6 +164,7 @@ pub struct PuenteRespuesta {
     pub id: Uuid,
     pub nombre: String,
     /// `activo` o `retirado`.
+    #[schema(value_type = crate::esquemas::EstadoPuente)]
     pub estado: String,
     pub version: Option<String>,
     pub ultimo_latido_en: Option<DateTime<Utc>>,
@@ -316,7 +317,7 @@ pub struct DispositivoDto {
     pub punto_acceso_id: Uuid,
     /// `torniquete`, `talanquera`, `puerta`, `lector_qr`, `lector_rfid`, `teclado_pin`,
     /// `biometrico_huella`, `biometrico_facial` o `camara_lpr`.
-    #[schema(value_type = String, example = "camara_lpr")]
+    #[schema(value_type = crate::esquemas::TipoDispositivoAcceso)]
     pub tipo: TipoDispositivoAcceso,
     #[schema(example = "Hikvision")]
     pub fabricante: String,

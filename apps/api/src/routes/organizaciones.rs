@@ -61,10 +61,12 @@ pub struct FichaOrganizacionRespuesta {
     #[schema(example = "Seguridad Andina S.A.S.")]
     pub razon_social: String,
     /// `juridica` o `natural_con_rut`.
+    #[schema(value_type = crate::esquemas::NaturalezaOrganizacion)]
     pub naturaleza: String,
     #[schema(example = json!(["seguridad"]))]
     pub tipos: Vec<String>,
     /// `sin_reclamar`, `reclamada` o `suspendida`.
+    #[schema(value_type = crate::esquemas::EstadoOrganizacion)]
     pub estado: String,
 }
 
@@ -122,9 +124,9 @@ pub struct NuevaOrganizacionPeticion {
     pub nit: String,
     pub razon_social: String,
     /// `juridica` o `natural_con_rut`.
-    #[schema(example = "juridica")]
+    #[schema(value_type = crate::esquemas::NaturalezaOrganizacion)]
     pub naturaleza: String,
-    #[schema(example = json!(["seguridad"]))]
+    #[schema(value_type = Vec<crate::esquemas::TipoOrganizacion>, example = json!(["seguridad"]))]
     pub tipos: Vec<String>,
     pub correo_contacto: Option<String>,
     pub telefono_contacto: Option<String>,
@@ -187,10 +189,12 @@ pub async fn crear(
 pub struct ContratoRespuesta {
     pub id: Uuid,
     pub organizacion_id: Uuid,
+    #[schema(value_type = crate::esquemas::TipoOrganizacion)]
     pub tipo_servicio: String,
     pub vigente_desde: DateTime<Utc>,
     pub vigente_hasta: Option<DateTime<Utc>>,
     /// `vigente` o `terminado`.
+    #[schema(value_type = crate::esquemas::EstadoContrato)]
     pub estado: String,
     #[schema(value_type = Option<String>, example = "2500000.00")]
     pub valor: Option<Decimal>,
@@ -231,7 +235,7 @@ pub async fn listar_contratos(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ContratoPeticion {
     pub organizacion_id: Uuid,
-    #[schema(example = "seguridad")]
+    #[schema(value_type = crate::esquemas::TipoOrganizacion)]
     pub tipo_servicio: String,
     pub vigente_desde: Option<DateTime<Utc>>,
     pub vigente_hasta: Option<DateTime<Utc>>,
@@ -351,6 +355,7 @@ pub async fn asignar_por_contrato(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct CambiosFichaPeticion {
     pub razon_social: Option<String>,
+    #[schema(value_type = Option<Vec<crate::esquemas::TipoOrganizacion>>)]
     pub tipos: Option<Vec<String>>,
     pub correo_contacto: Option<String>,
     pub telefono_contacto: Option<String>,
@@ -404,7 +409,7 @@ pub async fn editar_ficha(
 pub struct MiembroPeticion {
     pub cuenta_id: Uuid,
     /// `dueno`, `gestor` u `operario`.
-    #[schema(example = "operario")]
+    #[schema(value_type = crate::esquemas::RolOrganizacion)]
     pub rol: String,
 }
 
@@ -453,6 +458,7 @@ pub struct ReclamacionRespuesta {
     pub cuenta_id: Uuid,
     pub mensaje: String,
     /// `pendiente`, `aprobada` o `rechazada`.
+    #[schema(value_type = crate::esquemas::EstadoReclamacion)]
     pub estado: String,
     pub creada_en: DateTime<Utc>,
 }

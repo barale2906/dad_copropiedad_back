@@ -66,13 +66,13 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 pub struct ReunionPeticion {
     #[schema(example = "Asamblea general ordinaria 2027")]
     pub titulo: String,
-    #[schema(value_type = String, example = "ordinaria")]
+    #[schema(value_type = crate::esquemas::TipoReunion)]
     pub tipo: TipoReunion,
     /// `primera` (por defecto), `segunda` o `derecho_propio`.
-    #[schema(value_type = Option<String>, example = "primera")]
+    #[schema(value_type = Option<crate::esquemas::Convocatoria>)]
     pub convocatoria: Option<Convocatoria>,
     /// `presencial`, `virtual`, `mixta` o `escrita` (consulta por escrito, art. 43).
-    #[schema(value_type = String, example = "presencial")]
+    #[schema(value_type = crate::esquemas::Modalidad)]
     pub modalidad: Modalidad,
     pub fecha_programada: DateTime<Utc>,
     pub lugar: Option<String>,
@@ -105,7 +105,7 @@ impl From<ReunionPeticion> for NuevaReunion {
 #[into_params(parameter_in = Query)]
 pub struct FiltroReuniones {
     /// Estado de la reunión.
-    #[param(value_type = Option<String>, example = "convocada")]
+    #[param(value_type = Option<crate::esquemas::EstadoReunion>)]
     pub estado: Option<EstadoReunion>,
     pub limite: Option<u32>,
     pub despues: Option<Uuid>,
@@ -351,7 +351,7 @@ pub async fn eliminar_punto(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EstadoPuntoPeticion {
     /// `en_curso`, `terminado` o `aplazado`.
-    #[schema(value_type = String, example = "en_curso")]
+    #[schema(value_type = crate::esquemas::EstadoPunto)]
     pub estado: EstadoPunto,
 }
 
@@ -391,7 +391,7 @@ pub async fn estado_punto(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct DocumentoPeticion {
     pub archivo_id: Uuid,
-    #[schema(value_type = String, example = "estados_financieros")]
+    #[schema(value_type = crate::esquemas::TipoDocumentoReunion)]
     pub tipo: TipoDocumentoReunion,
     #[schema(example = "Estados financieros 2026")]
     pub titulo: String,
@@ -750,13 +750,10 @@ pub async fn en_vivo(
     Path(ruta): Path<(Uuid, Uuid)>,
     ws: WebSocketUpgrade,
 ) -> ApiResult<Response> {
-    let id = ruta.1;
-    en.ctx.exigir(domain::Permiso::AsambleasVer)?;
-    let reunion = ReunionId::from_uuid(id);
-    let tenant = en.ctx.tenant_id;
-    // Verifica la reunión (y el módulo) antes de abrir el socket.
-    let inicial = tablero_json(&state.unidad, tenant, reunion).await?;
-    let rx = state.en_vivo.suscribir(tenant, reunion);
+    let reunion = ReunionId::from_uuid(ruta.1);
+    // Verifica el permiso, la reunión y el módulo antes de abrir el socket.
+    let inicial = tablero_json(&state.unidad, &en.ctx, reunion).await?;
+    let rx = state.en_vivo.suscribir(en.ctx.tenant_id, reunion);
     Ok(ws
         .protocols([SUBPROTOCOLO_WS])
         .on_upgrade(move |socket| atender_socket(socket, inicial, rx)))

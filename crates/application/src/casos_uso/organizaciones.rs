@@ -28,16 +28,19 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR: AccionAuditoria = AccionAuditoria::new("organizaciones.organizacion.crear");
-pub const ACCION_VINCULAR: AccionAuditoria = AccionAuditoria::new("organizaciones.contrato.crear");
-pub const ACCION_TERMINAR: AccionAuditoria =
+pub(crate) const ACCION_CREAR: AccionAuditoria =
+    AccionAuditoria::new("organizaciones.organizacion.crear");
+pub(crate) const ACCION_VINCULAR: AccionAuditoria =
+    AccionAuditoria::new("organizaciones.contrato.crear");
+pub(crate) const ACCION_TERMINAR: AccionAuditoria =
     AccionAuditoria::new("organizaciones.contrato.terminar");
-pub const ACCION_EDITAR_FICHA: AccionAuditoria =
+pub(crate) const ACCION_EDITAR_FICHA: AccionAuditoria =
     AccionAuditoria::new("organizaciones.ficha.editar");
-pub const ACCION_MIEMBRO: AccionAuditoria = AccionAuditoria::new("organizaciones.miembro.guardar");
-pub const ACCION_RECLAMAR: AccionAuditoria =
+pub(crate) const ACCION_MIEMBRO: AccionAuditoria =
+    AccionAuditoria::new("organizaciones.miembro.guardar");
+pub(crate) const ACCION_RECLAMAR: AccionAuditoria =
     AccionAuditoria::new("organizaciones.reclamacion.crear");
-pub const ACCION_RESOLVER: AccionAuditoria =
+pub(crate) const ACCION_RESOLVER: AccionAuditoria =
     AccionAuditoria::new("organizaciones.reclamacion.resolver");
 
 /// Busca la ficha pública por NIT exacto.

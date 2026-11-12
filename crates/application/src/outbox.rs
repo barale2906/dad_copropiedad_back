@@ -44,16 +44,11 @@ pub enum Canal {
     Push,
 }
 
-impl Canal {
-    /// Texto persistido en `outbox.canal`.
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::WhatsApp => "whatsapp",
-            Self::Correo => "correo",
-            Self::Push => "push",
-        }
-    }
-}
+domain::enum_texto!(Canal {
+    WhatsApp => "whatsapp",
+    Correo => "correo",
+    Push => "push",
+});
 
 /// Contenido de un mensaje encolado. Se persiste completo en `outbox.payload` (JSONB).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -66,6 +61,7 @@ pub enum MensajeOutbox {
 }
 
 impl MensajeOutbox {
+    /// Canal por el que sale el mensaje.
     pub const fn canal(&self) -> Canal {
         match self {
             Self::WhatsApp(_) => Canal::WhatsApp,

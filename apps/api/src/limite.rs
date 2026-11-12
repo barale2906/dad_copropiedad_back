@@ -72,6 +72,7 @@ pub struct Limitador {
 }
 
 impl Limitador {
+    /// Limitador con los límites por grupo.
     pub fn new(limites: Limites) -> Self {
         Self {
             limites,

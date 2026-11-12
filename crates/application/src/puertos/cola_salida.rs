@@ -33,6 +33,7 @@ pub struct MensajePendiente {
 
 /// Fuente de lotes de mensajes pendientes.
 pub trait ColaSalida: Send + Sync {
+    /// Lote reclamado que se marca enviado o fallido mensaje por mensaje.
     type Lote: LoteSalida;
 
     /// Reclama hasta `limite` mensajes pendientes de `canales`, por prioridad y antigüedad.

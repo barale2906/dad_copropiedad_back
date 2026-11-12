@@ -34,6 +34,7 @@ pub struct CierreTurno {
     pub respuestas: Vec<MensajeSaliente>,
 }
 
+/// Sesiones del chat por (línea, teléfono) y `wamid` procesados (ámbito de plataforma).
 pub trait SesionesConversacion: Send + Sync {
     /// ¿Ya se procesó este `wamid`? (Meta reintenta los webhooks.)
     fn ya_procesado(&self, wamid: &str) -> impl Future<Output = AppResult<bool>> + Send;

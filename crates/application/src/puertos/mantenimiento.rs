@@ -166,18 +166,34 @@ pub struct TableroMantenimiento {
     pub preventivas_programadas: u64,
     /// De esas, ejecutadas o verificadas.
     pub preventivas_cumplidas: u64,
+    /// Órdenes pendientes con la fecha programada ya vencida.
     pub ordenes_vencidas: u64,
     /// Costo acumulado (mano de obra + repuestos) por activo, de mayor a menor.
     pub costo_por_activo: Vec<(ActivoId, String, Decimal)>,
 }
 
+impl TableroMantenimiento {
+    /// Porcentaje de cumplimiento del plan preventivo con dos decimales, o `None` si no hubo
+    /// preventivas programadas (un 0 % o un 100 % sin programadas engañaría).
+    pub fn cumplimiento_porcentaje(&self) -> Option<Decimal> {
+        (self.preventivas_programadas > 0).then(|| {
+            (Decimal::from(self.preventivas_cumplidas) * Decimal::ONE_HUNDRED
+                / Decimal::from(self.preventivas_programadas))
+            .round_dp(2)
+        })
+    }
+}
+
+/// Persistencia del inventario y el mantenimiento de la copropiedad.
 pub trait RepositorioMantenimiento: Send {
+    /// Activos que cumplen el filtro, paginados por cursor.
     fn activos(
         &mut self,
         filtro: &FiltroActivos,
         pagina: SolicitudPagina,
     ) -> impl Future<Output = AppResult<Pagina<Activo>>> + Send;
 
+    /// Activo por su id.
     fn activo(&mut self, id: ActivoId) -> impl Future<Output = AppResult<Option<Activo>>> + Send;
 
     /// # Errors
@@ -185,19 +201,23 @@ pub trait RepositorioMantenimiento: Send {
     /// [`crate::AppError::Conflicto`] si el código ya existe.
     fn insertar_activo(&mut self, a: &Activo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de un activo.
     fn actualizar_activo(&mut self, a: &Activo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Adjunta un archivo (manual, garantía, foto) al activo.
     fn insertar_archivo_activo(
         &mut self,
         activo: ActivoId,
         a: &ArchivoActivo,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Archivos adjuntos al activo.
     fn archivos_activo(
         &mut self,
         activo: ActivoId,
     ) -> impl Future<Output = AppResult<Vec<ArchivoActivo>>> + Send;
 
+    /// Registra un movimiento de inventario (append-only).
     fn insertar_movimiento(&mut self, m: &Movimiento)
     -> impl Future<Output = AppResult<()>> + Send;
 
@@ -207,32 +227,38 @@ pub trait RepositorioMantenimiento: Send {
         activo: ActivoId,
     ) -> impl Future<Output = AppResult<Vec<Movimiento>>> + Send;
 
+    /// Planes de mantenimiento (solo los activos si se pide).
     fn planes(
         &mut self,
         solo_activos: bool,
     ) -> impl Future<Output = AppResult<Vec<PlanMantenimiento>>> + Send;
 
+    /// Plan de mantenimiento por su id.
     fn plan(
         &mut self,
         id: PlanMantenimientoId,
     ) -> impl Future<Output = AppResult<Option<PlanMantenimiento>>> + Send;
 
+    /// Guarda un plan de mantenimiento nuevo.
     fn insertar_plan(
         &mut self,
         p: &PlanMantenimiento,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de un plan de mantenimiento.
     fn actualizar_plan(
         &mut self,
         p: &PlanMantenimiento,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Órdenes de trabajo que cumplen el filtro, paginadas por cursor.
     fn ordenes(
         &mut self,
         filtro: &FiltroOrdenes,
         pagina: SolicitudPagina,
     ) -> impl Future<Output = AppResult<Pagina<OrdenTrabajo>>> + Send;
 
+    /// Orden de trabajo por su id.
     fn orden(
         &mut self,
         id: OrdenTrabajoId,
@@ -245,26 +271,32 @@ pub trait RepositorioMantenimiento: Send {
         fecha: NaiveDate,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Guarda una orden de trabajo nueva.
     fn insertar_orden(&mut self, o: &OrdenTrabajo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de una orden de trabajo.
     fn actualizar_orden(&mut self, o: &OrdenTrabajo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Adjunta una evidencia a la orden.
     fn insertar_evidencia(
         &mut self,
         orden: OrdenTrabajoId,
         e: &EvidenciaOrden,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Evidencias de la orden.
     fn evidencias(
         &mut self,
         orden: OrdenTrabajoId,
     ) -> impl Future<Output = AppResult<Vec<EvidenciaOrden>>> + Send;
 
+    /// Obligaciones periódicas (solo las activas si se pide).
     fn obligaciones(
         &mut self,
         solo_activas: bool,
     ) -> impl Future<Output = AppResult<Vec<Obligacion>>> + Send;
 
+    /// Obligación periódica por su id.
     fn obligacion(
         &mut self,
         id: ObligacionId,
@@ -276,23 +308,53 @@ pub trait RepositorioMantenimiento: Send {
     fn insertar_obligacion(&mut self, o: &Obligacion)
     -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de una obligación periódica.
     fn actualizar_obligacion(
         &mut self,
         o: &Obligacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Registra un cumplimiento de la obligación (append-only).
     fn insertar_cumplimiento(
         &mut self,
         c: &Cumplimiento,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Cumplimientos de la obligación.
     fn cumplimientos(
         &mut self,
         obligacion: ObligacionId,
     ) -> impl Future<Output = AppResult<Vec<Cumplimiento>>> + Send;
 
+    /// Indicadores del tablero de mantenimiento al día dado.
     fn tablero_mantenimiento(
         &mut self,
         hoy: NaiveDate,
     ) -> impl Future<Output = AppResult<TableroMantenimiento>> + Send;
+}
+
+#[cfg(test)]
+mod tests {
+    use rust_decimal::dec;
+
+    use super::*;
+
+    fn tablero(programadas: u64, cumplidas: u64) -> TableroMantenimiento {
+        TableroMantenimiento {
+            preventivas_programadas: programadas,
+            preventivas_cumplidas: cumplidas,
+            ..TableroMantenimiento::default()
+        }
+    }
+
+    #[test]
+    fn cumplimiento_redondea_a_dos_decimales() {
+        assert_eq!(tablero(3, 2).cumplimiento_porcentaje(), Some(dec!(66.67)));
+        assert_eq!(tablero(8, 8).cumplimiento_porcentaje(), Some(dec!(100)));
+    }
+
+    #[test]
+    fn sin_preventivas_programadas_no_hay_cumplimiento() {
+        assert_eq!(tablero(0, 0).cumplimiento_porcentaje(), None);
+    }
 }

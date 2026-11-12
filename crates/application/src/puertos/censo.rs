@@ -110,6 +110,7 @@ pub struct FilaLibroResidentes {
     pub vigente_desde: DateTime<Utc>,
 }
 
+/// Persistencia del censo: residencias, vehículos, mascotas, propuestas de cambio y libros.
 pub trait RepositorioCenso: Send {
     /// Residencias (de un bien o de todos), vigentes o con su historial, más recientes primero.
     fn residencias(
@@ -118,6 +119,7 @@ pub trait RepositorioCenso: Send {
         incluir_terminadas: bool,
     ) -> impl Future<Output = AppResult<Vec<Residencia>>> + Send;
 
+    /// Residencia por su id.
     fn residencia(
         &mut self,
         id: ResidenciaId,
@@ -129,12 +131,14 @@ pub trait RepositorioCenso: Send {
     fn insertar_residencia(&mut self, r: &Residencia)
     -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Termina la residencia (el rol `residente` derivado vence en la misma transacción).
     fn terminar_residencia(
         &mut self,
         id: ResidenciaId,
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Vehículos por bien o por placa (los retirados, solo si se piden).
     fn vehiculos(
         &mut self,
         bien: Option<BienPrivadoId>,
@@ -142,6 +146,7 @@ pub trait RepositorioCenso: Send {
         incluir_retirados: bool,
     ) -> impl Future<Output = AppResult<Vec<Vehiculo>>> + Send;
 
+    /// Vehículo por su id.
     fn vehiculo(
         &mut self,
         id: VehiculoId,
@@ -152,36 +157,44 @@ pub trait RepositorioCenso: Send {
     /// [`crate::AppError::Conflicto`] si la placa ya está vigente en la copropiedad.
     fn insertar_vehiculo(&mut self, v: &Vehiculo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Retira el vehículo del censo (libera su placa).
     fn retirar_vehiculo(
         &mut self,
         id: VehiculoId,
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Mascotas del bien o de toda la copropiedad (solo las activas si se pide).
     fn mascotas(
         &mut self,
         bien: Option<BienPrivadoId>,
         solo_activas: bool,
     ) -> impl Future<Output = AppResult<Vec<Mascota>>> + Send;
 
+    /// Mascota por su id.
     fn mascota(&mut self, id: MascotaId)
     -> impl Future<Output = AppResult<Option<Mascota>>> + Send;
 
+    /// Guarda una mascota nueva.
     fn insertar_mascota(&mut self, m: &Mascota) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de una mascota.
     fn actualizar_mascota(&mut self, m: &Mascota) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Propuestas de cambio del censo por estado y por quien las propuso.
     fn cambios(
         &mut self,
         estado: Option<EstadoCambioCenso>,
         propuesto_por: Option<CuentaId>,
     ) -> impl Future<Output = AppResult<Vec<CambioCenso>>> + Send;
 
+    /// Propuesta de cambio por su id.
     fn cambio(
         &mut self,
         id: CambioCensoId,
     ) -> impl Future<Output = AppResult<Option<CambioCenso>>> + Send;
 
+    /// Guarda una propuesta de cambio (no toca el censo hasta aprobarla).
     fn insertar_cambio(&mut self, c: &CambioCenso) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Guarda la resolución (estado, revisor, motivo, resultado).
@@ -194,11 +207,13 @@ pub trait RepositorioCenso: Send {
         bien: BienPrivadoId,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Libro de propietarios con los titulares vigentes al corte.
     fn libro_propietarios(
         &mut self,
         corte: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Vec<FilaLibroPropietarios>>> + Send;
 
+    /// Libro de residentes con las residencias vigentes al corte.
     fn libro_residentes(
         &mut self,
         corte: DateTime<Utc>,
@@ -267,11 +282,13 @@ pub struct RespuestaCensoListada {
 
 /// Persistencia de las campañas de actualización del censo.
 pub trait RepositorioCampanasCenso: Send {
+    /// Guarda una campaña de actualización del censo.
     fn insertar_campana_censo(
         &mut self,
         c: &CampanaCenso,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Campaña de actualización del censo por su id.
     fn campana_censo(
         &mut self,
         id: domain::CampanaCensoId,
@@ -296,6 +313,7 @@ pub trait RepositorioCampanasCenso: Send {
         r: &RespuestaCenso,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Respuestas recibidas de la campaña.
     fn respuestas_censo(
         &mut self,
         campana: domain::CampanaCensoId,

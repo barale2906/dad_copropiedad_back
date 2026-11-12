@@ -148,7 +148,7 @@ pub struct RegistroAsistentePeticion {
     /// Enviar la plantilla `confirmar_asistencia` por WhatsApp (por defecto, sí).
     pub enviar_confirmacion: Option<bool>,
     /// `mesa` (el día, cuenta para el quórum; por defecto) o `prerregistro`.
-    #[schema(value_type = Option<String>, example = "mesa")]
+    #[schema(value_type = Option<crate::esquemas::MetodoRegistro>)]
     pub metodo: Option<MetodoRegistro>,
 }
 
@@ -238,7 +238,7 @@ pub async fn agregar_poder(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct SalidaPeticion {
     /// `se_retiro`, `delego_poder`, `problema_tecnico` u `otro` (con `detalle`).
-    #[schema(value_type = String, example = "se_retiro")]
+    #[schema(value_type = crate::esquemas::MotivoSalida)]
     pub motivo: MotivoSalida,
     pub detalle: Option<String>,
 }
@@ -405,7 +405,7 @@ pub async fn listar_poderes(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RevisionPoderPeticion {
     /// `verificado`, `rechazado` o `revocado`.
-    #[schema(value_type = String, example = "verificado")]
+    #[schema(value_type = crate::esquemas::EstadoPoder)]
     pub estado: EstadoPoder,
     pub motivo: Option<String>,
 }

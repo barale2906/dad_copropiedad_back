@@ -51,7 +51,7 @@ fn id(ruta: (Uuid, Uuid)) -> VisitaId {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct AnunciarPeticion {
     pub bien_privado_id: Uuid,
-    #[schema(value_type = String, example = "domicilio")]
+    #[schema(value_type = crate::esquemas::TipoVisita)]
     pub tipo: TipoVisita,
     #[schema(example = "Mensajero de domicilios")]
     pub visitante_nombre: String,
@@ -78,7 +78,7 @@ impl AnunciarPeticion {
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroVisitasQuery {
-    #[param(value_type = Option<String>, example = "requiere_llamada")]
+    #[param(value_type = Option<crate::esquemas::EstadoVisita>)]
     pub estado: Option<EstadoVisita>,
     /// Obligatorio para residentes y propietarios (solo ven las de su bien).
     pub bien_privado_id: Option<Uuid>,
@@ -324,7 +324,7 @@ pub async fn qr(
 pub struct ResponderPeticion {
     pub autorizar: bool,
     /// `app` (por defecto) o `web`.
-    #[schema(value_type = Option<String>, example = "app")]
+    #[schema(value_type = Option<crate::esquemas::CanalRespuestaVisita>)]
     pub canal: Option<CanalRespuestaVisita>,
 }
 
@@ -426,7 +426,7 @@ pub async fn contactos(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct LlamadaPeticion {
     /// `autorizo`, `rechazo` o `no_contesto`.
-    #[schema(value_type = String, example = "autorizo")]
+    #[schema(value_type = crate::esquemas::ResultadoLlamada)]
     pub resultado: ResultadoLlamada,
     /// Persona que atendió la llamada (si contestó).
     pub persona_id: Option<Uuid>,

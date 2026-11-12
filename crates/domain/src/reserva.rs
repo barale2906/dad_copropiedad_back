@@ -125,18 +125,22 @@ impl Franja {
         Ok(Self { inicio, fin })
     }
 
+    /// Inicio de la franja.
     pub const fn inicio(&self) -> DateTime<Utc> {
         self.inicio
     }
 
+    /// Fin de la franja (excluido).
     pub const fn fin(&self) -> DateTime<Utc> {
         self.fin
     }
 
+    /// Duración de la franja.
     pub fn duracion(&self) -> Duration {
         self.fin - self.inicio
     }
 
+    /// Si las dos franjas comparten algún instante.
     pub fn se_solapa(&self, otra: &Self) -> bool {
         self.inicio < otra.fin && otra.inicio < self.fin
     }

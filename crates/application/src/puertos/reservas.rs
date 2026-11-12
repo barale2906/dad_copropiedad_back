@@ -154,6 +154,7 @@ pub struct AsignacionParqueadero {
 }
 
 impl AsignacionParqueadero {
+    /// Si la asignación está vigente en ese instante (empezó y no ha terminado).
     pub fn vigente_en(&self, ahora: DateTime<Utc>) -> bool {
         self.desde <= ahora && self.hasta.is_none_or(|h| ahora < h)
     }
@@ -187,12 +188,16 @@ pub struct InscripcionSorteo {
     pub inscrito_en: DateTime<Utc>,
 }
 
+/// Persistencia del motor de reservas (ADR 0008): recursos, reservas, restricciones,
+/// parqueaderos y sorteos.
 pub trait RepositorioReservas: Send {
+    /// Recursos reservables, o solo los de un tipo.
     fn recursos(
         &mut self,
         tipo: Option<TipoRecurso>,
     ) -> impl Future<Output = AppResult<Vec<Recurso>>> + Send;
 
+    /// Recurso por su id.
     fn recurso(&mut self, id: RecursoId)
     -> impl Future<Output = AppResult<Option<Recurso>>> + Send;
 
@@ -211,14 +216,17 @@ pub trait RepositorioReservas: Send {
     /// Guarda datos, estado, política, horario y detalle.
     fn actualizar_recurso(&mut self, r: &Recurso) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Reservas que cumplen el filtro.
     fn reservas(
         &mut self,
         filtro: &FiltroReservas,
     ) -> impl Future<Output = AppResult<Vec<Reserva>>> + Send;
 
+    /// Reserva por su id.
     fn reserva(&mut self, id: ReservaId)
     -> impl Future<Output = AppResult<Option<Reserva>>> + Send;
 
+    /// Reserva por su clave de idempotencia (un reintento devuelve la original).
     fn reserva_por_clave(
         &mut self,
         clave: &str,
@@ -249,11 +257,13 @@ pub trait RepositorioReservas: Send {
         bien: BienPrivadoId,
     ) -> impl Future<Output = AppResult<Option<(PersonaId, VinculoSolicitante)>>> + Send;
 
+    /// Restricciones de reserva vigentes, o solo las del bien.
     fn restricciones(
         &mut self,
         bien: Option<BienPrivadoId>,
     ) -> impl Future<Output = AppResult<Vec<Restriccion>>> + Send;
 
+    /// Guarda una restricción de reserva.
     fn insertar_restriccion(
         &mut self,
         r: &Restriccion,
@@ -271,11 +281,13 @@ pub trait RepositorioReservas: Send {
     /// [`crate::AppError::Conflicto`] si ya se registró ese tipo para la reserva.
     fn insertar_entrega(&mut self, e: &Entrega) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Entregas y recibos de la reserva.
     fn entregas(
         &mut self,
         reserva: ReservaId,
     ) -> impl Future<Output = AppResult<Vec<Entrega>>> + Send;
 
+    /// Guarda un cargo pendiente (penalidad o daño).
     fn insertar_cargo(&mut self, c: &CargoPendiente) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Autoriza (o no) las reservas de un tenedor.
@@ -285,12 +297,14 @@ pub trait RepositorioReservas: Send {
         autorizadas: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Asignaciones de parqueadero por recurso o por bien.
     fn asignaciones_parqueadero(
         &mut self,
         recurso: Option<RecursoId>,
         bien: Option<BienPrivadoId>,
     ) -> impl Future<Output = AppResult<Vec<AsignacionParqueadero>>> + Send;
 
+    /// Asignación de parqueadero por su id.
     fn asignacion_parqueadero(
         &mut self,
         id: AsignacionParqueaderoId,
@@ -311,13 +325,16 @@ pub trait RepositorioReservas: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda un sorteo nuevo.
     fn insertar_sorteo(&mut self, s: &Sorteo) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Sorteos de parqueaderos de la copropiedad.
     fn sorteos(&mut self) -> impl Future<Output = AppResult<Vec<Sorteo>>> + Send;
 
     /// Lee el sorteo bloqueándolo (inscripciones y ejecución no se cruzan).
     fn sorteo(&mut self, id: SorteoId) -> impl Future<Output = AppResult<Option<Sorteo>>> + Send;
 
+    /// Inscripciones del sorteo.
     fn inscripciones(
         &mut self,
         sorteo: SorteoId,
@@ -331,6 +348,7 @@ pub trait RepositorioReservas: Send {
         i: &InscripcionSorteo,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda el orden resultante del sorteo.
     fn guardar_resultado_sorteo(
         &mut self,
         id: SorteoId,
@@ -345,6 +363,7 @@ pub trait RepositorioReservas: Send {
         hasta: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<Vec<Reserva>>> + Send;
 
+    /// Marca la reserva como recordada para no repetir el aviso.
     fn marcar_recordada(
         &mut self,
         id: ReservaId,
@@ -354,6 +373,8 @@ pub trait RepositorioReservas: Send {
 
 /// Copropiedades con recordatorios pendientes (cruza tenants: función `SECURITY DEFINER`).
 pub trait DirectorioRecordatorios: Send + Sync {
+    /// Copropiedades con reservas aprobadas que empiezan antes de `hasta` y aún no se recordaron
+    /// (SECURITY DEFINER; solo ids de tenant).
     fn copropiedades_con_recordatorios(
         &self,
         hasta: DateTime<Utc>,

@@ -63,12 +63,13 @@ pub const DIAS_SEGUIMIENTO: i64 = 7;
 /// Fichas que se consideran antes de ordenar las sugerencias.
 const CANDIDATOS: u32 = SolicitudPagina::LIMITE_MAXIMO;
 
-pub const ACCION_BUSCAR: AccionAuditoria = AccionAuditoria::new("directorio.solicitud.crear");
-pub const ACCION_AUTORIZAR: AccionAuditoria =
+pub(crate) const ACCION_BUSCAR: AccionAuditoria =
+    AccionAuditoria::new("directorio.solicitud.crear");
+pub(crate) const ACCION_AUTORIZAR: AccionAuditoria =
     AccionAuditoria::new("directorio.solicitud.autorizar_contacto");
-pub const ACCION_GENERAR_ENLACE: AccionAuditoria =
+pub(crate) const ACCION_GENERAR_ENLACE: AccionAuditoria =
     AccionAuditoria::new("directorio.enlace.generar");
-pub const ACCION_REVOCAR_ENLACE: AccionAuditoria =
+pub(crate) const ACCION_REVOCAR_ENLACE: AccionAuditoria =
     AccionAuditoria::new("directorio.enlace.revocar");
 
 /// Puertos de la transacción que usan estos casos de uso.

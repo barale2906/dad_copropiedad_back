@@ -48,6 +48,7 @@ pub struct PermisoRespuesta {
     #[schema(example = "roles.asignar")]
     pub codigo: &'static str,
     /// `plataforma` o `copropiedad`.
+    #[schema(value_type = crate::esquemas::Ambito)]
     pub ambito: &'static str,
 }
 
@@ -81,10 +82,11 @@ pub struct RolRespuesta {
     pub nombre: String,
     pub descripcion: Option<String>,
     /// `plataforma` o `copropiedad`.
+    #[schema(value_type = crate::esquemas::Ambito)]
     pub ambito: String,
     /// Rol del sistema: no se edita.
     pub es_plantilla: bool,
-    #[schema(value_type = Vec<String>, example = json!(["roles.ver", "roles.asignar"]))]
+    #[schema(value_type = Vec<crate::esquemas::Permiso>, example = json!(["roles.ver", "roles.asignar"]))]
     pub permisos: Vec<Permiso>,
 }
 
@@ -111,7 +113,7 @@ pub struct NuevoRolPeticion {
     #[schema(example = "Auxiliar de cartera")]
     pub nombre: String,
     pub descripcion: Option<String>,
-    #[schema(value_type = Vec<String>, example = json!(["contabilidad.ver"]))]
+    #[schema(value_type = Vec<crate::esquemas::Permiso>, example = json!(["contabilidad.ver"]))]
     pub permisos: Vec<Permiso>,
 }
 
@@ -129,7 +131,7 @@ impl From<NuevoRolPeticion> for NuevoRol {
 /// Permisos nuevos de un rol (reemplazan a los anteriores).
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct PermisosPeticion {
-    #[schema(value_type = Vec<String>)]
+    #[schema(value_type = Vec<crate::esquemas::Permiso>)]
     pub permisos: Vec<Permiso>,
 }
 
@@ -225,6 +227,7 @@ pub struct AsignacionRespuesta {
     /// `null` = sin fecha de fin.
     pub vigente_hasta: Option<DateTime<Utc>>,
     /// `manual`, `contrato_servicio`, `propiedad`, `residencia` o `asamblea`.
+    #[schema(value_type = crate::esquemas::OrigenAsignacion)]
     pub origen: String,
     pub origen_id: Option<Uuid>,
     pub asignado_por: Option<Uuid>,

@@ -39,6 +39,7 @@ pub struct FiltroAuditoria {
     pub hasta: Option<DateTime<Utc>>,
 }
 
+/// Consulta de la auditoría de la copropiedad.
 pub trait LecturaAuditoria: Send {
     /// Eventos más recientes primero con `id < antes_de`, a lo sumo `limite`.
     fn consultar_auditoria(

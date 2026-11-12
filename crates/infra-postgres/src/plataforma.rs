@@ -32,6 +32,7 @@ pub struct UnidadDeTrabajoPlataformaPg {
 }
 
 impl UnidadDeTrabajoPlataformaPg {
+    /// Unidad de trabajo de plataforma sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }

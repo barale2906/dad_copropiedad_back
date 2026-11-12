@@ -72,7 +72,7 @@ pub struct ActivoRespuesta {
     #[schema(example = "BOMBA-01")]
     pub codigo: String,
     pub nombre: String,
-    #[schema(value_type = String, example = "equipo")]
+    #[schema(value_type = crate::esquemas::ClaseActivo)]
     pub clase: ClaseActivo,
     pub marca: Option<String>,
     pub modelo: Option<String>,
@@ -80,7 +80,7 @@ pub struct ActivoRespuesta {
     pub ubicacion: Option<String>,
     pub agrupacion_id: Option<Uuid>,
     pub recurso_id: Option<Uuid>,
-    #[schema(value_type = String, example = "operativo")]
+    #[schema(value_type = crate::esquemas::EstadoActivo)]
     pub estado: EstadoActivo,
     pub fecha_compra: Option<NaiveDate>,
     #[schema(value_type = Option<String>, example = "12500000.00")]
@@ -117,9 +117,9 @@ impl From<Activo> for ActivoRespuesta {
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroActivosQuery {
-    #[param(value_type = Option<String>, example = "equipo")]
+    #[param(value_type = Option<crate::esquemas::ClaseActivo>)]
     pub clase: Option<ClaseActivo>,
-    #[param(value_type = Option<String>, example = "con_falla")]
+    #[param(value_type = Option<crate::esquemas::EstadoActivo>)]
     pub estado: Option<EstadoActivo>,
     /// Fragmento del nombre o del código.
     pub q: Option<String>,
@@ -165,7 +165,7 @@ pub struct ActivoPeticion {
     pub codigo: CodigoActivo,
     #[schema(example = "Bomba de agua potable 1")]
     pub nombre: String,
-    #[schema(value_type = String, example = "equipo")]
+    #[schema(value_type = crate::esquemas::ClaseActivo)]
     pub clase: ClaseActivo,
     pub marca: Option<String>,
     pub modelo: Option<String>,
@@ -229,7 +229,7 @@ pub async fn registrar_activo(
 pub struct ArchivoActivoDto {
     pub archivo_id: Uuid,
     /// `manual`, `foto`, `factura`, `garantia` u `otro`.
-    #[schema(value_type = String, example = "manual")]
+    #[schema(value_type = crate::esquemas::TipoArchivoActivo)]
     pub tipo: TipoArchivoActivo,
 }
 
@@ -246,7 +246,7 @@ impl From<ArchivoActivo> for ArchivoActivoDto {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct MovimientoRespuesta {
     pub id: Uuid,
-    #[schema(value_type = String, example = "traslado")]
+    #[schema(value_type = crate::esquemas::TipoMovimiento)]
     pub tipo: TipoMovimiento,
     pub ubicacion_destino: Option<String>,
     pub reserva_id: Option<Uuid>,
@@ -336,7 +336,7 @@ pub struct CambiosActivoPeticion {
     pub garantia_vence: Option<NaiveDate>,
     pub proveedor_organizacion_id: Option<Uuid>,
     /// `operativo`, `con_falla`, `en_reparacion` o `fuera_de_servicio` (la baja va por movimiento).
-    #[schema(value_type = Option<String>, example = "en_reparacion")]
+    #[schema(value_type = Option<crate::esquemas::EstadoActivo>)]
     pub estado: Option<EstadoActivo>,
 }
 
@@ -424,7 +424,7 @@ pub async fn adjuntar_archivo(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct MovimientoPeticion {
     /// `entrada`, `salida`, `traslado`, `prestamo`, `devolucion` o `baja`.
-    #[schema(value_type = String, example = "traslado")]
+    #[schema(value_type = crate::esquemas::TipoMovimiento)]
     pub tipo: TipoMovimiento,
     /// Obligatoria en los traslados.
     pub ubicacion_destino: Option<String>,
@@ -483,7 +483,7 @@ pub async fn registrar_movimiento(
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct RecurrenciaDto {
     /// `dias`, `semanas` o `meses` (anual = 12 meses).
-    #[schema(value_type = String, example = "meses")]
+    #[schema(value_type = crate::esquemas::Frecuencia)]
     pub frecuencia: Frecuencia,
     #[schema(example = 1)]
     pub intervalo: u32,
@@ -687,9 +687,9 @@ pub struct OrdenRespuesta {
     pub id: Uuid,
     #[schema(example = "OT-2026-00007")]
     pub numero: String,
-    #[schema(value_type = String, example = "plan_preventivo")]
+    #[schema(value_type = crate::esquemas::OrigenOrden)]
     pub origen: OrigenOrden,
-    #[schema(value_type = String, example = "preventivo")]
+    #[schema(value_type = crate::esquemas::TipoOrden)]
     pub tipo: TipoOrden,
     pub plan_id: Option<Uuid>,
     pub ticket_id: Option<Uuid>,
@@ -698,7 +698,7 @@ pub struct OrdenRespuesta {
     pub descripcion: String,
     pub asignado: Option<ResponsableDto>,
     pub programada_para: NaiveDate,
-    #[schema(value_type = String, example = "programada")]
+    #[schema(value_type = crate::esquemas::EstadoOrden)]
     pub estado: EstadoOrden,
     pub checklist: Vec<PuntoChecklistDto>,
     #[schema(value_type = String, example = "0.00")]
@@ -749,7 +749,7 @@ impl From<OrdenTrabajo> for OrdenRespuesta {
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroOrdenesQuery {
-    #[param(value_type = Option<String>, example = "programada")]
+    #[param(value_type = Option<crate::esquemas::EstadoOrden>)]
     pub estado: Option<EstadoOrden>,
     pub activo_id: Option<Uuid>,
     pub ticket_id: Option<Uuid>,
@@ -797,7 +797,7 @@ pub async fn listar_ordenes(
 pub struct OrdenPeticion {
     /// `correctivo` o `urgente` (las preventivas las generan los planes; `preventivo` vale para
     /// una inspección).
-    #[schema(value_type = String, example = "correctivo")]
+    #[schema(value_type = crate::esquemas::TipoOrden)]
     pub tipo: TipoOrden,
     /// Ticket que la origina.
     pub ticket_id: Option<Uuid>,
@@ -853,7 +853,7 @@ pub async fn crear_orden(
 pub struct EvidenciaDto {
     pub archivo_id: Uuid,
     /// `antes`, `despues` o `soporte`.
-    #[schema(value_type = String, example = "despues")]
+    #[schema(value_type = crate::esquemas::MomentoEvidencia)]
     pub momento: MomentoEvidencia,
 }
 
@@ -1405,15 +1405,10 @@ pub struct TableroMantenimientoRespuesta {
 
 impl From<TableroMantenimiento> for TableroMantenimientoRespuesta {
     fn from(t: TableroMantenimiento) -> Self {
-        let cumplimiento_porcentaje = (t.preventivas_programadas > 0).then(|| {
-            (Decimal::from(t.preventivas_cumplidas) * Decimal::from(100)
-                / Decimal::from(t.preventivas_programadas))
-            .round_dp(2)
-        });
         Self {
+            cumplimiento_porcentaje: t.cumplimiento_porcentaje(),
             preventivas_programadas: t.preventivas_programadas,
             preventivas_cumplidas: t.preventivas_cumplidas,
-            cumplimiento_porcentaje,
             ordenes_vencidas: t.ordenes_vencidas,
             costo_por_activo: t
                 .costo_por_activo

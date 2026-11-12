@@ -81,7 +81,7 @@ pub struct RespuestaCensoRespuesta {
     #[schema(example = "T1-506")]
     pub codigo: String,
     /// `confirmado` o `cambios`.
-    #[schema(example = "cambios")]
+    #[schema(value_type = crate::esquemas::RespuestaCampanaCenso)]
     pub respuesta: String,
     /// Cambios descritos por el responsable.
     pub detalle: Option<String>,

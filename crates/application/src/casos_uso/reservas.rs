@@ -39,23 +39,31 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR_RECURSO: AccionAuditoria =
+pub(crate) const ACCION_CREAR_RECURSO: AccionAuditoria =
     AccionAuditoria::new("bienes_comunes.recurso.crear");
-pub const ACCION_EDITAR_RECURSO: AccionAuditoria =
+pub(crate) const ACCION_EDITAR_RECURSO: AccionAuditoria =
     AccionAuditoria::new("bienes_comunes.recurso.editar");
-pub const ACCION_ESTADO_RECURSO: AccionAuditoria =
+pub(crate) const ACCION_ESTADO_RECURSO: AccionAuditoria =
     AccionAuditoria::new("bienes_comunes.recurso.cambiar_estado");
-pub const ACCION_SOLICITAR: AccionAuditoria = AccionAuditoria::new("reservas.reserva.solicitar");
-pub const ACCION_APROBAR: AccionAuditoria = AccionAuditoria::new("reservas.reserva.aprobar");
-pub const ACCION_RECHAZAR: AccionAuditoria = AccionAuditoria::new("reservas.reserva.rechazar");
-pub const ACCION_CANCELAR: AccionAuditoria = AccionAuditoria::new("reservas.reserva.cancelar");
-pub const ACCION_ENTREGA: AccionAuditoria = AccionAuditoria::new("reservas.reserva.entregar");
-pub const ACCION_RECIBO: AccionAuditoria = AccionAuditoria::new("reservas.reserva.recibir");
-pub const ACCION_NO_ASISTIO: AccionAuditoria = AccionAuditoria::new("reservas.reserva.no_asistio");
-pub const ACCION_PAGO: AccionAuditoria = AccionAuditoria::new("reservas.reserva.registrar_pago");
-pub const ACCION_RESTRINGIR: AccionAuditoria = AccionAuditoria::new("reservas.restriccion.crear");
-pub const ACCION_LEVANTAR: AccionAuditoria = AccionAuditoria::new("reservas.restriccion.levantar");
-pub const ACCION_AUTORIZAR_TENEDOR: AccionAuditoria =
+pub(crate) const ACCION_SOLICITAR: AccionAuditoria =
+    AccionAuditoria::new("reservas.reserva.solicitar");
+pub(crate) const ACCION_APROBAR: AccionAuditoria = AccionAuditoria::new("reservas.reserva.aprobar");
+pub(crate) const ACCION_RECHAZAR: AccionAuditoria =
+    AccionAuditoria::new("reservas.reserva.rechazar");
+pub(crate) const ACCION_CANCELAR: AccionAuditoria =
+    AccionAuditoria::new("reservas.reserva.cancelar");
+pub(crate) const ACCION_ENTREGA: AccionAuditoria =
+    AccionAuditoria::new("reservas.reserva.entregar");
+pub(crate) const ACCION_RECIBO: AccionAuditoria = AccionAuditoria::new("reservas.reserva.recibir");
+pub(crate) const ACCION_NO_ASISTIO: AccionAuditoria =
+    AccionAuditoria::new("reservas.reserva.no_asistio");
+pub(crate) const ACCION_PAGO: AccionAuditoria =
+    AccionAuditoria::new("reservas.reserva.registrar_pago");
+pub(crate) const ACCION_RESTRINGIR: AccionAuditoria =
+    AccionAuditoria::new("reservas.restriccion.crear");
+pub(crate) const ACCION_LEVANTAR: AccionAuditoria =
+    AccionAuditoria::new("reservas.restriccion.levantar");
+pub(crate) const ACCION_AUTORIZAR_TENEDOR: AccionAuditoria =
     AccionAuditoria::new("reservas.tenedor.autorizar");
 
 /// Anticipación de los recordatorios.

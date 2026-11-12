@@ -32,6 +32,12 @@ pub trait RepositorioModulos: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Módulos con algún periodo que cubre `ahora`, sin repetir y en cualquier orden.
+    fn modulos_habilitados(
+        &mut self,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<Vec<Modulo>>> + Send;
+
     /// Registra un periodo nuevo.
     fn insertar_periodo(
         &mut self,
