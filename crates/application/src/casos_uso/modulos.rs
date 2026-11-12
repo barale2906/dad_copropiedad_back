@@ -1,14 +1,15 @@
 //! Habilitación de módulos por copropiedad (venta por módulo).
 //!
-//! Los endpoints de cada módulo llaman a [`exigir_modulo`] antes de operar; cuando exista la
-//! sesión (plan 02), un extractor lo hará por todo el router del módulo. Habilitar y terminar
-//! módulos es una operación de plataforma (roles de plataforma, plan 02).
+//! Los casos de uso de cada módulo llaman a [`exigir_modulo`] (o a `exigir_modulo_en` dentro de
+//! su transacción) antes de operar. Habilitar y terminar módulos es una operación de la
+//! plataforma: exige `plataforma.modulos.gestionar` y actúa en la copropiedad sin permisos de
+//! copropiedad.
 
 use chrono::{DateTime, Utc};
-use domain::{ConjuntoPermisos, Modulo};
+use domain::{ConjuntoPermisos, Modulo, Permiso, TenantId};
 
 use crate::{
-    AppError, AppResult, Contexto,
+    AppError, AppResult, Contexto, ContextoPlataforma,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
         RegistroAuditoria, Reloj, RepositorioModulos, Transaccion, UnidadDeTrabajo,
@@ -62,15 +63,29 @@ where
     }
 }
 
-/// Habilita el módulo desde `desde` (por defecto, ahora) hasta `hasta` (por defecto, sin fin).
+/// Contexto con el que la plataforma actúa en la copropiedad: su operador como actor (para la
+/// auditoría) y ningún permiso de copropiedad.
+fn en_copropiedad(ctx: &ContextoPlataforma, tenant: TenantId) -> Contexto {
+    Contexto {
+        tenant_id: tenant,
+        actor_id: ctx.actor_id,
+        request_id: ctx.request_id.clone(),
+        permisos: ConjuntoPermisos::vacio(),
+    }
+}
+
+/// Habilita el módulo en la copropiedad desde `desde` (por defecto, ahora) hasta `hasta` (por
+/// defecto, sin fin).
 ///
 /// # Errors
 ///
-/// [`AppError::Validacion`] si `hasta` no es posterior a `desde`.
+/// [`AppError::SinPermiso`] sin `plataforma.modulos.gestionar`; [`AppError::Validacion`] si
+/// `hasta` no es posterior a `desde`; [`AppError::NoEncontrado`] si la copropiedad no existe.
 pub async fn habilitar_modulo<U>(
     unidad: &U,
     reloj: &impl Reloj,
-    ctx: &Contexto,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
     modulo: Modulo,
     desde: Option<DateTime<Utc>>,
     hasta: Option<DateTime<Utc>>,
@@ -84,11 +99,13 @@ where
         desde: desde.unwrap_or_else(|| reloj.ahora()),
         hasta,
     };
+    ctx.exigir(Permiso::PlataformaModulosGestionar)?;
     if periodo.hasta.is_some_and(|h| h <= periodo.desde) {
         return Err(AppError::Validacion(
             "la fecha de fin debe ser posterior a la de inicio".into(),
         ));
     }
+    let ctx = &en_copropiedad(ctx, tenant);
     let mut tx = unidad.iniciar(ctx).await?;
     tx.insertar_periodo(&periodo).await?;
     let detalle = DetalleAuditoria::vacio()
@@ -101,22 +118,25 @@ where
     Ok(periodo)
 }
 
-/// Termina el módulo desde ahora (los periodos abiertos se cierran; el historial se conserva).
-/// Devuelve cuántos periodos cerró.
+/// Termina el módulo en la copropiedad desde ahora (los periodos abiertos se cierran; el
+/// historial se conserva). Devuelve cuántos periodos cerró.
 ///
 /// # Errors
 ///
-/// [`AppError::Infraestructura`] si falla la base de datos.
+/// [`AppError::SinPermiso`] sin `plataforma.modulos.gestionar`.
 pub async fn terminar_modulo<U>(
     unidad: &U,
     reloj: &impl Reloj,
-    ctx: &Contexto,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
     modulo: Modulo,
 ) -> AppResult<u64>
 where
     U: UnidadDeTrabajo,
     U::Transaccion: RepositorioModulos + RegistroAuditoria,
 {
+    ctx.exigir(Permiso::PlataformaModulosGestionar)?;
+    let ctx = &en_copropiedad(ctx, tenant);
     let mut tx = unidad.iniciar(ctx).await?;
     let terminados = tx.terminar_periodos(modulo, reloj.ahora()).await?;
     if terminados > 0 {
@@ -174,10 +194,13 @@ fn evento(accion: AccionAuditoria, ctx: &Contexto) -> EventoAuditoria {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
-    use domain::TenantId;
 
     use super::*;
     use crate::puertos::unidad_trabajo::memoria::UnidadEnMemoria;
+
+    fn plataforma() -> ContextoPlataforma {
+        ContextoPlataforma::sistema()
+    }
 
     struct RelojEn(DateTime<Utc>);
 
@@ -219,7 +242,8 @@ mod tests {
         habilitar_modulo(
             &unidad,
             &RelojEn(dia(1)),
-            &ctx,
+            &plataforma(),
+            ctx.tenant_id,
             Modulo::Asambleas,
             Some(dia(5)),
             Some(dia(10)),
@@ -246,7 +270,8 @@ mod tests {
         habilitar_modulo(
             &unidad,
             &RelojEn(dia(1)),
-            &ctx,
+            &plataforma(),
+            ctx.tenant_id,
             Modulo::Publicidad,
             None,
             None,
@@ -254,9 +279,15 @@ mod tests {
         .await
         .expect("habilita");
 
-        let terminados = terminar_modulo(&unidad, &RelojEn(dia(8)), &ctx, Modulo::Publicidad)
-            .await
-            .expect("termina");
+        let terminados = terminar_modulo(
+            &unidad,
+            &RelojEn(dia(8)),
+            &plataforma(),
+            ctx.tenant_id,
+            Modulo::Publicidad,
+        )
+        .await
+        .expect("termina");
 
         assert_eq!(terminados, 1);
         assert!(
@@ -279,7 +310,8 @@ mod tests {
         let err = habilitar_modulo(
             &unidad,
             &RelojEn(dia(1)),
-            &Contexto::new(TenantId::nuevo()),
+            &plataforma(),
+            TenantId::nuevo(),
             Modulo::Asambleas,
             Some(dia(5)),
             Some(dia(5)),
@@ -294,7 +326,6 @@ mod tests {
     async fn capacidades_son_los_permisos_de_la_cuenta_y_los_modulos_vigentes() {
         let unidad = UnidadEnMemoria::default();
         let tenant = TenantId::nuevo();
-        let sistema = Contexto::new(tenant);
         for (modulo, desde, hasta) in [
             (Modulo::Publicidad, dia(1), None),
             (Modulo::Asambleas, dia(1), None),
@@ -303,7 +334,8 @@ mod tests {
             habilitar_modulo(
                 &unidad,
                 &RelojEn(dia(1)),
-                &sistema,
+                &plataforma(),
+                tenant,
                 modulo,
                 Some(desde),
                 hasta,
@@ -332,5 +364,45 @@ mod tests {
             .expect("capacidades");
 
         assert!(c.modulos.is_empty());
+    }
+
+    #[tokio::test]
+    async fn sin_el_permiso_de_plataforma_no_se_habilita_ni_termina_un_modulo() {
+        let unidad = UnidadEnMemoria::default();
+        let tenant = TenantId::nuevo();
+        let soporte = ContextoPlataforma::de_cuenta(
+            domain::CuentaId::nuevo(),
+            [Permiso::PlataformaCuentasBloquear].into_iter().collect(),
+            None,
+        );
+        let sin_permiso = |r: AppResult<_>| {
+            matches!(
+                r,
+                Err(AppError::SinPermiso(Permiso::PlataformaModulosGestionar))
+            )
+        };
+
+        let habilitado = habilitar_modulo(
+            &unidad,
+            &RelojEn(dia(1)),
+            &soporte,
+            tenant,
+            Modulo::Asambleas,
+            None,
+            None,
+        )
+        .await;
+        let terminado = terminar_modulo(
+            &unidad,
+            &RelojEn(dia(1)),
+            &soporte,
+            tenant,
+            Modulo::Asambleas,
+        )
+        .await;
+
+        assert!(sin_permiso(habilitado.map(|_| ())));
+        assert!(sin_permiso(terminado.map(|_| ())));
+        assert!(unidad.confirmados().is_empty(), "nada se confirmó");
     }
 }

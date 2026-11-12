@@ -51,7 +51,9 @@ impl RepositorioModulos for TransaccionPg {
         )
         .execute(&mut *self.tx)
         .await
-        .map_err(AppError::infra)?;
+        .map_err(|e| {
+            crate::copropiedades::error_escritura(e, "periodo de módulo repetido", "copropiedad")
+        })?;
         Ok(())
     }
 

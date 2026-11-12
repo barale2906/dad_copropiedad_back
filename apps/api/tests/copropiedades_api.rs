@@ -433,3 +433,89 @@ async fn capacidades_de_otra_copropiedad_no_se_revelan(pool: PgPool) {
         (StatusCode::UNAUTHORIZED, &json!("no_autenticado"))
     );
 }
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_plataforma_habilita_y_termina_un_modulo_y_la_ph_lo_nota_de_inmediato(pool: PgPool) {
+    let ph = ph(pool).await;
+    let modulos = format!("/api/v1/plataforma/copropiedades/{}/modulos", ph.id);
+    assert_eq!(
+        ph.pedir(Method::GET, "/asambleas", None).await.0,
+        StatusCode::FORBIDDEN
+    );
+
+    let (s, v) = ph
+        .api
+        .pedir(
+            Method::POST,
+            &modulos,
+            Some(&ph.root),
+            Some(json!({ "modulo": "asambleas" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    assert_eq!(
+        ph.pedir(Method::GET, "/asambleas", None).await.0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        ph.pedir(Method::GET, "/capacidades", None).await.1["modulos"],
+        json!(["asambleas"])
+    );
+
+    let (s, v) = ph
+        .api
+        .pedir(
+            Method::DELETE,
+            &format!("{modulos}/asambleas"),
+            Some(&ph.root),
+            None,
+        )
+        .await;
+    assert_eq!((s, &v["terminados"]), (StatusCode::OK, &json!(1)), "{v}");
+    let (s, v) = ph.pedir(Method::GET, "/asambleas", None).await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::FORBIDDEN, &json!("modulo_no_habilitado"))
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn habilitar_modulos_exige_el_permiso_y_una_copropiedad_existente(pool: PgPool) {
+    let ph = ph(pool).await;
+    let cuerpo = || Some(json!({ "modulo": "asambleas" }));
+
+    let ajena = format!(
+        "/api/v1/plataforma/copropiedades/{}/modulos",
+        uuid::Uuid::now_v7()
+    );
+    let (s, v) = ph
+        .api
+        .pedir(Method::POST, &ajena, Some(&ph.root), cuerpo())
+        .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::NOT_FOUND, &json!("no_encontrado")),
+        "{v}"
+    );
+
+    let propia = format!("/api/v1/plataforma/copropiedades/{}/modulos", ph.id);
+    let (s, v) = ph
+        .api
+        .pedir(
+            Method::POST,
+            &propia,
+            Some(&ph.root),
+            Some(json!({ "modulo": "inventado" })),
+        )
+        .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::UNPROCESSABLE_ENTITY, &json!("validacion"))
+    );
+    // El administrador de la PH no es operador de plataforma.
+    let (s, _) = ph
+        .api
+        .pedir(Method::POST, &propia, Some(&ph.admin), cuerpo())
+        .await;
+    assert_eq!(s, StatusCode::FORBIDDEN);
+}

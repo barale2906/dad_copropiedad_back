@@ -431,6 +431,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "carga"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api",
+ "axum",
+ "chrono",
+ "infra-archivos",
+ "infra-seguridad",
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "tokio",
+ "uuid",
+ "webpki-roots",
+]
+
+[[package]]
 name = "cc"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
