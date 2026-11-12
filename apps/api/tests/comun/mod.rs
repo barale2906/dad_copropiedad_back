@@ -186,12 +186,16 @@ impl Api {
     }
 
     pub async fn login(&self, usuario: &str) -> Value {
+        self.login_con(usuario, CONTRASENA).await
+    }
+
+    pub async fn login_con(&self, usuario: &str, contrasena: &str) -> Value {
         let (s, v) = self
             .pedir(
                 Method::POST,
                 "/api/v1/auth/sesion",
                 None,
-                Some(json!({ "identificador": usuario, "contrasena": CONTRASENA })),
+                Some(json!({ "identificador": usuario, "contrasena": contrasena })),
             )
             .await;
         assert_eq!(s, StatusCode::OK, "{v}");
@@ -199,7 +203,11 @@ impl Api {
     }
 
     pub async fn token(&self, usuario: &str) -> String {
-        self.login(usuario).await["tokens"]["token_acceso"]
+        self.token_con(usuario, CONTRASENA).await
+    }
+
+    pub async fn token_con(&self, usuario: &str, contrasena: &str) -> String {
+        self.login_con(usuario, contrasena).await["tokens"]["token_acceso"]
             .as_str()
             .expect("token")
             .to_owned()

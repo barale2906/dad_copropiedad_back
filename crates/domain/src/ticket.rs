@@ -409,6 +409,7 @@ impl PlazosTicket {
             .or_else(|| plazo_predeterminado(tipo, prioridad))
     }
 
+    /// Plazos configurados por tipo y, opcionalmente, por prioridad.
     pub fn reglas(&self) -> &[(TipoTicket, Option<PrioridadTicket>, Plazo)] {
         &self.reglas
     }
@@ -455,6 +456,7 @@ impl Calificacion {
         }
     }
 
+    /// Calificación de 1 a 5.
     pub const fn valor(self) -> u8 {
         self.0
     }

@@ -143,7 +143,7 @@ pub struct ComunicadoPeticion {
     /// Texto; admite saltos de línea (máximo 10 000 caracteres).
     pub cuerpo: String,
     /// `administracion` (llega a todos) o `comunicaciones` (solo a quien lo autorizó, Ley 1581).
-    #[schema(example = "administracion")]
+    #[schema(value_type = crate::esquemas::FinalidadTratamiento)]
     pub finalidad: String,
     pub audiencia: AudienciaDto,
     /// También por WhatsApp a quien no tiene la app (plantilla `comunicado_importante`, con costo).
@@ -188,13 +188,13 @@ pub struct ComunicadoRespuesta {
     pub id: Uuid,
     pub titulo: String,
     pub cuerpo: String,
-    #[schema(example = "administracion")]
+    #[schema(value_type = crate::esquemas::FinalidadTratamiento)]
     pub finalidad: String,
     pub audiencia: AudienciaDto,
     pub importante: bool,
     pub requiere_confirmacion: bool,
     /// `borrador`, `programado`, `enviado` o `anulado`.
-    #[schema(example = "enviado")]
+    #[schema(value_type = crate::esquemas::EstadoComunicado)]
     pub estado: String,
     pub programado_para: Option<DateTime<Utc>>,
     pub enviado_en: Option<DateTime<Utc>>,

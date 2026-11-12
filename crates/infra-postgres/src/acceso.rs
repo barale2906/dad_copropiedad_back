@@ -1717,6 +1717,7 @@ pub struct DirectorioAccesoPg {
 }
 
 impl DirectorioAccesoPg {
+    /// Directorio sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }

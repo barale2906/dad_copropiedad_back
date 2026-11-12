@@ -38,16 +38,18 @@ use crate::{
     },
 };
 
-pub const ACCION_REGISTRAR: AccionAuditoria =
+pub(crate) const ACCION_REGISTRAR: AccionAuditoria =
     AccionAuditoria::new("publicidad.anunciante.registrar");
-pub const ACCION_FICHA: AccionAuditoria = AccionAuditoria::new("publicidad.ficha.editar");
-pub const ACCION_CREAR_CAMPANA: AccionAuditoria = AccionAuditoria::new("publicidad.campana.crear");
-pub const ACCION_EDITAR_CAMPANA: AccionAuditoria =
+pub(crate) const ACCION_FICHA: AccionAuditoria = AccionAuditoria::new("publicidad.ficha.editar");
+pub(crate) const ACCION_CREAR_CAMPANA: AccionAuditoria =
+    AccionAuditoria::new("publicidad.campana.crear");
+pub(crate) const ACCION_EDITAR_CAMPANA: AccionAuditoria =
     AccionAuditoria::new("publicidad.campana.editar");
-pub const ACCION_ESTADO_CAMPANA: AccionAuditoria =
+pub(crate) const ACCION_ESTADO_CAMPANA: AccionAuditoria =
     AccionAuditoria::new("publicidad.campana.cambiar_estado");
-pub const ACCION_CREATIVO: AccionAuditoria = AccionAuditoria::new("publicidad.creativo.guardar");
-pub const ACCION_REDIMIR: AccionAuditoria = AccionAuditoria::new("publicidad.cupon.redimir");
+pub(crate) const ACCION_CREATIVO: AccionAuditoria =
+    AccionAuditoria::new("publicidad.creativo.guardar");
+pub(crate) const ACCION_REDIMIR: AccionAuditoria = AccionAuditoria::new("publicidad.cupon.redimir");
 
 /// El anunciante, si la cuenta es miembro de su organización con un papel que permite la
 /// acción.

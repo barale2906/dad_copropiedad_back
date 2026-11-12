@@ -1102,39 +1102,47 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
 // Copropiedad
 // ---------------------------------------------------------------------------------------------
 
-#[allow(clippy::too_many_arguments)]
-fn candidata(
+/// Columnas que deciden si una pieza se puede entregar, comunes a `piezas_publicidad` y
+/// `pieza_para_entrega` (campos nombrados: varios son `Decimal` y se confundirían por posición).
+struct FilaCandidata<'a> {
     creativo: Uuid,
     campana: Uuid,
     verificado: bool,
-    estado_creativo: &str,
-    estado_campana: &str,
+    estado_creativo: &'a str,
+    estado_campana: &'a str,
     inicio: DateTime<Utc>,
     fin: DateTime<Utc>,
-    modelo: &str,
+    modelo: &'a str,
     tarifa: Option<Decimal>,
     total: Decimal,
     diario: Option<Decimal>,
     consumido: Decimal,
     consumido_hoy: Decimal,
     impresiones_hoy: i64,
-) -> AppResult<PiezaCandidata> {
-    Ok(PiezaCandidata {
-        creativo: CreativoId::from_uuid(creativo),
-        campana: CampanaId::from_uuid(campana),
-        anunciante_verificado: verificado,
-        creativo_aprobado: EstadoCreativo::try_from(estado_creativo)? == EstadoCreativo::Aprobado,
-        estado_campana: EstadoCampana::try_from(estado_campana)?,
-        inicio,
-        fin,
-        modelo: ModeloCobro::try_from(modelo)?,
-        // Una campaña activa siempre tiene tarifa (CHECK); sin ella no se cobra.
-        tarifa: tarifa.unwrap_or(Decimal::ZERO),
-        presupuesto: Presupuesto::new(total, diario)?,
-        consumido_total: consumido,
-        consumido_hoy,
-        impresiones_hoy: u32_de(impresiones_hoy),
-    })
+}
+
+impl TryFrom<FilaCandidata<'_>> for PiezaCandidata {
+    type Error = AppError;
+
+    fn try_from(f: FilaCandidata<'_>) -> AppResult<Self> {
+        Ok(Self {
+            creativo: CreativoId::from_uuid(f.creativo),
+            campana: CampanaId::from_uuid(f.campana),
+            anunciante_verificado: f.verificado,
+            creativo_aprobado: EstadoCreativo::try_from(f.estado_creativo)?
+                == EstadoCreativo::Aprobado,
+            estado_campana: EstadoCampana::try_from(f.estado_campana)?,
+            inicio: f.inicio,
+            fin: f.fin,
+            modelo: ModeloCobro::try_from(f.modelo)?,
+            // Una campaña activa siempre tiene tarifa (CHECK); sin ella no se cobra.
+            tarifa: f.tarifa.unwrap_or(Decimal::ZERO),
+            presupuesto: Presupuesto::new(f.total, f.diario)?,
+            consumido_total: f.consumido,
+            consumido_hoy: f.consumido_hoy,
+            impresiones_hoy: u32_de(f.impresiones_hoy),
+        })
+    }
 }
 
 impl RepositorioPublicidad for TransaccionPg {
@@ -1166,22 +1174,23 @@ impl RepositorioPublicidad for TransaccionPg {
             .into_iter()
             .map(|f| {
                 Ok(PiezaPublicidad {
-                    candidata: candidata(
-                        f.creativo_id,
-                        f.campana_id,
-                        f.anunciante_verificado,
-                        &f.estado_creativo,
-                        &f.estado_campana,
-                        f.inicio,
-                        f.fin,
-                        &f.modelo,
-                        f.tarifa,
-                        f.presupuesto_total,
-                        f.presupuesto_diario,
-                        f.consumido,
-                        f.consumido_hoy,
-                        f.impresiones_hoy,
-                    )?,
+                    candidata: FilaCandidata {
+                        creativo: f.creativo_id,
+                        campana: f.campana_id,
+                        verificado: f.anunciante_verificado,
+                        estado_creativo: &f.estado_creativo,
+                        estado_campana: &f.estado_campana,
+                        inicio: f.inicio,
+                        fin: f.fin,
+                        modelo: &f.modelo,
+                        tarifa: f.tarifa,
+                        total: f.presupuesto_total,
+                        diario: f.presupuesto_diario,
+                        consumido: f.consumido,
+                        consumido_hoy: f.consumido_hoy,
+                        impresiones_hoy: f.impresiones_hoy,
+                    }
+                    .try_into()?,
                     anunciante_id: AnuncianteId::from_uuid(f.anunciante_id),
                     nombre_comercial: f.nombre_comercial,
                     contenido: ContenidoCreativo {
@@ -1221,22 +1230,23 @@ impl RepositorioPublicidad for TransaccionPg {
         .map_err(AppError::infra)?;
         f.map(|f| {
             Ok((
-                candidata(
-                    f.creativo_id,
-                    f.campana_id,
-                    f.anunciante_verificado,
-                    &f.estado_creativo,
-                    &f.estado_campana,
-                    f.inicio,
-                    f.fin,
-                    &f.modelo,
-                    f.tarifa,
-                    f.presupuesto_total,
-                    f.presupuesto_diario,
-                    f.consumido,
-                    f.consumido_hoy,
-                    0,
-                )?,
+                PiezaCandidata::try_from(FilaCandidata {
+                    creativo: f.creativo_id,
+                    campana: f.campana_id,
+                    verificado: f.anunciante_verificado,
+                    estado_creativo: &f.estado_creativo,
+                    estado_campana: &f.estado_campana,
+                    inicio: f.inicio,
+                    fin: f.fin,
+                    modelo: &f.modelo,
+                    tarifa: f.tarifa,
+                    total: f.presupuesto_total,
+                    diario: f.presupuesto_diario,
+                    consumido: f.consumido,
+                    consumido_hoy: f.consumido_hoy,
+                    // Solo ordena la rotación al seleccionar piezas; la entrega no lo usa.
+                    impresiones_hoy: 0,
+                })?,
                 FormatoCreativo::try_from(f.formato.as_str())?,
             ))
         })
@@ -1467,6 +1477,7 @@ pub struct DirectorioPublicidadPg {
 }
 
 impl DirectorioPublicidadPg {
+    /// Directorio sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }

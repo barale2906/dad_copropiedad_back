@@ -1,3 +1,5 @@
+//! Errores de reglas de negocio ([`DominioError`]).
+
 use crate::{EstadoPregunta, EstadoReunion, OpcionId, Permiso};
 
 /// Errores de reglas de negocio. El mapeo a HTTP vive en `apps/api/src/error.rs`.

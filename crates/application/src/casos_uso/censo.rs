@@ -39,17 +39,21 @@ use crate::{
     },
 };
 
-pub const ACCION_RESIDENCIA: AccionAuditoria = AccionAuditoria::new("censo.residencia.crear");
-pub const ACCION_TERMINAR_RESIDENCIA: AccionAuditoria =
+pub(crate) const ACCION_RESIDENCIA: AccionAuditoria =
+    AccionAuditoria::new("censo.residencia.crear");
+pub(crate) const ACCION_TERMINAR_RESIDENCIA: AccionAuditoria =
     AccionAuditoria::new("censo.residencia.terminar");
-pub const ACCION_VEHICULO: AccionAuditoria = AccionAuditoria::new("censo.vehiculo.crear");
-pub const ACCION_RETIRAR_VEHICULO: AccionAuditoria = AccionAuditoria::new("censo.vehiculo.retirar");
-pub const ACCION_MASCOTA: AccionAuditoria = AccionAuditoria::new("censo.mascota.crear");
-pub const ACCION_EDITAR_MASCOTA: AccionAuditoria = AccionAuditoria::new("censo.mascota.editar");
-pub const ACCION_PROPONER: AccionAuditoria = AccionAuditoria::new("censo.cambio.proponer");
-pub const ACCION_APROBAR: AccionAuditoria = AccionAuditoria::new("censo.cambio.aprobar");
-pub const ACCION_RECHAZAR: AccionAuditoria = AccionAuditoria::new("censo.cambio.rechazar");
-pub const ACCION_EDITAR_PERSONA: AccionAuditoria = AccionAuditoria::new("personas.persona.editar");
+pub(crate) const ACCION_VEHICULO: AccionAuditoria = AccionAuditoria::new("censo.vehiculo.crear");
+pub(crate) const ACCION_RETIRAR_VEHICULO: AccionAuditoria =
+    AccionAuditoria::new("censo.vehiculo.retirar");
+pub(crate) const ACCION_MASCOTA: AccionAuditoria = AccionAuditoria::new("censo.mascota.crear");
+pub(crate) const ACCION_EDITAR_MASCOTA: AccionAuditoria =
+    AccionAuditoria::new("censo.mascota.editar");
+pub(crate) const ACCION_PROPONER: AccionAuditoria = AccionAuditoria::new("censo.cambio.proponer");
+pub(crate) const ACCION_APROBAR: AccionAuditoria = AccionAuditoria::new("censo.cambio.aprobar");
+pub(crate) const ACCION_RECHAZAR: AccionAuditoria = AccionAuditoria::new("censo.cambio.rechazar");
+pub(crate) const ACCION_EDITAR_PERSONA: AccionAuditoria =
+    AccionAuditoria::new("personas.persona.editar");
 
 /// Código del rol plantilla que reciben los residentes permanentes con cuenta.
 pub const CODIGO_RESIDENTE: &str = "residente";
@@ -641,6 +645,7 @@ pub enum PropuestaCenso {
 }
 
 impl PropuestaCenso {
+    /// Tipo de cambio que se propone (según el registro que crearía).
     pub const fn tipo(&self) -> TipoCambioCenso {
         match self {
             Self::Residencia(_) => TipoCambioCenso::Residencia,

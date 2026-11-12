@@ -137,6 +137,7 @@ pub struct CanalesComunicado {
 }
 
 impl CanalesComunicado {
+    /// Si sale por al menos un canal.
     pub const fn alguno(&self) -> bool {
         self.push || self.correo || self.whatsapp
     }

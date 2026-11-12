@@ -22,10 +22,11 @@ use crate::{
     },
 };
 
-pub const ACCION_ACTUALIZAR: AccionAuditoria = AccionAuditoria::new("copropiedad.datos.actualizar");
-pub const ACCION_PUNTO_ATENCION: AccionAuditoria =
+pub(crate) const ACCION_ACTUALIZAR: AccionAuditoria =
+    AccionAuditoria::new("copropiedad.datos.actualizar");
+pub(crate) const ACCION_PUNTO_ATENCION: AccionAuditoria =
     AccionAuditoria::new("copropiedad.punto_atencion.crear");
-pub const ACCION_HORARIO: AccionAuditoria =
+pub(crate) const ACCION_HORARIO: AccionAuditoria =
     AccionAuditoria::new("copropiedad.punto_atencion.definir_horario");
 
 /// Ficha completa: datos, cargos vigentes y advertencias legales.

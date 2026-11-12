@@ -195,6 +195,7 @@ enum_texto!(Almacen {
 pub struct NombreArchivo(String);
 
 impl NombreArchivo {
+    /// Caracteres máximos del nombre.
     pub const LONGITUD_MAXIMA: usize = 255;
 
     /// # Errors
@@ -215,6 +216,7 @@ impl NombreArchivo {
         }
     }
 
+    /// Nombre normalizado.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -290,6 +292,7 @@ impl ClaveArchivo {
         }
     }
 
+    /// Clave lógica en el almacén (nunca una ruta absoluta).
     pub fn as_str(&self) -> &str {
         &self.0
     }

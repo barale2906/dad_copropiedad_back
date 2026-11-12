@@ -18,8 +18,8 @@ use crate::{
     },
 };
 
-pub const ACCION_SUBIR: AccionAuditoria = AccionAuditoria::new("archivos.archivo.subir");
-pub const ACCION_MIGRAR: AccionAuditoria = AccionAuditoria::new("archivos.archivo.migrar");
+pub(crate) const ACCION_SUBIR: AccionAuditoria = AccionAuditoria::new("archivos.archivo.subir");
+pub(crate) const ACCION_MIGRAR: AccionAuditoria = AccionAuditoria::new("archivos.archivo.migrar");
 
 /// Vigencia por defecto de un enlace de descarga: suficiente para abrirlo, corta para que un
 /// enlace reenviado deje de servir pronto.

@@ -1,3 +1,5 @@
+//! Coeficiente de copropiedad (Ley 675, art. 25): fracción en `Decimal`, nunca en flotante.
+
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +17,11 @@ impl Coeficiente {
     /// Máximo de decimales admitidos (coincide con la escala de la columna en BD).
     pub const ESCALA: u32 = 8;
 
+    /// Coeficiente en el rango (0, 1] con a lo sumo [`Self::ESCALA`] decimales.
+    ///
+    /// # Errors
+    ///
+    /// [`DominioError::CoeficienteInvalido`] si está fuera del rango o tiene más decimales.
     pub fn new(valor: Decimal) -> Result<Self, DominioError> {
         if valor <= Decimal::ZERO || valor > Decimal::ONE {
             return Err(DominioError::CoeficienteInvalido(format!(
@@ -30,6 +37,7 @@ impl Coeficiente {
         Ok(Self(valor))
     }
 
+    /// Fracción del coeficiente (0,5 % = 0,005).
     pub const fn valor(self) -> Decimal {
         self.0
     }

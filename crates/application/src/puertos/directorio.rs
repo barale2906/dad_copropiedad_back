@@ -125,6 +125,7 @@ pub trait RepositorioDirectorioPlataforma: Send {
     /// Todo el catálogo, por rama y nombre.
     fn categorias(&mut self) -> impl Future<Output = AppResult<Vec<Categoria>>> + Send;
 
+    /// Categoría del directorio por su código.
     fn categoria(
         &mut self,
         codigo: &CodigoCategoria,
@@ -165,6 +166,7 @@ pub trait RepositorioDirectorioPlataforma: Send {
         anunciante: &Anunciante,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Anunciante por su id.
     fn anunciante(
         &mut self,
         id: AnuncianteId,
@@ -176,6 +178,7 @@ pub trait RepositorioDirectorioPlataforma: Send {
         id: AnuncianteId,
     ) -> impl Future<Output = AppResult<Option<Anunciante>>> + Send;
 
+    /// Anunciantes que cumplen el filtro, paginados por cursor.
     fn anunciantes(
         &mut self,
         filtro: &FiltroAnunciantes,
@@ -188,6 +191,7 @@ pub trait RepositorioDirectorioPlataforma: Send {
         anunciante: &Anunciante,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Ficha del directorio del anunciante.
     fn ficha(&mut self, id: AnuncianteId) -> impl Future<Output = AppResult<Option<Ficha>>> + Send;
 
     /// Crea o reemplaza la ficha y sus categorías (en su orden).
@@ -282,12 +286,14 @@ pub trait RepositorioDirectorio: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Reseña de la cuenta sobre el anunciante, si ya escribió una.
     fn resena_de_cuenta(
         &mut self,
         anunciante: AnuncianteId,
         cuenta: CuentaId,
     ) -> impl Future<Output = AppResult<Option<Resena>>> + Send;
 
+    /// Reseña por su id.
     fn resena(&mut self, id: ResenaId) -> impl Future<Output = AppResult<Option<Resena>>> + Send;
 
     /// Crea la reseña o actualiza calificación, texto y fecha de la existente.
@@ -360,6 +366,7 @@ pub trait RepositorioSolicitudesProveedor: Send {
         id: SolicitudProveedorId,
     ) -> impl Future<Output = AppResult<Option<SolicitudProveedor>>> + Send;
 
+    /// Registra el «Sí» del residente: desde ese instante se puede contactar al proveedor.
     fn autorizar_contacto(
         &mut self,
         id: SolicitudProveedorId,
@@ -388,6 +395,7 @@ pub trait RepositorioSolicitudesProveedor: Send {
         disponible_en: Option<DateTime<Utc>>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Enlace público vigente del directorio de la copropiedad, si existe.
     fn enlace_directorio(
         &mut self,
     ) -> impl Future<Output = AppResult<Option<EnlaceDirectorio>>> + Send;

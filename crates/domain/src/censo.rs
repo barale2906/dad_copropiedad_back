@@ -139,6 +139,7 @@ impl Placa {
         }
     }
 
+    /// Placa normalizada (mayúsculas, sin espacios, guiones ni puntos).
     pub fn as_str(&self) -> &str {
         &self.0
     }

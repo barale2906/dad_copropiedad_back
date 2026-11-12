@@ -58,7 +58,7 @@ pub struct DatosSubida {
     #[param(example = "Reglamento de propiedad horizontal.pdf")]
     pub nombre: String,
     /// `publico`, `interno`, `personal` o `sensible`.
-    #[param(example = "interno")]
+    #[param(value_type = crate::esquemas::ClasificacionArchivo)]
     pub clasificacion: String,
 }
 
@@ -68,10 +68,11 @@ pub struct ArchivoRespuesta {
     pub id: Uuid,
     pub nombre: String,
     /// Detectado por el contenido.
-    #[schema(example = "application/pdf")]
+    #[schema(value_type = crate::esquemas::TipoArchivo)]
     pub tipo: String,
     pub tamano_bytes: u64,
     pub sha256: String,
+    #[schema(value_type = crate::esquemas::ClasificacionArchivo)]
     pub clasificacion: String,
     pub creado_en: DateTime<Utc>,
 }
@@ -199,6 +200,7 @@ pub struct ParametrosEnlace {
          body = ErrorRespuesta),
         (status = NOT_FOUND, description = "El archivo ya no está en el almacén (`no_encontrado`)",
          body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn descargar(

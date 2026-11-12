@@ -553,3 +553,175 @@ async fn la_configuracion_valida_sus_plazos(pool: PgPool) {
         (Some(180), Some("22:00:00"))
     );
 }
+
+// ---------------------------------------------------------------------------------------------
+// Biometría, credenciales y autorizaciones manuales (contra PostgreSQL)
+// ---------------------------------------------------------------------------------------------
+
+async fn emitir_biometrica(e: &Escenario) -> (StatusCode, Value) {
+    e.ph.pedir(
+        Method::POST,
+        "/credenciales",
+        Some(json!({
+            "titular": { "persona_id": e.persona }, "tipo": "biometria_ref", "valor": "plantilla-1"
+        })),
+    )
+    .await
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_biometria_exige_consentimiento_vigente_y_revocarlo_revoca_la_credencial(pool: PgPool) {
+    let e = escenario(pool).await;
+    let ruta_consentimiento = format!("/personas/{}/consentimiento-biometrico", e.persona);
+
+    // Sin consentimiento se rechaza por eso, no por otro dato faltante.
+    let por_consentimiento = |v: &Value| {
+        v["error"]["mensaje"]
+            .as_str()
+            .is_some_and(|m| m.contains("consentimiento"))
+    };
+    let (s, v) = emitir_biometrica(&e).await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "{v}");
+    assert!(por_consentimiento(&v), "{v}");
+
+    let (s, v) =
+        e.ph.pedir(
+            Method::POST,
+            &ruta_consentimiento,
+            Some(json!({ "version_texto": "v1" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    let (s, v) =
+        e.ph.pedir(
+            Method::POST,
+            &ruta_consentimiento,
+            Some(json!({ "version_texto": "v1" })),
+        )
+        .await;
+    assert_eq!(
+        s,
+        StatusCode::CONFLICT,
+        "un solo consentimiento vigente: {v}"
+    );
+    let (s, credencial) = emitir_biometrica(&e).await;
+    assert_eq!(s, StatusCode::CREATED, "{credencial}");
+
+    let (s, v) = e.ph.pedir(Method::DELETE, &ruta_consentimiento, None).await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    let (_, credenciales) =
+        e.ph.pedir(
+            Method::GET,
+            &format!("/credenciales?persona_id={}", e.persona),
+            None,
+        )
+        .await;
+    let biometrica = credenciales
+        .as_array()
+        .and_then(|c| c.iter().find(|c| c["id"] == credencial["credencial"]["id"]))
+        .expect("la credencial sigue en el historial");
+    assert_eq!(biometrica["estado"], "revocada");
+    let (s, v) = emitir_biometrica(&e).await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "{v}");
+    assert!(por_consentimiento(&v), "{v}");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_vigilante_no_enrola_biometria(pool: PgPool) {
+    let e = escenario(pool).await;
+
+    let (s, v) = como(
+        &e.ph,
+        &e.vigilante,
+        Method::POST,
+        &format!("/personas/{}/consentimiento-biometrico", e.persona),
+        Some(json!({ "version_texto": "v1" })),
+    )
+    .await;
+
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::FORBIDDEN, &json!("sin_permiso"))
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_tarjeta_suspendida_se_reactiva_y_una_revocada_ya_no(pool: PgPool) {
+    let e = escenario(pool).await;
+    let (s, tarjeta) = e.ph
+        .pedir(
+            Method::POST,
+            "/credenciales",
+            Some(json!({ "titular": { "persona_id": e.persona }, "tipo": "tarjeta_rfid", "valor": "04A1B2C3" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{tarjeta}");
+    let estado = |nuevo: &'static str| {
+        let (ph, id) = (
+            &e.ph,
+            tarjeta["credencial"]["id"].as_str().expect("id").to_owned(),
+        );
+        async move {
+            ph.pedir(
+                Method::POST,
+                &format!("/credenciales/{id}/estado"),
+                Some(json!({ "estado": nuevo })),
+            )
+            .await
+        }
+    };
+
+    assert_eq!(estado("suspendida").await.1["estado"], "suspendida");
+    assert_eq!(estado("activa").await.1["estado"], "activa");
+    assert_eq!(estado("revocada").await.1["estado"], "revocada");
+    let (s, v) = estado("activa").await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto_estado")),
+        "{v}"
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_autorizacion_manual_se_lista_y_al_revocarla_queda_con_fecha(pool: PgPool) {
+    let e = escenario(pool).await;
+    let ruta = format!("/autorizaciones-acceso?persona_id={}", e.persona);
+    let (s, a) =
+        e.ph.pedir(
+            Method::POST,
+            "/autorizaciones-acceso",
+            Some(json!({
+                "titular": { "persona_id": e.persona },
+                "vigente_desde": chrono::Utc::now().to_rfc3339(),
+                "motivo": "contratista de la remodelación",
+            })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{a}");
+    let id = a["id"].as_str().expect("id");
+
+    let (_, lista) = e.ph.pedir(Method::GET, &ruta, None).await;
+    assert!(
+        lista.as_array().is_some_and(|l| l
+            .iter()
+            .any(|x| x["id"] == a["id"] && x["revocada_en"].is_null())),
+        "{lista}"
+    );
+    let (s, _) =
+        e.ph.pedir(
+            Method::POST,
+            &format!("/autorizaciones-acceso/{id}/revocacion"),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::NO_CONTENT);
+
+    let (_, lista) = e.ph.pedir(Method::GET, &ruta, None).await;
+    let revocada = lista
+        .as_array()
+        .and_then(|l| l.iter().find(|x| x["id"] == a["id"]));
+    assert!(
+        revocada.is_none_or(|x| x["revocada_en"].is_string()),
+        "{lista}"
+    );
+}

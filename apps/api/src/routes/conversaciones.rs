@@ -5,7 +5,7 @@
 use application::{
     casos_uso::conversaciones::{self as uc, DatosPregunta},
     puertos::{
-        RelojSistema,
+        Reloj as _, RelojSistema,
         chat::{Conversacion, EstadoConversacion, MensajeConversacion, PreguntaFrecuente},
     },
 };
@@ -176,7 +176,7 @@ pub struct ConversacionRespuesta {
     /// Teléfono del residente (dato personal).
     pub telefono: String,
     pub persona_id: Option<Uuid>,
-    #[schema(value_type = String, example = "abierta")]
+    #[schema(value_type = crate::esquemas::EstadoConversacion)]
     pub estado: EstadoConversacion,
     pub atendida_por: Option<Uuid>,
     pub abierta_en: DateTime<Utc>,
@@ -189,7 +189,7 @@ pub struct ConversacionRespuesta {
 impl From<Conversacion> for ConversacionRespuesta {
     fn from(c: Conversacion) -> Self {
         Self {
-            ventana_abierta: c.ventana_abierta(Utc::now()),
+            ventana_abierta: c.ventana_abierta(RelojSistema.ahora()),
             id: c.id.as_uuid(),
             telefono: c.telefono,
             persona_id: c.persona_id.map(PersonaId::as_uuid),
@@ -234,8 +234,7 @@ pub struct DetalleConversacionRespuesta {
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroConversaciones {
-    /// `abierta` o `cerrada`.
-    #[param(value_type = Option<String>, example = "abierta")]
+    #[param(value_type = Option<crate::esquemas::EstadoConversacion>)]
     pub estado: Option<EstadoConversacion>,
 }
 

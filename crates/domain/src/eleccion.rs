@@ -37,6 +37,7 @@ pub struct CuposPlancha {
 }
 
 impl CuposPlancha {
+    /// Total de cupos de la plancha.
     pub const fn total(&self) -> u16 {
         self.por_cociente + self.por_residuo
     }

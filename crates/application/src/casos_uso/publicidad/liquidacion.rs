@@ -22,11 +22,12 @@ use crate::{
     },
 };
 
-pub const ACCION_TARIFA: AccionAuditoria = AccionAuditoria::new("publicidad.tarifa.fijar");
-pub const ACCION_POLITICA: AccionAuditoria = AccionAuditoria::new("publicidad.politica.publicar");
-pub const ACCION_LIQUIDAR: AccionAuditoria =
+pub(crate) const ACCION_TARIFA: AccionAuditoria = AccionAuditoria::new("publicidad.tarifa.fijar");
+pub(crate) const ACCION_POLITICA: AccionAuditoria =
+    AccionAuditoria::new("publicidad.politica.publicar");
+pub(crate) const ACCION_LIQUIDAR: AccionAuditoria =
     AccionAuditoria::new("publicidad.liquidacion.calcular");
-pub const ACCION_ESTADO_LIQUIDACION: AccionAuditoria =
+pub(crate) const ACCION_ESTADO_LIQUIDACION: AccionAuditoria =
     AccionAuditoria::new("publicidad.liquidacion.cambiar_estado");
 
 fn exigir(ctx: &ContextoPlataforma) -> AppResult<()> {

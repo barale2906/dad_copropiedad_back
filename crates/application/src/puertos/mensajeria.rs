@@ -21,6 +21,7 @@ pub struct MensajeEntrante {
     pub contenido: ContenidoEntrante,
 }
 
+/// Contenido de un mensaje que llega por WhatsApp.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "tipo", rename_all = "snake_case")]
 pub enum ContenidoEntrante {
@@ -71,6 +72,7 @@ impl Eleccion {
     }
 }
 
+/// Contenido de un mensaje que se envía por WhatsApp.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "tipo", rename_all = "snake_case")]
 pub enum ContenidoSaliente {
@@ -110,6 +112,7 @@ pub enum ContenidoSaliente {
 impl ContenidoSaliente {
     /// Límites de WhatsApp Cloud API para mensajes interactivos.
     pub const MAX_BOTONES: usize = 3;
+    /// Filas máximas de una lista de WhatsApp.
     pub const MAX_FILAS_LISTA: usize = 10;
 
     /// Elige botones o lista según cuántas opciones haya.
@@ -130,6 +133,7 @@ impl ContenidoSaliente {
     }
 }
 
+/// Mensaje a enviar: línea de origen, teléfono de destino y contenido.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MensajeSaliente {
     pub linea: String,
@@ -145,6 +149,7 @@ pub struct MediaDescargada {
     pub mime: Option<String>,
 }
 
+/// Envío de mensajes y descarga de multimedia del proveedor de WhatsApp.
 pub trait Mensajeria: Send + Sync {
     /// Envía el mensaje y devuelve el `wamid` asignado por el proveedor.
     fn enviar(&self, mensaje: &MensajeSaliente) -> impl Future<Output = AppResult<String>> + Send;

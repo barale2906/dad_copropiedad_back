@@ -236,6 +236,7 @@ impl Pregunta {
             .flatten()
     }
 
+    /// Opción de la pregunta por su id.
     pub fn opcion(&self, id: OpcionId) -> Option<&OpcionPregunta> {
         self.opciones.iter().find(|o| o.id == id)
     }
@@ -251,6 +252,7 @@ impl Pregunta {
 pub struct PreguntaAbierta<'a>(&'a Pregunta);
 
 impl PreguntaAbierta<'_> {
+    /// Pregunta abierta que se está votando.
     pub fn pregunta(&self) -> &Pregunta {
         self.0
     }

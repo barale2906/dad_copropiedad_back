@@ -667,6 +667,19 @@ pub(crate) mod memoria {
                 .any(|p| p.modulo == modulo && p.cubre(ahora)))
         }
 
+        async fn modulos_habilitados(&mut self, ahora: DateTime<Utc>) -> AppResult<Vec<Modulo>> {
+            let mut modulos: Vec<Modulo> = self
+                .datos
+                .modulos
+                .iter()
+                .filter(|p| p.cubre(ahora))
+                .map(|p| p.modulo)
+                .collect();
+            modulos.sort();
+            modulos.dedup();
+            Ok(modulos)
+        }
+
         async fn insertar_periodo(&mut self, periodo: &PeriodoModulo) -> AppResult<()> {
             self.datos.modulos.push(*periodo);
             Ok(())

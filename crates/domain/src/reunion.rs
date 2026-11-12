@@ -156,10 +156,12 @@ enum_texto!(EfectoMora {
 });
 
 impl EfectoMora {
+    /// Si un bien moroso vota con este efecto de la mora.
     pub const fn vota(self) -> bool {
         matches!(self, Self::Informativo)
     }
 
+    /// Si un bien moroso cuenta para el quórum con este efecto de la mora.
     pub const fn cuenta_para_quorum(self) -> bool {
         !matches!(self, Self::SinVotoNiQuorum)
     }

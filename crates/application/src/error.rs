@@ -1,3 +1,6 @@
+//! Errores de la capa de aplicación ([`AppError`]): envuelven los del dominio y agregan los de
+//! permisos, módulos, conflictos e infraestructura.
+
 use domain::{DominioError, Modulo, Permiso};
 
 /// Error de los casos de uso. El mapeo a HTTP vive en `apps/api/src/error.rs`.
@@ -10,7 +13,9 @@ pub enum AppError {
     #[error("{0}")]
     Validacion(String),
 
-    #[error("{0} no encontrada")]
+    /// El recurso no existe (o no es visible para el contexto). «Inexistente» sirve para
+    /// cualquier género: «rol inexistente», «persona inexistente».
+    #[error("{0} inexistente")]
     NoEncontrado(&'static str),
 
     #[error("los bienes privados que representa ya votaron en esta pregunta")]
@@ -60,4 +65,5 @@ impl AppError {
     }
 }
 
+/// Resultado de los casos de uso.
 pub type AppResult<T> = Result<T, AppError>;

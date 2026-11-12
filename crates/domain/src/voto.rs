@@ -39,6 +39,7 @@ enum_texto!(Canal {
 pub struct ClaveIdempotencia(String);
 
 impl ClaveIdempotencia {
+    /// Caracteres máximos de la clave.
     pub const LONGITUD_MAXIMA: usize = 200;
 
     /// # Errors
@@ -55,6 +56,7 @@ impl ClaveIdempotencia {
         Ok(Self(valor))
     }
 
+    /// Clave tal como llegó (el `wamid` en WhatsApp).
     pub fn as_str(&self) -> &str {
         &self.0
     }

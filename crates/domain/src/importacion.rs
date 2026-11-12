@@ -73,6 +73,8 @@ pub struct ErrorFila {
 }
 
 impl ErrorFila {
+    /// Error de validación de una fila (y de una columna, si aplica). El mensaje no repite el valor
+    /// de la celda.
     pub fn new(fila: u32, columna: Option<&str>, mensaje: impl Into<String>) -> Self {
         Self {
             fila,
@@ -99,6 +101,7 @@ pub enum Columna {
 }
 
 impl Columna {
+    /// Columnas de la plantilla de importación, en orden.
     pub const TODAS: [Self; 11] = [
         Self::Agrupacion,
         Self::Numero,
@@ -381,6 +384,7 @@ impl Documento {
         }
     }
 
+    /// Documento normalizado.
     pub fn as_str(&self) -> &str {
         &self.0
     }

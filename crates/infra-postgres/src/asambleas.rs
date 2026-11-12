@@ -1461,16 +1461,17 @@ impl RepositorioAsambleas for TransaccionPg {
     }
 
     async fn eliminar_pregunta(&mut self, id: PreguntaId) -> AppResult<bool> {
-        for sql in [
+        sqlx::query!(
             "DELETE FROM candidatos WHERE pregunta_id = $1",
-            "DELETE FROM opciones WHERE pregunta_id = $1",
-        ] {
-            sqlx::query(sql)
-                .bind(id.as_uuid())
-                .execute(&mut *self.tx)
-                .await
-                .map_err(AppError::infra)?;
-        }
+            id.as_uuid()
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        sqlx::query!("DELETE FROM opciones WHERE pregunta_id = $1", id.as_uuid())
+            .execute(&mut *self.tx)
+            .await
+            .map_err(AppError::infra)?;
         Ok(sqlx::query!(
             "DELETE FROM preguntas WHERE id = $1 AND estado = 'borrador'",
             id.as_uuid()
@@ -1875,11 +1876,7 @@ impl RepositorioAsambleas for TransaccionPg {
             Ok(EnvioConvocatoria {
                 persona_id: PersonaId::from_uuid(f.persona_id),
                 nombre: f.nombre,
-                canal: if f.canal == "correo" {
-                    CanalConvocatoria::Correo
-                } else {
-                    CanalConvocatoria::Whatsapp
-                },
+                canal: CanalConvocatoria::try_from(f.canal.as_str())?,
                 estado_envio: f.estado.unwrap_or_else(|| "pendiente".into()),
                 acuse: f.acuse,
                 enviado_en: f.enviado_en,
@@ -2001,6 +1998,7 @@ pub struct DirectorioAsambleasPg {
 }
 
 impl DirectorioAsambleasPg {
+    /// Directorio sobre el pool de la app (`dad_app`).
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
@@ -2104,7 +2102,7 @@ impl RepositorioLineasWhatsapp for TransaccionPlataformaPg {
                 numero_visible: f.numero_visible,
                 nombre: f.nombre,
                 limite_mps: entero(i64::from(f.limite_mps), "limite_mps")?,
-                estado: EstadoLinea::desde(&f.estado)?,
+                estado: EstadoLinea::try_from(f.estado.as_str())?,
                 calidad: f.calidad,
                 franquicia_servicio_mes: entero(
                     i64::from(f.franquicia_servicio_mes),

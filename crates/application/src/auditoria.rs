@@ -85,16 +85,11 @@ pub enum ResultadoAuditoria {
     Error,
 }
 
-impl ResultadoAuditoria {
-    /// Texto persistido en `auditoria.resultado`.
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Ok => "ok",
-            Self::Rechazado => "rechazado",
-            Self::Error => "error",
-        }
-    }
-}
+domain::enum_texto!(ResultadoAuditoria {
+    Ok => "ok",
+    Rechazado => "rechazado",
+    Error => "error",
+});
 
 /// Datos adicionales del evento (`auditoria.detalle`, JSONB): identificadores, valores antes y
 /// después de un cambio, motivo de un rechazo.

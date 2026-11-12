@@ -116,10 +116,12 @@ impl Coordenadas {
         })
     }
 
+    /// Latitud en grados.
     pub const fn latitud(self) -> Decimal {
         self.latitud
     }
 
+    /// Longitud en grados.
     pub const fn longitud(self) -> Decimal {
         self.longitud
     }
@@ -191,6 +193,7 @@ impl Cobertura {
         }
     }
 
+    /// Tipo de cobertura (nacional, municipio o radio).
     pub const fn tipo(self) -> TipoCobertura {
         match self {
             Self::Nacional => TipoCobertura::Nacional,
@@ -199,6 +202,7 @@ impl Cobertura {
         }
     }
 
+    /// Radio en kilómetros, solo en la cobertura por radio.
     pub const fn radio_km(self) -> Option<u16> {
         match self {
             Self::Radio(km) => Some(km),
@@ -289,6 +293,7 @@ impl CodigoCategoria {
         }
     }
 
+    /// Código normalizado de la categoría.
     pub fn as_str(&self) -> &str {
         &self.0
     }

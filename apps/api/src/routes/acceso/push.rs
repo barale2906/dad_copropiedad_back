@@ -33,7 +33,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 pub struct DispositivoPushRespuesta {
     pub id: Uuid,
     /// `android` o `ios`.
-    #[schema(example = "android")]
+    #[schema(value_type = crate::esquemas::PlataformaPush)]
     pub plataforma: String,
     pub nombre: Option<String>,
     pub registrado_en: DateTime<Utc>,
@@ -53,7 +53,7 @@ impl From<DispositivoPush> for DispositivoPushRespuesta {
 /// Registro del dispositivo.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RegistrarDispositivoPeticion {
-    #[schema(value_type = String, example = "android")]
+    #[schema(value_type = crate::esquemas::PlataformaPush)]
     pub plataforma: PlataformaPush,
     /// Token de FCM del teléfono (`FirebaseMessaging.instance.getToken()`).
     pub token: String,

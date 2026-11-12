@@ -6,6 +6,7 @@ use sha2::Sha256;
 /// Nombre de la cabecera HTTP con la firma.
 pub const CABECERA_FIRMA: &str = "x-hub-signature-256";
 
+/// Errores al verificar `X-Hub-Signature-256`.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ErrorFirma {
     #[error("falta la cabecera de firma")]

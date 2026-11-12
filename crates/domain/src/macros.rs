@@ -3,6 +3,10 @@
 /// Implementa `as_str`, `TODOS`, `Display` y `TryFrom<&str>` para un enum cuyo valor se
 /// persiste como `TEXT` + `CHECK` en PostgreSQL. El texto es el contrato con la base de datos:
 /// **no cambiarlo sin una migración**.
+///
+/// Se exporta para que `application` declare con ella sus propios enums persistidos
+/// (`domain::enum_texto!`) en lugar de escribir `as_str` y el parseo a mano.
+#[macro_export]
 macro_rules! enum_texto {
     ($tipo:ident { $($variante:ident => $texto:literal),+ $(,)? }) => {
         impl $tipo {
@@ -26,7 +30,7 @@ macro_rules! enum_texto {
         impl ::std::convert::TryFrom<&str> for $tipo {
             type Error = $crate::DominioError;
 
-            fn try_from(valor: &str) -> Result<Self, Self::Error> {
+            fn try_from(valor: &str) -> Result<Self, $crate::DominioError> {
                 match valor {
                     $($texto => Ok(Self::$variante),)+
                     otro => Err($crate::DominioError::ValorDesconocido {

@@ -180,3 +180,76 @@ impl utoipa::Modify for EsquemaBearer {
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))
 )]
 pub struct ApiDoc;
+
+/// Agrega a cada operación las respuestas de error que imponen los extractores de sesión, si
+/// el handler no las declaró: 401 en toda ruta con token, 403 y 404 en las de una copropiedad
+/// (`EnCopropiedad` responde 404 si la cuenta no tiene roles allí) y 403 en las de plataforma
+/// (`OperadorPlataforma` exige segundo factor). Así el frontend ve todos los errores posibles,
+/// también en las rutas nuevas.
+pub fn completar_respuestas_comunes(doc: &mut utoipa::openapi::OpenApi) {
+    for (ruta, item) in doc.paths.paths.iter_mut() {
+        let operaciones = [
+            &mut item.get,
+            &mut item.post,
+            &mut item.put,
+            &mut item.patch,
+            &mut item.delete,
+        ];
+        for op in operaciones.into_iter().flatten() {
+            let con_token = op.security.as_ref().is_some_and(|s| !s.is_empty());
+            if !con_token {
+                continue;
+            }
+            let respuestas = &mut op.responses.responses;
+            agregar(
+                respuestas,
+                "401",
+                "Sin sesión o token vencido (`no_autenticado`)",
+            );
+            if ruta.starts_with("/api/v1/copropiedades/") {
+                agregar(
+                    respuestas,
+                    "403",
+                    "Sin el permiso (`sin_permiso`) o módulo no contratado \
+                     (`modulo_no_habilitado`)",
+                );
+                agregar(
+                    respuestas,
+                    "404",
+                    "La copropiedad no existe o la cuenta no tiene roles en ella \
+                     (`no_encontrado`)",
+                );
+            } else if ruta.starts_with("/api/v1/plataforma/") {
+                agregar(
+                    respuestas,
+                    "403",
+                    "Sin el permiso (`sin_permiso`) o sin segundo factor \
+                     (`segundo_factor_requerido`)",
+                );
+            }
+        }
+    }
+}
+
+fn agregar(
+    respuestas: &mut std::collections::BTreeMap<
+        String,
+        utoipa::openapi::RefOr<utoipa::openapi::Response>,
+    >,
+    codigo: &str,
+    descripcion: &str,
+) {
+    use utoipa::openapi::{ContentBuilder, Ref, ResponseBuilder};
+    respuestas.entry(codigo.to_owned()).or_insert_with(|| {
+        ResponseBuilder::new()
+            .description(descripcion)
+            .content(
+                "application/json",
+                ContentBuilder::new()
+                    .schema(Some(Ref::from_schema_name("ErrorRespuesta")))
+                    .build(),
+            )
+            .build()
+            .into()
+    });
+}

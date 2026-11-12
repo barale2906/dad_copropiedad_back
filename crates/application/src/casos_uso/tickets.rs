@@ -46,15 +46,19 @@ use crate::{
     },
 };
 
-pub const ACCION_RADICAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.radicar");
-pub const ACCION_CLASIFICAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.clasificar");
-pub const ACCION_ASIGNAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.asignar");
-pub const ACCION_TRANSICIONAR: AccionAuditoria =
+pub(crate) const ACCION_RADICAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.radicar");
+pub(crate) const ACCION_CLASIFICAR: AccionAuditoria =
+    AccionAuditoria::new("tickets.ticket.clasificar");
+pub(crate) const ACCION_ASIGNAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.asignar");
+pub(crate) const ACCION_TRANSICIONAR: AccionAuditoria =
     AccionAuditoria::new("tickets.ticket.transicionar");
-pub const ACCION_COMENTAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.comentar");
-pub const ACCION_CALIFICAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.calificar");
-pub const ACCION_CONFIGURAR: AccionAuditoria = AccionAuditoria::new("tickets.configuracion.editar");
-pub const ACCION_CATEGORIA: AccionAuditoria = AccionAuditoria::new("tickets.categoria.editar");
+pub(crate) const ACCION_COMENTAR: AccionAuditoria = AccionAuditoria::new("tickets.ticket.comentar");
+pub(crate) const ACCION_CALIFICAR: AccionAuditoria =
+    AccionAuditoria::new("tickets.ticket.calificar");
+pub(crate) const ACCION_CONFIGURAR: AccionAuditoria =
+    AccionAuditoria::new("tickets.configuracion.editar");
+pub(crate) const ACCION_CATEGORIA: AccionAuditoria =
+    AccionAuditoria::new("tickets.categoria.editar");
 
 /// Puertos que usan los casos de uso de tickets dentro de la transacción de la copropiedad.
 pub trait TxTickets:

@@ -26,13 +26,17 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR: AccionAuditoria = AccionAuditoria::new("parqueaderos.parqueadero.crear");
-pub const ACCION_ASIGNAR: AccionAuditoria = AccionAuditoria::new("parqueaderos.asignacion.crear");
-pub const ACCION_LIBERAR: AccionAuditoria =
+pub(crate) const ACCION_CREAR: AccionAuditoria =
+    AccionAuditoria::new("parqueaderos.parqueadero.crear");
+pub(crate) const ACCION_ASIGNAR: AccionAuditoria =
+    AccionAuditoria::new("parqueaderos.asignacion.crear");
+pub(crate) const ACCION_LIBERAR: AccionAuditoria =
     AccionAuditoria::new("parqueaderos.asignacion.terminar");
-pub const ACCION_CREAR_SORTEO: AccionAuditoria = AccionAuditoria::new("sorteos.sorteo.crear");
-pub const ACCION_INSCRIBIR: AccionAuditoria = AccionAuditoria::new("sorteos.inscripcion.crear");
-pub const ACCION_EJECUTAR: AccionAuditoria = AccionAuditoria::new("sorteos.sorteo.ejecutar");
+pub(crate) const ACCION_CREAR_SORTEO: AccionAuditoria =
+    AccionAuditoria::new("sorteos.sorteo.crear");
+pub(crate) const ACCION_INSCRIBIR: AccionAuditoria =
+    AccionAuditoria::new("sorteos.inscripcion.crear");
+pub(crate) const ACCION_EJECUTAR: AccionAuditoria = AccionAuditoria::new("sorteos.sorteo.ejecutar");
 
 /// Datos de un parqueadero nuevo.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -27,14 +27,17 @@ use crate::{
     },
 };
 
-pub const ACCION_ANUNCIAR: AccionAuditoria = AccionAuditoria::new("acceso.visita.anunciar");
-pub const ACCION_PREAUTORIZAR: AccionAuditoria = AccionAuditoria::new("acceso.visita.preautorizar");
-pub const ACCION_DECIDIR: AccionAuditoria = AccionAuditoria::new("acceso.visita.decidir");
-pub const ACCION_LLAMADA: AccionAuditoria = AccionAuditoria::new("acceso.visita.registrar_llamada");
-pub const ACCION_CONTACTOS: AccionAuditoria = AccionAuditoria::new("acceso.visita.ver_contactos");
-pub const ACCION_INGRESO: AccionAuditoria = AccionAuditoria::new("acceso.visita.ingresar");
-pub const ACCION_SALIDA: AccionAuditoria = AccionAuditoria::new("acceso.visita.salir");
-pub const ACCION_CANCELAR: AccionAuditoria = AccionAuditoria::new("acceso.visita.cancelar");
+pub(crate) const ACCION_ANUNCIAR: AccionAuditoria = AccionAuditoria::new("acceso.visita.anunciar");
+pub(crate) const ACCION_PREAUTORIZAR: AccionAuditoria =
+    AccionAuditoria::new("acceso.visita.preautorizar");
+pub(crate) const ACCION_DECIDIR: AccionAuditoria = AccionAuditoria::new("acceso.visita.decidir");
+pub(crate) const ACCION_LLAMADA: AccionAuditoria =
+    AccionAuditoria::new("acceso.visita.registrar_llamada");
+pub(crate) const ACCION_CONTACTOS: AccionAuditoria =
+    AccionAuditoria::new("acceso.visita.ver_contactos");
+pub(crate) const ACCION_INGRESO: AccionAuditoria = AccionAuditoria::new("acceso.visita.ingresar");
+pub(crate) const ACCION_SALIDA: AccionAuditoria = AccionAuditoria::new("acceso.visita.salir");
+pub(crate) const ACCION_CANCELAR: AccionAuditoria = AccionAuditoria::new("acceso.visita.cancelar");
 
 /// Plantilla de utilidad «visita_anunciada». Parámetros: visitante, tipo, bien privado.
 /// Botones: «Autorizar», «Rechazar».

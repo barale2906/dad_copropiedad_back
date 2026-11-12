@@ -41,20 +41,28 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR: AccionAuditoria = AccionAuditoria::new("comunicados.comunicado.crear");
-pub const ACCION_EDITAR: AccionAuditoria = AccionAuditoria::new("comunicados.comunicado.editar");
-pub const ACCION_PROGRAMAR: AccionAuditoria =
+pub(crate) const ACCION_CREAR: AccionAuditoria =
+    AccionAuditoria::new("comunicados.comunicado.crear");
+pub(crate) const ACCION_EDITAR: AccionAuditoria =
+    AccionAuditoria::new("comunicados.comunicado.editar");
+pub(crate) const ACCION_PROGRAMAR: AccionAuditoria =
     AccionAuditoria::new("comunicados.comunicado.programar");
-pub const ACCION_ENVIAR: AccionAuditoria = AccionAuditoria::new("comunicados.comunicado.enviar");
-pub const ACCION_RETIRAR: AccionAuditoria = AccionAuditoria::new("comunicados.comunicado.retirar");
-pub const ACCION_ANULAR: AccionAuditoria = AccionAuditoria::new("comunicados.comunicado.anular");
+pub(crate) const ACCION_ENVIAR: AccionAuditoria =
+    AccionAuditoria::new("comunicados.comunicado.enviar");
+pub(crate) const ACCION_RETIRAR: AccionAuditoria =
+    AccionAuditoria::new("comunicados.comunicado.retirar");
+pub(crate) const ACCION_ANULAR: AccionAuditoria =
+    AccionAuditoria::new("comunicados.comunicado.anular");
 
 /// Plantilla de WhatsApp (aprobar en Meta): «{{1}} publicó un comunicado importante: {{2}}.
 /// Consúltelo en la app o en su correo.»
 pub const PLANTILLA_COMUNICADO: &str = "comunicado_importante";
 
+/// Caracteres máximos del título.
 pub const MAX_TITULO: usize = 150;
+/// Caracteres máximos del cuerpo.
 pub const MAX_CUERPO: usize = 10_000;
+/// Adjuntos máximos por comunicado.
 pub const MAX_ADJUNTOS: usize = 10;
 /// Un comunicado se programa a lo sumo con un año de anticipación.
 const MAX_ANTICIPACION_DIAS: i64 = 366;

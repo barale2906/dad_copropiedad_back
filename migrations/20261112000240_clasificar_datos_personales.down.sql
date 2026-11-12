@@ -1,0 +1,10 @@
+-- Revierte la clasificación de 20261112000240.
+COMMENT ON COLUMN organizaciones.correo_contacto IS NULL;
+COMMENT ON COLUMN organizaciones.telefono_contacto IS NULL;
+COMMENT ON COLUMN visitas.observacion IS NULL;
+COMMENT ON COLUMN reservas.observacion IS NULL;
+COMMENT ON COLUMN autorizaciones_acceso.motivo IS NULL;
+COMMENT ON COLUMN asistente_presencias.detalle_salida IS NULL;
+COMMENT ON COLUMN cambios_censo.motivo IS NULL;
+COMMENT ON COLUMN reclamaciones_organizacion.motivo IS NULL;
+COMMENT ON COLUMN ordenes_trabajo.observaciones IS NULL;

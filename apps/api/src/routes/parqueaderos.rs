@@ -51,7 +51,7 @@ pub struct AsignacionParqueaderoRespuesta {
     pub bien_privado_id: Uuid,
     pub vehiculo_id: Option<Uuid>,
     /// `propiedad`, `sorteo`, `arriendo` o `manual`.
-    #[schema(value_type = String, example = "sorteo")]
+    #[schema(value_type = crate::esquemas::OrigenAsignacionParqueadero)]
     pub origen: OrigenAsignacionParqueadero,
     pub desde: DateTime<Utc>,
     pub hasta: Option<DateTime<Utc>>,
@@ -114,10 +114,10 @@ pub async fn listar(
 pub struct NuevoParqueaderoPeticion {
     #[schema(example = "S1-045")]
     pub codigo: String,
-    #[schema(value_type = String, example = "carro")]
+    #[schema(value_type = crate::esquemas::TipoParqueadero)]
     pub tipo_vehiculo: TipoParqueadero,
     /// `privado`, `uso_exclusivo`, `comunal` o `visitantes`.
-    #[schema(value_type = String, example = "comunal")]
+    #[schema(value_type = crate::esquemas::NaturalezaParqueadero)]
     pub naturaleza: NaturalezaParqueadero,
     /// Solo para los privados.
     pub bien_privado_id: Option<Uuid>,
@@ -172,7 +172,7 @@ pub struct AsignacionParqueaderoPeticion {
     pub bien_privado_id: Uuid,
     pub vehiculo_id: Option<Uuid>,
     /// `propiedad`, `arriendo` o `manual` (las de sorteo las crea el sorteo).
-    #[schema(value_type = String, example = "arriendo")]
+    #[schema(value_type = crate::esquemas::OrigenAsignacionParqueadero)]
     pub origen: OrigenAsignacionParqueadero,
     pub desde: Option<DateTime<Utc>>,
     pub hasta: Option<DateTime<Utc>>,
@@ -284,7 +284,7 @@ pub struct SorteoRespuesta {
     pub vigencia_desde: DateTime<Utc>,
     pub vigencia_hasta: DateTime<Utc>,
     /// `abierto` o `ejecutado`.
-    #[schema(value_type = String, example = "abierto")]
+    #[schema(value_type = crate::esquemas::EstadoSorteo)]
     pub estado: EstadoSorteo,
     pub compromiso: String,
     pub semilla: Option<String>,

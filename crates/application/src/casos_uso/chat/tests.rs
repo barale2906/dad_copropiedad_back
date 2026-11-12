@@ -958,3 +958,159 @@ async fn no_recibir_mas_revoca_la_autorizacion_de_publicidad() {
     assert!(cuerpo(&r[0]).contains("no le enviaremos más publicidad"));
     assert!(e.unidad.datos().autorizaciones[0].1.is_some(), "revocada");
 }
+
+// ---------------------------------------------------------------------------------------------
+// Reservas desde el chat
+// ---------------------------------------------------------------------------------------------
+
+/// Entorno del motor de reservas (bien con su propietaria y salón social) atendido por el chat:
+/// la propietaria tiene cuenta y un rol con los permisos de reservar.
+async fn entorno_con_reservas() -> Entorno {
+    use crate::casos_uso::{
+        reservas::tests::{entorno as entorno_reservas, salon},
+        roles::{NuevoRol, SolicitudAsignacion, asignar_rol, crear_rol},
+    };
+    let er = entorno_reservas().await;
+    er.unidad.habilitar(Modulo::GestionAdministrativa);
+    salon(&er, domain::PoliticaReserva::default(), false).await;
+    let cuenta = er.dueno.actor_id.expect("cuenta de la propietaria");
+    let rol = crear_rol(
+        &er.unidad,
+        &er.ctx,
+        NuevoRol {
+            codigo: "reserva_chat".into(),
+            nombre: "Reserva por chat".into(),
+            descripcion: None,
+            permisos: er.dueno.permisos.clone(),
+        },
+    )
+    .await
+    .expect("rol");
+    asignar_rol(
+        &er.unidad,
+        &RelojFijo(ahora()),
+        &er.ctx,
+        SolicitudAsignacion::manual(cuenta, rol.id),
+    )
+    .await
+    .expect("asignación");
+    let mut persona = PersonaId::nuevo();
+    er.unidad.con_datos(|d| {
+        persona = d
+            .personas
+            .iter()
+            .find(|p| p.cuenta_id == Some(cuenta))
+            .expect("persona de la propietaria")
+            .id;
+    });
+    let v = VinculoTelefono {
+        cuenta_id: Some(cuenta),
+        bien_privado_id: er.bien,
+        ..vinculo(er.ctx.tenant_id, persona, "101")
+    };
+    Entorno {
+        asambleas: Asambleas::default(),
+        unidad: er.unidad,
+        sesiones: SesionesEnMemoria::default(),
+        directorio: Directorio(vec![v]),
+        almacen: AlmacenEnMemoria::new(Almacen::Local),
+        tenant: er.ctx.tenant_id,
+        persona,
+        n: Mutex::new(0),
+    }
+}
+
+/// Primera opción de la última respuesta con ese prefijo de id.
+fn opcion(r: &[ContenidoSaliente], prefijo: &str) -> String {
+    r.iter()
+        .flat_map(ids)
+        .find(|i| i.starts_with(prefijo))
+        .unwrap_or_else(|| panic!("sin opción {prefijo}: {r:?}"))
+}
+
+/// Recorre el menú hasta la confirmación; devuelve la respuesta que pide confirmar.
+async fn hasta_confirmar(e: &Entorno) -> Vec<ContenidoSaliente> {
+    e.enviar(texto("hola")).await;
+    let recursos = e.enviar(elige("m:reservar")).await;
+    let dias = e.enviar(elige(&opcion(&recursos, "r:"))).await;
+    // El día siguiente: la anticipación mínima puede dejar sin franjas el de hoy.
+    let manana = dias
+        .iter()
+        .flat_map(ids)
+        .filter(|i| i.starts_with("d:"))
+        .nth(1)
+        .expect("días");
+    let franjas = e.enviar(elige(&manana)).await;
+    e.enviar(elige(&opcion(&franjas, "h:"))).await
+}
+
+fn reservas(e: &Entorno) -> usize {
+    let mut n = 0;
+    e.unidad.con_datos(|d| n = d.reservas.len());
+    n
+}
+
+#[tokio::test]
+async fn reservar_el_salon_por_whatsapp_recorre_recurso_dia_franja_y_confirmacion() {
+    let e = entorno_con_reservas().await;
+
+    let confirmar = hasta_confirmar(&e).await;
+    assert_eq!(
+        ids(&confirmar[0]),
+        vec![ID_SI.to_owned(), ID_NO.to_owned()],
+        "{confirmar:?}"
+    );
+    assert!(matches!(e.paso(), Some(Paso::ReservaConfirmar { .. })));
+    let r = e.enviar(elige(ID_SI)).await;
+
+    assert!(
+        r.iter().any(
+            |c| matches!(c, ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("Salón social"))
+        ),
+        "{r:?}"
+    );
+    assert_eq!(reservas(&e), 1);
+    assert_eq!(e.paso(), Some(Paso::Menu));
+}
+
+#[tokio::test]
+async fn el_reintento_de_meta_de_la_confirmacion_no_duplica_la_reserva() {
+    let e = entorno_con_reservas().await;
+    hasta_confirmar(&e).await;
+
+    e.enviar_con("wamid.si", TELEFONO, elige(ID_SI)).await;
+    e.enviar_con("wamid.si", TELEFONO, elige(ID_SI)).await;
+
+    assert_eq!(reservas(&e), 1);
+}
+
+#[tokio::test]
+async fn responder_no_a_la_confirmacion_no_reserva_y_vuelve_al_menu() {
+    let e = entorno_con_reservas().await;
+    hasta_confirmar(&e).await;
+
+    e.enviar(elige(ID_NO)).await;
+
+    assert_eq!(reservas(&e), 0);
+    assert_eq!(e.paso(), Some(Paso::Menu));
+}
+
+#[tokio::test]
+async fn una_opcion_que_no_es_de_la_lista_repite_la_pregunta_sin_avanzar() {
+    let e = entorno_con_reservas().await;
+    e.enviar(texto("hola")).await;
+    e.enviar(elige("m:reservar")).await;
+
+    let r = e
+        .enviar(elige("r:00000000-0000-0000-0000-000000000000"))
+        .await;
+
+    assert!(
+        r.iter().flat_map(ids).any(|i| i.starts_with("r:")),
+        "vuelve a listar: {r:?}"
+    );
+    assert!(matches!(e.paso(), Some(Paso::ReservaRecurso { .. })));
+    let r = e.enviar(texto("mañana a las 3")).await;
+    assert!(r.iter().flat_map(ids).any(|i| i.starts_with("r:")));
+    assert_eq!(reservas(&e), 0);
+}

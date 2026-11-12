@@ -54,6 +54,7 @@ impl DireccionCorreo {
                 .all(|parte| !parte.is_empty() && !parte.starts_with('-') && !parte.ends_with('-'))
     }
 
+    /// Correo normalizado en minúsculas.
     pub fn as_str(&self) -> &str {
         &self.0
     }

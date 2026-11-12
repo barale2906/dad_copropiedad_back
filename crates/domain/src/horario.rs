@@ -72,10 +72,12 @@ impl Horario {
         })
     }
 
+    /// Franjas semanales del horario.
     pub fn franjas(&self) -> &[FranjaSemanal] {
         &self.franjas
     }
 
+    /// Excepciones por fecha (festivos, cierres).
     pub fn excepciones(&self) -> &[ExcepcionHorario] {
         &self.excepciones
     }

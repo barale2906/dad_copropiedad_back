@@ -168,6 +168,7 @@ impl CodigoActivo {
         }
     }
 
+    /// Código normalizado del activo.
     pub fn as_str(&self) -> &str {
         &self.0
     }

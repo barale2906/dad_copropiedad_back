@@ -32,7 +32,7 @@ use crate::error::{ApiError, ApiResult};
 #[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct ConfiguracionAsambleaDto {
     /// `coeficiente` (por defecto, lo que exige la ley) o `unidades` (se advierte en el acta).
-    #[schema(value_type = String, example = "coeficiente")]
+    #[schema(value_type = crate::esquemas::BaseComputo)]
     #[serde(default)]
     pub base_computo: BaseComputo,
     /// Máximo de bienes que representa un apoderado (`null` = sin límite).
@@ -45,7 +45,7 @@ pub struct ConfiguracionAsambleaDto {
     #[serde(default)]
     pub exigir_soporte_poder: bool,
     /// `informativo`, `sin_voto` o `sin_voto_ni_quorum` (validar con asesor).
-    #[schema(value_type = String, example = "informativo")]
+    #[schema(value_type = crate::esquemas::EfectoMora)]
     #[serde(default)]
     pub efecto_mora: EfectoMora,
     /// Temporizador por defecto de las preguntas, en segundos.
@@ -94,16 +94,16 @@ impl From<ConfiguracionAsambleaDto> for ConfiguracionReunion {
 pub struct ReunionRespuesta {
     pub id: Uuid,
     pub titulo: String,
-    #[schema(value_type = String, example = "ordinaria")]
+    #[schema(value_type = crate::esquemas::TipoReunion)]
     pub tipo: TipoReunion,
     /// `primera`, `segunda` o `derecho_propio`.
-    #[schema(value_type = String, example = "primera")]
+    #[schema(value_type = crate::esquemas::Convocatoria)]
     pub convocatoria: Convocatoria,
     /// `presencial`, `virtual`, `mixta` o `escrita`.
-    #[schema(value_type = String, example = "presencial")]
+    #[schema(value_type = crate::esquemas::Modalidad)]
     pub modalidad: Modalidad,
     /// `borrador`, `convocada`, `en_registro`, `instalada`, `suspendida`, `cerrada`, `cancelada`.
-    #[schema(value_type = String, example = "convocada")]
+    #[schema(value_type = crate::esquemas::EstadoReunion)]
     pub estado: EstadoReunion,
     pub fecha_programada: DateTime<Utc>,
     pub lugar: Option<String>,
@@ -117,7 +117,7 @@ pub struct ReunionRespuesta {
     pub cerrada_en: Option<DateTime<Utc>>,
     pub motivo_cancelacion: Option<String>,
     /// `pendiente`, `generada`, `aprobada` o `publicada`.
-    #[schema(value_type = String, example = "pendiente")]
+    #[schema(value_type = crate::esquemas::EstadoActa)]
     pub acta_estado: EstadoActa,
     pub acta_archivo_id: Option<Uuid>,
     pub acta_firmada_archivo_id: Option<Uuid>,
@@ -156,7 +156,7 @@ pub struct PuntoRespuesta {
     pub orden: u16,
     pub titulo: String,
     pub descripcion: Option<String>,
-    #[schema(value_type = String, example = "pendiente")]
+    #[schema(value_type = crate::esquemas::EstadoPunto)]
     pub estado: EstadoPunto,
     pub iniciado_en: Option<DateTime<Utc>>,
     pub terminado_en: Option<DateTime<Utc>>,
@@ -181,7 +181,7 @@ impl From<PuntoOrden> for PuntoRespuesta {
 pub struct DocumentoDto {
     pub archivo_id: Uuid,
     /// `estados_financieros`, `presupuesto`, `informe`, `reglamento` u `otro`.
-    #[schema(value_type = String, example = "presupuesto")]
+    #[schema(value_type = crate::esquemas::TipoDocumentoReunion)]
     pub tipo: TipoDocumentoReunion,
     pub titulo: String,
 }
@@ -210,6 +210,7 @@ pub struct ConstanciaRespuesta {
     pub persona_id: Uuid,
     pub nombre: String,
     /// `whatsapp` o `correo`.
+    #[schema(value_type = crate::esquemas::CanalConvocatoria)]
     pub canal: &'static str,
     /// `pendiente`, `enviado` o `fallido`.
     pub estado_envio: String,
@@ -321,7 +322,7 @@ pub struct BienAsistenteRespuesta {
     #[schema(value_type = String, example = "0.01250000")]
     pub coeficiente: Decimal,
     /// `propietario` o `apoderado`.
-    #[schema(value_type = String, example = "propietario")]
+    #[schema(value_type = crate::esquemas::CalidadRepresentacion)]
     pub calidad: CalidadRepresentacion,
     pub poder_id: Option<Uuid>,
     pub moroso: bool,
@@ -347,7 +348,7 @@ pub struct AsistenteRespuesta {
     pub persona_id: Uuid,
     pub nombre: String,
     /// `mesa`, `prerregistro`, `enlace` o `consulta`.
-    #[schema(value_type = String, example = "mesa")]
+    #[schema(value_type = crate::esquemas::MetodoRegistro)]
     pub metodo: MetodoRegistro,
     /// Teléfono de WhatsApp (dato personal; solo para la mesa).
     pub telefono: Option<String>,
@@ -455,7 +456,7 @@ pub struct PoderRespuesta {
     pub apoderado_persona_id: Uuid,
     pub soporte_archivo_id: Option<Uuid>,
     /// `pendiente`, `verificado`, `rechazado` o `revocado`.
-    #[schema(value_type = String, example = "pendiente")]
+    #[schema(value_type = crate::esquemas::EstadoPoder)]
     pub estado: EstadoPoder,
     pub motivo: Option<String>,
     pub registrado_en: DateTime<Utc>,
@@ -492,7 +493,7 @@ pub struct ReglaDto {
     #[schema(value_type = Option<String>, example = "60")]
     pub porcentaje: Option<Decimal>,
     /// Solo en `personalizada`: `presentes` o `total`.
-    #[schema(value_type = Option<String>, example = "presentes")]
+    #[schema(value_type = Option<crate::esquemas::BaseMayoria>)]
     pub sobre: Option<BaseMayoria>,
 }
 
@@ -539,20 +540,20 @@ pub struct PreguntaRespuesta {
     pub punto_id: Option<Uuid>,
     pub enunciado: String,
     /// `si_no`, `seleccion_unica`, `seleccion_multiple` o `eleccion`.
-    #[schema(value_type = String, example = "si_no")]
+    #[schema(value_type = crate::esquemas::TipoPregunta)]
     pub tipo: TipoPregunta,
     /// `nominal` o `reservado`.
-    #[schema(value_type = String, example = "nominal")]
+    #[schema(value_type = crate::esquemas::TipoVoto)]
     pub tipo_voto: TipoVoto,
-    #[schema(value_type = String, example = "coeficiente")]
+    #[schema(value_type = crate::esquemas::BaseComputo)]
     pub base_computo: BaseComputo,
     pub regla_mayoria: ReglaDto,
     pub max_selecciones: u16,
     pub cupos: Option<u16>,
-    #[schema(value_type = Option<String>, example = "consejero")]
+    #[schema(value_type = Option<crate::esquemas::CargoEleccion>)]
     pub cargo: Option<CargoEleccion>,
     /// `borrador`, `abierta`, `cerrada` o `anulada`.
-    #[schema(value_type = String, example = "abierta")]
+    #[schema(value_type = crate::esquemas::EstadoPregunta)]
     pub estado: EstadoPregunta,
     pub temporizador_segundos: Option<u32>,
     pub cierra_en: Option<DateTime<Utc>>,

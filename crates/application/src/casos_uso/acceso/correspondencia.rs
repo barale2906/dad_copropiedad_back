@@ -28,10 +28,11 @@ use crate::{
     },
 };
 
-pub const ACCION_RECIBIR: AccionAuditoria = AccionAuditoria::new("acceso.correspondencia.recibir");
-pub const ACCION_ENTREGAR: AccionAuditoria =
+pub(crate) const ACCION_RECIBIR: AccionAuditoria =
+    AccionAuditoria::new("acceso.correspondencia.recibir");
+pub(crate) const ACCION_ENTREGAR: AccionAuditoria =
     AccionAuditoria::new("acceso.correspondencia.entregar");
-pub const ACCION_DEVOLVER: AccionAuditoria =
+pub(crate) const ACCION_DEVOLVER: AccionAuditoria =
     AccionAuditoria::new("acceso.correspondencia.devolver");
 
 /// Plantilla «correspondencia_recibida». Parámetros: tipo, bien privado, días en portería.

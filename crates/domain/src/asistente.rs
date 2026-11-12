@@ -126,6 +126,7 @@ enum_texto!(MomentoQuorum {
 pub struct CodigoRotulo(String);
 
 impl CodigoRotulo {
+    /// Caracteres máximos del código.
     pub const LONGITUD_MAXIMA: usize = 32;
 
     /// # Errors
@@ -154,6 +155,7 @@ impl CodigoRotulo {
         Self::new(&format!("{prefijo}{numero:0digitos$}"))
     }
 
+    /// Código normalizado.
     pub fn as_str(&self) -> &str {
         &self.0
     }

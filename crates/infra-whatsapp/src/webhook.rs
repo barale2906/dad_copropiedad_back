@@ -12,26 +12,28 @@ use application::puertos::{
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 
+/// Cuerpo de una notificación del webhook de Meta. Se lee con [`Notificacion::desde_json`] y se
+/// consume con sus métodos, que devuelven tipos de la aplicación (mensajes, acuses, calidades).
 #[derive(Debug, Deserialize)]
 pub struct Notificacion {
     #[serde(default)]
-    pub entry: Vec<Entrada>,
+    entry: Vec<Entrada>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Entrada {
+pub(crate) struct Entrada {
     #[serde(default)]
     pub changes: Vec<Cambio>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Cambio {
+pub(crate) struct Cambio {
     pub field: String,
     pub value: Valor,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Valor {
+pub(crate) struct Valor {
     /// Ausente en `phone_number_quality_update`.
     pub metadata: Option<Metadatos>,
     #[serde(default)]
@@ -46,7 +48,7 @@ pub struct Valor {
 
 /// Acuse de entrega de un mensaje saliente.
 #[derive(Debug, Deserialize)]
-pub struct EstadoMensaje {
+pub(crate) struct EstadoMensaje {
     pub id: String,
     pub status: String,
     pub timestamp: Option<String>,
@@ -56,13 +58,13 @@ pub struct EstadoMensaje {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Precio {
+pub(crate) struct Precio {
     pub billable: Option<bool>,
     pub category: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct ErrorEstado {
+pub(crate) struct ErrorEstado {
     pub code: Option<i32>,
 }
 
@@ -75,12 +77,12 @@ pub struct CambioCalidad {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Metadatos {
+pub(crate) struct Metadatos {
     pub phone_number_id: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Mensaje {
+pub(crate) struct Mensaje {
     pub from: String,
     pub id: String,
     pub timestamp: String,
@@ -94,35 +96,40 @@ pub struct Mensaje {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Imagen {
+pub(crate) struct Imagen {
     pub id: String,
     pub caption: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Texto {
+pub(crate) struct Texto {
     pub body: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Interactivo {
+pub(crate) struct Interactivo {
     pub button_reply: Option<Respuesta>,
     pub list_reply: Option<Respuesta>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Respuesta {
+pub(crate) struct Respuesta {
     pub id: String,
     pub title: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct BotonPlantilla {
+pub(crate) struct BotonPlantilla {
     pub payload: String,
     pub text: String,
 }
 
 impl Notificacion {
+    /// Deserializa el cuerpo crudo (ya verificada su firma `X-Hub-Signature-256`).
+    ///
+    /// # Errors
+    ///
+    /// Si el cuerpo no es el JSON de una notificación.
     pub fn desde_json(cuerpo: &[u8]) -> Result<Self, serde_json::Error> {
         serde_json::from_slice(cuerpo)
     }

@@ -40,7 +40,7 @@ pub struct CuadroRespuesta {
     pub id: Uuid,
     pub version: u32,
     /// `borrador`, `vigente` o `historico`.
-    #[schema(value_type = String, example = "borrador")]
+    #[schema(value_type = crate::esquemas::EstadoCuadro)]
     pub estado: EstadoCuadro,
     pub descripcion: Option<String>,
     pub soporte_archivo_id: Option<Uuid>,

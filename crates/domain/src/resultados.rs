@@ -21,6 +21,7 @@ pub struct Conteo {
 }
 
 impl Conteo {
+    /// Conteo por coeficiente y por unidades.
     pub fn new(coeficiente: Decimal, unidades: u32) -> Self {
         Self {
             coeficiente,

@@ -38,10 +38,12 @@ use crate::{
     seguridad::{hash_secreto, iguales},
 };
 
-pub const ACCION_AUTORIZAR: AccionAuditoria =
+pub(crate) const ACCION_AUTORIZAR: AccionAuditoria =
     AccionAuditoria::new("publicidad.autorizacion.otorgar");
-pub const ACCION_REVOCAR: AccionAuditoria = AccionAuditoria::new("publicidad.autorizacion.revocar");
-pub const ACCION_REPORTAR: AccionAuditoria = AccionAuditoria::new("publicidad.anuncio.reportar");
+pub(crate) const ACCION_REVOCAR: AccionAuditoria =
+    AccionAuditoria::new("publicidad.autorizacion.revocar");
+pub(crate) const ACCION_REPORTAR: AccionAuditoria =
+    AccionAuditoria::new("publicidad.anuncio.reportar");
 
 /// Piezas que se muestran a la vez en la app.
 pub const MAXIMO_PIEZAS: usize = 3;
@@ -67,10 +69,12 @@ pub struct BotonBaja {
 impl BotonBaja {
     const PREFIJO: &'static str = "baja:";
 
+    /// Id del botón (`baja:{tenant}`).
     pub fn id(&self) -> String {
         format!("{}{}", Self::PREFIJO, self.tenant)
     }
 
+    /// Botón a partir de su id; `None` si no es un botón de baja válido.
     pub fn desde_id(id: &str) -> Option<Self> {
         Some(Self {
             tenant: TenantId::from_uuid(id.strip_prefix(Self::PREFIJO)?.parse().ok()?),

@@ -8,7 +8,7 @@ use application::{
         MensajeVista, NuevoMensaje, NuevoTicket, TicketVista,
     },
     puertos::{
-        RelojSistema,
+        Reloj as _, RelojSistema,
         tickets::{
             AdjuntoTicket, CategoriaTicket, ConfiguracionTickets, EventoTicket, MensajeTicket,
             Responsable, TableroTickets,
@@ -108,7 +108,7 @@ pub struct PlazoDto {
     #[schema(example = 15)]
     pub cantidad: u32,
     /// `horas`, `horas_habiles` o `dias_habiles`.
-    #[schema(value_type = String, example = "dias_habiles")]
+    #[schema(value_type = crate::esquemas::UnidadPlazo)]
     pub unidad: UnidadPlazo,
 }
 
@@ -137,14 +137,14 @@ pub struct TicketRespuesta {
     /// Número legible por copropiedad y año.
     #[schema(example = "PQR-2026-00042")]
     pub numero: String,
-    #[schema(value_type = String, example = "solicitud_mantenimiento")]
+    #[schema(value_type = crate::esquemas::TipoTicket)]
     pub tipo: TipoTicket,
     pub categoria_id: Option<Uuid>,
-    #[schema(value_type = String, example = "media")]
+    #[schema(value_type = crate::esquemas::PrioridadTicket)]
     pub prioridad: PrioridadTicket,
-    #[schema(value_type = String, example = "web")]
+    #[schema(value_type = crate::esquemas::CanalTicket)]
     pub canal: CanalTicket,
-    #[schema(value_type = String, example = "abierto")]
+    #[schema(value_type = crate::esquemas::EstadoTicket)]
     pub estado: EstadoTicket,
     pub asunto: String,
     pub descripcion: String,
@@ -210,7 +210,7 @@ impl From<TicketVista> for TicketRespuesta {
 }
 
 fn vista_propia(t: application::puertos::tickets::Ticket) -> TicketRespuesta {
-    let vencido = t.vencido(Utc::now());
+    let vencido = t.vencido(RelojSistema.ahora());
     TicketVista {
         ticket: t,
         identidad_oculta: false,
@@ -226,10 +226,10 @@ fn vista_propia(t: application::puertos::tickets::Ticket) -> TicketRespuesta {
 /// Regla de plazo: por tipo y, opcionalmente, por prioridad.
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct ReglaPlazoDto {
-    #[schema(value_type = String, example = "queja")]
+    #[schema(value_type = crate::esquemas::TipoTicket)]
     pub tipo: TipoTicket,
     /// `null` = cualquier prioridad.
-    #[schema(value_type = Option<String>, example = "urgente")]
+    #[schema(value_type = Option<crate::esquemas::PrioridadTicket>)]
     pub prioridad: Option<PrioridadTicket>,
     pub plazo: PlazoDto,
 }
@@ -467,11 +467,11 @@ pub async fn editar_categoria(
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroTicketsQuery {
-    #[param(value_type = Option<String>, example = "abierto")]
+    #[param(value_type = Option<crate::esquemas::EstadoTicket>)]
     pub estado: Option<EstadoTicket>,
-    #[param(value_type = Option<String>, example = "queja")]
+    #[param(value_type = Option<crate::esquemas::TipoTicket>)]
     pub tipo: Option<TipoTicket>,
-    #[param(value_type = Option<String>, example = "urgente")]
+    #[param(value_type = Option<crate::esquemas::PrioridadTicket>)]
     pub prioridad: Option<PrioridadTicket>,
     pub bien_privado_id: Option<Uuid>,
     /// Solo los vencidos.
@@ -523,14 +523,14 @@ pub async fn listar(
 /// Ticket nuevo.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RadicarPeticion {
-    #[schema(value_type = String, example = "solicitud_mantenimiento")]
+    #[schema(value_type = crate::esquemas::TipoTicket)]
     pub tipo: TipoTicket,
     pub categoria_id: Option<Uuid>,
     /// `media` si se omite.
-    #[schema(value_type = Option<String>, example = "alta")]
+    #[schema(value_type = Option<crate::esquemas::PrioridadTicket>)]
     pub prioridad: Option<PrioridadTicket>,
     /// `web` si se omite; `presencial` o `correo` cuando la administración registra un caso.
-    #[schema(value_type = Option<String>, example = "web")]
+    #[schema(value_type = Option<crate::esquemas::CanalTicket>)]
     pub canal: Option<CanalTicket>,
     #[schema(example = "Fuga en el baño comunal del piso 3")]
     pub asunto: String,
@@ -598,7 +598,7 @@ pub async fn radicar(
 /// Pendientes por estado.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ConteoEstado {
-    #[schema(value_type = String, example = "en_progreso")]
+    #[schema(value_type = crate::esquemas::EstadoTicket)]
     pub estado: EstadoTicket,
     pub cantidad: u64,
 }
@@ -660,7 +660,7 @@ pub struct MensajeRespuesta {
     pub autor_persona_id: Option<Uuid>,
     /// Lo escribió el solicitante.
     pub del_solicitante: bool,
-    #[schema(value_type = String, example = "web")]
+    #[schema(value_type = crate::esquemas::CanalTicket)]
     pub canal: CanalTicket,
     /// Nota interna (el solicitante no la ve).
     pub interno: bool,
@@ -718,9 +718,9 @@ impl From<AdjuntoTicket> for AdjuntoRespuesta {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct EventoRespuesta {
     /// `null` = radicación.
-    #[schema(value_type = Option<String>, example = "abierto")]
+    #[schema(value_type = Option<crate::esquemas::EstadoTicket>)]
     pub desde: Option<EstadoTicket>,
-    #[schema(value_type = String, example = "asignado")]
+    #[schema(value_type = crate::esquemas::EstadoTicket)]
     pub hacia: EstadoTicket,
     pub actor_cuenta_id: Option<Uuid>,
     pub motivo: Option<String>,
@@ -786,10 +786,10 @@ pub async fn ver(
 /// Cambios de clasificación (los omitidos no cambian).
 #[derive(Debug, Default, Deserialize, ToSchema)]
 pub struct ClasificarPeticion {
-    #[schema(value_type = Option<String>, example = "reclamo")]
+    #[schema(value_type = Option<crate::esquemas::TipoTicket>)]
     pub tipo: Option<TipoTicket>,
     pub categoria_id: Option<Uuid>,
-    #[schema(value_type = Option<String>, example = "alta")]
+    #[schema(value_type = Option<crate::esquemas::PrioridadTicket>)]
     pub prioridad: Option<PrioridadTicket>,
 }
 
@@ -869,7 +869,7 @@ pub async fn asignar(
 /// Cambio de estado.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct TransicionTicketPeticion {
-    #[schema(value_type = String, example = "resuelto")]
+    #[schema(value_type = crate::esquemas::EstadoTicket)]
     pub hacia: EstadoTicket,
     /// Obligatorio al resolver (es la respuesta al solicitante), rechazar o pedir información.
     pub motivo: Option<String>,

@@ -335,3 +335,101 @@ async fn esquema_usa_terminos_de_la_ley_675(pool: PgPool) {
     );
     assert_eq!(contar_como_app(&pool, None, "bienes_privados").await, 0);
 }
+
+/// Tablas con `tenant_id` que no usan `aislamiento_tenant`, con su motivo. Agregar una aquí
+/// exige que su política propia también aísle por copropiedad o la reserve a la plataforma.
+const TENANT_CON_POLITICA_PROPIA: &[&str] = &[
+    // Plantillas globales (`tenant_id IS NULL`) visibles para todas; las propias, solo en su PH.
+    "roles",
+    "roles_permisos",
+    // Publicidad: datos de la plataforma por copropiedad (ADR 0015); ninguna PH los lee.
+    "campana_copropiedades",
+    "entregas_publicidad",
+];
+
+/// Multi-tenant (§8): toda tabla de negocio con `tenant_id` tiene RLS activa y la política
+/// `aislamiento_tenant` (salvo las excepciones documentadas). Las particiones no tienen RLS
+/// propia, así que `dad_app` no debe poder leerlas sin pasar por la tabla madre.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn toda_tabla_con_tenant_tiene_rls(pool: PgPool) {
+    let sin_aislamiento: Vec<String> = sqlx::query_scalar(
+        "SELECT c.relname::text
+         FROM pg_class c
+         JOIN pg_attribute a ON a.attrelid = c.oid AND a.attname = 'tenant_id' AND NOT a.attisdropped
+         WHERE c.relnamespace = 'public'::regnamespace AND c.relkind IN ('r', 'p')
+           AND NOT c.relispartition
+           AND (NOT c.relrowsecurity
+                OR NOT EXISTS (SELECT 1 FROM pg_policy p
+                               WHERE p.polrelid = c.oid AND p.polname = 'aislamiento_tenant'))
+           AND NOT (c.relrowsecurity AND c.relname = ANY ($1)
+                    AND EXISTS (SELECT 1 FROM pg_policy p WHERE p.polrelid = c.oid))
+         ORDER BY 1",
+    )
+    .bind(TENANT_CON_POLITICA_PROPIA)
+    .fetch_all(&pool)
+    .await
+    .expect("consulta del catálogo");
+    assert!(
+        sin_aislamiento.is_empty(),
+        "tablas con tenant_id sin RLS: {sin_aislamiento:?}"
+    );
+
+    let particiones_legibles: Vec<String> = sqlx::query_scalar(
+        "SELECT c.relname::text FROM pg_class c
+         WHERE c.relnamespace = 'public'::regnamespace AND c.relispartition AND c.relkind = 'r'
+           AND (has_table_privilege('dad_app', c.oid, 'SELECT')
+                OR has_table_privilege('dad_app', c.oid, 'INSERT'))",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("consulta del catálogo");
+    assert!(
+        particiones_legibles.is_empty(),
+        "particiones accesibles sin RLS: {particiones_legibles:?}"
+    );
+}
+
+/// Las funciones `SECURITY DEFINER` cruzan tenants: fijan `search_path` (sin él, un objeto
+/// homónimo en otro esquema suplantaría al real) y no se ejecutan desde `PUBLIC`.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn funciones_security_definer_fijan_search_path_y_no_son_publicas(pool: PgPool) {
+    let inseguras: Vec<String> = sqlx::query_scalar(
+        "SELECT p.oid::regprocedure::text FROM pg_proc p
+         WHERE p.pronamespace = 'public'::regnamespace AND p.prosecdef
+           AND (NOT EXISTS (SELECT 1 FROM unnest(coalesce(p.proconfig, '{}')) x
+                            WHERE x LIKE 'search_path=%')
+                OR has_function_privilege('public', p.oid, 'EXECUTE'))
+         ORDER BY 1",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("consulta del catálogo");
+    assert!(
+        inseguras.is_empty(),
+        "SECURITY DEFINER inseguras: {inseguras:?}"
+    );
+}
+
+async fn versiones_aplicadas(pool: &PgPool) -> Vec<i64> {
+    sqlx::query_scalar("SELECT version FROM _sqlx_migrations ORDER BY version")
+        .fetch_all(pool)
+        .await
+        .expect("versiones")
+}
+
+/// `dad_admin revertir` deshace las migraciones posteriores a la versión pedida (y solo esas,
+/// con sus `.down.sql`); volver a migrar las aplica de nuevo.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn revertir_deshace_solo_las_migraciones_posteriores_y_migrar_las_reaplica(pool: PgPool) {
+    let todas = versiones_aplicadas(&pool).await;
+    let destino = todas[todas.len() - 3];
+
+    infra_postgres::revertir_en(&pool, destino)
+        .await
+        .expect("revertir");
+
+    let quedan = versiones_aplicadas(&pool).await;
+    assert_eq!(quedan, todas[..todas.len() - 2], "solo las dos posteriores");
+    MIGRACIONES.run(&pool).await.expect("migrar de nuevo");
+    assert_eq!(versiones_aplicadas(&pool).await, todas);
+}

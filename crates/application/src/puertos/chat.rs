@@ -30,6 +30,7 @@ pub struct VinculoTelefono {
     pub es_propietario: bool,
 }
 
+/// Resuelve a qué copropiedades y bienes pertenece un teléfono (cruza tenants: SECURITY DEFINER).
 pub trait DirectorioTelefonos: Send + Sync {
     /// Vínculos vigentes del teléfono en copropiedades activas con la gestión administrativa
     /// contratada (función `vinculos_por_telefono`).
@@ -60,14 +61,10 @@ pub enum EstadoConversacion {
     Cerrada,
 }
 
-impl EstadoConversacion {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::Abierta => "abierta",
-            Self::Cerrada => "cerrada",
-        }
-    }
-}
+domain::enum_texto!(EstadoConversacion {
+    Abierta => "abierta",
+    Cerrada => "cerrada",
+});
 
 /// Conversación escalada a la administración.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -107,12 +104,15 @@ pub struct MensajeConversacion {
     pub creado_en: DateTime<Utc>,
 }
 
+/// Persistencia del chat: preguntas frecuentes y bandeja de conversaciones escaladas.
 pub trait RepositorioChat: Send {
+    /// Preguntas frecuentes (solo las activas si se pide).
     fn preguntas_frecuentes(
         &mut self,
         solo_activas: bool,
     ) -> impl Future<Output = AppResult<Vec<PreguntaFrecuente>>> + Send;
 
+    /// Pregunta frecuente por su id.
     fn pregunta_frecuente(
         &mut self,
         id: PreguntaFrecuenteId,
@@ -125,22 +125,26 @@ pub trait RepositorioChat: Send {
         nueva: bool,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Conversación abierta de ese teléfono en esa línea, si la hay.
     fn conversacion_abierta(
         &mut self,
         linea: &str,
         telefono: &str,
     ) -> impl Future<Output = AppResult<Option<Conversacion>>> + Send;
 
+    /// Conversación por su id.
     fn conversacion(
         &mut self,
         id: ConversacionId,
     ) -> impl Future<Output = AppResult<Option<Conversacion>>> + Send;
 
+    /// Guarda una conversación nueva.
     fn insertar_conversacion(
         &mut self,
         c: &Conversacion,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Guarda los cambios de una conversación (atención, último mensaje, cierre).
     fn actualizar_conversacion(
         &mut self,
         c: &Conversacion,
@@ -159,6 +163,7 @@ pub trait RepositorioChat: Send {
         m: &MensajeConversacion,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// Mensajes de la conversación, en orden.
     fn mensajes_conversacion(
         &mut self,
         id: ConversacionId,

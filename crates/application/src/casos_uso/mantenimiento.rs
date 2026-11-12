@@ -40,18 +40,20 @@ use crate::{
     },
 };
 
-pub const ACCION_REGISTRAR_ACTIVO: AccionAuditoria =
+pub(crate) const ACCION_REGISTRAR_ACTIVO: AccionAuditoria =
     AccionAuditoria::new("inventario.activo.registrar");
-pub const ACCION_EDITAR_ACTIVO: AccionAuditoria = AccionAuditoria::new("inventario.activo.editar");
-pub const ACCION_MOVIMIENTO: AccionAuditoria =
+pub(crate) const ACCION_EDITAR_ACTIVO: AccionAuditoria =
+    AccionAuditoria::new("inventario.activo.editar");
+pub(crate) const ACCION_MOVIMIENTO: AccionAuditoria =
     AccionAuditoria::new("inventario.movimiento.registrar");
-pub const ACCION_PLAN: AccionAuditoria = AccionAuditoria::new("mantenimiento.plan.editar");
-pub const ACCION_CREAR_ORDEN: AccionAuditoria = AccionAuditoria::new("mantenimiento.orden.crear");
-pub const ACCION_ESTADO_ORDEN: AccionAuditoria =
+pub(crate) const ACCION_PLAN: AccionAuditoria = AccionAuditoria::new("mantenimiento.plan.editar");
+pub(crate) const ACCION_CREAR_ORDEN: AccionAuditoria =
+    AccionAuditoria::new("mantenimiento.orden.crear");
+pub(crate) const ACCION_ESTADO_ORDEN: AccionAuditoria =
     AccionAuditoria::new("mantenimiento.orden.transicionar");
-pub const ACCION_OBLIGACION: AccionAuditoria =
+pub(crate) const ACCION_OBLIGACION: AccionAuditoria =
     AccionAuditoria::new("mantenimiento.obligacion.editar");
-pub const ACCION_CUMPLIMIENTO: AccionAuditoria =
+pub(crate) const ACCION_CUMPLIMIENTO: AccionAuditoria =
     AccionAuditoria::new("mantenimiento.obligacion.cumplir");
 
 /// Puertos que usan los casos de uso de mantenimiento (los de tickets más el de mantenimiento).

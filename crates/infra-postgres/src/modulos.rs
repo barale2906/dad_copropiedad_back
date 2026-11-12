@@ -25,6 +25,20 @@ impl RepositorioModulos for TransaccionPg {
         .map_err(AppError::infra)
     }
 
+    async fn modulos_habilitados(&mut self, ahora: DateTime<Utc>) -> AppResult<Vec<Modulo>> {
+        sqlx::query_scalar!(
+            "SELECT DISTINCT modulo FROM modulos_habilitados
+             WHERE desde <= $1 AND (hasta IS NULL OR $1 < hasta)",
+            ahora,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .iter()
+        .map(|m| Ok(Modulo::try_from(m.as_str())?))
+        .collect()
+    }
+
     async fn insertar_periodo(&mut self, p: &PeriodoModulo) -> AppResult<()> {
         sqlx::query!(
             "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde, hasta)

@@ -22,6 +22,7 @@ pub const MAX_MEDIA_BYTES: usize = 10 * 1024 * 1024;
 /// Tiempo máximo de cada llamada a la API.
 pub const TIMEOUT: Duration = Duration::from_secs(15);
 
+/// Errores del cliente de la Graph API.
 #[derive(Debug, thiserror::Error)]
 pub enum ErrorCliente {
     #[error("no se pudo crear el cliente HTTP: {0}")]

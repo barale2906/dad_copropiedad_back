@@ -78,6 +78,7 @@ pub struct CuentaCreada {
         (status = CREATED, description = "Cuenta creada", body = CuentaCreada),
         (status = CONFLICT, description = "Usuario o correo ya registrados (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos (`validacion`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn registrar(
@@ -224,6 +225,7 @@ pub struct SegundoFactorPeticion {
     responses(
         (status = OK, description = "Sesión iniciada", body = TokensRespuesta),
         (status = UNAUTHORIZED, description = "Desafío vencido o código incorrecto", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn completar_segundo_factor(
@@ -260,6 +262,7 @@ pub struct RenovarPeticion {
     responses(
         (status = OK, description = "Tokens nuevos", body = TokensRespuesta),
         (status = UNAUTHORIZED, description = "Token inválido, vencido o reutilizado (`no_autenticado`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn renovar(
@@ -316,7 +319,7 @@ pub struct RecuperarPeticion {
     path = "/contrasena/recuperar",
     tag = ETIQUETA_AUTH,
     request_body = RecuperarPeticion,
-    responses((status = ACCEPTED, description = "Si la cuenta existe, se envió el código"))
+    responses((status = ACCEPTED, description = "Si la cuenta existe, se envió el código"), (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta))
 )]
 pub async fn solicitar_recuperacion(
     _limite: LimiteAuth,
@@ -354,6 +357,7 @@ pub struct RestablecerPeticion {
     responses(
         (status = NO_CONTENT, description = "Contraseña cambiada"),
         (status = UNPROCESSABLE_ENTITY, description = "Código inválido o contraseña débil (`validacion`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn restablecer_contrasena(

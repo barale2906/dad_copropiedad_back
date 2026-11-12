@@ -9,6 +9,7 @@
 //!
 //! - [`routes`]: router, middlewares y convención de rutas.
 //! - [`error`]: error uniforme y catálogo de códigos.
+//! - [`esquemas`]: esquemas OpenAPI con nombre de los enums del dominio.
 //! - [`extractores`]: `Json`, `Query` y `Path` que responden con el error uniforme.
 //! - [`paginacion`]: DTOs de la paginación por cursor.
 //! - [`openapi`]: metadatos del contrato OpenAPI.
@@ -19,6 +20,7 @@
 pub mod csv;
 pub mod en_vivo;
 pub mod error;
+pub mod esquemas;
 pub mod extractores;
 pub mod idempotencia;
 pub mod limite;

@@ -396,6 +396,7 @@ pub struct Conteo {
 }
 
 impl Conteo {
+    /// Si no hubo impresiones, clics, redenciones ni leads.
     pub const fn vacio(&self) -> bool {
         self.impresiones == 0 && self.clics == 0 && self.redenciones == 0 && self.leads == 0
     }
@@ -584,6 +585,7 @@ impl CodigoCupon {
         }
     }
 
+    /// Código del cupón normalizado.
     pub fn as_str(&self) -> &str {
         &self.0
     }

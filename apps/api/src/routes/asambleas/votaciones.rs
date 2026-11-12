@@ -63,13 +63,13 @@ pub struct OpcionPeticion {
 pub struct PreguntaPeticion {
     #[schema(example = "¿Aprueba el presupuesto 2027?")]
     pub enunciado: String,
-    #[schema(value_type = String, example = "si_no")]
+    #[schema(value_type = crate::esquemas::TipoPregunta)]
     pub tipo: TipoPregunta,
     /// `nominal` (por defecto) o `reservado`.
-    #[schema(value_type = Option<String>, example = "nominal")]
+    #[schema(value_type = Option<crate::esquemas::TipoVoto>)]
     pub tipo_voto: Option<TipoVoto>,
     /// Por defecto, la de la reunión.
-    #[schema(value_type = Option<String>, example = "coeficiente")]
+    #[schema(value_type = Option<crate::esquemas::BaseComputo>)]
     pub base_computo: Option<BaseComputo>,
     /// Por defecto, mayoría simple.
     pub regla_mayoria: Option<ReglaDto>,
@@ -79,7 +79,7 @@ pub struct PreguntaPeticion {
     pub cupos: Option<u16>,
     /// Elección: cargo que se elige (`consejero`, `revisor_fiscal`, `comite_convivencia`,
     /// `presidente_asamblea`, `secretario_asamblea`, `comision_verificadora`).
-    #[schema(value_type = Option<String>, example = "consejero")]
+    #[schema(value_type = Option<crate::esquemas::CargoEleccion>)]
     pub cargo: Option<CargoEleccion>,
     /// En sí/no se puede omitir (se usan «Sí», «No» y «Abstención» si `con_abstencion`).
     #[serde(default)]
@@ -293,7 +293,7 @@ pub struct VotoPeticion {
     pub rotulo: Option<String>,
     pub opciones: Vec<Uuid>,
     /// `presencial` (operador) o `rotulo` (puesto de escaneo).
-    #[schema(value_type = String, example = "rotulo")]
+    #[schema(value_type = crate::esquemas::CanalVoto)]
     pub canal: Canal,
 }
 
@@ -403,7 +403,7 @@ pub struct DetalleVotoRespuesta {
     #[schema(value_type = String, example = "0.01250000")]
     pub coeficiente: Decimal,
     pub opcion_id: Uuid,
-    #[schema(value_type = String, example = "whatsapp")]
+    #[schema(value_type = crate::esquemas::CanalVoto)]
     pub canal: Canal,
     pub asistente: String,
     pub apoderado: bool,

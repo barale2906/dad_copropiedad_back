@@ -93,11 +93,11 @@ pub struct NuevaCopropiedadPeticion {
     #[schema(value_type = Option<String>, example = "900123456-8")]
     pub nit: Option<Nit>,
     /// `residencial` (por defecto), `comercial` o `mixta`.
-    #[schema(value_type = Option<String>, example = "residencial")]
+    #[schema(value_type = Option<crate::esquemas::TipoCopropiedad>)]
     pub tipo: Option<TipoCopropiedad>,
     /// `conjunto` (por defecto), `edificio`, `condominio`, `centro_comercial`, `parcelacion`
     /// u `otro`.
-    #[schema(value_type = Option<String>, example = "conjunto")]
+    #[schema(value_type = Option<crate::esquemas::FormaCopropiedad>)]
     pub forma: Option<FormaCopropiedad>,
 }
 
@@ -147,14 +147,14 @@ pub async fn crear_copropiedad(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EstadoCopropiedadPeticion {
     /// `activa`, `suspendida` o `retirada` (desde `en_configuracion` solo `activa` o `retirada`).
-    #[schema(value_type = String, example = "activa")]
+    #[schema(value_type = crate::esquemas::EstadoCopropiedad)]
     pub estado: EstadoCopropiedad,
 }
 
 /// Estado resultante.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct EstadoCopropiedadRespuesta {
-    #[schema(value_type = String, example = "activa")]
+    #[schema(value_type = crate::esquemas::EstadoCopropiedad)]
     pub estado: EstadoCopropiedad,
 }
 

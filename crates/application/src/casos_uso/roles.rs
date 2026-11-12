@@ -24,11 +24,12 @@ use crate::{
 
 use domain::Permiso;
 
-pub const ACCION_CREAR_ROL: AccionAuditoria = AccionAuditoria::new("roles.rol.crear");
-pub const ACCION_EDITAR_PERMISOS: AccionAuditoria =
+pub(crate) const ACCION_CREAR_ROL: AccionAuditoria = AccionAuditoria::new("roles.rol.crear");
+pub(crate) const ACCION_EDITAR_PERMISOS: AccionAuditoria =
     AccionAuditoria::new("roles.rol.editar_permisos");
-pub const ACCION_ASIGNAR: AccionAuditoria = AccionAuditoria::new("roles.asignacion.crear");
-pub const ACCION_REVOCAR: AccionAuditoria = AccionAuditoria::new("roles.asignacion.terminar");
+pub(crate) const ACCION_ASIGNAR: AccionAuditoria = AccionAuditoria::new("roles.asignacion.crear");
+pub(crate) const ACCION_REVOCAR: AccionAuditoria =
+    AccionAuditoria::new("roles.asignacion.terminar");
 
 /// Valida el código de un rol propio: `^[a-z][a-z0-9_]{1,59}$`.
 ///

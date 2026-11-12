@@ -91,6 +91,7 @@ pub trait RepositorioProteccionDatos: Send {
     /// Versión más alta publicada (0 si no hay ninguna).
     fn ultima_version_politica(&mut self) -> impl Future<Output = AppResult<u32>> + Send;
 
+    /// Publica una versión de la política de tratamiento.
     fn insertar_politica(
         &mut self,
         politica: &PoliticaTratamiento,
@@ -124,6 +125,7 @@ pub trait RepositorioProteccionDatos: Send {
         persona_id: PersonaId,
     ) -> impl Future<Output = AppResult<Vec<FinalidadTratamiento>>> + Send;
 
+    /// Radica una solicitud del titular.
     fn insertar_solicitud(
         &mut self,
         solicitud: &SolicitudTitular,

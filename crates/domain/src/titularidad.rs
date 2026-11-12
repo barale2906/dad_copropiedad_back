@@ -46,6 +46,7 @@ pub enum ClaseDerecho {
 }
 
 impl TipoTitularidad {
+    /// Clase de derecho del tipo de titularidad (los vigentes suman 100 % por clase).
     pub const fn clase(self) -> ClaseDerecho {
         match self {
             Self::Usufructuario => ClaseDerecho::Goce,
@@ -73,6 +74,7 @@ enum_texto!(TipoPersona {
 pub struct Porcentaje(Decimal);
 
 impl Porcentaje {
+    /// Cien por ciento.
     pub const CIEN: Self = Self(Decimal::ONE_HUNDRED);
 
     /// # Errors
@@ -88,6 +90,7 @@ impl Porcentaje {
         Ok(Self(valor))
     }
 
+    /// Porcentaje mayor que 0 y hasta 100.
     pub const fn valor(self) -> Decimal {
         self.0
     }
@@ -162,10 +165,12 @@ impl ConjuntoTitulares {
         Ok(Self(titulares))
     }
 
+    /// Titulares del conjunto.
     pub fn titulares(&self) -> &[TitularNuevo] {
         &self.0
     }
 
+    /// Representante del bien ante la copropiedad.
     pub fn representante(&self) -> PersonaId {
         self.0
             .iter()

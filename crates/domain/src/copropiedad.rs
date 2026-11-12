@@ -177,6 +177,7 @@ impl CodigoDane {
         }
     }
 
+    /// Código DANE de cinco dígitos.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -226,6 +227,7 @@ impl Telefono {
         }
     }
 
+    /// Teléfono en E.164 sin `+`.
     pub fn as_str(&self) -> &str {
         &self.0
     }

@@ -32,19 +32,22 @@ use crate::{
     },
 };
 
-pub const ACCION_GUARDAR_CATEGORIA: AccionAuditoria =
+pub(crate) const ACCION_GUARDAR_CATEGORIA: AccionAuditoria =
     AccionAuditoria::new("plataforma.directorio_categoria.guardar");
-pub const ACCION_CREAR_ANUNCIANTE: AccionAuditoria =
+pub(crate) const ACCION_CREAR_ANUNCIANTE: AccionAuditoria =
     AccionAuditoria::new("plataforma.anunciante.crear");
-pub const ACCION_EDITAR_ANUNCIANTE: AccionAuditoria =
+pub(crate) const ACCION_EDITAR_ANUNCIANTE: AccionAuditoria =
     AccionAuditoria::new("plataforma.anunciante.editar");
-pub const ACCION_VERIFICACION: AccionAuditoria =
+pub(crate) const ACCION_VERIFICACION: AccionAuditoria =
     AccionAuditoria::new("plataforma.anunciante.cambiar_estado");
-pub const ACCION_GUARDAR_FICHA: AccionAuditoria =
+pub(crate) const ACCION_GUARDAR_FICHA: AccionAuditoria =
     AccionAuditoria::new("plataforma.ficha_directorio.guardar");
-pub const ACCION_RESENAR: AccionAuditoria = AccionAuditoria::new("directorio.resena.guardar");
-pub const ACCION_REPORTAR: AccionAuditoria = AccionAuditoria::new("directorio.resena.reportar");
-pub const ACCION_MODERAR: AccionAuditoria = AccionAuditoria::new("directorio.resena.moderar");
+pub(crate) const ACCION_RESENAR: AccionAuditoria =
+    AccionAuditoria::new("directorio.resena.guardar");
+pub(crate) const ACCION_REPORTAR: AccionAuditoria =
+    AccionAuditoria::new("directorio.resena.reportar");
+pub(crate) const ACCION_MODERAR: AccionAuditoria =
+    AccionAuditoria::new("directorio.resena.moderar");
 
 /// Máximo de fichas destacadas que se devuelven a la vez.
 pub const MAXIMO_DESTACADAS: u32 = 10;

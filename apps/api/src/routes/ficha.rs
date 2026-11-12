@@ -1,16 +1,22 @@
 //! Ficha de la copropiedad: `GET/PATCH /api/v1/copropiedades/{copropiedad_id}`,
-//! `/cargos-vigentes` y `/puntos-atencion`.
+//! `/cargos-vigentes`, `/puntos-atencion` y `/capacidades` (lo que la cuenta puede hacer).
 
 use application::{
-    casos_uso::copropiedades::{self as uc, CambiosCopropiedad, FichaCompleta, NuevoPuntoAtencion},
-    puertos::copropiedades::{CargoVigente, FichaCopropiedad, PuntoAtencion},
+    casos_uso::{
+        copropiedades::{self as uc, CambiosCopropiedad, FichaCompleta, NuevoPuntoAtencion},
+        modulos::{Capacidades, capacidades as uc_capacidades},
+    },
+    puertos::{
+        RelojSistema,
+        copropiedades::{CargoVigente, FichaCopropiedad, PuntoAtencion},
+    },
 };
 use axum::{extract::State, http::StatusCode};
 use chrono::{DateTime, NaiveDate, NaiveTime, Utc, Weekday};
 use domain::{
     AdvertenciaFicha, ArchivoId, CodigoDane, DireccionCorreo, ExcepcionHorario, FormaCopropiedad,
-    FranjaSemanal, Horario, Nit, PlantillaNomenclatura, PuntoAtencionId, Telefono, TipoCopropiedad,
-    TipoPuntoAtencion,
+    FranjaSemanal, Horario, Modulo, Nit, Permiso, PlantillaNomenclatura, PuntoAtencionId, Telefono,
+    TipoCopropiedad, TipoPuntoAtencion,
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -31,6 +37,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(ver, actualizar))
         .routes(routes!(cargos_vigentes))
+        .routes(routes!(ver_capacidades))
         .routes(routes!(listar_puntos, crear_punto))
         .routes(routes!(definir_horario))
 }
@@ -44,10 +51,10 @@ pub struct DatosCopropiedadRespuesta {
     #[schema(example = "900123456-8")]
     pub nit: Option<String>,
     /// `residencial`, `comercial` o `mixta`.
-    #[schema(value_type = String, example = "residencial")]
+    #[schema(value_type = crate::esquemas::TipoCopropiedad)]
     pub tipo: TipoCopropiedad,
     /// `edificio`, `conjunto`, `condominio`, `centro_comercial`, `parcelacion` u `otro`.
-    #[schema(value_type = String, example = "conjunto")]
+    #[schema(value_type = crate::esquemas::FormaCopropiedad)]
     pub forma: FormaCopropiedad,
     pub direccion: Option<String>,
     #[schema(example = "11001")]
@@ -71,7 +78,7 @@ pub struct DatosCopropiedadRespuesta {
     #[schema(example = "America/Bogota")]
     pub zona_horaria: String,
     /// `en_configuracion`, `activa`, `suspendida` o `retirada`.
-    #[schema(example = "activa")]
+    #[schema(value_type = crate::esquemas::EstadoCopropiedad)]
     pub estado: String,
     /// Plantilla de los códigos de bienes privados (`{agrupacion}`, `{ruta}`, `{numero}`).
     #[schema(example = "{agrupacion}-{numero}")]
@@ -143,7 +150,7 @@ pub struct FichaRespuesta {
     pub cargos: Vec<CargoRespuesta>,
     /// `falta_revisor_fiscal` (art. 56), `falta_consejo_administracion` (art. 53) o
     /// `sin_cuadro_vigente`.
-    #[schema(value_type = Vec<String>, example = json!(["sin_cuadro_vigente"]))]
+    #[schema(value_type = Vec<crate::esquemas::AdvertenciaFicha>, example = json!(["sin_cuadro_vigente"]))]
     pub advertencias: Vec<AdvertenciaFicha>,
 }
 
@@ -186,9 +193,9 @@ pub struct CambiosCopropiedadPeticion {
     /// Con o sin dígito de verificación; se valida con el algoritmo de la DIAN.
     #[schema(value_type = Option<String>, example = "900123456-8")]
     pub nit: Option<Nit>,
-    #[schema(value_type = Option<String>, example = "mixta")]
+    #[schema(value_type = Option<crate::esquemas::TipoCopropiedad>)]
     pub tipo: Option<TipoCopropiedad>,
-    #[schema(value_type = Option<String>, example = "edificio")]
+    #[schema(value_type = Option<crate::esquemas::FormaCopropiedad>)]
     pub forma: Option<FormaCopropiedad>,
     pub direccion: Option<String>,
     #[schema(value_type = Option<String>, example = "11001")]
@@ -298,6 +305,48 @@ pub async fn cargos_vigentes(
     Ok(Json(cargos.into_iter().map(Into::into).collect()))
 }
 
+/// Lo que la cuenta puede hacer en la copropiedad, para mostrar u ocultar opciones. El backend
+/// vuelve a exigir el permiso y el módulo en cada operación.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CapacidadesRespuesta {
+    /// Permisos efectivos de la cuenta (unión de sus roles vigentes en la copropiedad).
+    #[schema(value_type = Vec<crate::esquemas::Permiso>)]
+    pub permisos: Vec<Permiso>,
+    /// Módulos contratados y vigentes hoy; los demás responden `modulo_no_habilitado`.
+    #[schema(value_type = Vec<crate::esquemas::Modulo>)]
+    pub modulos: Vec<Modulo>,
+}
+
+impl From<Capacidades> for CapacidadesRespuesta {
+    fn from(c: Capacidades) -> Self {
+        Self {
+            permisos: c.permisos.iter().collect(),
+            modulos: c.modulos,
+        }
+    }
+}
+
+/// Permisos de la cuenta en la copropiedad y módulos habilitados. Cualquier cuenta con un rol
+/// en la copropiedad puede consultarlo (no exige un permiso).
+#[utoipa::path(
+    get,
+    path = "/capacidades",
+    tag = ETIQUETA_COPROPIEDAD,
+    security(("bearer" = [])),
+    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    responses(
+        (status = OK, description = "Permisos y módulos", body = CapacidadesRespuesta),
+        (status = NOT_FOUND, description = "La cuenta no tiene roles en la copropiedad (`no_encontrado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn ver_capacidades(
+    State(state): State<AppState>,
+    en: EnCopropiedad,
+) -> ApiResult<Json<CapacidadesRespuesta>> {
+    let c = uc_capacidades(&state.unidad, &RelojSistema, &en.ctx).await?;
+    Ok(Json(c.into()))
+}
+
 /// Franja semanal de atención.
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct FranjaDto {
@@ -396,7 +445,7 @@ impl HorarioDto {
 pub struct PuntoAtencionRespuesta {
     pub id: Uuid,
     /// `oficina_administracion`, `porteria`, `recepcion` u `otro`.
-    #[schema(value_type = String, example = "oficina_administracion")]
+    #[schema(value_type = crate::esquemas::TipoPuntoAtencion)]
     pub tipo: TipoPuntoAtencion,
     pub nombre: String,
     pub ubicacion: Option<String>,
@@ -440,7 +489,7 @@ pub async fn listar_puntos(
 /// Punto de atención nuevo.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct NuevoPuntoPeticion {
-    #[schema(value_type = String, example = "oficina_administracion")]
+    #[schema(value_type = crate::esquemas::TipoPuntoAtencion)]
     pub tipo: TipoPuntoAtencion,
     #[schema(example = "Oficina de administración")]
     pub nombre: String,

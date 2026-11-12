@@ -52,10 +52,10 @@ pub struct CredencialRespuesta {
     pub id: Uuid,
     pub titular: TitularDto,
     /// `tarjeta_rfid`, `pin`, `qr_permanente`, `placa`, `biometria_ref` o `app_movil`.
-    #[schema(example = "tarjeta_rfid")]
+    #[schema(value_type = crate::esquemas::TipoCredencial)]
     pub tipo: String,
     /// `activa`, `suspendida`, `revocada` o `perdida`.
-    #[schema(example = "activa")]
+    #[schema(value_type = crate::esquemas::EstadoCredencial)]
     pub estado: String,
     pub vigente_desde: DateTime<Utc>,
     pub vigente_hasta: Option<DateTime<Utc>>,
@@ -103,7 +103,7 @@ pub async fn listar(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EmitirPeticion {
     pub titular: TitularDto,
-    #[schema(value_type = String, example = "tarjeta_rfid")]
+    #[schema(value_type = crate::esquemas::TipoCredencial)]
     pub tipo: TipoCredencial,
     /// Número de tarjeta, PIN, placa o id de enrolamiento (se guarda solo su huella). Se omite en
     /// `qr_permanente` y `app_movil`: el texto se genera y se devuelve una sola vez.
@@ -168,7 +168,7 @@ pub struct VerificarPeticion {
     /// Texto del QR, PIN o número de tarjeta.
     pub texto: String,
     /// Tipo de lo leído (`qr_permanente` si se omite; los QR de visita se reconocen solos).
-    #[schema(value_type = Option<String>, example = "qr_permanente")]
+    #[schema(value_type = Option<crate::esquemas::TipoCredencial>)]
     pub tipo: Option<TipoCredencial>,
     pub punto_acceso_id: Uuid,
 }
@@ -229,7 +229,7 @@ pub async fn verificar(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EstadoPeticion {
     /// `activa` (reactivar), `suspendida`, `revocada` o `perdida`.
-    #[schema(value_type = String, example = "suspendida")]
+    #[schema(value_type = crate::esquemas::EstadoCredencial)]
     pub estado: EstadoCredencial,
 }
 
@@ -300,6 +300,7 @@ pub struct AutorizacionAccesoRespuesta {
     pub id: Uuid,
     pub titular: TitularDto,
     /// `manual` (las de residentes y propietarios se derivan del censo y no aparecen aquí).
+    #[schema(value_type = crate::esquemas::OrigenAutorizacionAcceso)]
     pub origen: String,
     /// Puntos permitidos; vacío = todos.
     pub puntos: Vec<Uuid>,

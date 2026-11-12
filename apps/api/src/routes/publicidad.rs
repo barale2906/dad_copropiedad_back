@@ -117,6 +117,7 @@ pub struct SegmentacionDto {
     #[schema(example = json!(["11001"]))]
     pub municipios: Vec<String>,
     /// `residencial`, `comercial` o `mixta`.
+    #[schema(value_type = Vec<crate::esquemas::TipoCopropiedad>)]
     pub tipos: Vec<String>,
     pub bienes_min: Option<u32>,
     pub bienes_max: Option<u32>,
@@ -172,7 +173,7 @@ pub struct CampanaPeticion {
     #[schema(example = "Arreglos de noviembre")]
     pub nombre: String,
     /// `visibilidad`, `trafico`, `cupones` o `leads`.
-    #[schema(example = "trafico")]
+    #[schema(value_type = crate::esquemas::ObjetivoCampana)]
     pub objetivo: String,
     /// Una de las categorías de su ficha.
     #[schema(example = "costura")]
@@ -180,7 +181,7 @@ pub struct CampanaPeticion {
     pub inicio: DateTime<Utc>,
     pub fin: DateTime<Utc>,
     /// `tarifa_fija`, `cpm`, `cpc`, `por_redencion`, `por_lead` o `directorio_destacado`.
-    #[schema(example = "cpc")]
+    #[schema(value_type = crate::esquemas::ModeloCobro)]
     pub modelo: String,
     /// COP.
     #[schema(value_type = String, example = "200000")]
@@ -215,10 +216,12 @@ pub struct CampanaRespuesta {
     pub id: Uuid,
     pub anunciante_id: Uuid,
     pub nombre: String,
+    #[schema(value_type = crate::esquemas::ObjetivoCampana)]
     pub objetivo: String,
     pub categoria: String,
     pub inicio: DateTime<Utc>,
     pub fin: DateTime<Utc>,
+    #[schema(value_type = crate::esquemas::ModeloCobro)]
     pub modelo: String,
     #[schema(value_type = String)]
     pub presupuesto_total: Decimal,
@@ -233,6 +236,7 @@ pub struct CampanaRespuesta {
     /// El anunciante presta servicio a una copropiedad alcanzada: la moderación lo revisa.
     pub conflicto_interes: bool,
     /// `borrador`, `en_revision`, `aprobada`, `rechazada`, `activa`, `pausada` o `finalizada`.
+    #[schema(value_type = crate::esquemas::EstadoCampana)]
     pub estado: String,
     pub motivo_estado: Option<String>,
     pub creada_en: DateTime<Utc>,
@@ -267,7 +271,7 @@ impl From<Campana> for CampanaRespuesta {
 pub struct CreativoPeticion {
     /// `banner`, `tarjeta_destacada`, `oferta_cupon`, `mensaje_whatsapp`, `boletin_correo` o
     /// `pantalla_lobby`.
-    #[schema(example = "banner")]
+    #[schema(value_type = crate::esquemas::FormatoCreativo)]
     pub formato: String,
     #[schema(example = "Arreglos en 24 horas")]
     pub titulo: String,
@@ -318,6 +322,7 @@ impl TryFrom<CreativoPeticion> for ContenidoCreativo {
 pub struct CreativoRespuesta {
     pub id: Uuid,
     pub campana_id: Uuid,
+    #[schema(value_type = crate::esquemas::FormatoCreativo)]
     pub formato: String,
     pub titulo: String,
     pub texto: String,
@@ -330,6 +335,7 @@ pub struct CreativoRespuesta {
     pub cupon_usos: u32,
     pub plantilla_whatsapp: Option<String>,
     /// `pendiente`, `aprobado` o `rechazado`.
+    #[schema(value_type = crate::esquemas::EstadoCreativo)]
     pub estado: String,
     pub motivo_estado: Option<String>,
 }
@@ -394,6 +400,7 @@ pub struct AccionCampanaPeticion {
 pub struct MetricaDiaRespuesta {
     pub dia: NaiveDate,
     /// `app`, `pantalla`, `whatsapp` o `correo`.
+    #[schema(value_type = crate::esquemas::CanalPublicidad)]
     pub canal: String,
     pub impresiones: u32,
     pub clics: u32,
@@ -1153,7 +1160,7 @@ pub async fn atender_reportes(
 /// Tarifa de un modelo de cobro.
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TarifaPublicidadDto {
-    #[schema(example = "cpc")]
+    #[schema(value_type = crate::esquemas::ModeloCobro)]
     pub modelo: String,
     /// COP.
     #[schema(value_type = String, example = "800")]
@@ -1295,6 +1302,7 @@ pub struct LiquidacionRespuesta {
     #[schema(value_type = String)]
     pub costo_whatsapp: Decimal,
     /// `calculada`, `facturada` o `pagada`.
+    #[schema(value_type = crate::esquemas::EstadoLiquidacion)]
     pub estado: String,
 }
 
@@ -1363,6 +1371,7 @@ pub async fn liquidar(
 pub struct EstadoLiquidacionPeticion {
     pub mes: NaiveDate,
     /// `facturada` o `pagada`.
+    #[schema(value_type = crate::esquemas::EstadoLiquidacion)]
     pub estado: String,
 }
 
@@ -1449,6 +1458,7 @@ pub struct AutorizarPublicidadPeticion {
     /// Versión de la política que leyó y acepta (debe ser la vigente).
     pub version: u32,
     /// `app` (por defecto) o `web`.
+    #[schema(value_type = Option<crate::esquemas::MedioAutorizacion>)]
     pub medio: Option<String>,
 }
 
@@ -1524,6 +1534,7 @@ pub struct PiezaRespuesta {
     pub creativo_id: Uuid,
     pub anunciante_id: Uuid,
     pub nombre_comercial: String,
+    #[schema(value_type = crate::esquemas::FormatoCreativo)]
     pub formato: String,
     pub titulo: String,
     pub texto: String,

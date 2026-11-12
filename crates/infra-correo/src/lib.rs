@@ -42,6 +42,7 @@ pub enum ErrorCorreo {
 
 /// Medio que entrega un [`Message`] ya construido. Devuelve la referencia del servidor si la da.
 pub trait Transporte: Send + Sync {
+    /// Entrega el mensaje; devuelve el id que asigna el servidor, si lo da.
     fn entregar(
         &self,
         mensaje: Message,

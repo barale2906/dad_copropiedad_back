@@ -42,9 +42,9 @@ use crate::{
     },
 };
 
-pub const ACCION_IMPORTAR: AccionAuditoria =
+pub(crate) const ACCION_IMPORTAR: AccionAuditoria =
     AccionAuditoria::new("importaciones.bienes_privados.validar");
-pub const ACCION_CONFIRMAR: AccionAuditoria =
+pub(crate) const ACCION_CONFIRMAR: AccionAuditoria =
     AccionAuditoria::new("importaciones.bienes_privados.aplicar");
 
 /// Filas de datos máximas por archivo.

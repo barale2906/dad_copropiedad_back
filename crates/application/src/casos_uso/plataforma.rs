@@ -23,16 +23,19 @@ use crate::{
     },
 };
 
-pub const ACCION_CREAR_COPROPIEDAD: AccionAuditoria =
+pub(crate) const ACCION_CREAR_COPROPIEDAD: AccionAuditoria =
     AccionAuditoria::new("plataforma.copropiedad.crear");
-pub const ACCION_CREAR_ROL: AccionAuditoria = AccionAuditoria::new("plataforma.rol.crear");
-pub const ACCION_EDITAR_ROL: AccionAuditoria =
+pub(crate) const ACCION_CREAR_ROL: AccionAuditoria = AccionAuditoria::new("plataforma.rol.crear");
+pub(crate) const ACCION_EDITAR_ROL: AccionAuditoria =
     AccionAuditoria::new("plataforma.rol.editar_permisos");
-pub const ACCION_ASIGNAR: AccionAuditoria = AccionAuditoria::new("plataforma.asignacion.crear");
-pub const ACCION_REVOCAR: AccionAuditoria = AccionAuditoria::new("plataforma.asignacion.terminar");
-pub const ACCION_BLOQUEAR: AccionAuditoria = AccionAuditoria::new("plataforma.cuenta.bloquear");
+pub(crate) const ACCION_ASIGNAR: AccionAuditoria =
+    AccionAuditoria::new("plataforma.asignacion.crear");
+pub(crate) const ACCION_REVOCAR: AccionAuditoria =
+    AccionAuditoria::new("plataforma.asignacion.terminar");
+pub(crate) const ACCION_BLOQUEAR: AccionAuditoria =
+    AccionAuditoria::new("plataforma.cuenta.bloquear");
 
-pub const ACCION_CAMBIAR_ESTADO: AccionAuditoria =
+pub(crate) const ACCION_CAMBIAR_ESTADO: AccionAuditoria =
     AccionAuditoria::new("plataforma.copropiedad.cambiar_estado");
 
 /// Da de alta una copropiedad (en configuración) y le asigna su primer administrador.

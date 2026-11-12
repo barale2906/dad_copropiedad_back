@@ -18,7 +18,8 @@
 //! - Control de acceso: [`TransaccionPg`] implementa `RepositorioAcceso`; [`DirectorioAccesoPg`]
 //!   cruza copropiedades para el worker y autentica los puentes; los dispositivos push van en la
 //!   transacción de plataforma.
-//! - Las migraciones se ejecutan con otra conexión (dueño del esquema): [`migrar`].
+//! - Las migraciones se ejecutan con otra conexión (dueño del esquema): [`migrar`] y, para
+//!   deshacer un despliegue fallido, [`revertir_hasta`].
 //! - Preferir `sqlx::query!`/`query_as!` en los repositorios y versionar `.sqlx/`.
 
 mod acceso;
@@ -58,7 +59,7 @@ pub use cola_salida::{ColaSalidaPg, LoteSalidaPg};
 pub use error::InfraPgError;
 pub use idempotencia::IdempotenciaPg;
 pub use plataforma::{TransaccionPlataformaPg, UnidadDeTrabajoPlataformaPg};
-pub use pool::{conectar, migrar, ping, verificar_rol_restringido};
+pub use pool::{conectar, migrar, ping, revertir_en, revertir_hasta, verificar_rol_restringido};
 pub use publicidad::DirectorioPublicidadPg;
 pub use reservas::DirectorioRecordatoriosPg;
 pub use tenant::transaccion_tenant;

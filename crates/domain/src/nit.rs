@@ -66,10 +66,12 @@ impl Nit {
         u8::try_from(dv).expect("el DV es menor que 11")
     }
 
+    /// Número del NIT sin el dígito de verificación.
     pub fn numero(&self) -> &str {
         &self.numero
     }
 
+    /// Dígito de verificación.
     pub const fn dv(&self) -> u8 {
         self.dv
     }

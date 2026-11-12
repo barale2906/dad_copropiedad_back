@@ -21,10 +21,12 @@ macro_rules! id_entidad {
                 Self($generador())
             }
 
+            /// Envuelve un UUID existente (leído de la BD o de la ruta de una petición).
             pub const fn from_uuid(uuid: Uuid) -> Self {
                 Self(uuid)
             }
 
+            /// UUID subyacente, para persistirlo o exponerlo en la API.
             pub const fn as_uuid(self) -> Uuid {
                 self.0
             }
@@ -60,8 +62,16 @@ id_entidad!(
     ReunionId,
     Uuid::now_v7
 );
-id_entidad!(PreguntaId, Uuid::now_v7);
-id_entidad!(OpcionId, Uuid::now_v7);
+id_entidad!(
+    /// Pregunta que se vota en una reunión.
+    PreguntaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Opción de respuesta de una pregunta.
+    OpcionId,
+    Uuid::now_v7
+);
 id_entidad!(
     /// Bien privado o de dominio particular (Ley 675, art. 3): unidad con coeficiente de copropiedad.
     BienPrivadoId,
@@ -107,7 +117,11 @@ id_entidad!(
     FotoQuorumId,
     Uuid::now_v7
 );
-id_entidad!(ParticipacionId, Uuid::now_v7);
+id_entidad!(
+    /// Participación de un bien privado en una pregunta (una por bien, ver §9 de AGENTS.md).
+    ParticipacionId,
+    Uuid::now_v7
+);
 id_entidad!(
     /// Archivo subido a una copropiedad (`archivos`).
     ArchivoId,

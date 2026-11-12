@@ -278,7 +278,7 @@ pub async fn costo_avisos(
 pub struct NovedadRespuesta {
     pub id: Uuid,
     /// `inicio_turno`, `entrega_turno`, `ronda`, `novedad`, `incidente` u `otro`.
-    #[schema(example = "ronda")]
+    #[schema(value_type = crate::esquemas::TipoNovedadMinuta)]
     pub tipo: String,
     pub texto: String,
     pub punto_acceso_id: Option<Uuid>,
@@ -304,7 +304,7 @@ impl From<NovedadMinuta> for NovedadRespuesta {
 /// Novedad nueva.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct NovedadPeticion {
-    #[schema(value_type = String, example = "ronda")]
+    #[schema(value_type = crate::esquemas::TipoNovedadMinuta)]
     pub tipo: TipoNovedadMinuta,
     #[schema(example = "Ronda perimetral sin novedad")]
     pub texto: String,
@@ -318,7 +318,7 @@ pub struct NovedadPeticion {
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroMinutaQuery {
-    #[param(value_type = Option<String>)]
+    #[param(value_type = Option<crate::esquemas::TipoNovedadMinuta>)]
     pub tipo: Option<TipoNovedadMinuta>,
     pub desde: Option<DateTime<Utc>>,
     pub hasta: Option<DateTime<Utc>>,
@@ -399,7 +399,7 @@ pub struct FiltroEventosQuery {
     pub desde: Option<DateTime<Utc>>,
     pub hasta: Option<DateTime<Utc>>,
     pub punto_acceso_id: Option<Uuid>,
-    #[param(value_type = Option<String>, example = "denegado")]
+    #[param(value_type = Option<crate::esquemas::ResultadoAcceso>)]
     pub resultado: Option<ResultadoAcceso>,
 }
 
@@ -436,10 +436,10 @@ pub async fn listar_eventos(
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EventoManualPeticion {
     pub punto_acceso_id: Option<Uuid>,
-    #[schema(value_type = String, example = "entrada")]
+    #[schema(value_type = crate::esquemas::SentidoAcceso)]
     pub sentido: SentidoAcceso,
     /// `manual` (apertura del vigilante), `denegado` o `forzado`.
-    #[schema(value_type = String, example = "manual")]
+    #[schema(value_type = crate::esquemas::ResultadoAcceso)]
     pub resultado: ResultadoAcceso,
     pub motivo: Option<String>,
     pub placa: Option<String>,

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT modulo FROM modulos_habilitados\n             WHERE desde <= $1 AND (hasta IS NULL OR $1 < hasta)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "modulo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "modulos_habilitados",
+            "name": "modulo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "24aa52e4beadca297183d0b403f40fc707388386b558223bb75b031119d6945c"
+}

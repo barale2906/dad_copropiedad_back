@@ -43,7 +43,7 @@ fn id(ruta: (Uuid, Uuid)) -> CorrespondenciaId {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct RegistrarCorrespondenciaPeticion {
     pub bien_privado_id: Uuid,
-    #[schema(value_type = String, example = "paquete")]
+    #[schema(value_type = crate::esquemas::TipoCorrespondencia)]
     pub tipo: TipoCorrespondencia,
     #[schema(example = "Servientrega")]
     pub remitente: Option<String>,
@@ -97,7 +97,7 @@ pub async fn registrar(
 #[derive(Debug, Default, Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct FiltroCorrespondenciaQuery {
-    #[param(value_type = Option<String>, example = "recibida")]
+    #[param(value_type = Option<crate::esquemas::EstadoCorrespondencia>)]
     pub estado: Option<EstadoCorrespondencia>,
     /// Obligatorio para residentes y propietarios.
     pub bien_privado_id: Option<Uuid>,

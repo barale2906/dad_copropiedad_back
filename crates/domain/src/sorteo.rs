@@ -40,6 +40,7 @@ impl Semilla {
         }
     }
 
+    /// Semilla en hexadecimal.
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -98,6 +99,7 @@ pub struct Inscrito {
 }
 
 impl CriteriosSorteo {
+    /// Puntos de prioridad del inscrito según los criterios (discapacidad, no favorecido antes).
     pub fn puntaje(&self, i: &Inscrito) -> u32 {
         let mut p = 0;
         if i.discapacidad {

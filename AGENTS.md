@@ -186,12 +186,15 @@ El código se documenta para poder **generar** la documentación de referencia y
 Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige **utoipa** por madurez y adopción; al incorporarlo, actualizar §4.
 
 ### Reglas
-- Todo ítem `pub` lleva `///`: qué hace, **por qué** existe si no es obvio, invariantes, errores (`# Errors`) y pánicos (`# Panics`) si los hay. Cada crate y módulo lleva `//!` con su propósito y su lugar en la arquitectura.
+- Todo ítem `pub` (función, método, trait, struct, enum, constante, alias, módulo) lleva `///`: qué hace, **por qué** existe si no es obvio, invariantes, errores (`# Errors`) y pánicos (`# Panics`) si los hay. Los **campos y variantes** llevan `///` cuando su nombre y su tipo no bastan (unidades, formato, cuándo es `None`, dato personal); `pub nombre: String` no lo necesita. Cada crate y módulo lleva `//!` con su propósito y su lugar en la arquitectura. Antes de documentar algo que solo usa su crate, bajarlo a `pub(crate)` (§5). `make doc-items` lo verifica (parte de `make doc` y del CI).
 - Ejemplos en doctests cuando el uso no sea evidente; deben compilar.
 - Enlaces internos con `[`Tipo`]` (intra-doc links); `make doc` debe pasar sin advertencias.
 - **Cada endpoint REST** se anota con `#[utoipa::path]`: método, ruta, parámetros, cuerpo, respuestas (incluidos errores con su `codigo`), seguridad y etiqueta del módulo. Cada DTO de entrada/salida deriva `ToSchema` con descripciones y ejemplos. Un endpoint sin documentación OpenAPI no está terminado.
 - DTOs de la API viven en `apps/api` (no se exponen entidades de dominio directamente); versionado en la ruta (`/api/v1`).
-- Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global). Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
+- Un campo o parámetro que es un enum del dominio (o un `String` que se llena con su `as_str()`) se anota con su **esquema con nombre**: `#[schema(value_type = crate::esquemas::EstadoTicket)]` (o `Option<…>` / `Vec<…>`; `#[param(…)]` en filtros). Un enum nuevo se declara en `api::esquemas` (tipo espejo; los valores salen de `TODOS`). Nunca `value_type = String` para un enum: el cliente del frontend perdería los valores.
+- Las respuestas 401/403/404 que imponen los extractores de sesión las agrega `openapi::completar_respuestas_comunes`; cada handler documenta además sus errores propios. Las rutas con `LimiteAuth`/`LimitePublico` documentan el 429.
+- Lo que el contrato no cuenta (sesión y renovación, reintentos, paginación, archivos, WebSocket, cabeceras de credenciales) está en `docs/guia-frontend.md`: actualizarla cuando cambie una de esas convenciones.
+- Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad; `/capacidades` da los permisos de la cuenta y los módulos contratados), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global). Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
 - Rutas sin sesión o con credenciales adivinables llevan el extractor `LimiteAuth` o `LimitePublico` (`api::limite`).
 - Reintentos: los `POST` con sesión aceptan `Idempotency-Key` (middleware `api::idempotencia`, tabla de plataforma `peticiones_idempotentes`, 24 h). No sustituye la idempotencia de negocio dentro de la transacción (tickets, `wamid`, votos).
 - Otras rutas: `/api/v1/puentes/…` (sin sesión de persona: token de máquina del puente, esquema `puente`), `/api/v1/auth/…` (sin sesión: registro, inicio de sesión), `/api/v1/organizaciones/{organizacion_id}/…`, `/api/v1/permisos` y `/api/v1/archivos/descarga` (sin sesión: el enlace firmado es la credencial, ADR 0003), `/api/v1/copropiedades/{copropiedad_id}/papeleta` (sin sesión: el token del enlace personal en `X-Papeleta` es la credencial, ADR 0010) `/api/v1/copropiedades/{copropiedad_id}/directorio/publico` (sin sesión: el token del enlace público en `X-Enlace-Directorio`, ADR 0014) y `/api/v1/copropiedades/{copropiedad_id}/publicidad/pantalla` (sin sesión: el token de la pantalla del lobby en `X-Pantalla`, ADR 0015). Portal del anunciante en `/api/v1/anunciantes/…` (`CuentaAutenticada` + papel en la organización). El WebSocket del tablero en vivo acepta el token como subprotocolo (`EnCopropiedadWs`), nunca en la URL.
@@ -284,10 +287,11 @@ Una tarea está terminada solo si:
 | Ejecutar | `make api` · `make gateway` · `make dev` | `cargo api` · `cargo gateway` · `cargo puente` (puente de acceso; `PUENTE_*`) · `bacon` |
 | Primer superusuario | `make superusuario USUARIO=admin CORREO=a@b.co` | `DAD_ADMIN_CONTRASENA=… cargo run --bin dad_admin -- crear-superusuario --usuario admin` |
 | Migrar en producción | `docker compose -f docker-compose.prod.yml run --rm migracion` | `dad_admin migrar` (dueño en `DATABASE_URL`) |
+| Revertir en producción | `docker compose -f docker-compose.prod.yml run --rm migracion dad_admin revertir --hasta <versión> --confirmar` | Tras un respaldo; ver `docs/despliegue.md` §5 |
 | Imagen de producción | — | `docker build -t dad_copropiedad:local .` |
 | Verificación completa | `make verificar` | `cargo fmt --all --check && cargo lint && cargo pruebas` |
 | Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) + `cargo test --workspace --doc` (doctests) |
-| Documentación | `make doc` | `cargo doc --workspace --no-deps` |
+| Documentación | `make doc` (incluye `make doc-items`: ítems públicos sin `///`) | `cargo doc --workspace --no-deps` |
 | Contrato OpenAPI | `make openapi` | `ACTUALIZAR_OPENAPI=1 cargo nextest run -p api --test contrato_openapi` |
 | Migraciones | `make migracion NOMBRE=x` · `make migrar` · `make revertir` | `sqlx migrate add -r x` … |
 | Dependencias | `make deny` · `make audit` | `cargo deny check` · `cargo audit` |

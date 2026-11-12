@@ -42,7 +42,8 @@ necesitan hoja de vida, mantenimiento preventivo y control de certificaciones (p
   `sesiones_chat` con vencimiento. Cada turno se cierra en **una transacción** que guarda la
   sesión, encola las respuestas en el outbox y marca el `wamid` (`mensajes_entrantes`); los
   casos de uso que invoca son idempotentes por `wamid`, así un reintento de Meta no duplica nada.
-  Redis queda para el pub/sub de resultados de las asambleas (plan 06).
+  Redis queda para el pub/sub de resultados de las asambleas (plan 06). *Superado por el
+  ADR 0010: el tablero en vivo usa `LISTEN/NOTIFY` de PostgreSQL y Redis se retiró.*
 - Máquina de estados en `application::casos_uso::chat` (menú, preguntas frecuentes, reportar
   daño con foto, mis solicitudes, reservas, parqueadero de visitantes, citas, bandeja humana);
   el gateway solo traduce el webhook. Reservar exige cuenta en la plataforma: se usan sus
