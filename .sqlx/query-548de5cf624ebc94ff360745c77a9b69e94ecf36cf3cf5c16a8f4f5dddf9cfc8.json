@@ -1,0 +1,167 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT e.id, e.cuenta_tesoreria_id, e.desde, e.hasta, e.formato, e.version_lector,\n                    e.archivo_id, e.sha256, e.saldo_inicial, e.saldo_final, e.cargado_por,\n                    e.cargado_en,\n                    (SELECT count(*) FROM movimientos_extracto m\n                     WHERE m.tenant_id = e.tenant_id AND m.extracto_id = e.id) AS \"movimientos!\"\n             FROM extractos_bancarios e WHERE e.cuenta_tesoreria_id = $1\n             ORDER BY e.hasta DESC, e.cargado_en DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "cuenta_tesoreria_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "cuenta_tesoreria_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "desde"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "formato",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "formato"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "version_lector",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "version_lector"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "sha256",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "sha256"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "saldo_inicial",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "saldo_inicial"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "saldo_final",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "saldo_final"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "cargado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "cargado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "cargado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "extractos_bancarios",
+            "name": "cargado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "movimientos!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      null
+    ]
+  },
+  "hash": "548de5cf624ebc94ff360745c77a9b69e94ecf36cf3cf5c16a8f4f5dddf9cfc8"
+}

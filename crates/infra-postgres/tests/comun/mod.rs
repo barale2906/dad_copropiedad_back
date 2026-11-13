@@ -23,6 +23,8 @@ pub async fn pool_como_app(pool: &PgPool) -> PgPool {
 }
 
 /// Crea una copropiedad (entidad + extensión de la vertical PH) con el dueño del esquema.
+// Las pruebas de entidades sin vertical (tesorería) no la usan.
+#[allow(dead_code)]
 pub async fn crear_copropiedad(pool: &PgPool) -> TenantId {
     let tenant = insertar_entidad(pool, "PH de prueba").await;
     sqlx::query("INSERT INTO copropiedades (id) VALUES ($1)")

@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT coalesce(sum(l.debito - l.credito), 0) AS \"saldo!\"\n             FROM lineas_comprobante l\n             JOIN comprobantes c ON c.tenant_id = l.tenant_id AND c.id = l.comprobante_id\n             WHERE l.cuenta_id = $1 AND c.estado = 'contabilizado' AND c.fecha <= $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "saldo!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "adc10b180dd9af18d6e27fc0c4ee93709a7020c5f746062ad322ecb2732e6d33"
+}

@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO recibos_caja (id, tenant_id, cuenta_tesoreria_id, persona_id, fecha, valor,\n                 medio, referencia, descripcion, soporte_archivo_id, estado, comprobante_id,\n                 registrado_por, registrado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Numeric",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "49ef3eead227621ce17ca2cbe61f6a33f8b221b60b28660c0323f4399d551d7f"
+}

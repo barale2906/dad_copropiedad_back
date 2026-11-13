@@ -552,10 +552,6 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxContable,
 {
-    let motivo = texto("motivo", motivo, 500)?;
-    if motivo.chars().count() < 5 {
-        return Err(error_validacion("explique el motivo del reverso"));
-    }
     let mut tx = abrir(
         unidad,
         reloj,
@@ -563,6 +559,29 @@ where
         Permiso::ContabilidadComprobantesRevertir,
     )
     .await?;
+    let reverso = revertir_en(&mut tx, reloj, ctx, id, motivo, fecha).await?;
+    tx.confirmar().await?;
+    Ok(reverso)
+}
+
+/// Revierte un comprobante **dentro de la transacción del módulo** que anula su documento (un
+/// recibo, un egreso, una factura). El permiso lo exige quien llama.
+///
+/// # Errors
+///
+/// Los mismos de [`revertir`], salvo el permiso.
+pub(crate) async fn revertir_en<T: TxContable>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    id: ComprobanteId,
+    motivo: &str,
+    fecha: Option<NaiveDate>,
+) -> AppResult<Comprobante> {
+    let motivo = texto("motivo", motivo, 500)?;
+    if motivo.chars().count() < 5 {
+        return Err(error_validacion("explique el motivo del reverso"));
+    }
     let original = tx
         .comprobante(id)
         .await?
@@ -585,7 +604,7 @@ where
         .find(|t| t.id == original.tipo_comprobante_id)
         .ok_or(AppError::NoEncontrado("tipo de comprobante"))?;
     let reverso = guardar_y_contabilizar(
-        &mut tx,
+        tx,
         reloj,
         ctx,
         Contabilizacion {
@@ -610,7 +629,6 @@ where
             .con_detalle(detalle),
     )
     .await?;
-    tx.confirmar().await?;
     Ok(reverso)
 }
 

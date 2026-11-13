@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cuentas_tesoreria SET nombre = $2, destinacion = $3, activa = $4 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b6bcdc0d11875c88c62bd0f57e1f54e28725fc2edd7e35b16eac64eca72e1801"
+}

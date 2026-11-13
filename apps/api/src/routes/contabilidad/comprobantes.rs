@@ -509,6 +509,8 @@ pub async fn previsualizar_documento(
                 persona: i.persona_id.map(PersonaId::from_uuid),
                 centro_costo: i.centro_costo_id.map(CentroCostoId::from_uuid),
                 descripcion: i.descripcion,
+                cuenta: None,
+                base: None,
             })
             .collect(),
     };

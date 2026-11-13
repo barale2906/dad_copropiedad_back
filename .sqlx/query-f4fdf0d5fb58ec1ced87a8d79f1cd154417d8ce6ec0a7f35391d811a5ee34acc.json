@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT recibo_id AS \"recibo_id!\" FROM eventos_pasarela\n             WHERE proveedor = $1 AND referencia = $2 AND recibo_id IS NOT NULL\n             ORDER BY ocurrido_en LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "recibo_id!",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "recibo_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "f4fdf0d5fb58ec1ced87a8d79f1cd154417d8ce6ec0a7f35391d811a5ee34acc"
+}

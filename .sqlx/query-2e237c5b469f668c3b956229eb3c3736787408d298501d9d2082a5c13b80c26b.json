@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE egresos SET estado = $2, fecha = $3, autorizado_por = $4, autorizado_en = $5,\n                 pagado_en = $6, comprobante_id = $7, motivo_anulacion = $8\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Date",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2e237c5b469f668c3b956229eb3c3736787408d298501d9d2082a5c13b80c26b"
+}

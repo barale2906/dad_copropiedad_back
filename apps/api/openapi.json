@@ -3041,6 +3041,204 @@
         ]
       }
     },
+    "/api/v1/plataforma/retenciones": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Catálogo de retenciones (todas las versiones) y valores de la UVT.",
+        "operationId": "catalogo_retenciones",
+        "responses": {
+          "200": {
+            "description": "Catálogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoRetencionesRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Agrega una versión de un concepto de retención (la anterior del mismo código queda vigente\nhasta el día antes de `vigente_desde`).",
+        "operationId": "crear_concepto_retencion",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoConceptoRetencionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConceptoRetencionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay una versión con esa fecha (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Código, tarifa o municipio inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/uvt/{anio}": {
+      "put": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Crea o corrige el valor de la UVT del año.",
+        "operationId": "guardar_uvt",
+        "parameters": [
+          {
+            "name": "anio",
+            "in": "path",
+            "description": "Año",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UvtPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "UVT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UvtRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Año o valor inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/plataforma/plantillas-contables": {
       "get": {
         "tags": [
@@ -34763,6 +34961,3639 @@
           }
         ]
       }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Cuentas de tesorería.",
+        "operationId": "listar_cuentas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CuentaTesoreriaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Crea una cuenta de tesorería respaldada por una cuenta contable de movimiento de naturaleza\ndébito. Del número de cuenta solo se guardan los cuatro últimos dígitos.",
+        "operationId": "crear_cuenta",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaCuentaTesoreriaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Cuenta creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuentaTesoreriaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre o cuenta contable ya usados (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Datos del banco o cuenta contable inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}": {
+      "put": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Cambia el nombre, la destinación o si la cuenta está activa.",
+        "operationId": "actualizar_cuenta",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambioCuentaTesoreriaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuentaTesoreriaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Nombre ya usado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/recibos": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Recibos de caja por fecha descendente (a lo sumo 500).",
+        "operationId": "listar_recibos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_tesoreria_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sin_identificar",
+            "in": "query",
+            "description": "Solo los no identificados.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recibos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReciboRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Registra y contabiliza un recibo de caja; lo que no se aplica a facturas queda sin aplicar.",
+        "operationId": "registrar_recibo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoReciboPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Recibo registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.recibos.registrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cuenta, tercero o factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cuenta inactiva o factura que no admite recaudos (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Aplicaciones inválidas (`validacion`) o sin regla, periodo cerrado o descuadre (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/recibos/{recibo_id}": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Recibo de caja con sus aplicaciones.",
+        "operationId": "ver_recibo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibo_id",
+            "in": "path",
+            "description": "Recibo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recibo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/recibos/{recibo_id}/aplicaciones": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Aplica lo que el recibo tiene sin aplicar a una factura de venta (si no tenía pagador, queda\nidentificado con el cliente de la factura).",
+        "operationId": "aplicar_recibo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibo_id",
+            "in": "path",
+            "description": "Recibo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AplicarReciboPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recibo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.recibos.registrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recibo anulado o factura que no admite recaudos (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Supera lo sin aplicar o el saldo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/recibos/{recibo_id}/anulacion": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Anula el recibo: revierte su comprobante y devuelve el saldo a las facturas.",
+        "operationId": "anular_recibo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibo_id",
+            "in": "path",
+            "description": "Recibo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnulacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recibo anulado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.recibos.registrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está anulado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin motivo (`validacion`) o periodo cerrado (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/egresos": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Egresos por fecha descendente (a lo sumo 500).",
+        "operationId": "listar_egresos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoEgreso"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Egresos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EgresoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Registra un egreso por autorizar (facturas de proveedor del beneficiario, gastos directos o\nambos).",
+        "operationId": "registrar_egreso",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoEgresoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Egreso registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EgresoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.egresos.registrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Cuenta inactiva o factura que no admite pagos (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin facturas ni gastos, saldo superado o falta el número del cheque (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/egresos/{egreso_id}": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Egreso.",
+        "operationId": "ver_egreso",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "egreso_id",
+            "in": "path",
+            "description": "Egreso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Egreso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EgresoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/egresos/{egreso_id}/autorizacion": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Autoriza un egreso que registró **otra** cuenta (segregación de funciones).",
+        "operationId": "autorizar_egreso",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "egreso_id",
+            "in": "path",
+            "description": "Egreso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Egreso autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EgresoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.egresos.autorizar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Lo registró la misma cuenta (`conflicto`) o el estado no lo permite (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/egresos/{egreso_id}/pago": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Registra el pago de un egreso autorizado: lo contabiliza y abona las facturas que paga.",
+        "operationId": "pagar_egreso",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "egreso_id",
+            "in": "path",
+            "description": "Egreso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoEgresoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Egreso pagado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EgresoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.egresos.registrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está autorizado (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin regla, periodo cerrado o descuadre (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/egresos/{egreso_id}/anulacion": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Anula el egreso; si ya se pagó, revierte su comprobante y devuelve el saldo a las facturas.",
+        "operationId": "anular_egreso",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "egreso_id",
+            "in": "path",
+            "description": "Egreso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnulacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Egreso anulado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EgresoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.egresos.registrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está anulado (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/retenciones": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Conceptos de retención del catálogo de la plataforma.",
+        "operationId": "listar_retenciones",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "vigentes_en",
+            "in": "query",
+            "description": "Solo las versiones vigentes en la fecha (sin ella, todas).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conceptos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConceptoRetencionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/uvt": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Valores de la UVT por año.",
+        "operationId": "listar_uvt",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "UVT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UvtRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/facturas": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Facturas de proveedor por vencimiento (a lo sumo 500, sin líneas).",
+        "operationId": "listar_facturas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoFacturaProveedor"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facturas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaProveedorRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Registra una factura de proveedor y calcula sus retenciones con la tarifa vigente en su\nfecha. Un número que el proveedor ya usó se rechaza salvo excepción con motivo.",
+        "operationId": "registrar_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaFacturaProveedorPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Factura registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaProveedorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_proveedor.gestionar` (o `tesoreria.egresos.autorizar` para la excepción) o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tercero inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Factura repetida del proveedor (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dato inválido o concepto no vigente (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/facturas/{factura_id}": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Factura de proveedor con sus líneas y retenciones.",
+        "operationId": "ver_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Factura",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaProveedorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/facturas/{factura_id}/causacion": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Causa la factura (gasto, IVA, retenciones y cuenta por pagar) en su fecha.",
+        "operationId": "causar_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Factura causada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaProveedorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_proveedor.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se causó o se anuló (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin regla, periodo cerrado o descuadre (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/facturas/{factura_id}/anulacion": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Anula una factura sin pagos (si estaba causada, revierte su comprobante).",
+        "operationId": "anular_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnulacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Factura anulada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaProveedorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_proveedor.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tiene pagos o ya se anuló (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/certificados/{persona_id}": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Certificado de las retenciones practicadas al tercero en el periodo.",
+        "operationId": "ver_certificado",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Tercero",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Certificado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificadoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_proveedor.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/certificados/{persona_id}/pdf": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "El certificado de retenciones en PDF.",
+        "operationId": "certificado_pdf",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Tercero",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del certificado",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_proveedor.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/certificados/{persona_id}/envio": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Envía el certificado por correo al correo de facturación del tercero (o a su correo).",
+        "operationId": "enviar_certificado",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Tercero",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Certificado en la cola de correo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvioCertificadoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_proveedor.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El tercero no tiene correo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/ventas/facturas": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Facturas de venta por vencimiento (a lo sumo 500, sin líneas).",
+        "operationId": "listar_facturas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoFacturaVenta"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facturas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaVentaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Crea una factura de venta en borrador (el IVA de cada línea lo elige quien factura).",
+        "operationId": "crear_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaFacturaVentaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Factura en borrador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaVentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_venta.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cliente inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El documento origen ya tiene factura (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Línea inválida (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/ventas/facturas/{factura_id}": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Factura de venta con sus líneas.",
+        "operationId": "ver_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Factura",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaVentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Borra una factura en borrador.",
+        "operationId": "eliminar_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Borrada"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_venta.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se emitió (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/ventas/facturas/{factura_id}/emision": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Emite la factura: la contabiliza y le asigna el número de su comprobante `FV`.",
+        "operationId": "emitir_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Factura emitida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaVentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_venta.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está en borrador (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin regla, periodo cerrado o descuadre (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/ventas/facturas/{factura_id}/anulacion": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Anula una factura emitida sin recaudos (revierte su comprobante).",
+        "operationId": "anular_factura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnulacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Factura anulada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaVentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.facturas_venta.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tiene recaudos o no se emitió (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/ventas/cartera": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Cartera de clientes por edades a la fecha de corte (saldo actual de cada factura en el tramo\nde sus días vencidos).",
+        "operationId": "cartera",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cartera",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaCarteraRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/extractos/vista-previa": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Lee el extracto y muestra lo que se importaría, con los problemas por fila (no guarda nada).",
+        "operationId": "previsualizar_extracto",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Vista previa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VistaPreviaExtractoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Archivo o mapeo inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/extractos": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Extractos importados en la cuenta, más recientes primero.",
+        "operationId": "listar_extractos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Extractos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExtractoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Importa el extracto (el archivo queda como soporte). El mismo archivo no se importa dos\nveces; un extracto con filas inválidas se rechaza (revíselo con la vista previa).",
+        "operationId": "importar_extracto",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExtractoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Extracto importado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se importó en la cuenta (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Filas inválidas o sin movimientos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/movimientos": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Movimientos del extracto de la cuenta entre dos fechas.",
+        "operationId": "listar_movimientos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoMovimientoExtracto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Movimientos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MovimientoExtractoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/libros": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Líneas contabilizadas de la cuenta contable del banco entre dos fechas.",
+        "operationId": "listar_libros",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "solo_pendientes",
+            "in": "query",
+            "description": "Solo las no conciliadas.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Líneas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LineaLibrosRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/conciliacion-automatica": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Concilia automáticamente por valor, fecha (con tolerancia) y referencia; lo que no casa queda\npara la conciliación manual.",
+        "operationId": "conciliar_automaticamente",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConciliacionAutomaticaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Conciliaciones hechas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConciliacionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Tolerancia mayor a 10 días (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/conciliaciones": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Conciliaciones de la cuenta, más recientes primero.",
+        "operationId": "listar_conciliaciones",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conciliaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConciliacionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Concilia a mano movimientos y líneas de libros cuyas sumas coinciden.",
+        "operationId": "conciliar_manual",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConciliacionManualPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Conciliación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConciliacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Partida ajena o conciliada (`validacion`) o sumas distintas (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/conciliaciones/{conciliacion_id}/deshacer": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Deshace una conciliación con un registro nuevo (sus movimientos vuelven a pendientes).",
+        "operationId": "deshacer_conciliacion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "conciliacion_id",
+            "in": "path",
+            "description": "Conciliación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Registro de deshacer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConciliacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se deshizo o es un deshacer (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/movimientos/{movimiento_id}/partida-conciliatoria": {
+      "put": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Marca un movimiento pendiente como partida conciliatoria (o lo devuelve a pendiente).",
+        "operationId": "marcar_partida",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "movimiento_id",
+            "in": "path",
+            "description": "Movimiento del extracto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartidaConciliatoriaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Movimiento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientoExtractoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Está conciliado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/movimientos/{movimiento_id}/recibo": {
+      "post": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Crea un recibo no identificado por un crédito del extracto y lo concilia con él.",
+        "operationId": "recibo_no_identificado",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "movimiento_id",
+            "in": "path",
+            "description": "Movimiento del extracto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReciboNoIdentificadoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Recibo no identificado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar` o `tesoreria.recibos.registrar`, o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No es un crédito pendiente (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/informe-conciliacion": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Informe de conciliación: saldo del extracto, de libros y partidas conciliatorias.",
+        "operationId": "informe",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta de tesorería",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Informe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformeConciliacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -34800,6 +38631,14 @@
             "example": "enviar_a_revision"
           }
         }
+      },
+      "AccionConciliacionDto": {
+        "type": "string",
+        "description": "Qué hace un registro de conciliación.",
+        "enum": [
+          "conciliar",
+          "deshacer"
+        ]
       },
       "AccionPregunta": {
         "type": "string",
@@ -35283,6 +39122,19 @@
           "copropiedad"
         ]
       },
+      "AnulacionPeticion": {
+        "type": "object",
+        "description": "Anulación de un documento (se revierte su comprobante).",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "example": "Consignación registrada dos veces"
+          }
+        }
+      },
       "AnuncianteRespuesta": {
         "type": "object",
         "description": "Anunciante del directorio.",
@@ -35406,6 +39258,66 @@
           }
         }
       },
+      "AplicacionPeticion": {
+        "type": "object",
+        "description": "Aplicación de un recibo a una factura de venta.",
+        "required": [
+          "factura_venta_id",
+          "valor"
+        ],
+        "properties": {
+          "factura_venta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string",
+            "example": "250000"
+          }
+        }
+      },
+      "AplicacionRespuesta": {
+        "type": "object",
+        "description": "Aplicación de un recibo.",
+        "required": [
+          "id",
+          "factura_venta_id",
+          "valor",
+          "aplicada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "factura_venta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string",
+            "example": "250000"
+          },
+          "aplicada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "comprobante_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "anulada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "AplicarPlantillaPeticion": {
         "type": "object",
         "description": "Aplicar una plantilla a la entidad.",
@@ -35420,6 +39332,32 @@
           "previsualizar": {
             "type": "boolean",
             "description": "`true` = solo mostrar qué haría, sin cambiar nada."
+          }
+        }
+      },
+      "AplicarReciboPeticion": {
+        "type": "object",
+        "description": "Aplicación posterior de un recibo.",
+        "required": [
+          "factura_venta_id",
+          "valor"
+        ],
+        "properties": {
+          "factura_venta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string",
+            "example": "250000"
+          },
+          "fecha": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Fecha contable (por defecto, hoy)."
           }
         }
       },
@@ -36520,6 +40458,28 @@
           }
         }
       },
+      "CambioCuentaTesoreriaPeticion": {
+        "type": "object",
+        "description": "Cambios de una cuenta de tesorería.",
+        "required": [
+          "nombre",
+          "activa"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "destinacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
       "CambioRespuesta": {
         "type": "object",
         "description": "Propuesta de cambio del censo.",
@@ -37542,6 +41502,28 @@
           }
         }
       },
+      "CatalogoRetencionesRespuesta": {
+        "type": "object",
+        "description": "Catálogo de retenciones de la plataforma: todas las versiones de los conceptos y la UVT.",
+        "required": [
+          "conceptos",
+          "uvt"
+        ],
+        "properties": {
+          "conceptos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConceptoRetencionRespuesta"
+            }
+          },
+          "uvt": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UvtRespuesta"
+            }
+          }
+        }
+      },
       "CategoriaBienComun": {
         "type": "string",
         "description": "Categoría de bien común.",
@@ -37726,6 +41708,60 @@
           },
           "activo": {
             "type": "boolean"
+          }
+        }
+      },
+      "CertificadoRespuesta": {
+        "type": "object",
+        "description": "Certificado de retenciones de un tercero.",
+        "required": [
+          "entidad",
+          "tercero",
+          "desde",
+          "hasta",
+          "filas",
+          "total_base",
+          "total_retenido"
+        ],
+        "properties": {
+          "entidad": {
+            "type": "string"
+          },
+          "entidad_nit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tercero": {
+            "type": "string"
+          },
+          "tercero_documento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Dato personal si el tercero es persona natural."
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "filas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaCertificadoRespuesta"
+            }
+          },
+          "total_base": {
+            "type": "string"
+          },
+          "total_retenido": {
+            "type": "string"
           }
         }
       },
@@ -38257,6 +42293,183 @@
           "actualizado_en": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ConceptoRetencionRespuesta": {
+        "type": "object",
+        "description": "Versión de un concepto de retención.",
+        "required": [
+          "id",
+          "codigo",
+          "impuesto",
+          "nombre",
+          "base_minima_uvt",
+          "tarifa",
+          "fuente",
+          "vigente_desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "servicios_generales"
+          },
+          "impuesto": {
+            "$ref": "#/components/schemas/ImpuestoRetencion"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "base_minima_uvt": {
+            "type": "string",
+            "example": "4"
+          },
+          "tarifa": {
+            "type": "string",
+            "description": "Porcentaje.",
+            "example": "4"
+          },
+          "cuenta_sugerida": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fuente": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        }
+      },
+      "ConciliacionAutomaticaPeticion": {
+        "type": "object",
+        "description": "Conciliación automática.",
+        "required": [
+          "desde",
+          "hasta"
+        ],
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "tolerancia_dias": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Días de diferencia admitidos entre el extracto y los libros (máximo 10).",
+            "minimum": 0
+          }
+        }
+      },
+      "ConciliacionManualPeticion": {
+        "type": "object",
+        "description": "Conciliación manual.",
+        "required": [
+          "movimientos",
+          "lineas"
+        ],
+        "properties": {
+          "movimientos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaRefDto"
+            }
+          }
+        }
+      },
+      "ConciliacionRespuesta": {
+        "type": "object",
+        "description": "Registro de conciliación.",
+        "required": [
+          "id",
+          "cuenta_tesoreria_id",
+          "accion",
+          "modo",
+          "en",
+          "movimientos",
+          "lineas",
+          "deshecha"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accion": {
+            "$ref": "#/components/schemas/AccionConciliacionDto"
+          },
+          "deshace_a": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Conciliación que deshace (solo en `deshacer`)."
+          },
+          "modo": {
+            "$ref": "#/components/schemas/ModoConciliacion"
+          },
+          "por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "movimientos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaRefDto"
+            }
+          },
+          "deshecha": {
+            "type": "boolean"
           }
         }
       },
@@ -39618,6 +43831,70 @@
           }
         }
       },
+      "CuentaTesoreriaRespuesta": {
+        "type": "object",
+        "description": "Cuenta de tesorería.",
+        "required": [
+          "id",
+          "tipo",
+          "nombre",
+          "cuenta_contable_id",
+          "activa",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoCuentaTesoreria"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "banco": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "numero_enmascarado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "****8901"
+          },
+          "tipo_cuenta": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TipoCuentaBancaria"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cuenta_contable_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "destinacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "activa": {
+            "type": "boolean"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "CumplimientoPeticion": {
         "type": "object",
         "description": "Cumplimiento nuevo.",
@@ -40467,6 +44744,122 @@
           "sin_voto_ni_quorum"
         ]
       },
+      "EgresoRespuesta": {
+        "type": "object",
+        "description": "Egreso.",
+        "required": [
+          "id",
+          "cuenta_tesoreria_id",
+          "persona_id",
+          "fecha",
+          "valor",
+          "medio",
+          "descripcion",
+          "estado",
+          "registrado_por",
+          "registrado_en",
+          "facturas",
+          "gastos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor": {
+            "type": "string",
+            "example": "1126500"
+          },
+          "medio": {
+            "$ref": "#/components/schemas/MedioEgreso"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoEgreso"
+          },
+          "registrado_por": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registrado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "autorizado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "autorizado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "pagado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "comprobante_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "motivo_anulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "facturas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PagoFacturaDto"
+            }
+          },
+          "gastos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GastoRespuesta"
+            }
+          }
+        }
+      },
       "EleccionPeticion": {
         "type": "object",
         "description": "Vigencia de los roles de los elegidos.",
@@ -40827,6 +45220,19 @@
           }
         }
       },
+      "EnvioCertificadoRespuesta": {
+        "type": "object",
+        "description": "A dónde se envió el certificado.",
+        "required": [
+          "para"
+        ],
+        "properties": {
+          "para": {
+            "type": "string",
+            "description": "Correo del tercero (dato personal)."
+          }
+        }
+      },
       "ErrorFilaRespuesta": {
         "type": "object",
         "description": "Error de una fila (sin el valor de la celda).",
@@ -40846,6 +45252,23 @@
               "string",
               "null"
             ]
+          },
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorLecturaRespuesta": {
+        "type": "object",
+        "description": "Problema de una fila del extracto.",
+        "required": [
+          "fila",
+          "mensaje"
+        ],
+        "properties": {
+          "fila": {
+            "type": "integer",
+            "minimum": 0
           },
           "mensaje": {
             "type": "string"
@@ -41049,6 +45472,16 @@
           "historico"
         ]
       },
+      "EstadoEgreso": {
+        "type": "string",
+        "description": "Estado de un egreso (registrar → autorizar → pagar).",
+        "enum": [
+          "por_autorizar",
+          "autorizado",
+          "pagado",
+          "anulado"
+        ]
+      },
       "EstadoEnlaceRespuesta": {
         "type": "object",
         "description": "Estado del enlace público del directorio.",
@@ -41076,6 +45509,28 @@
             "example": "https://wa.me/573000000000?text=Busco%20"
           }
         }
+      },
+      "EstadoFacturaProveedor": {
+        "type": "string",
+        "description": "Estado de una factura de proveedor.",
+        "enum": [
+          "registrada",
+          "causada",
+          "pagada_parcial",
+          "pagada",
+          "anulada"
+        ]
+      },
+      "EstadoFacturaVenta": {
+        "type": "string",
+        "description": "Estado de una factura de venta.",
+        "enum": [
+          "borrador",
+          "emitida",
+          "pagada_parcial",
+          "pagada",
+          "anulada"
+        ]
       },
       "EstadoImportacion": {
         "type": "string",
@@ -41147,6 +45602,15 @@
           "activa",
           "fallecida",
           "trasladada"
+        ]
+      },
+      "EstadoMovimientoExtracto": {
+        "type": "string",
+        "description": "Estado de un movimiento del extracto.",
+        "enum": [
+          "pendiente",
+          "conciliado",
+          "partida_conciliatoria"
         ]
       },
       "EstadoOrden": {
@@ -41311,6 +45775,14 @@
           "pendiente",
           "aprobada",
           "rechazada"
+        ]
+      },
+      "EstadoRecibo": {
+        "type": "string",
+        "description": "Estado de un recibo de caja.",
+        "enum": [
+          "registrado",
+          "anulado"
         ]
       },
       "EstadoReclamacion": {
@@ -41967,6 +46439,337 @@
           }
         }
       },
+      "ExtractoPeticion": {
+        "type": "object",
+        "description": "Extracto a leer o importar. El archivo va en Base64.",
+        "required": [
+          "nombre_archivo",
+          "archivo_base64",
+          "formato"
+        ],
+        "properties": {
+          "nombre_archivo": {
+            "type": "string",
+            "example": "extracto-marzo.csv"
+          },
+          "archivo_base64": {
+            "type": "string",
+            "description": "Contenido del archivo en Base64 (CSV, XLSX o el texto Asobancaria)."
+          },
+          "formato": {
+            "$ref": "#/components/schemas/FormatoExtracto"
+          },
+          "mapeo": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/MapeoColumnasDto",
+                "description": "Obligatorio con `planilla`."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "saldo_inicial": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "saldo_final": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "ExtractoRespuesta": {
+        "type": "object",
+        "description": "Extracto importado.",
+        "required": [
+          "id",
+          "cuenta_tesoreria_id",
+          "desde",
+          "hasta",
+          "formato",
+          "version_lector",
+          "archivo_id",
+          "cargado_en",
+          "movimientos"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "formato": {
+            "$ref": "#/components/schemas/FormatoExtracto"
+          },
+          "version_lector": {
+            "type": "string",
+            "example": "planilla-1"
+          },
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "saldo_inicial": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "saldo_final": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cargado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "movimientos": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "FacturaProveedorRespuesta": {
+        "type": "object",
+        "description": "Factura de proveedor (las líneas solo en el detalle).",
+        "required": [
+          "id",
+          "persona_id",
+          "prefijo",
+          "numero",
+          "fecha",
+          "vencimiento",
+          "descripcion",
+          "subtotal",
+          "iva",
+          "retenciones",
+          "neto_pagar",
+          "pagado",
+          "estado",
+          "registrada_en",
+          "lineas"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prefijo": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "origen": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OrigenDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cufe": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "iva": {
+            "type": "string"
+          },
+          "retenciones": {
+            "type": "string"
+          },
+          "neto_pagar": {
+            "type": "string"
+          },
+          "pagado": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoFacturaProveedor"
+          },
+          "excepcion_duplicado": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "comprobante_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "motivo_anulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registrada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaFacturaProveedorRespuesta"
+            }
+          }
+        }
+      },
+      "FacturaVentaRespuesta": {
+        "type": "object",
+        "description": "Factura de venta (las líneas solo en el detalle).",
+        "required": [
+          "id",
+          "persona_id",
+          "fecha",
+          "vencimiento",
+          "descripcion",
+          "subtotal",
+          "iva",
+          "total",
+          "pagado",
+          "estado",
+          "creada_en",
+          "lineas"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "numero": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Número de su comprobante `FV` (al emitir).",
+            "minimum": 0
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "origen": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OrigenDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "iva": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          },
+          "pagado": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoFacturaVenta"
+          },
+          "comprobante_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "motivo_anulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "emitida_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaVentaRespuesta"
+            }
+          }
+        }
+      },
       "FichaAnuncianteRespuesta": {
         "type": "object",
         "description": "Ficha completa del anunciante (vista de la plataforma).",
@@ -42368,6 +47171,62 @@
           }
         }
       },
+      "FilaCarteraRespuesta": {
+        "type": "object",
+        "description": "Cartera de un cliente por edades.",
+        "required": [
+          "persona_id",
+          "nombre",
+          "tramos",
+          "total"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tramos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TramoRespuesta"
+            }
+          },
+          "total": {
+            "type": "string"
+          }
+        }
+      },
+      "FilaCertificadoRespuesta": {
+        "type": "object",
+        "description": "Fila de un certificado de retenciones.",
+        "required": [
+          "impuesto",
+          "concepto",
+          "tarifa",
+          "base",
+          "valor"
+        ],
+        "properties": {
+          "impuesto": {
+            "$ref": "#/components/schemas/ImpuestoRetencion"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "tarifa": {
+            "type": "string"
+          },
+          "base": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "string"
+          }
+        }
+      },
       "FilaCoeficientePeticion": {
         "type": "object",
         "description": "Coeficiente de un bien privado (por id o por código).",
@@ -42681,6 +47540,14 @@
           "pantalla_lobby"
         ]
       },
+      "FormatoExtracto": {
+        "type": "string",
+        "description": "Formato de un extracto bancario.",
+        "enum": [
+          "planilla",
+          "asobancaria_2001"
+        ]
+      },
       "FranjaDto": {
         "type": "object",
         "description": "Franja semanal de atención.",
@@ -42738,6 +47605,77 @@
           "semanas",
           "meses"
         ]
+      },
+      "GastoPeticion": {
+        "type": "object",
+        "description": "Gasto directo de un egreso (caja menor, gastos bancarios, anticipos).",
+        "required": [
+          "cuenta",
+          "valor",
+          "descripcion"
+        ],
+        "properties": {
+          "cuenta": {
+            "type": "string",
+            "example": "530505"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "centro_costo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código del centro de costo."
+          },
+          "valor": {
+            "type": "string",
+            "example": "15000"
+          },
+          "descripcion": {
+            "type": "string"
+          }
+        }
+      },
+      "GastoRespuesta": {
+        "type": "object",
+        "description": "Gasto directo de un egreso.",
+        "required": [
+          "cuenta_id",
+          "valor",
+          "descripcion"
+        ],
+        "properties": {
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          }
+        }
       },
       "GuardarPlantillaPeticion": {
         "type": "object",
@@ -42945,6 +47883,65 @@
           }
         }
       },
+      "ImpuestoRetencion": {
+        "type": "string",
+        "description": "Impuesto de una retención.",
+        "enum": [
+          "renta",
+          "iva",
+          "ica"
+        ]
+      },
+      "InformeConciliacionRespuesta": {
+        "type": "object",
+        "description": "Informe de conciliación.",
+        "required": [
+          "corte",
+          "saldo_libros",
+          "libros_pendientes",
+          "extracto_pendientes",
+          "saldo_conciliado"
+        ],
+        "properties": {
+          "corte": {
+            "type": "string",
+            "format": "date"
+          },
+          "saldo_extracto": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "saldo_libros": {
+            "type": "string"
+          },
+          "libros_pendientes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaLibrosRespuesta"
+            },
+            "description": "En libros y no en el extracto (cheques y consignaciones en tránsito)."
+          },
+          "extracto_pendientes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovimientoExtractoRespuesta"
+            },
+            "description": "En el extracto y no en libros."
+          },
+          "saldo_conciliado": {
+            "type": "string"
+          },
+          "diferencia": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Saldo del extracto − saldo conciliado (cero si cuadra)."
+          }
+        }
+      },
       "IngresoQrPeticion": {
         "type": "object",
         "description": "QR leído con la cámara de la tablet.",
@@ -43106,6 +48103,144 @@
           }
         }
       },
+      "LineaFacturaProveedorPeticion": {
+        "type": "object",
+        "description": "Línea de una factura de proveedor nueva.",
+        "required": [
+          "descripcion",
+          "cuenta",
+          "base",
+          "iva"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": "string"
+          },
+          "cuenta": {
+            "type": "string",
+            "description": "Código de la cuenta de gasto, costo o activo.",
+            "example": "513525"
+          },
+          "centro_costo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "base": {
+            "type": "string",
+            "example": "1000000"
+          },
+          "iva": {
+            "type": "string",
+            "example": "190000"
+          },
+          "iva_descontable": {
+            "type": "boolean",
+            "description": "`false` = el IVA es mayor valor del gasto."
+          },
+          "retenciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos de los conceptos de retención que aplican (uno por impuesto como máximo)."
+          }
+        }
+      },
+      "LineaFacturaProveedorRespuesta": {
+        "type": "object",
+        "description": "Línea de una factura de proveedor.",
+        "required": [
+          "descripcion",
+          "cuenta_id",
+          "base",
+          "iva",
+          "iva_descontable",
+          "retenciones"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": "string"
+          },
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "base": {
+            "type": "string"
+          },
+          "iva": {
+            "type": "string"
+          },
+          "iva_descontable": {
+            "type": "boolean"
+          },
+          "retenciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RetencionRespuesta"
+            }
+          }
+        }
+      },
+      "LineaLibrosRespuesta": {
+        "type": "object",
+        "description": "Línea de libros de la cuenta bancaria.",
+        "required": [
+          "comprobante_id",
+          "orden",
+          "tipo",
+          "numero",
+          "fecha",
+          "descripcion",
+          "valor"
+        ],
+        "properties": {
+          "comprobante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "string",
+            "description": "Débito − crédito (positivo = entra dinero)."
+          },
+          "conciliacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "LineaPeticion": {
         "type": "object",
         "description": "Línea nueva (ya verificada en Meta).",
@@ -43124,6 +48259,25 @@
           },
           "nombre": {
             "type": "string"
+          }
+        }
+      },
+      "LineaRefDto": {
+        "type": "object",
+        "description": "Línea de un comprobante (comprobante + orden).",
+        "required": [
+          "comprobante_id",
+          "orden"
+        ],
+        "properties": {
+          "comprobante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
           }
         }
       },
@@ -43270,6 +48424,89 @@
           }
         }
       },
+      "LineaVentaPeticion": {
+        "type": "object",
+        "description": "Línea de una factura de venta nueva.",
+        "required": [
+          "descripcion",
+          "cuenta",
+          "cantidad",
+          "valor_unitario"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": "string"
+          },
+          "cuenta": {
+            "type": "string",
+            "description": "Código de la cuenta de ingreso.",
+            "example": "415505"
+          },
+          "centro_costo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cantidad": {
+            "type": "string",
+            "example": "1"
+          },
+          "valor_unitario": {
+            "type": "string",
+            "example": "350000"
+          },
+          "tarifa_iva": {
+            "type": "string",
+            "description": "Porcentaje de IVA que elige quien factura (0 si no aplica).",
+            "example": "0"
+          }
+        }
+      },
+      "LineaVentaRespuesta": {
+        "type": "object",
+        "description": "Línea de una factura de venta.",
+        "required": [
+          "descripcion",
+          "cuenta_id",
+          "cantidad",
+          "valor_unitario",
+          "tarifa_iva",
+          "subtotal",
+          "iva"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": "string"
+          },
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "cantidad": {
+            "type": "string"
+          },
+          "valor_unitario": {
+            "type": "string"
+          },
+          "tarifa_iva": {
+            "type": "string"
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "iva": {
+            "type": "string"
+          }
+        }
+      },
       "LiquidacionRespuesta": {
         "type": "object",
         "description": "Liquidación de un anunciante en un mes (sin reparto a las copropiedades).",
@@ -43343,6 +48580,64 @@
             ],
             "format": "uuid",
             "description": "Persona que atendió la llamada (si contestó)."
+          }
+        }
+      },
+      "MapeoColumnasDto": {
+        "type": "object",
+        "description": "Cómo leer la planilla de un banco.",
+        "required": [
+          "fecha",
+          "formato_fecha",
+          "descripcion"
+        ],
+        "properties": {
+          "fila_encabezado": {
+            "type": "integer",
+            "description": "Fila (desde 1) con los encabezados.",
+            "minimum": 0
+          },
+          "fecha": {
+            "type": "string",
+            "example": "Fecha"
+          },
+          "formato_fecha": {
+            "type": "string",
+            "example": "%d/%m/%Y"
+          },
+          "descripcion": {
+            "type": "string",
+            "example": "Descripción"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "valor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Columna con signo (positivo = entra dinero)."
+          },
+          "debito": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Columna de salidas (sin signo)."
+          },
+          "credito": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Columna de entradas (sin signo)."
+          },
+          "separador_decimal": {
+            "$ref": "#/components/schemas/SeparadorDecimal"
           }
         }
       },
@@ -43569,6 +48864,28 @@
           "app",
           "whatsapp",
           "escrito"
+        ]
+      },
+      "MedioEgreso": {
+        "type": "string",
+        "description": "Medio de pago de un egreso.",
+        "enum": [
+          "efectivo",
+          "transferencia",
+          "consignacion",
+          "pse",
+          "cheque"
+        ]
+      },
+      "MedioRecibo": {
+        "type": "string",
+        "description": "Medio por el que entró el dinero de un recibo de caja.",
+        "enum": [
+          "efectivo",
+          "transferencia",
+          "consignacion",
+          "pasarela",
+          "cheque"
         ]
       },
       "MembresiaRespuesta": {
@@ -43959,6 +49276,14 @@
           "turno_rotativo"
         ]
       },
+      "ModoConciliacion": {
+        "type": "string",
+        "description": "Cómo se hizo una conciliación.",
+        "enum": [
+          "automatica",
+          "manual"
+        ]
+      },
       "Modulo": {
         "type": "string",
         "description": "Módulo contratable por la copropiedad.",
@@ -44058,6 +49383,82 @@
           "problema_tecnico",
           "otro"
         ]
+      },
+      "MovimientoExtractoRespuesta": {
+        "type": "object",
+        "description": "Movimiento del extracto.",
+        "required": [
+          "id",
+          "extracto_id",
+          "orden",
+          "fecha",
+          "descripcion",
+          "valor",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "extracto_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "valor": {
+            "type": "string",
+            "description": "Positivo = entra dinero."
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoMovimientoExtracto"
+          }
+        }
+      },
+      "MovimientoLeidoRespuesta": {
+        "type": "object",
+        "description": "Movimiento leído (vista previa).",
+        "required": [
+          "fecha",
+          "descripcion",
+          "valor"
+        ],
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "valor": {
+            "type": "string",
+            "description": "Positivo = entra dinero."
+          }
+        }
       },
       "MovimientoPeticion": {
         "type": "object",
@@ -44505,6 +49906,61 @@
           }
         }
       },
+      "NuevaCuentaTesoreriaPeticion": {
+        "type": "object",
+        "description": "Cuenta de tesorería nueva.",
+        "required": [
+          "tipo",
+          "nombre",
+          "cuenta_contable"
+        ],
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoCuentaTesoreria"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Cuenta corriente principal"
+          },
+          "banco": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorio en las de tipo `banco`.",
+            "example": "Banco de Bogotá"
+          },
+          "numero_cuenta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Número completo: solo se guardan los cuatro últimos dígitos.",
+            "example": "123-456789-01"
+          },
+          "tipo_cuenta": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TipoCuentaBancaria"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cuenta_contable": {
+            "type": "string",
+            "description": "Código de la cuenta contable de movimiento (naturaleza débito) que la respalda.",
+            "example": "111005"
+          },
+          "destinacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "NuevaEntidadPeticion": {
         "type": "object",
         "description": "Entidad sin vertical por crear.",
@@ -44529,6 +49985,124 @@
             "type": "string",
             "format": "uuid",
             "description": "Cuenta que será su primer administrador."
+          }
+        }
+      },
+      "NuevaFacturaProveedorPeticion": {
+        "type": "object",
+        "description": "Factura de proveedor nueva.",
+        "required": [
+          "persona_id",
+          "numero",
+          "fecha",
+          "vencimiento",
+          "descripcion",
+          "lineas"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prefijo": {
+            "type": "string",
+            "example": "FE"
+          },
+          "numero": {
+            "type": "string",
+            "example": "1024"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "origen": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OrigenDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cufe": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "CUFE si es electrónica (96 caracteres hexadecimales)."
+          },
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaFacturaProveedorPeticion"
+            }
+          },
+          "excepcion_duplicado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Motivo para aceptar un número que el proveedor ya usó (exige\n`tesoreria.egresos.autorizar`)."
+          }
+        }
+      },
+      "NuevaFacturaVentaPeticion": {
+        "type": "object",
+        "description": "Factura de venta nueva (queda en borrador).",
+        "required": [
+          "persona_id",
+          "fecha",
+          "vencimiento",
+          "descripcion",
+          "lineas"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "origen": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/OrigenDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaVentaPeticion"
+            }
           }
         }
       },
@@ -44770,6 +50344,62 @@
           }
         }
       },
+      "NuevoConceptoRetencionPeticion": {
+        "type": "object",
+        "description": "Versión nueva de un concepto de retención (la anterior del código queda vigente hasta el día\nantes).",
+        "required": [
+          "codigo",
+          "impuesto",
+          "nombre",
+          "base_minima_uvt",
+          "tarifa",
+          "fuente",
+          "vigente_desde"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "servicios_generales"
+          },
+          "impuesto": {
+            "$ref": "#/components/schemas/ImpuestoRetencion"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "base_minima_uvt": {
+            "type": "string",
+            "example": "4"
+          },
+          "tarifa": {
+            "type": "string",
+            "description": "Porcentaje.",
+            "example": "4"
+          },
+          "cuenta_sugerida": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "236525"
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo ReteICA."
+          },
+          "fuente": {
+            "type": "string",
+            "description": "Norma de donde sale la tarifa."
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "NuevoCuadroPeticion": {
         "type": "object",
         "description": "Borrador nuevo.",
@@ -44792,6 +50422,64 @@
             ],
             "format": "uuid",
             "description": "Escritura o acta de la reforma (opcional)."
+          }
+        }
+      },
+      "NuevoEgresoPeticion": {
+        "type": "object",
+        "description": "Egreso nuevo (queda por autorizar).",
+        "required": [
+          "cuenta_tesoreria_id",
+          "persona_id",
+          "fecha",
+          "medio",
+          "descripcion"
+        ],
+        "properties": {
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Beneficiario."
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "medio": {
+            "$ref": "#/components/schemas/MedioEgreso"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatoria con cheque (su número)."
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "facturas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PagoFacturaDto"
+            }
+          },
+          "gastos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GastoPeticion"
+            }
           }
         }
       },
@@ -44875,6 +50563,66 @@
           },
           "horario": {
             "$ref": "#/components/schemas/HorarioDto"
+          }
+        }
+      },
+      "NuevoReciboPeticion": {
+        "type": "object",
+        "description": "Recibo de caja nuevo.",
+        "required": [
+          "cuenta_tesoreria_id",
+          "fecha",
+          "valor",
+          "medio",
+          "descripcion"
+        ],
+        "properties": {
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Pagador; sin él queda como no identificado."
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor": {
+            "type": "string",
+            "example": "250000"
+          },
+          "medio": {
+            "$ref": "#/components/schemas/MedioRecibo"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": "string",
+            "example": "Pago del alquiler del salón"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "aplicaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AplicacionPeticion"
+            },
+            "description": "Lo que no se aplica queda sin aplicar (anticipo o por identificar)."
           }
         }
       },
@@ -45555,6 +51303,24 @@
           "fijo",
           "ninguno"
         ]
+      },
+      "OrigenDto": {
+        "type": "object",
+        "description": "Documento que originó una factura en otro módulo.",
+        "required": [
+          "tipo",
+          "id"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "example": "mantenimiento.orden_trabajo"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "OrigenOrden": {
         "type": "string",
@@ -48004,6 +53770,38 @@
           }
         }
       },
+      "PagoEgresoPeticion": {
+        "type": "object",
+        "description": "Pago de un egreso autorizado.",
+        "properties": {
+          "fecha": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Fecha del pago (por defecto, la del egreso)."
+          }
+        }
+      },
+      "PagoFacturaDto": {
+        "type": "object",
+        "description": "Factura que paga un egreso.",
+        "required": [
+          "factura_proveedor_id",
+          "valor"
+        ],
+        "properties": {
+          "factura_proveedor_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string",
+            "example": "1121500"
+          }
+        }
+      },
       "PagoPeticion": {
         "type": "object",
         "description": "Estado del pago.",
@@ -48098,6 +53896,18 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "PartidaConciliatoriaPeticion": {
+        "type": "object",
+        "description": "Marcar o desmarcar una partida conciliatoria.",
+        "required": [
+          "partida"
+        ],
+        "properties": {
+          "partida": {
+            "type": "boolean"
           }
         }
       },
@@ -48338,6 +54148,13 @@
           "contabilidad.periodos.reabrir",
           "contabilidad.periodos.aprobar_reapertura",
           "contabilidad.exportar",
+          "tesoreria.configurar",
+          "tesoreria.recibos.registrar",
+          "tesoreria.egresos.registrar",
+          "tesoreria.egresos.autorizar",
+          "tesoreria.facturas_proveedor.gestionar",
+          "tesoreria.facturas_venta.gestionar",
+          "tesoreria.conciliar",
           "directorio.ver",
           "directorio.resenar",
           "directorio.compartir"
@@ -50107,6 +55924,108 @@
           }
         }
       },
+      "ReciboNoIdentificadoPeticion": {
+        "type": "object",
+        "description": "Recibo no identificado desde un crédito del extracto.",
+        "required": [
+          "descripcion"
+        ],
+        "properties": {
+          "descripcion": {
+            "type": "string",
+            "example": "Consignación por identificar"
+          }
+        }
+      },
+      "ReciboRespuesta": {
+        "type": "object",
+        "description": "Recibo de caja.",
+        "required": [
+          "id",
+          "cuenta_tesoreria_id",
+          "fecha",
+          "valor",
+          "sin_aplicar",
+          "medio",
+          "descripcion",
+          "estado",
+          "comprobante_id",
+          "registrado_en",
+          "aplicaciones"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor": {
+            "type": "string",
+            "example": "250000"
+          },
+          "sin_aplicar": {
+            "type": "string",
+            "description": "Lo que falta por aplicar.",
+            "example": "0"
+          },
+          "medio": {
+            "$ref": "#/components/schemas/MedioRecibo"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoRecibo"
+          },
+          "comprobante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo_anulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registrado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "aplicaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AplicacionRespuesta"
+            }
+          }
+        }
+      },
       "ReclamacionPeticion": {
         "type": "object",
         "description": "Solicitud para manejar la ficha de una organización.",
@@ -51624,6 +57543,35 @@
           }
         }
       },
+      "RetencionRespuesta": {
+        "type": "object",
+        "description": "Retención calculada.",
+        "required": [
+          "concepto_id",
+          "impuesto",
+          "base",
+          "tarifa",
+          "valor"
+        ],
+        "properties": {
+          "concepto_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "impuesto": {
+            "$ref": "#/components/schemas/ImpuestoRetencion"
+          },
+          "base": {
+            "type": "string"
+          },
+          "tarifa": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "string"
+          }
+        }
+      },
       "ReunionPeticion": {
         "type": "object",
         "description": "Reunión nueva (o sus datos al editarla en borrador).",
@@ -52226,6 +58174,14 @@
           "entrada",
           "salida",
           "ambos"
+        ]
+      },
+      "SeparadorDecimal": {
+        "type": "string",
+        "description": "Separador decimal de los valores de una planilla.",
+        "enum": [
+          "coma",
+          "punto"
         ]
       },
       "SesionesCerradas": {
@@ -53202,6 +59158,24 @@
           "app_movil"
         ]
       },
+      "TipoCuentaBancaria": {
+        "type": "string",
+        "description": "Tipo de cuenta bancaria.",
+        "enum": [
+          "ahorros",
+          "corriente"
+        ]
+      },
+      "TipoCuentaTesoreria": {
+        "type": "string",
+        "description": "Tipo de cuenta de tesorería.",
+        "enum": [
+          "banco",
+          "caja_general",
+          "caja_menor",
+          "fondo"
+        ]
+      },
       "TipoDispositivoAcceso": {
         "type": "string",
         "description": "Tipo de dispositivo conectado a un puente.",
@@ -53678,6 +59652,33 @@
           }
         }
       },
+      "TramoEdad": {
+        "type": "string",
+        "description": "Tramo de edad de una cuenta por cobrar.",
+        "enum": [
+          "corriente",
+          "de_1_a_30",
+          "de_31_a_60",
+          "de_61_a_90",
+          "mas_de_90"
+        ]
+      },
+      "TramoRespuesta": {
+        "type": "object",
+        "description": "Saldo de un tramo de edad.",
+        "required": [
+          "tramo",
+          "saldo"
+        ],
+        "properties": {
+          "tramo": {
+            "$ref": "#/components/schemas/TramoEdad"
+          },
+          "saldo": {
+            "type": "string"
+          }
+        }
+      },
       "TransicionPeticion": {
         "type": "object",
         "description": "Transición de la reunión.",
@@ -53782,6 +59783,46 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "UvtPeticion": {
+        "type": "object",
+        "description": "UVT de un año.",
+        "required": [
+          "valor",
+          "fuente"
+        ],
+        "properties": {
+          "valor": {
+            "type": "string",
+            "example": "52374"
+          },
+          "fuente": {
+            "type": "string",
+            "example": "Resolución DIAN 000238 de 2025"
+          }
+        }
+      },
+      "UvtRespuesta": {
+        "type": "object",
+        "description": "Valor de la UVT de un año.",
+        "required": [
+          "anio",
+          "valor",
+          "fuente"
+        ],
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "valor": {
+            "type": "string",
+            "example": "52374"
+          },
+          "fuente": {
+            "type": "string"
           }
         }
       },
@@ -54201,6 +60242,28 @@
           }
         }
       },
+      "VistaPreviaExtractoRespuesta": {
+        "type": "object",
+        "description": "Vista previa del extracto.",
+        "required": [
+          "movimientos",
+          "errores"
+        ],
+        "properties": {
+          "movimientos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovimientoLeidoRespuesta"
+            }
+          },
+          "errores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorLecturaRespuesta"
+            }
+          }
+        }
+      },
       "VistaPreviaRespuesta": {
         "type": "object",
         "description": "Importación con su vista previa.",
@@ -54426,6 +60489,10 @@
     {
       "name": "contabilidad",
       "description": "Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)"
+    },
+    {
+      "name": "tesoreria",
+      "description": "Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir"
     }
   ]
 }

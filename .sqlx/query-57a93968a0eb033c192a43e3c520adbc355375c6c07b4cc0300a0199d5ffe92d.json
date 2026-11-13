@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO movimientos_extracto (id, tenant_id, extracto_id, cuenta_tesoreria_id,\n                     orden, fecha, descripcion, referencia, valor, estado)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Date",
+        "Text",
+        "Text",
+        "Numeric",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "57a93968a0eb033c192a43e3c520adbc355375c6c07b4cc0300a0199d5ffe92d"
+}

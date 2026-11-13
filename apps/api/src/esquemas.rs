@@ -87,6 +87,34 @@ esquema_enum! {
         "Marco técnico contable (grupo NIIF).";
     Naturaleza = domain::contabilidad::Naturaleza,
         "Naturaleza de una cuenta contable.";
+    TipoCuentaTesoreria = domain::contabilidad::tesoreria::TipoCuentaTesoreria,
+        "Tipo de cuenta de tesorería.";
+    TipoCuentaBancaria = domain::contabilidad::tesoreria::TipoCuentaBancaria,
+        "Tipo de cuenta bancaria.";
+    MedioRecibo = domain::contabilidad::tesoreria::MedioRecibo,
+        "Medio por el que entró el dinero de un recibo de caja.";
+    MedioEgreso = domain::contabilidad::tesoreria::MedioEgreso,
+        "Medio de pago de un egreso.";
+    EstadoRecibo = domain::contabilidad::tesoreria::EstadoRecibo,
+        "Estado de un recibo de caja.";
+    EstadoEgreso = domain::contabilidad::tesoreria::EstadoEgreso,
+        "Estado de un egreso (registrar → autorizar → pagar).";
+    EstadoFacturaProveedor = domain::contabilidad::tesoreria::EstadoFacturaProveedor,
+        "Estado de una factura de proveedor.";
+    EstadoFacturaVenta = domain::contabilidad::tesoreria::EstadoFacturaVenta,
+        "Estado de una factura de venta.";
+    ImpuestoRetencion = domain::contabilidad::tesoreria::ImpuestoRetencion,
+        "Impuesto de una retención.";
+    TramoEdad = domain::contabilidad::tesoreria::TramoEdad,
+        "Tramo de edad de una cuenta por cobrar.";
+    FormatoExtracto = domain::contabilidad::tesoreria::FormatoExtracto,
+        "Formato de un extracto bancario.";
+    EstadoMovimientoExtracto = domain::contabilidad::tesoreria::EstadoMovimientoExtracto,
+        "Estado de un movimiento del extracto.";
+    ModoConciliacion = domain::contabilidad::tesoreria::ModoConciliacion,
+        "Cómo se hizo una conciliación.";
+    SeparadorDecimal = domain::contabilidad::extracto::SeparadorDecimal,
+        "Separador decimal de los valores de una planilla.";
     NivelCuenta = domain::contabilidad::NivelCuenta,
         "Nivel de una cuenta según el largo de su código.";
     OrigenCentro = domain::contabilidad::OrigenCentro,

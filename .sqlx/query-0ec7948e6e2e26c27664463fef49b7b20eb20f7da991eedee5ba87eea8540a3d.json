@@ -1,0 +1,189 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, cuenta_tesoreria_id, persona_id, fecha, valor, medio, referencia,\n                    descripcion, soporte_archivo_id, estado, comprobante_id, motivo_anulacion,\n                    registrado_por, registrado_en\n             FROM recibos_caja\n             WHERE ($1::date IS NULL OR fecha >= $1) AND ($2::date IS NULL OR fecha <= $2)\n               AND ($3::uuid IS NULL OR persona_id = $3)\n               AND ($4::uuid IS NULL OR cuenta_tesoreria_id = $4)\n               AND (NOT $5 OR persona_id IS NULL)\n             ORDER BY fecha DESC, id DESC LIMIT $6",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "cuenta_tesoreria_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "cuenta_tesoreria_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "medio",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "medio"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "referencia",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "referencia"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "soporte_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "soporte_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "motivo_anulacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "motivo_anulacion"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "registrado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "registrado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "registrado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "recibos_caja",
+            "name": "registrado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date",
+        "Uuid",
+        "Uuid",
+        "Bool",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "0ec7948e6e2e26c27664463fef49b7b20eb20f7da991eedee5ba87eea8540a3d"
+}

@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO retenciones_factura_proveedor (tenant_id, factura_id, linea_orden,\n                         concepto_retencion_id, impuesto, base, tarifa, valor)\n                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2dbc121b066131599ab47cf45ee903c6b8a203261eef61ef3ba0bcbe962b63bf"
+}

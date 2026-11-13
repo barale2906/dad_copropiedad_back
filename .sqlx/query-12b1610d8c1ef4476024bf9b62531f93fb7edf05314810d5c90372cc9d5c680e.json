@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO eventos_pasarela (id, tenant_id, proveedor, evento_externo, referencia,\n                 estado, valor, comision, retenciones, cuenta_tesoreria_id, persona_id, recibo_id,\n                 ocurrido_en, recibido_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "12b1610d8c1ef4476024bf9b62531f93fb7edf05314810d5c90372cc9d5c680e"
+}

@@ -8,14 +8,24 @@
 //! - [`comprobantes`]: borradores, previsualización, contabilización, reverso, el
 //!   contabilizador de documentos origen, saldos iniciales y cierre anual.
 //! - [`reportes`]: balance de prueba, libro diario, mayor, auxiliares y estados financieros.
+//! - [`tesoreria`]: cuentas de tesorería, recibos de caja, egresos y eventos de la pasarela
+//!   (plan 13).
+//! - [`cuentas_por_pagar`]: catálogo de retenciones, facturas de proveedores, causación y
+//!   certificados de retención.
+//! - [`ventas`]: facturas de venta, recaudo con los recibos y cartera por edades.
+//! - [`conciliacion`]: extractos bancarios y conciliación automática y manual.
 //!
 //! Toda operación exige el módulo [`Modulo::Contabilidad`] dentro de su transacción.
 
 pub mod comprobantes;
+pub mod conciliacion;
 pub mod configuracion;
+pub mod cuentas_por_pagar;
 pub mod periodos;
 pub mod plantillas;
 pub mod reportes;
+pub mod tesoreria;
+pub mod ventas;
 
 use domain::Modulo;
 
@@ -27,6 +37,9 @@ use crate::{
         contabilidad::{
             RepositorioComprobantes, RepositorioConfiguracionContable, RepositorioPlanCuentas,
         },
+        tesoreria::{
+            CatalogoRetenciones, RepositorioConciliacion, RepositorioFacturas, RepositorioTesoreria,
+        },
     },
 };
 
@@ -37,6 +50,10 @@ pub(crate) mod prelude {
         contabilidad::{
             RepositorioComprobantes as _, RepositorioConfiguracionContable as _,
             RepositorioPlanCuentas as _,
+        },
+        tesoreria::{
+            CatalogoRetenciones as _, RepositorioConciliacion as _, RepositorioFacturas as _,
+            RepositorioTesoreria as _,
         },
     };
 }
@@ -63,6 +80,38 @@ impl<T> TxContable for T where
         + RegistroAuditoria
         + Transaccion
 {
+}
+
+/// Lo que usa una transacción de tesorería: la contable más tesorería, facturas, conciliación y
+/// el catálogo de retenciones.
+pub trait TxTesoreria:
+    TxContable
+    + RepositorioTesoreria
+    + RepositorioFacturas
+    + RepositorioConciliacion
+    + CatalogoRetenciones
+{
+}
+
+impl<T> TxTesoreria for T where
+    T: TxContable
+        + RepositorioTesoreria
+        + RepositorioFacturas
+        + RepositorioConciliacion
+        + CatalogoRetenciones
+{
+}
+
+/// Texto opcional: vacío = `None`; si trae algo, se valida como [`texto`].
+pub(crate) fn texto_opcional(
+    campo: &'static str,
+    valor: Option<&str>,
+    maximo: usize,
+) -> AppResult<Option<String>> {
+    match valor.map(str::trim).filter(|v| !v.is_empty()) {
+        None => Ok(None),
+        Some(v) => texto(campo, v, maximo).map(Some),
+    }
 }
 
 /// Exige el módulo de contabilidad en la transacción.

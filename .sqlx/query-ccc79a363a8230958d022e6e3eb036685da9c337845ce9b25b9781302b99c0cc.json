@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT orden, descripcion, cuenta_id, centro_costo_id, base, iva, iva_descontable\n             FROM lineas_factura_proveedor WHERE factura_id = $1 ORDER BY orden",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_proveedor",
+            "name": "orden"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_proveedor",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_proveedor",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_proveedor",
+            "name": "centro_costo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "base",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_proveedor",
+            "name": "base"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "iva",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_proveedor",
+            "name": "iva"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "iva_descontable",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_proveedor",
+            "name": "iva_descontable"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ccc79a363a8230958d022e6e3eb036685da9c337845ce9b25b9781302b99c0cc"
+}

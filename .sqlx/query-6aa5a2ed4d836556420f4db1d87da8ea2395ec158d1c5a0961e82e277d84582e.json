@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO conciliaciones (id, tenant_id, cuenta_tesoreria_id, accion, modo, deshace_a,\n                 por, en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6aa5a2ed4d836556420f4db1d87da8ea2395ec158d1c5a0961e82e277d84582e"
+}

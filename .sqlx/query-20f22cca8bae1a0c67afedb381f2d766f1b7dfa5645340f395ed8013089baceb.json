@@ -1,0 +1,136 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, tipo, nombre, banco, numero_enmascarado, tipo_cuenta, cuenta_contable_id,\n                    destinacion, activa, creada_en\n             FROM cuentas_tesoreria WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "banco",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "banco"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "numero_enmascarado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "numero_enmascarado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "tipo_cuenta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "tipo_cuenta"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "cuenta_contable_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "cuenta_contable_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "destinacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "destinacion"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "activa",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "activa"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "20f22cca8bae1a0c67afedb381f2d766f1b7dfa5645340f395ed8013089baceb"
+}

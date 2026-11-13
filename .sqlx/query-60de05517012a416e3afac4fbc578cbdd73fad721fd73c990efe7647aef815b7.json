@@ -1,0 +1,104 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT l.comprobante_id, l.orden, t.codigo AS tipo_codigo, c.numero AS \"numero!\",\n                    c.fecha, c.descripcion, (l.debito - l.credito) AS \"valor!\",\n                    (SELECT k.id FROM conciliacion_partidas p\n                     JOIN conciliaciones k ON k.tenant_id = p.tenant_id AND k.id = p.conciliacion_id\n                     WHERE p.tenant_id = l.tenant_id AND p.comprobante_id = l.comprobante_id\n                       AND p.linea_orden = l.orden AND k.accion = 'conciliar'\n                       AND NOT EXISTS (SELECT 1 FROM conciliaciones d\n                                       WHERE d.tenant_id = k.tenant_id AND d.deshace_a = k.id)\n                     LIMIT 1) AS conciliacion_id\n             FROM lineas_comprobante l\n             JOIN comprobantes c ON c.tenant_id = l.tenant_id AND c.id = l.comprobante_id\n             JOIN tipos_comprobante t ON t.tenant_id = c.tenant_id AND t.id = c.tipo_comprobante_id\n             WHERE l.cuenta_id = $1 AND c.estado = 'contabilizado'\n               AND ($2::date IS NULL OR c.fecha >= $2) AND c.fecha <= $3\n             ORDER BY c.fecha, c.numero, l.orden",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "orden"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo_codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "numero!",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "valor!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
+        "name": "conciliacion_id",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "60de05517012a416e3afac4fbc578cbdd73fad721fd73c990efe7647aef815b7"
+}

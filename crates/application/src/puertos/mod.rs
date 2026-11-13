@@ -22,11 +22,13 @@ pub mod mantenimiento;
 pub mod mensajeria;
 pub mod modulos;
 pub mod personas;
+pub mod planillas;
 pub mod proteccion_datos;
 pub mod publicidad;
 pub mod reloj;
 pub mod reservas;
 pub mod sesiones;
+pub mod tesoreria;
 pub mod tickets;
 pub mod unidad_trabajo;
 
@@ -43,7 +45,7 @@ pub use chat::{DirectorioTelefonos, RepositorioChat};
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
 pub use comunicados::RepositorioComunicados;
 pub use copropiedades::{
-    LectorPlanillas, RepositorioBienesPrivados, RepositorioCoeficientes, RepositorioCopropiedad,
+    RepositorioBienesPrivados, RepositorioCoeficientes, RepositorioCopropiedad,
     RepositorioImportaciones, RepositorioPersonas, RepositorioTitulares,
 };
 pub use correo::EnvioCorreo;
@@ -60,6 +62,7 @@ pub use identidad::{
 pub use mantenimiento::RepositorioMantenimiento;
 pub use mensajeria::Mensajeria;
 pub use modulos::RepositorioModulos;
+pub use planillas::LectorPlanillas;
 pub use proteccion_datos::RepositorioProteccionDatos;
 pub use publicidad::{
     DirectorioPublicidad, RepositorioPublicidad, RepositorioPublicidadPlataforma,
