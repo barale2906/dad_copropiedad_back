@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO avisos_cartera (tenant_id, cuenta_cobro_id, tipo, enviado_en)\n             VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5637d3c287ddd56f8ca6c87b7e5a9bc87e8c0df0750fb1086e3796a6cdbf76d8"
+}

@@ -227,6 +227,21 @@ enum_texto!(TipoAjuste {
     ProntoPago => "pronto_pago",
 });
 
+/// Clase de aviso de la cartera (uno por cuenta de cobro y clase).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TipoAvisoCartera {
+    /// Antes del vencimiento.
+    Recordatorio,
+    /// Después del vencimiento, si sigue debiendo.
+    Mora,
+}
+
+enum_texto!(TipoAvisoCartera {
+    Recordatorio => "recordatorio",
+    Mora => "mora",
+});
+
 /// Estado de una cuota extraordinaria.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

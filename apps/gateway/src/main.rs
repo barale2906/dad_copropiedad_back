@@ -18,12 +18,14 @@
 //!   ([`worker_acceso`]); push a las apps con Firebase (respaldo por WhatsApp).
 //! - Publicidad de la plataforma ([`worker_publicidad`]): finaliza campañas vencidas y encola
 //!   los masivos (solo a quien autorizó, prioridad 9).
+//! - Cartera de la PH ([`worker_cartera`]): recordatorios de pago y avisos de mora.
 
 mod mensajeria;
 mod routes;
 mod state;
 mod worker_acceso;
 mod worker_asambleas;
+mod worker_cartera;
 mod worker_gestion;
 mod worker_publicidad;
 mod worker_recordatorios;
@@ -143,6 +145,13 @@ async fn main() -> anyhow::Result<()> {
         esperar_apagado(apagado.clone()),
     ));
 
+    let cartera = tokio::spawn(worker_cartera::ejecutar(
+        infra_postgres::DirectorioCarteraPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        Arc::clone(&hay_salida),
+        esperar_apagado(apagado.clone()),
+    ));
+
     let recordatorios = tokio::spawn(worker_recordatorios::ejecutar(
         DirectorioRecordatoriosPg::new(db.clone()),
         UnidadDeTrabajoPg::new(db.clone()),
@@ -200,6 +209,10 @@ async fn main() -> anyhow::Result<()> {
         && let Err(e) = worker.await
     {
         tracing::error!(error = %e, "el worker de envíos terminó con error");
+    }
+
+    if let Err(e) = cartera.await {
+        tracing::error!(error = %e, "el worker de avisos de cartera terminó con error");
     }
 
     if let Err(e) = recordatorios.await {

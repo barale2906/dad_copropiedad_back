@@ -421,7 +421,13 @@ async fn reservar_sin_cuenta_explica_que_debe_registrarse() {
 async fn la_bandeja_humana_recibe_los_mensajes_y_menu_sale_de_ella() {
     let e = entorno(1);
     e.enviar(texto("hola")).await;
-    e.enviar(elige("m:humano")).await;
+    let r = e.enviar(elige("m:humano")).await;
+    assert_eq!(e.paso(), Some(Paso::Contacto));
+    assert!(
+        ids(&r[0]).contains(&"h:cita".to_owned()),
+        "la cita está dentro del contacto"
+    );
+    e.enviar(elige("h:mensaje")).await;
     assert!(matches!(e.paso(), Some(Paso::Humano { .. })));
     let r = e.enviar(texto("Necesito un paz y salvo")).await;
     assert!(r.is_empty(), "en modo humano el chat no responde solo");
@@ -469,6 +475,7 @@ async fn fuera_de_la_ventana_de_24_horas_no_se_responde_con_texto_libre() {
     let e = entorno(1);
     e.enviar(texto("hola")).await;
     e.enviar(elige("m:humano")).await;
+    e.enviar(elige("h:mensaje")).await;
     let c = e.unidad.datos().gestion.conversaciones[0].id;
     let admin = Contexto::de_cuenta(
         e.tenant,
@@ -486,6 +493,27 @@ async fn fuera_de_la_ventana_de_24_horas_no_se_responde_con_texto_libre() {
     )
     .await;
     assert!(matches!(r, Err(AppError::Conflicto(_))));
+}
+
+#[tokio::test]
+async fn mi_saldo_reemplaza_la_cita_en_el_menu_y_sin_cartera_lo_dice() {
+    let e = entorno(1);
+    let r = e.enviar(texto("hola")).await;
+    let opciones = ids(&r[0]);
+    assert!(opciones.contains(&"m:saldo".to_owned()));
+    assert!(!opciones.contains(&"m:cita".to_owned()));
+    assert!(
+        opciones.contains(&"m:info".to_owned()),
+        "no se pierde ninguna opción"
+    );
+
+    let r = e.enviar(elige("m:saldo")).await;
+
+    assert!(
+        matches!(&r[0], ContenidoSaliente::Texto { cuerpo } if cuerpo.contains("no está disponible")),
+        "{r:?}"
+    );
+    assert_eq!(e.paso(), Some(Paso::Menu));
 }
 
 #[test]

@@ -97,6 +97,14 @@ de pago de la tesorería, sin maestros paralelos ni asientos fuera del contabili
   mensual de las cuentas de tesorería según el mayor, proyecto de presupuesto del año siguiente
   (copia del vigente con ajuste, en borrador) y paquete PDF para la asamblea (ejecución, edades y
   fondo).
+- **Canales** (decisión del usuario): el menú del chat gana «Mi saldo» (solo propietario o
+  pagador; puerto mínimo `ResumenCartera` para no cargar al chat con toda la cartera) y «Cita con
+  administración» pasa a ser una opción de «Contactar administración» (WhatsApp admite 10 filas).
+  Solo los **avisos** son automáticos: el worker del gateway envía el recordatorio de pago 3 días
+  antes del vencimiento y el aviso de mora 5 días después, una vez por cuenta de cobro y clase
+  (`avisos_cartera`), por correo (con el valor) y por WhatsApp con la plantilla
+  `recordatorio_pago` (sin el valor). La causación de intereses y la restricción de reservas siguen
+  siendo manuales porque crean asientos y bloqueos.
 - Seis permisos nuevos: `cartera.ver`, `cartera.configurar`, `cartera.liquidar`,
   `cartera.ajustar`, `cartera.certificados.emitir`, `presupuesto.gestionar` (contador y
   administrador todos; revisor fiscal, consejero y presidente del consejo `cartera.ver`).
@@ -112,7 +120,8 @@ de pago de la tesorería, sin maestros paralelos ni asientos fuera del contabili
 - La causación de intereses se dispara por la API (mensual); falta la tarea programada del
   worker del gateway.
 - El umbral de mora de las reservas se pasa al sincronizar (no está en la política de reserva) y
-  la sincronización y los morosos se disparan por la API.
-- Pendiente: "Mi saldo" y "Paz y salvo" en el chat de WhatsApp, recordatorios de pago y aviso de
-  mora (plantilla `recordatorio_pago`), tareas programadas del worker (causación, sincronización),
-  cobros de zonas comunes facturables (plan 15) y pago por PSE (D8).
+  la sincronización, los morosos y la causación de intereses se disparan por la API.
+- Los avisos no van por push todavía (correo y WhatsApp); el paz y salvo por el chat remite a la
+  app.
+- Pendiente: aprobar en Meta la plantilla `recordatorio_pago`, cobros de zonas comunes
+  facturables (plan 15) y pago por PSE (D8).

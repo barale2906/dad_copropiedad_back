@@ -18,7 +18,7 @@ use domain::{
     contabilidad_ph::{
         CriterioDistribucion, EstadoCuotaExtraordinaria, EstadoLiquidacionExpensas,
         EstadoObligacion, EstadoPresupuesto, OrigenObligacion, ParametrosPolitica, TipoAjuste,
-        TipoConceptoCobro,
+        TipoAvisoCartera, TipoConceptoCobro,
         mora::{
             CuotaAcuerdo, EstadoAcuerdo, EstadoCausacion, ModalidadTasa, Reduccion, TipoCertificado,
         },
@@ -361,6 +361,39 @@ pub struct CertificadoCartera {
     pub pdf_sha256: String,
     pub emitido_por: Option<CuentaId>,
     pub emitido_en: DateTime<Utc>,
+}
+
+/// Resumen de la cartera de un bien (lo que muestra el chat).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResumenBien {
+    pub saldo: Decimal,
+    pub vencido: Decimal,
+    /// Vencimiento más próximo de lo que tiene saldo.
+    pub proximo_vencimiento: Option<NaiveDate>,
+    pub referencia_pago: Option<String>,
+    pub pagador_persona_id: Option<PersonaId>,
+}
+
+/// Consulta mínima de la cartera para otros módulos (el chat): no exige el puerto completo.
+pub trait ResumenCartera: Send {
+    /// Resumen del bien al día `hoy` (`None` si el bien no existe).
+    fn resumen_bien(
+        &mut self,
+        bien: BienPrivadoId,
+        hoy: NaiveDate,
+    ) -> impl Future<Output = AppResult<Option<ResumenBien>>> + Send;
+}
+
+/// Copropiedades con avisos de cartera pendientes (cruza tenants: SECURITY DEFINER).
+pub trait DirectorioCartera: Send + Sync {
+    /// Ids de las copropiedades con la cartera habilitada y cuentas de cobro por recordar o por
+    /// avisar en mora.
+    fn copropiedades_con_avisos(
+        &self,
+        hoy: NaiveDate,
+        dias_antes: u32,
+        dias_despues: u32,
+    ) -> impl Future<Output = AppResult<Vec<domain::TenantId>>> + Send;
 }
 
 /// Lectura del catálogo de tasas de referencia (desde cualquier transacción).
@@ -752,4 +785,22 @@ pub trait RepositorioCartera: Send {
         &mut self,
         bien: BienPrivadoId,
     ) -> impl Future<Output = AppResult<Vec<CertificadoCartera>>> + Send;
+
+    /// Cuentas de cobro de liquidaciones vigentes por recordar (vencen en los próximos
+    /// `dias_antes` días) o por avisar en mora (vencieron hace `dias_despues` días o más, dentro
+    /// de los últimos 60), sin aviso de esa clase.
+    fn cuentas_por_avisar(
+        &mut self,
+        hoy: NaiveDate,
+        dias_antes: u32,
+        dias_despues: u32,
+    ) -> impl Future<Output = AppResult<Vec<(CuentaCobro, TipoAvisoCartera)>>> + Send;
+
+    /// Deja constancia del aviso (no se repite).
+    fn registrar_aviso(
+        &mut self,
+        cuenta: CuentaCobroId,
+        tipo: TipoAvisoCartera,
+        en: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
 }

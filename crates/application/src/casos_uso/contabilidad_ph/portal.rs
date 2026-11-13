@@ -16,7 +16,7 @@ use crate::{
     casos_uso::{contabilidad::prelude::*, modulos::exigir_modulo_en},
     puertos::{
         GeneradorActas, Reloj, RepositorioCartera as _, UnidadDeTrabajo,
-        cartera::{BienCartera, CuentaCobro},
+        cartera::{BienCartera, CuentaCobro, ResumenBien, ResumenCartera},
     },
 };
 
@@ -187,4 +187,50 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(emitido)
+}
+
+/// Lo que el chat muestra en «Mi saldo».
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SaldoChat {
+    /// La copropiedad no tiene la cartera contratada.
+    SinCartera,
+    /// Quien escribe no es propietario ni pagador del bien: no ve el saldo.
+    NoAutorizado,
+    Resumen(ResumenBien),
+}
+
+/// Saldo del bien para el chat de WhatsApp: solo lo ve el propietario o el pagador del bien que
+/// escribe (el vínculo lo resolvió el gateway por el teléfono). No exige el puerto completo de
+/// la cartera.
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si falla la base de datos.
+pub async fn saldo_para_chat<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    bien: BienPrivadoId,
+    persona: domain::PersonaId,
+    es_propietario: bool,
+) -> AppResult<SaldoChat>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: ResumenCartera + crate::puertos::RepositorioModulos,
+{
+    use crate::puertos::RepositorioModulos as _;
+    let mut tx = unidad.iniciar(ctx).await?;
+    if !tx
+        .modulo_habilitado(Modulo::ContabilidadPh, reloj.ahora())
+        .await?
+    {
+        return Ok(SaldoChat::SinCartera);
+    }
+    let Some(r) = tx.resumen_bien(bien, reloj.ahora().date_naive()).await? else {
+        return Ok(SaldoChat::SinCartera);
+    };
+    if !es_propietario && r.pagador_persona_id != Some(persona) {
+        return Ok(SaldoChat::NoAutorizado);
+    }
+    Ok(SaldoChat::Resumen(r))
 }

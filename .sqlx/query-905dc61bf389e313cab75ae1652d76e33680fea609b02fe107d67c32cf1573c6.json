@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT referencia_pago, pagador_persona_id FROM bienes_privados WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "referencia_pago",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "referencia_pago"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "pagador_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "pagador_persona_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "905dc61bf389e313cab75ae1652d76e33680fea609b02fe107d67c32cf1573c6"
+}

@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id, t.tipo AS \"tipo!\"\n               FROM cuentas_cobro c\n               JOIN liquidaciones_expensas l ON l.id = c.liquidacion_id\n                    AND l.estado = 'contabilizada'\n               CROSS JOIN LATERAL (VALUES\n                   (CASE WHEN c.vencimiento > $1::date AND c.vencimiento <= $1::date + $2::int\n                         THEN 'recordatorio' END),\n                   (CASE WHEN c.vencimiento <= $1::date - $3::int AND c.vencimiento > $1::date - 60\n                         THEN 'mora' END)) AS t (tipo)\n               WHERE t.tipo IS NOT NULL\n                 AND NOT EXISTS (SELECT 1 FROM avisos_cartera a\n                                 WHERE a.cuenta_cobro_id = c.id AND a.tipo = t.tipo)\n               ORDER BY c.anio, c.numero",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuentas_cobro",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo!",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "b5ff0abbf83e36278490b245c24548ac04e8f43d76d66bb9636de27065122dc8"
+}
