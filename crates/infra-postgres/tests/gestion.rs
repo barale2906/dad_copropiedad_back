@@ -240,7 +240,7 @@ async fn vinculos_por_telefono_exige_ph_activa_y_modulo(pool: PgPool) {
             .expect("consulta")
             .is_empty()
     );
-    sqlx::query("UPDATE copropiedades SET estado = 'activa' WHERE id = $1")
+    sqlx::query("UPDATE entidades SET estado = 'activa' WHERE id = $1")
         .bind(e.tenant.as_uuid())
         .execute(&e.duenio)
         .await

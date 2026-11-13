@@ -53,7 +53,8 @@ macro_rules! id_entidad {
 }
 
 id_entidad!(
-    /// Copropiedad (PH). Es la unidad de aislamiento multi-tenant (`tenant_id` + RLS).
+    /// Entidad (empresa) que usa la plataforma; una copropiedad es una entidad con la vertical
+    /// PH (ADR 0016). Es la unidad de aislamiento multi-tenant (`tenant_id` + RLS).
     TenantId,
     Uuid::now_v7
 );
@@ -417,6 +418,62 @@ id_entidad!(
     /// Identificador de un voto. **Siempre UUID v4**: un v7 revelaría la hora de emisión.
     VotoId,
     Uuid::new_v4
+);
+
+id_entidad!(
+    /// Cuenta del plan de cuentas de una entidad.
+    CuentaContableId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Centro de costo de una entidad.
+    CentroCostoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Periodo contable (mes, o 13 = cierre anual).
+    PeriodoContableId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Solicitud de reapertura de un periodo contable cerrado.
+    ReaperturaPeriodoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Tipo de comprobante contable (recibo de caja, egreso, nota…).
+    TipoComprobanteId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Comprobante contable (asiento de partida doble).
+    ComprobanteId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de una regla de contabilización de un evento.
+    ReglaContabilizacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Plantilla contable editable (estándar de la plataforma o de una firma contable).
+    PlantillaContableId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Rubro de un estado financiero (agrupa cuentas por prefijo).
+    RubroEstadoFinancieroId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de una nota a los estados financieros.
+    NotaEstadosId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de la configuración contable de una entidad.
+    ConfiguracionContableId,
+    Uuid::now_v7
 );
 
 #[cfg(test)]

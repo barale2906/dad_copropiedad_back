@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE copropiedades SET\n                 tipo = $2, forma = $3, estrato = $4, escritura_numero = $5, notaria = $6,\n                 escritura_fecha = $7, matricula_matriz = $8, reglamento_archivo_id = $9,\n                 certificado_archivo_id = $10, plantilla_codigo = $11\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Int2",
+        "Text",
+        "Text",
+        "Date",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "19dc0369b3a2f1400268c85aab663ecfefe198641ecdfeecb7f700621145b49c"
+}

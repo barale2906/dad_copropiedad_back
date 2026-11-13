@@ -7,6 +7,9 @@
 //! - [`EnCopropiedad`]: toma `{copropiedad_id}` de la ruta y arma el [`Contexto`] con los
 //!   permisos efectivos de la cuenta en esa PH. Si no tiene ningún rol allí responde 404 (no se
 //!   revela si la copropiedad existe). El superusuario tiene todos los permisos en todas.
+//!   Después exige que la entidad sea una copropiedad (404 si no lo es; ADR 0016).
+//! - [`EnEntidad`]: toma `{entidad_id}` de la ruta, como [`EnCopropiedad`] pero para cualquier
+//!   entidad (contabilidad de cualquier empresa); 404 si la cuenta no tiene roles allí.
 //! - [`EnCopropiedadWs`]: igual, para abrir un WebSocket desde el navegador (que no puede
 //!   enviar `Authorization`): el token va en `Sec-WebSocket-Protocol: dad.v1, <token>`.
 //! - [`PapeletaVirtual`]: la papeleta del asistente (cabecera `X-Papeleta`): el token es la
@@ -19,6 +22,7 @@ use application::{
     AppError, Contexto, ContextoPlataforma,
     casos_uso::{
         autenticacion::{SesionAutenticada, autenticar},
+        modulos::exigir_copropiedad,
         roles::permisos_en_copropiedad,
     },
     puertos::RelojSistema,
@@ -96,16 +100,24 @@ pub struct EnCopropiedad {
     pub ctx: Contexto,
 }
 
-async fn tenant_de_ruta(parts: &mut Parts, state: &AppState) -> Result<TenantId, ApiError> {
+async fn tenant_de_parametro(
+    parts: &mut Parts,
+    state: &AppState,
+    parametro: &str,
+) -> Result<TenantId, ApiError> {
     let params = RawPathParams::from_request_parts(parts, state)
         .await
         .map_err(|e| ApiError::PeticionInvalida(e.body_text()))?;
     params
         .iter()
-        .find(|(k, _)| *k == PARAMETRO_COPROPIEDAD)
+        .find(|(k, _)| *k == parametro)
         .and_then(|(_, v)| Uuid::try_parse(v).ok())
         .map(TenantId::from_uuid)
-        .ok_or_else(|| ApiError::PeticionInvalida("copropiedad_id inválido".into()))
+        .ok_or_else(|| ApiError::PeticionInvalida(format!("{parametro} inválido")))
+}
+
+async fn tenant_de_ruta(parts: &mut Parts, state: &AppState) -> Result<TenantId, ApiError> {
+    tenant_de_parametro(parts, state, PARAMETRO_COPROPIEDAD).await
 }
 
 impl FromRequestParts<AppState> for EnCopropiedad {
@@ -118,12 +130,13 @@ impl FromRequestParts<AppState> for EnCopropiedad {
     }
 }
 
-async fn en_copropiedad(
+/// Permisos de la cuenta en la entidad y su contexto; 404 si no tiene ningún rol allí.
+async fn contexto_en_entidad(
     parts: &Parts,
     state: &AppState,
     tenant: TenantId,
-    cuenta: CuentaAutenticada,
-) -> Result<EnCopropiedad, ApiError> {
+    cuenta: &CuentaAutenticada,
+) -> Result<Contexto, ApiError> {
     let permisos = permisos_en_copropiedad(
         &state.unidad,
         &RelojSistema,
@@ -133,15 +146,61 @@ async fn en_copropiedad(
     )
     .await?;
     if permisos.es_vacio() {
-        // Sin vínculo con la copropiedad: para esa cuenta "no existe" (invariante 1).
-        return Err(ApiError::App(AppError::NoEncontrado("copropiedad")));
+        // Sin vínculo con la entidad: para esa cuenta "no existe" (invariante 1).
+        return Err(ApiError::App(AppError::NoEncontrado("entidad")));
     }
-    let ctx = Contexto::de_cuenta(tenant, cuenta.sesion.cuenta_id, permisos)
-        .con_request_id(request_id(parts));
+    Ok(
+        Contexto::de_cuenta(tenant, cuenta.sesion.cuenta_id, permisos)
+            .con_request_id(request_id(parts)),
+    )
+}
+
+async fn en_copropiedad(
+    parts: &Parts,
+    state: &AppState,
+    tenant: TenantId,
+    cuenta: CuentaAutenticada,
+) -> Result<EnCopropiedad, ApiError> {
+    let ctx = contexto_en_entidad(parts, state, tenant, &cuenta)
+        .await
+        .map_err(|e| match e {
+            ApiError::App(AppError::NoEncontrado(_)) => {
+                ApiError::App(AppError::NoEncontrado("copropiedad"))
+            }
+            otro => otro,
+        })?;
+    // Una entidad que no es PH (contabilidad de cualquier empresa) no tiene rutas de copropiedad.
+    exigir_copropiedad(&state.unidad, &ctx).await?;
     Ok(EnCopropiedad {
         sesion: cuenta.sesion,
         ctx,
     })
+}
+
+/// Nombre del parámetro de ruta con el id de la entidad (= `tenant_id`).
+pub const PARAMETRO_ENTIDAD: &str = "entidad_id";
+
+/// Cuenta autenticada dentro de una entidad cualquiera (rutas `/entidades/{entidad_id}/…`, ADR
+/// 0016): igual que [`EnCopropiedad`] pero sin exigir que sea una copropiedad. En una PH, el id
+/// de la entidad es el de la copropiedad.
+#[derive(Debug, Clone)]
+pub struct EnEntidad {
+    pub sesion: SesionAutenticada,
+    pub ctx: Contexto,
+}
+
+impl FromRequestParts<AppState> for EnEntidad {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
+        let tenant = tenant_de_parametro(parts, state, PARAMETRO_ENTIDAD).await?;
+        let cuenta = CuentaAutenticada::from_request_parts(parts, state).await?;
+        let ctx = contexto_en_entidad(parts, state, tenant, &cuenta).await?;
+        Ok(Self {
+            sesion: cuenta.sesion,
+            ctx,
+        })
+    }
 }
 
 /// Subprotocolo del WebSocket del tablero en vivo.

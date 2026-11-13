@@ -379,11 +379,19 @@ pub trait RepositorioRoles: Send {
         identificador: &Identificador,
     ) -> impl Future<Output = AppResult<Option<CuentaResumen>>> + Send;
 
-    /// Crea la fila de la copropiedad de la transacción (alta desde la plataforma).
+    /// Crea la entidad de la transacción (alta desde la plataforma, ADR 0016).
     ///
     /// # Errors
     ///
-    /// [`crate::AppError::Conflicto`] si el NIT ya lo usa otra copropiedad.
+    /// [`crate::AppError::Conflicto`] si el NIT ya lo usa otra entidad.
+    fn insertar_entidad(
+        &mut self,
+        nombre: &str,
+        nit: Option<&domain::Nit>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Crea la extensión de la vertical PH de la entidad de la transacción (ya creada con
+    /// [`Self::insertar_entidad`]).
     fn insertar_copropiedad(
         &mut self,
         alta: &crate::puertos::copropiedades::AltaCopropiedad,

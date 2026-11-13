@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE plantillas_contables\n             SET estado = $2, publicada_en = CASE WHEN $2 = 'publicada' THEN $3 ELSE publicada_en END\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ed829d2524679ae4dade10f8e013e3551fd39954d8f2e9a58df539de18a8fc2c"
+}

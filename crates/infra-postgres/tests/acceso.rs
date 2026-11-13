@@ -85,7 +85,7 @@ async fn entorno(pool: PgPool) -> Entorno {
         .execute(&pool)
         .await
         .expect("línea");
-    sqlx::query("UPDATE copropiedades SET estado = 'activa' WHERE id = $1")
+    sqlx::query("UPDATE entidades SET estado = 'activa' WHERE id = $1")
         .bind(tenant.as_uuid())
         .execute(&pool)
         .await

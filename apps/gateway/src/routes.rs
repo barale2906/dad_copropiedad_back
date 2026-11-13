@@ -279,8 +279,9 @@ mod tests {
         let mut tx = duenio.begin().await.unwrap();
         sqlx::query(
             "WITH ph AS (
-                     INSERT INTO copropiedades (id, nombre, estado)
+                     INSERT INTO entidades (id, nombre, estado)
                      VALUES (gen_random_uuid(), 'Conjunto Alameda', 'activa') RETURNING id),
+                 cp AS (INSERT INTO copropiedades (id) SELECT id FROM ph),
                  m AS (
                      INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
                      SELECT gen_random_uuid(), id, 'gestion_administrativa', now() - interval '1 day'
@@ -451,7 +452,8 @@ mod tests {
             Uuid::now_v7(),
         );
         let sql = format!(
-            "INSERT INTO copropiedades (id, nombre, estado) VALUES ('{t}', 'Conjunto', 'activa');
+            "INSERT INTO entidades (id, nombre, estado) VALUES ('{t}', 'Conjunto', 'activa');
+             INSERT INTO copropiedades (id) VALUES ('{t}');
              INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
                  VALUES (gen_random_uuid(), '{t}', 'asambleas', now() - interval '1 day');
              INSERT INTO bienes_privados (id, tenant_id, codigo, coeficiente) VALUES ('{b}', '{t}', 'T1-101', 0.5);

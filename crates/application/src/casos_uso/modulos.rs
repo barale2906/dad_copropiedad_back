@@ -1,9 +1,10 @@
-//! Habilitación de módulos por copropiedad (venta por módulo).
+//! Habilitación de módulos por entidad (venta por módulo, uno a uno; ADR 0016).
 //!
 //! Los casos de uso de cada módulo llaman a [`exigir_modulo`] (o a `exigir_modulo_en` dentro de
-//! su transacción) antes de operar. Habilitar y terminar módulos es una operación de la
-//! plataforma: exige `plataforma.modulos.gestionar` y actúa en la copropiedad sin permisos de
-//! copropiedad.
+//! su transacción) antes de operar; las rutas de copropiedad pasan antes por
+//! [`exigir_copropiedad`]. Habilitar y terminar módulos es una operación de la plataforma: exige
+//! `plataforma.modulos.gestionar`, los módulos de la PH ([`Modulo::exige_copropiedad`]) solo se
+//! habilitan en una copropiedad y actúa en la entidad sin permisos de copropiedad.
 
 use chrono::{DateTime, Utc};
 use domain::{ConjuntoPermisos, Modulo, Permiso, TenantId};
@@ -12,8 +13,8 @@ use crate::{
     AppError, AppResult, Contexto, ContextoPlataforma,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
-        RegistroAuditoria, Reloj, RepositorioModulos, Transaccion, UnidadDeTrabajo,
-        modulos::PeriodoModulo,
+        RegistroAuditoria, Reloj, RepositorioCopropiedad, RepositorioModulos, Transaccion,
+        UnidadDeTrabajo, modulos::PeriodoModulo,
     },
 };
 
@@ -63,6 +64,24 @@ where
     }
 }
 
+/// Exige que la entidad del contexto sea una copropiedad (tenga su fila en `copropiedades`): es
+/// la puerta de toda ruta `/copropiedades/{copropiedad_id}/…`.
+///
+/// # Errors
+///
+/// [`AppError::NoEncontrado`] si la entidad no es una copropiedad.
+pub async fn exigir_copropiedad<U>(unidad: &U, ctx: &Contexto) -> AppResult<()>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioCopropiedad,
+{
+    if unidad.iniciar(ctx).await?.ficha().await?.is_some() {
+        Ok(())
+    } else {
+        Err(AppError::NoEncontrado("copropiedad"))
+    }
+}
+
 /// Contexto con el que la plataforma actúa en la copropiedad: su operador como actor (para la
 /// auditoría) y ningún permiso de copropiedad.
 fn en_copropiedad(ctx: &ContextoPlataforma, tenant: TenantId) -> Contexto {
@@ -80,7 +99,8 @@ fn en_copropiedad(ctx: &ContextoPlataforma, tenant: TenantId) -> Contexto {
 /// # Errors
 ///
 /// [`AppError::SinPermiso`] sin `plataforma.modulos.gestionar`; [`AppError::Validacion`] si
-/// `hasta` no es posterior a `desde`; [`AppError::NoEncontrado`] si la copropiedad no existe.
+/// `hasta` no es posterior a `desde`; [`AppError::NoEncontrado`] si se pide un módulo de la PH
+/// ([`Modulo::exige_copropiedad`]) para una entidad que no es copropiedad (o no existe).
 pub async fn habilitar_modulo<U>(
     unidad: &U,
     reloj: &impl Reloj,
@@ -92,7 +112,7 @@ pub async fn habilitar_modulo<U>(
 ) -> AppResult<PeriodoModulo>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioModulos + RegistroAuditoria,
+    U::Transaccion: RepositorioModulos + RepositorioCopropiedad + RegistroAuditoria,
 {
     let periodo = PeriodoModulo {
         modulo,
@@ -107,6 +127,11 @@ where
     }
     let ctx = &en_copropiedad(ctx, tenant);
     let mut tx = unidad.iniciar(ctx).await?;
+    // Los módulos de la PH solo existen en una copropiedad (la entidad sin fila en
+    // `copropiedades`, o que no existe, no lo es).
+    if modulo.exige_copropiedad() && tx.ficha().await?.is_none() {
+        return Err(AppError::NoEncontrado("copropiedad"));
+    }
     tx.insertar_periodo(&periodo).await?;
     let detalle = DetalleAuditoria::vacio()
         .con("modulo", modulo.as_str())?

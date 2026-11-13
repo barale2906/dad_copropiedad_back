@@ -38,6 +38,7 @@ use utoipa::ToSchema;
 /// | `validacion` | 422 | Datos bien formados que violan una regla de negocio. |
 /// | `idempotencia_reusada` | 422 | La `Idempotency-Key` ya se usó con otra petición (otro método, ruta o cuerpo). |
 /// | `coeficientes_no_suman_uno` | 422 | El cuadro de coeficientes no suma exactamente 1 (el mensaje trae la diferencia). |
+/// | `regla_contable` | 422 | Incumple una regla contable: partida doble, periodo no abierto, cuenta que no admite la línea, plantilla inválida (el mensaje dice cuál). |
 /// | `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |
 /// | `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, ToSchema)]
@@ -77,6 +78,8 @@ pub enum CodigoError {
     IdempotenciaReusada,
     /// 422 · El cuadro de coeficientes no suma exactamente 1; el mensaje indica la diferencia.
     CoeficientesNoSumanUno,
+    /// 422 · Incumple una regla contable (partida doble, periodo, cuentas, plantilla).
+    ReglaContable,
     /// 500 · Error inesperado; el detalle queda en los logs con el `x-request-id`.
     Interno,
     /// 503 · Una dependencia (p. ej. la base de datos) no está disponible.
@@ -189,6 +192,9 @@ impl ApiError {
                 }
                 DominioError::CoeficientesNoSumanUno { .. } => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::CoeficientesNoSumanUno)
+                }
+                DominioError::ReglaContable(_) => {
+                    (StatusCode::UNPROCESSABLE_ENTITY, C::ReglaContable)
                 }
             },
             Self::App(AppError::Validacion(_)) => (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion),

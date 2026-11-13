@@ -61,10 +61,11 @@ async fn modulo_habilitado_solo_en_su_copropiedad_y_hasta_terminarlo(pool: PgPoo
             .await
             .is_err()
     );
-    let historial: i64 = sqlx::query_scalar("SELECT count(*) FROM modulos_habilitados")
-        .fetch_one(&pool)
-        .await
-        .expect("conteo");
+    let historial: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM modulos_habilitados WHERE modulo = 'asambleas'")
+            .fetch_one(&pool)
+            .await
+            .expect("conteo");
     assert_eq!(historial, 1, "el periodo se conserva para facturación");
 }
 

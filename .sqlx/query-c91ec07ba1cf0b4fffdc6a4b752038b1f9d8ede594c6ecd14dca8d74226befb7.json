@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE reaperturas_periodo SET estado = $2, decidida_por = $3, decidida_en = $4\n             WHERE id = $1 AND estado = 'pendiente'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c91ec07ba1cf0b4fffdc6a4b752038b1f9d8ede594c6ecd14dca8d74226befb7"
+}

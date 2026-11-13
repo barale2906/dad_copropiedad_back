@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE periodos_contables SET estado = $2, cerrado_por = $3, cerrado_en = $4\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "487e72507a32c2a6066c98468f82f3f61f5079de99e553cade94610d8a68edee"
+}

@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO lineas_regla (tenant_id, regla_id, orden, concepto, cara, cuenta_id,\n                     tercero, centro, centro_costo_id)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e622a4ad6de6c26d196612c61dfcef3d2783810f315e58d0d98f898e4f9fd71e"
+}

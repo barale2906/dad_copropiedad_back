@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM comprobantes WHERE id = $1 AND estado = 'borrador'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c511f944588681e5ee9e6cb78b6758b0de2f76098163843b62f9a6368b157676"
+}

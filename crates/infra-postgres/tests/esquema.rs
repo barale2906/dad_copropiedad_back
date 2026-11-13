@@ -35,7 +35,8 @@ async fn sembrar(pool: &PgPool, telefono: &str) -> Datos {
     let t = d.tenant.as_uuid();
     let reunion = Uuid::now_v7();
     let sql = format!(
-        "INSERT INTO copropiedades (id, nombre, estado) VALUES ('{t}', 'Conjunto {t}', 'activa');
+        "INSERT INTO entidades (id, nombre, estado) VALUES ('{t}', 'Conjunto {t}', 'activa');
+         INSERT INTO copropiedades (id) VALUES ('{t}');
          INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
              VALUES (gen_random_uuid(), '{t}', 'asambleas', now() - interval '1 day');
          INSERT INTO bienes_privados (id, tenant_id, codigo, coeficiente)

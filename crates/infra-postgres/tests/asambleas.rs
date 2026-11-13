@@ -59,7 +59,7 @@ fn telefono(base: u32, i: usize) -> String {
 /// con un propietario representante con teléfono `57{base}{i}`.
 async fn ph(duenio: &PgPool, n: usize, coef: Decimal, base: u32) -> Ph {
     let tenant = crear_copropiedad(duenio).await;
-    sqlx::query("UPDATE copropiedades SET estado = 'activa' WHERE id = $1")
+    sqlx::query("UPDATE entidades SET estado = 'activa' WHERE id = $1")
         .bind(tenant.as_uuid())
         .execute(duenio)
         .await

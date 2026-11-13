@@ -1,0 +1,124 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, periodo_id, motivo, alcance, solicitada_por, solicitada_en, estado,\n                    decidida_por, decidida_en\n             FROM reaperturas_periodo WHERE periodo_id = $1 ORDER BY solicitada_en DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "periodo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "periodo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "alcance",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "alcance"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "solicitada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "solicitada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "solicitada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "solicitada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "decidida_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "decidida_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "decidida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reaperturas_periodo",
+            "name": "decidida_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "d8f85f1e779e6ea9d7c34fc65812e6340a072c601b5616b2bab4e70262a7ada7"
+}

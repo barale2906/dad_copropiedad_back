@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cuentas_contables (id, tenant_id, codigo, nombre, naturaleza,\n                 acepta_movimiento, exige_tercero, exige_centro_costo, activa, creada_en,\n                 actualizada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "55020045a423a3ccbd6f853748082b842da0560747b2fbaf7a0307d99e66019e"
+}

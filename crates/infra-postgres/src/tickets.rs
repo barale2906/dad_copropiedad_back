@@ -168,19 +168,7 @@ impl RepositorioTickets for TransaccionPg {
         serie: SerieConsecutivo,
         anio: i32,
     ) -> AppResult<u32> {
-        let anio: i16 = entero(i64::from(anio), "anio")?;
-        let ultimo = sqlx::query_scalar!(
-            "INSERT INTO consecutivos (tenant_id, serie, anio, ultimo) VALUES ($1, $2, $3, 1)
-             ON CONFLICT (tenant_id, serie, anio) DO UPDATE SET ultimo = consecutivos.ultimo + 1
-             RETURNING ultimo",
-            self.ctx.tenant_id.as_uuid(),
-            serie.as_str(),
-            anio,
-        )
-        .fetch_one(&mut *self.tx)
-        .await
-        .map_err(AppError::infra)?;
-        entero(i64::from(ultimo), "consecutivo")
+        self.siguiente_en_serie(serie.as_str(), anio).await
     }
 
     async fn configuracion_tickets(&mut self) -> AppResult<ConfiguracionTickets> {

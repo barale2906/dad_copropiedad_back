@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT codigo, nombre, naturaleza FROM catalogo_puc\n             WHERE $1::text IS NULL OR codigo LIKE $1 || '%' ORDER BY codigo",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "catalogo_puc",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "catalogo_puc",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "naturaleza",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "catalogo_puc",
+            "name": "naturaleza"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d82399bcd18e5babac9b306d696a048b1a9538bbe3ab2b9f6f55c5f829278d68"
+}

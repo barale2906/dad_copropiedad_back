@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE comprobantes SET estado = 'contabilizado', numero = $2, contabilizado_por = $3,\n                 contabilizado_en = $4\n             WHERE id = $1 AND estado = 'borrador'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bf0915ddaa2ab4f2a056f6cdb8cc149eb1e0018f2eb382b4bcc6db81b68c7035"
+}

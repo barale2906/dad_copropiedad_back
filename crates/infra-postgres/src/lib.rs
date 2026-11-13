@@ -33,6 +33,8 @@ mod chat;
 mod coeficientes;
 mod cola_salida;
 mod comunicados;
+mod consecutivos;
+mod contabilidad;
 mod copropiedades;
 mod directorio;
 mod error;

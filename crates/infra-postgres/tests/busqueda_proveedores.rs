@@ -146,7 +146,7 @@ impl Entorno {
 async fn ph(pool: &PgPool) -> TenantId {
     let tenant = crear_copropiedad(pool).await;
     sqlx::query(
-        "UPDATE copropiedades SET estado = 'activa', latitud = 4.650000, longitud = -74.060000,
+        "UPDATE entidades SET estado = 'activa', latitud = 4.650000, longitud = -74.060000,
                 municipio_dane = '11001'
          WHERE id = $1",
     )

@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO plantillas_contables (id, ambito, organizacion_id, nombre, tipo_empresa,\n                 version, estado, contenido, autor_cuenta_id, creada_en, publicada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text",
+        "Text",
+        "Int4",
+        "Text",
+        "Jsonb",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ba5f1b00ea04062df0de79630395d3bd01925d78fef04719d917dad556b657b4"
+}

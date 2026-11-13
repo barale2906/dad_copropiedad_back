@@ -1,0 +1,124 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT DISTINCT ON (numero) id, anio, numero, version, titulo, texto, rubro_id,\n                    creada_por, creada_en\n             FROM notas_estados WHERE anio = $1 ORDER BY numero, version DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "anio",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "anio"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "numero",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "titulo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "titulo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "texto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "texto"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "rubro_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "rubro_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "notas_estados",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "f5349ce9433ba385709f6cefe06a44ccabad2b79e898b8ce1e7520162b7a9fbe"
+}

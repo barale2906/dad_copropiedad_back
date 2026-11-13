@@ -297,18 +297,29 @@ impl RepositorioRoles for TransaccionPg {
         }))
     }
 
+    async fn insertar_entidad(&mut self, nombre: &str, nit: Option<&domain::Nit>) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO entidades (id, nombre, nit) VALUES ($1, $2, $3)",
+            self.ctx.tenant_id.as_uuid(),
+            nombre,
+            nit.map(ToString::to_string),
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| conflicto_si_unico(e, "otra entidad ya tiene ese NIT"))?;
+        Ok(())
+    }
+
     async fn insertar_copropiedad(&mut self, alta: &AltaCopropiedad) -> AppResult<()> {
         sqlx::query!(
-            "INSERT INTO copropiedades (id, nombre, nit, tipo, forma) VALUES ($1, $2, $3, $4, $5)",
+            "INSERT INTO copropiedades (id, tipo, forma) VALUES ($1, $2, $3)",
             self.ctx.tenant_id.as_uuid(),
-            alta.nombre,
-            alta.nit.as_ref().map(ToString::to_string),
             alta.tipo.as_str(),
             alta.forma.as_str(),
         )
         .execute(&mut *self.tx)
         .await
-        .map_err(|e| conflicto_si_unico(e, "otra copropiedad ya tiene ese NIT"))?;
+        .map_err(AppError::infra)?;
         Ok(())
     }
 }

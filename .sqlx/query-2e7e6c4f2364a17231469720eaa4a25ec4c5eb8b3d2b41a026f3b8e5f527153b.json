@@ -1,0 +1,139 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT k.id, t.codigo AS tipo_codigo, k.numero AS \"numero!\", k.fecha, k.descripcion,\n                      l.cuenta_id, l.persona_id, l.centro_costo_id, l.debito, l.credito\n               FROM lineas_comprobante l\n               JOIN comprobantes k ON k.tenant_id = l.tenant_id AND k.id = l.comprobante_id\n               JOIN tipos_comprobante t ON t.tenant_id = k.tenant_id AND t.id = k.tipo_comprobante_id\n               WHERE k.estado = 'contabilizado' AND l.cuenta_id = $1\n                 AND ($2::uuid IS NULL OR l.persona_id = $2)\n                 AND k.fecha BETWEEN $3 AND $4\n               ORDER BY k.fecha, t.codigo, k.numero, l.orden",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo_codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "numero!",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "centro_costo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "debito",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "debito"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "credito",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "credito"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "2e7e6c4f2364a17231469720eaa4a25ec4c5eb8b3d2b41a026f3b8e5f527153b"
+}

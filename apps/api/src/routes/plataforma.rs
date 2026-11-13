@@ -50,6 +50,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(super::asambleas::lineas::rutas())
         .merge(super::directorio::rutas_plataforma())
         .merge(super::publicidad::rutas_plataforma())
+        .merge(super::contabilidad::rutas_plataforma())
 }
 
 /// Copropiedad registrada.

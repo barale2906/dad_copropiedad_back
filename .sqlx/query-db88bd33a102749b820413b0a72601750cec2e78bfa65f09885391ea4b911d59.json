@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM rubros_estado_financiero WHERE NOT (estado || ':' || codigo = ANY($1))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "db88bd33a102749b820413b0a72601750cec2e78bfa65f09885391ea4b911d59"
+}

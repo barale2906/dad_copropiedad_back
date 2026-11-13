@@ -76,8 +76,9 @@ impl Entorno {
         let (b1, b2) = (Uuid::now_v7(), Uuid::now_v7());
         let mut tx = pool.begin().await.expect("tx");
         for sql in [
-            "UPDATE copropiedades SET estado = 'activa', latitud = 4.650000, longitud = -74.060000,
-                    municipio_dane = '11001', estrato = 4 WHERE id = $1",
+            "UPDATE entidades SET estado = 'activa', latitud = 4.650000, longitud = -74.060000,
+                    municipio_dane = '11001' WHERE id = $1",
+            "UPDATE copropiedades SET estrato = 4 WHERE id = $1",
             "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
              VALUES (gen_random_uuid(), $1, 'publicidad', now() - interval '1 day')",
             "INSERT INTO bienes_privados (id, tenant_id, codigo) VALUES ($2, $1, '101'), ($3, $1, '102')",

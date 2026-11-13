@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, nombre FROM copropiedades ORDER BY nombre",
+  "query": "SELECT e.id, e.nombre FROM entidades e\n                 JOIN copropiedades c ON c.id = e.id ORDER BY e.nombre",
   "describe": {
     "columns": [
       {
@@ -9,7 +9,7 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "id"
           }
         }
@@ -20,7 +20,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "nombre"
           }
         }
@@ -34,5 +34,5 @@
       false
     ]
   },
-  "hash": "4a6cc3d36a775f2ab5769666811c78f7029dd48918334ec4071fe0a47b37775f"
+  "hash": "6e8c80350c50e1c2b1946c22a17b15503b5ebae10bb85d8d3e3989676c9e7e87"
 }

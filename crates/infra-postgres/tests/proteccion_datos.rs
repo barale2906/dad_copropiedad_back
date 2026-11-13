@@ -219,7 +219,8 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('visitas', 'observacion'), ('reservas', 'observacion'),
                ('autorizaciones_acceso', 'motivo'), ('asistente_presencias', 'detalle_salida'),
                ('cambios_censo', 'motivo'), ('reclamaciones_organizacion', 'motivo'),
-               ('ordenes_trabajo', 'observaciones'))
+               ('ordenes_trabajo', 'observaciones'), ('personas', 'direccion_fiscal'),
+               ('personas', 'correo_facturacion'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

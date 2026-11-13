@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (SELECT 1 FROM organizaciones_miembros\n                              WHERE organizacion_id = $1 AND cuenta_id = $2\n                                AND rol IN ('dueno', 'gestor')) AS \"e!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "e!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ffd177846a3a5ad91224c5f1d85b3b7e4725dda15b8e482e807ad7f108924d77"
+}

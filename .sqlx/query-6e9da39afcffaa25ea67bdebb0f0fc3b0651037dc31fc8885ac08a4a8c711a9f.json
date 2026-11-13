@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE entidades SET\n                 nombre = $2, razon_social = $3, nit = $4, direccion = $5, municipio_dane = $6,\n                 departamento = $7, barrio = $8, latitud = $9, longitud = $10, telefono = $11,\n                 correo = $12, sitio_web = $13, zona_horaria = $14, estado = $15,\n                 actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6e9da39afcffaa25ea67bdebb0f0fc3b0651037dc31fc8885ac08a4a8c711a9f"
+}

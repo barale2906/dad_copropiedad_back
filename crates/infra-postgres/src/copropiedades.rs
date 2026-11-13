@@ -172,12 +172,13 @@ impl RepositorioCopropiedad for TransaccionPg {
     async fn ficha(&mut self) -> AppResult<Option<FichaCopropiedad>> {
         sqlx::query_as!(
             FilaFicha,
-            "SELECT nombre, razon_social, nit, tipo, forma, direccion, municipio_dane, departamento,
-                    barrio, latitud, longitud, estrato, telefono, correo, sitio_web,
-                    escritura_numero, notaria, escritura_fecha, matricula_matriz,
-                    reglamento_archivo_id, certificado_archivo_id, zona_horaria, estado,
-                    plantilla_codigo
-             FROM copropiedades WHERE id = $1",
+            "SELECT e.nombre, e.razon_social, e.nit, c.tipo, c.forma, e.direccion,
+                    e.municipio_dane, e.departamento, e.barrio, e.latitud, e.longitud, c.estrato,
+                    e.telefono, e.correo, e.sitio_web, c.escritura_numero, c.notaria,
+                    c.escritura_fecha, c.matricula_matriz, c.reglamento_archivo_id,
+                    c.certificado_archivo_id, e.zona_horaria, e.estado, c.plantilla_codigo
+             FROM entidades e JOIN copropiedades c ON c.id = e.id
+             WHERE e.id = $1",
             self.ctx.tenant_id.as_uuid(),
         )
         .fetch_optional(&mut *self.tx)
@@ -188,40 +189,49 @@ impl RepositorioCopropiedad for TransaccionPg {
     }
 
     async fn guardar_ficha(&mut self, f: &FichaCopropiedad) -> AppResult<()> {
+        // Lo genérico vive en la entidad; lo propio de la PH, en su extensión.
         sqlx::query!(
-            "UPDATE copropiedades SET
-                 nombre = $2, razon_social = $3, nit = $4, tipo = $5, forma = $6, direccion = $7,
-                 municipio_dane = $8, departamento = $9, barrio = $10, latitud = $11,
-                 longitud = $12, estrato = $13, telefono = $14, correo = $15, sitio_web = $16,
-                 escritura_numero = $17, notaria = $18, escritura_fecha = $19,
-                 matricula_matriz = $20, reglamento_archivo_id = $21,
-                 certificado_archivo_id = $22, zona_horaria = $23, estado = $24,
-                 plantilla_codigo = $25, actualizado_en = now()
+            "UPDATE entidades SET
+                 nombre = $2, razon_social = $3, nit = $4, direccion = $5, municipio_dane = $6,
+                 departamento = $7, barrio = $8, latitud = $9, longitud = $10, telefono = $11,
+                 correo = $12, sitio_web = $13, zona_horaria = $14, estado = $15,
+                 actualizado_en = now()
              WHERE id = $1",
             self.ctx.tenant_id.as_uuid(),
             f.nombre,
             f.razon_social,
             f.nit.as_ref().map(ToString::to_string),
-            f.tipo.as_str(),
-            f.forma.as_str(),
             f.direccion,
             f.municipio_dane.as_ref().map(CodigoDane::as_str),
             f.departamento,
             f.barrio,
             f.latitud,
             f.longitud,
-            f.estrato.map(i16::from),
             f.telefono.as_ref().map(Telefono::as_str),
             f.correo.as_ref().map(DireccionCorreo::as_str),
             f.sitio_web,
+            f.zona_horaria,
+            f.estado.as_str(),
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_escritura(e, "otra copropiedad ya tiene ese NIT", "archivo"))?;
+        sqlx::query!(
+            "UPDATE copropiedades SET
+                 tipo = $2, forma = $3, estrato = $4, escritura_numero = $5, notaria = $6,
+                 escritura_fecha = $7, matricula_matriz = $8, reglamento_archivo_id = $9,
+                 certificado_archivo_id = $10, plantilla_codigo = $11
+             WHERE id = $1",
+            self.ctx.tenant_id.as_uuid(),
+            f.tipo.as_str(),
+            f.forma.as_str(),
+            f.estrato.map(i16::from),
             f.escritura_numero,
             f.notaria,
             f.escritura_fecha,
             f.matricula_matriz,
             f.reglamento_archivo_id.map(ArchivoId::as_uuid),
             f.certificado_archivo_id.map(ArchivoId::as_uuid),
-            f.zona_horaria,
-            f.estado.as_str(),
             f.plantilla_codigo.as_str(),
         )
         .execute(&mut *self.tx)

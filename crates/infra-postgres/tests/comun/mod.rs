@@ -22,13 +22,25 @@ pub async fn pool_como_app(pool: &PgPool) -> PgPool {
         .expect("pool con rol dad_app")
 }
 
-/// Crea una copropiedad (tenant) con el dueño del esquema.
+/// Crea una copropiedad (entidad + extensión de la vertical PH) con el dueño del esquema.
 pub async fn crear_copropiedad(pool: &PgPool) -> TenantId {
-    let tenant = TenantId::nuevo();
-    sqlx::query("INSERT INTO copropiedades (id, nombre) VALUES ($1, 'PH de prueba')")
+    let tenant = insertar_entidad(pool, "PH de prueba").await;
+    sqlx::query("INSERT INTO copropiedades (id) VALUES ($1)")
         .bind(tenant.as_uuid())
         .execute(pool)
         .await
         .expect("copropiedad");
+    tenant
+}
+
+/// Crea una entidad sin vertical con el dueño del esquema.
+pub async fn insertar_entidad(pool: &PgPool, nombre: &str) -> TenantId {
+    let tenant = TenantId::nuevo();
+    sqlx::query("INSERT INTO entidades (id, nombre) VALUES ($1, $2)")
+        .bind(tenant.as_uuid())
+        .bind(nombre)
+        .execute(pool)
+        .await
+        .expect("entidad");
     tenant
 }
