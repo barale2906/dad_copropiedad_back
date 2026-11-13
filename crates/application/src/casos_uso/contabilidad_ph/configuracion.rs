@@ -222,6 +222,22 @@ async fn validar_concepto<T: TxCartera>(tx: &mut T, c: &ConceptoCobro) -> AppRes
             "una cuota extraordinaria se reparte por coeficiente, módulo o área",
         ));
     }
+    if c.tipo == TipoConceptoCobro::InteresMora {
+        // Sin anatocismo: los intereses no generan intereses.
+        if c.genera_interes {
+            return Err(validacion("los intereses de mora no generan intereses"));
+        }
+        let otro = tx
+            .conceptos_cobro()
+            .await?
+            .into_iter()
+            .any(|x| x.activo && x.id != c.id && x.tipo == TipoConceptoCobro::InteresMora);
+        if c.activo && otro {
+            return Err(AppError::Conflicto(
+                "ya hay un concepto activo de intereses de mora".into(),
+            ));
+        }
+    }
     if c.tipo == TipoConceptoCobro::FondoImprevistos {
         if c.criterio != CriterioDistribucion::Coeficiente {
             return Err(validacion(

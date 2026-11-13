@@ -237,6 +237,8 @@ catalogo_permisos! {
     CarteraLiquidar => "cartera.liquidar", Copropiedad;
     /// Cobros manuales, notas crédito y cartera inicial.
     CarteraAjustar => "cartera.ajustar", Copropiedad;
+    /// Emitir paz y salvo y certificados de deuda de un bien privado.
+    CarteraCertificadosEmitir => "cartera.certificados.emitir", Copropiedad;
     /// Elaborar y aprobar el presupuesto de la PH.
     PresupuestoGestionar => "presupuesto.gestionar", Copropiedad;
     /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
@@ -478,6 +480,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::CarteraConfigurar,
             P::CarteraLiquidar,
             P::CarteraAjustar,
+            P::CarteraCertificadosEmitir,
             P::PresupuestoGestionar,
         ]),
     },

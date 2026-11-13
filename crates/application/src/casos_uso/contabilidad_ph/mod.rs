@@ -10,6 +10,8 @@
 //! - [`recaudo`]: recaudo por bien con imputación y pronto pago, recaudo desde el extracto por
 //!   referencia, anticipos, cobros manuales, notas crédito, cartera inicial, estado de cuenta,
 //!   cartera por bien y cuadre contra el mayor.
+//! - [`mora`]: tasas de referencia, causación de intereses de mora, acuerdos de pago, cartera
+//!   por edades y certificados (paz y salvo y deuda) verificables.
 //!
 //! Se monta sobre el núcleo contable y la tesorería (ADR 0017, 0018): los documentos se
 //! entregan al contabilizador con los eventos de [`eventos`] (el contador define sus reglas) y
@@ -18,6 +20,7 @@
 
 pub mod configuracion;
 pub mod liquidacion;
+pub mod mora;
 pub mod presupuesto;
 pub mod recaudo;
 
@@ -28,7 +31,10 @@ use super::contabilidad::TxTesoreria;
 use crate::{
     AppError, AppResult, Contexto,
     casos_uso::modulos::exigir_modulo_en,
-    puertos::{RegistroOutbox, Reloj, RepositorioCartera, RepositorioTickets, UnidadDeTrabajo},
+    puertos::{
+        RegistroOutbox, Reloj, RepositorioCartera, RepositorioTickets, UnidadDeTrabajo,
+        cartera::CatalogoTasas,
+    },
 };
 
 /// Eventos de las reglas de contabilización de la vertical (y tipo de origen del comprobante).
@@ -48,6 +54,9 @@ pub mod eventos {
     pub const NOTA_CREDITO: &str = "ph.nota_credito";
     /// Descuento por pronto pago: reduce la cartera del concepto.
     pub const PRONTO_PAGO: &str = "ph.pronto_pago";
+    /// Causación de intereses de mora: el concepto de tipo `interes_mora` debita la cartera de
+    /// intereses y acredita el ingreso.
+    pub const INTERESES: &str = "ph.intereses";
 }
 
 /// Serie del consecutivo de las cuentas de cobro (por año).
@@ -55,12 +64,12 @@ pub const SERIE_CUENTA_COBRO: &str = "CB";
 
 /// Lo que usa una transacción de la cartera: la de tesorería, la cartera y los avisos.
 pub trait TxCartera:
-    TxTesoreria + RepositorioCartera + RepositorioTickets + RegistroOutbox
+    TxTesoreria + RepositorioCartera + CatalogoTasas + RepositorioTickets + RegistroOutbox
 {
 }
 
 impl<T> TxCartera for T where
-    T: TxTesoreria + RepositorioCartera + RepositorioTickets + RegistroOutbox
+    T: TxTesoreria + RepositorioCartera + CatalogoTasas + RepositorioTickets + RegistroOutbox
 {
 }
 

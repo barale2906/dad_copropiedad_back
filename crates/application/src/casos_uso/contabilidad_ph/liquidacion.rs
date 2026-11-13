@@ -620,6 +620,7 @@ where
                 cuota_extraordinaria_id: c.cuota_id,
                 cuenta_cobro_id: Some(cuenta.id),
                 comprobante_id: None,
+                causacion_id: None,
                 descripcion: None,
                 estado: EstadoObligacion::Vigente,
                 creada_en: ahora,

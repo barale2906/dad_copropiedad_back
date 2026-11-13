@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT p.obligacion_id AS \"obligacion_id!\", r.fecha AS \"fecha!\", p.valor AS \"valor!\"\n               FROM aplicaciones_pago p JOIN recibos_caja r ON r.id = p.recibo_id\n               WHERE p.obligacion_id = ANY($1) AND p.anulada_en IS NULL\n               UNION ALL\n               SELECT a.obligacion_id, (a.creado_en AT TIME ZONE 'UTC')::date, a.valor\n               FROM ajustes_obligacion a\n               WHERE a.obligacion_id = ANY($1) AND a.anulado_en IS NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "obligacion_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "fecha!",
+        "type_info": "Date",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "valor!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "6f102aedf7a9db27f745652ea9757751669875b9323da30f43938133ef0e7608"
+}

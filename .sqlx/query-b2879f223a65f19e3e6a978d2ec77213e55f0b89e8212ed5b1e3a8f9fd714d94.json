@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO causaciones_mora (id, tenant_id, periodo, hasta, estado, total,\n                 comprobante_id, causada_por, causada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Date",
+        "Text",
+        "Numeric",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b2879f223a65f19e3e6a978d2ec77213e55f0b89e8212ed5b1e3a8f9fd714d94"
+}

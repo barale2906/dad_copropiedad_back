@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cuotas_acuerdo (tenant_id, acuerdo_id, numero, vencimiento, valor)\n                 VALUES ($1, $2, $3, $4, $5)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Date",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aeb5f5a511c763b6b1450a1589b5204aae34d0e619a6277b81ce65b801f57579"
+}

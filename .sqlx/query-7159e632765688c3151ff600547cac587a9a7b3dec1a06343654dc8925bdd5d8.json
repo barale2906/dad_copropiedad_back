@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT o.id, o.bien_privado_id, o.concepto_cobro_id, o.periodo, o.valor,\n                      o.vencimiento, o.deudor_persona_id, o.origen, o.liquidacion_id,\n                      o.cuota_extraordinaria_id, o.cuenta_cobro_id, o.comprobante_id,\n                      o.descripcion, o.estado, o.creada_en, o.anulada_en,\n                      c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,\n                      c.tipo AS concepto_tipo, c.concepto_contable,\n                      coalesce(aj.total, 0) AS \"ajustes!\", coalesce(ap.total, 0) AS \"aplicado!\"\n               FROM obligaciones o\n               JOIN conceptos_cobro c ON c.id = o.concepto_cobro_id\n               LEFT JOIN LATERAL (SELECT sum(a.valor) AS total FROM ajustes_obligacion a\n                                  WHERE a.obligacion_id = o.id AND a.anulado_en IS NULL) aj ON TRUE\n               LEFT JOIN LATERAL (SELECT sum(p.valor) AS total FROM aplicaciones_pago p\n                                  WHERE p.obligacion_id = o.id AND p.anulada_en IS NULL) ap ON TRUE\n               WHERE ($1::uuid IS NULL OR o.id = $1)\n                 AND ($2::uuid IS NULL OR o.bien_privado_id = $2)\n                 AND ($3::uuid IS NULL OR o.liquidacion_id = $3)\n                 AND ($4::uuid IS NULL OR o.cuenta_cobro_id = $4)\n                 AND ($5::date IS NULL OR o.periodo <= $5)\n                 AND (NOT $6 OR (o.estado = 'vigente'\n                                 AND o.valor - coalesce(aj.total, 0) - coalesce(ap.total, 0) > 0))\n               ORDER BY o.bien_privado_id, o.periodo, o.creada_en, o.id",
+  "query": "SELECT o.id, o.bien_privado_id, o.concepto_cobro_id, o.periodo, o.valor,\n                      o.vencimiento, o.deudor_persona_id, o.origen, o.liquidacion_id,\n                      o.cuota_extraordinaria_id, o.cuenta_cobro_id, o.comprobante_id,\n                      o.causacion_id, o.descripcion, o.estado, o.creada_en, o.anulada_en,\n                      c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,\n                      c.tipo AS concepto_tipo, c.concepto_contable,\n                      coalesce(aj.total, 0) AS \"ajustes!\", coalesce(ap.total, 0) AS \"aplicado!\"\n               FROM obligaciones o\n               JOIN conceptos_cobro c ON c.id = o.concepto_cobro_id\n               LEFT JOIN LATERAL (SELECT sum(a.valor) AS total FROM ajustes_obligacion a\n                                  WHERE a.obligacion_id = o.id AND a.anulado_en IS NULL) aj ON TRUE\n               LEFT JOIN LATERAL (SELECT sum(p.valor) AS total FROM aplicaciones_pago p\n                                  WHERE p.obligacion_id = o.id AND p.anulada_en IS NULL) ap ON TRUE\n               WHERE ($1::uuid IS NULL OR o.id = $1)\n                 AND ($2::uuid IS NULL OR o.bien_privado_id = $2)\n                 AND ($3::uuid IS NULL OR o.liquidacion_id = $3)\n                 AND ($4::uuid IS NULL OR o.cuenta_cobro_id = $4)\n                 AND ($5::date IS NULL OR o.periodo <= $5)\n                 AND (NOT $6 OR (o.estado = 'vigente'\n                                 AND o.valor - coalesce(aj.total, 0) - coalesce(ap.total, 0) > 0))\n               ORDER BY o.bien_privado_id, o.periodo, o.creada_en, o.id",
   "describe": {
     "columns": [
       {
@@ -137,6 +137,17 @@
       },
       {
         "ordinal": 12,
+        "name": "causacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "causacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
         "name": "descripcion",
         "type_info": "Text",
         "origin": {
@@ -147,7 +158,7 @@
         }
       },
       {
-        "ordinal": 13,
+        "ordinal": 14,
         "name": "estado",
         "type_info": "Text",
         "origin": {
@@ -158,7 +169,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "creada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -169,7 +180,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "anulada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -180,7 +191,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "concepto_codigo",
         "type_info": "Text",
         "origin": {
@@ -191,7 +202,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "concepto_nombre",
         "type_info": "Text",
         "origin": {
@@ -202,7 +213,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "concepto_tipo",
         "type_info": "Text",
         "origin": {
@@ -213,7 +224,7 @@
         }
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "concepto_contable",
         "type_info": "Text",
         "origin": {
@@ -224,13 +235,13 @@
         }
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "ajustes!",
         "type_info": "Numeric",
         "origin": "Expression"
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "aplicado!",
         "type_info": "Numeric",
         "origin": "Expression"
@@ -260,6 +271,7 @@
       true,
       true,
       true,
+      true,
       false,
       false,
       true,
@@ -271,5 +283,5 @@
       null
     ]
   },
-  "hash": "c99de424c9135de3c4afd35617ac62149acb87e71621a1c94772283b4050135a"
+  "hash": "7159e632765688c3151ff600547cac587a9a7b3dec1a06343654dc8925bdd5d8"
 }

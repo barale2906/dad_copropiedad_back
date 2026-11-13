@@ -6,6 +6,7 @@
 mod configuracion;
 mod dto;
 mod liquidacion;
+mod mora;
 mod recaudo;
 
 use utoipa_axum::router::OpenApiRouter;
@@ -18,4 +19,10 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(configuracion::rutas())
         .merge(liquidacion::rutas())
         .merge(recaudo::rutas())
+        .merge(mora::rutas())
+}
+
+/// Rutas de plataforma de la cartera (tasas de referencia; se montan en `/plataforma`).
+pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
+    mora::rutas_plataforma()
 }

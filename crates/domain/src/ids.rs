@@ -582,6 +582,27 @@ id_entidad!(
     Uuid::now_v7
 );
 
+id_entidad!(
+    /// Tasa de referencia (interés bancario corriente) del catálogo de la plataforma.
+    TasaReferenciaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Causación mensual de intereses de mora de la PH.
+    CausacionMoraId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Acuerdo de pago de un bien privado.
+    AcuerdoPagoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Certificado de cartera emitido (paz y salvo o deuda).
+    CertificadoCarteraId,
+    Uuid::now_v7
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;

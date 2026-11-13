@@ -133,6 +133,14 @@ esquema_enum! {
         "Clase de ajuste que reduce una obligación.";
     EstadoCuotaExtraordinaria = domain::contabilidad_ph::EstadoCuotaExtraordinaria,
         "Estado de una cuota extraordinaria.";
+    ModalidadTasa = domain::contabilidad_ph::mora::ModalidadTasa,
+        "Modalidad de una tasa de referencia certificada.";
+    EstadoCausacion = domain::contabilidad_ph::mora::EstadoCausacion,
+        "Estado de una causación de intereses de mora.";
+    EstadoAcuerdo = domain::contabilidad_ph::mora::EstadoAcuerdo,
+        "Estado de un acuerdo de pago.";
+    TipoCertificado = domain::contabilidad_ph::mora::TipoCertificado,
+        "Clase de certificado de cartera (paz y salvo o deuda).";
     NivelCuenta = domain::contabilidad::NivelCuenta,
         "Nivel de una cuenta según el largo de su código.";
     OrigenCentro = domain::contabilidad::OrigenCentro,

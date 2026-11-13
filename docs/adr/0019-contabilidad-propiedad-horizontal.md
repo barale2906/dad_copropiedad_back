@@ -2,7 +2,7 @@
 
 - **Estado:** aceptada
 - **Fecha:** 2026-11-14
-- **Plan:** `docs/planes/14-contabilidad-vertical-ph.md` (fases 1–4)
+- **Plan:** `docs/planes/14-contabilidad-vertical-ph.md` (fases 1–5)
 
 ## Contexto
 Sobre el núcleo contable (ADR 0017) y la tesorería (ADR 0018), una copropiedad necesita liquidar
@@ -65,9 +65,30 @@ de pago de la tesorería, sin maestros paralelos ni asientos fuera del contabili
   sin comprobante (su contabilidad son los saldos iniciales del núcleo); con errores no carga
   nada. El **cuadre** compara, por cada cuenta que debita la regla de `ph.liquidacion`, el saldo
   del mayor con la suma de los saldos de las obligaciones.
-- Cinco permisos nuevos: `cartera.ver`, `cartera.configurar`, `cartera.liquidar`,
-  `cartera.ajustar`, `presupuesto.gestionar` (contador y administrador todos; revisor fiscal,
-  consejero y presidente del consejo `cartera.ver`).
+- **Mora (fase 5).** La plataforma carga el interés bancario corriente certificado
+  (`tasas_referencia`, sin solapes por modalidad, solo inserción). La tasa de mora es el factor de
+  la política (≤ 1,5) por esa tasa o la tasa inferior aprobada (convertida a efectiva anual), y el
+  interés de cada día es el equivalente de la efectiva anual sobre el **capital** pendiente ese
+  día (pagos y ajustes por fecha), por tramos de tasa y de saldo (QA-010). Cada causación
+  (`causaciones_mora`, una vigente por periodo, evento `ph.intereses`) crea una obligación de
+  origen `interes` por bien con el concepto de tipo `interes_mora`, que nunca genera intereses
+  (sin anatocismo), y deja el detalle de cada tramo en `causaciones_interes` (base, días, tasa y
+  la tasa de referencia). Anular una causación sin pagos revierte su comprobante y deja los días
+  por causar otra vez. El pago cubre primero los intereses (imputación).
+- **Acuerdos de pago** (`acuerdos_pago` + `cuotas_acuerdo`): cuotas mensuales que cuadran al
+  peso; los aprueba otra cuenta (`CHECK`); un acuerdo activo por bien. Mientras está vigente
+  suspende la mora de lo que vencía hasta su fecha; al causar se revisa: si una cuota venció sin
+  cubrirse queda incumplido y la mora corre desde el día siguiente (no se cobra lo suspendido).
+  La deuda original no se borra.
+- **Cartera por edades** con los tramos del núcleo (`TramoEdad`).
+- **Certificados** (`certificados_emitidos`): paz y salvo solo sin saldo de lo ya cobrado (también
+  lo liquidado por anticipado) y certificado de deuda; el PDF lleva un código de 80 bits del que
+  solo se guarda el SHA-256, y se verifica sin sesión en
+  `POST /copropiedades/{id}/certificados/verificacion` (límite por IP; responde solo válido,
+  clase y corte). El PDF y el código se entregan una sola vez.
+- Seis permisos nuevos: `cartera.ver`, `cartera.configurar`, `cartera.liquidar`,
+  `cartera.ajustar`, `cartera.certificados.emitir`, `presupuesto.gestionar` (contador y
+  administrador todos; revisor fiscal, consejero y presidente del consejo `cartera.ver`).
 
 ## Consecuencias
 - Rutas en `/api/v1/copropiedades/{copropiedad_id}/cartera/…` (etiqueta `cartera`); el PDF de la
@@ -77,7 +98,8 @@ de pago de la tesorería, sin maestros paralelos ni asientos fuera del contabili
   `archivos`; la cartera inicial es JSON (no el flujo de `importaciones`); el envío masivo es por
   correo (la plantilla de WhatsApp `cuenta_cobro` está por aprobar en Meta y el push necesita
   la cuenta del pagador).
-- Pendiente (plan 14 fases 5–7): intereses de mora con `tasas_referencia`, acuerdos de pago,
-  edades por bien, paz y salvo y certificado de deuda verificables, portal `/yo/bienes`, chat,
-  morosos de la asamblea y restricción de reservas desde la cartera, informes para la asamblea;
-  cobros de zonas comunes facturables (plan 15) y pago por PSE (D8).
+- La causación de intereses se dispara por la API (mensual); falta la tarea programada del
+  worker del gateway.
+- Pendiente (plan 14 fases 6–7): portal del propietario, chat, recordatorios, morosos de la
+  asamblea y restricción de reservas desde la cartera, informes para la asamblea; cobros de zonas
+  comunes facturables (plan 15) y pago por PSE (D8).

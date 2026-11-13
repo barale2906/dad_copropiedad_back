@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, modalidad, vigente_desde, vigente_hasta, tasa_efectiva_anual,\n                            resolucion, fuente, creada_en\n                     FROM tasas_referencia WHERE modalidad = $1 ORDER BY vigente_desde",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "modalidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "modalidad"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vigente_hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "vigente_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "tasa_efectiva_anual",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "tasa_efectiva_anual"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "resolucion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "resolucion"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "fuente",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "fuente"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tasas_referencia",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "923422474947a91e714a99fb9f6e6161393dcbd3176b86310a5349f7843fe7be"
+}

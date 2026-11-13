@@ -4,7 +4,7 @@
 //! cuadre contra el mayor.
 
 use application::{
-    AppError, Contexto,
+    AppError, Contexto, ContextoPlataforma,
     casos_uso::{
         coeficientes::{self, NuevoCuadro, RefBienPrivado},
         contabilidad::{
@@ -19,6 +19,7 @@ use application::{
             configuracion::{self as cfg, NuevoConcepto},
             eventos,
             liquidacion::{self as liq, NuevaCuota},
+            mora,
             presupuesto::{self as pres, NuevoRubro},
             recaudo::{self as rec, FilaCarteraInicial, NuevoCobro, NuevoRecaudo},
         },
@@ -42,7 +43,7 @@ use domain::{
         TipoConceptoCobro,
     },
 };
-use infra_postgres::UnidadDeTrabajoPg;
+use infra_postgres::{UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg};
 use rust_decimal::{Decimal, dec};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -308,6 +309,8 @@ async fn entorno(pool: PgPool) -> Entorno {
         ("41", false, false),
         ("4170", true, false),
         ("4175", true, false),
+        ("42", false, false),
+        ("4210", true, false),
         ("5", false, false),
         ("51", false, false),
         ("5135", true, false),
@@ -389,7 +392,16 @@ async fn entorno(pool: PgPool) -> Entorno {
                 ("fondo", C, "1305", true),
                 ("extraordinaria", C, "1305", true),
                 ("multa", C, "1305", true),
+                ("intereses", C, "1305", true),
                 (conceptos::SIN_APLICAR, C, "2805", false),
+            ],
+        ),
+        regla(
+            eventos::INTERESES,
+            "CC",
+            &[
+                ("intereses", D, "1305", true),
+                ("intereses", C, "4210", false),
             ],
         ),
         regla(
@@ -518,6 +530,27 @@ async fn entorno(pool: PgPool) -> Entorno {
     )
     .await
     .expect("aprobar");
+    cfg::crear_concepto_cobro(
+        &unidad,
+        &RelojFijo,
+        &contador,
+        concepto(
+            "intereses",
+            TipoConceptoCobro::InteresMora,
+            CriterioDistribucion::Coeficiente,
+            "intereses",
+        ),
+    )
+    .await
+    .expect("intereses");
+    sqlx::query(
+        "INSERT INTO tasas_referencia (id, vigente_desde, vigente_hasta, tasa_efectiva_anual,
+             resolucion, fuente, creada_en)
+         VALUES (uuidv7(), '2026-01-01', '2026-12-31', 20, 'Resolución de prueba', 'Prueba', now())",
+    )
+    .execute(&pool)
+    .await
+    .expect("tasa");
     Entorno {
         pool,
         unidad,
@@ -1150,4 +1183,307 @@ async fn la_ejecucion_presupuestal_compara_contra_el_mayor(pool: PgPool) {
         matches!(sin_permiso, Err(AppError::SinPermiso(_))),
         "{sin_permiso:?}"
     );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Fase 5: mora, acuerdos, edades y certificados
+// ---------------------------------------------------------------------------------------------
+
+struct PdfFalso;
+
+impl application::puertos::GeneradorActas for PdfFalso {
+    async fn generar(
+        &self,
+        _: &application::puertos::actas::DatosActa,
+    ) -> application::AppResult<Vec<u8>> {
+        Ok(b"%PDF".to_vec())
+    }
+
+    async fn rotulos(
+        &self,
+        _: &application::puertos::actas::HojaRotulos,
+    ) -> application::AppResult<Vec<u8>> {
+        Ok(b"%PDF".to_vec())
+    }
+
+    async fn tabla(
+        &self,
+        _: &application::puertos::actas::TablaPdf,
+    ) -> application::AppResult<Vec<u8>> {
+        Ok(b"%PDF-tabla".to_vec())
+    }
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn los_intereses_se_causan_por_tramos_de_saldo_y_no_se_repiten(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    e.recaudar(e.bienes[0], fecha(2026, 11, 20), 300_000)
+        .await
+        .expect("abono");
+
+    let c = mora::causar_intereses(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 11, 30))
+        .await
+        .expect("causar");
+
+    assert_eq!(c.calculo.bienes.len(), 3);
+    let del_101 = c
+        .calculo
+        .bienes
+        .iter()
+        .find(|b| b.bien_id == e.bienes[0])
+        .expect("101");
+    let tramos: Vec<(u32, Decimal)> = del_101.detalle.iter().map(|d| (d.dias, d.base)).collect();
+    assert_eq!(tramos, vec![(9, dec!(500000.00)), (11, dec!(200000.00))]);
+    assert!(
+        del_101
+            .detalle
+            .iter()
+            .all(|d| d.tasa_efectiva_anual == dec!(30))
+    );
+    let otra =
+        mora::causar_intereses(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 11, 30)).await;
+    assert!(matches!(otra, Err(AppError::Conflicto(_))), "{otra:?}");
+    let (_, detalle) = mora::causacion(&e.unidad, &RelojFijo, &e.contador, c.causacion.id)
+        .await
+        .expect("detalle");
+    assert_eq!(detalle.len(), 4);
+    assert_eq!(e.saldo(e.bienes[0]).await, dec!(205000) + del_101.total);
+    let cuadre = rec::cuadre_cartera(&e.unidad, &RelojFijo, &e.contador)
+        .await
+        .expect("cuadre");
+    assert!(cuadre.iter().all(|c| c.diferencia.is_zero()));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_pago_cubre_primero_los_intereses(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    let c = mora::causar_intereses(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 11, 30))
+        .await
+        .expect("causar");
+    let interes_102 = c
+        .calculo
+        .bienes
+        .iter()
+        .find(|b| b.bien_id == e.bienes[1])
+        .expect("102")
+        .total;
+
+    let r = e
+        .recaudar(e.bienes[1], fecha(2026, 11, 30), 1_000)
+        .await
+        .expect("abono");
+
+    let (_, obligaciones) = (
+        0,
+        rec::estado_cuenta(&e.unidad, &RelojFijo, &e.contador, e.bienes[1], None)
+            .await
+            .expect("estado")
+            .obligaciones,
+    );
+    let interes = obligaciones
+        .iter()
+        .find(|o| o.obligacion.origen == domain::contabilidad_ph::OrigenObligacion::Interes)
+        .expect("obligación de intereses");
+    assert_eq!(r.aplicado[0].0, interes.obligacion.id);
+    assert_eq!(interes.saldo, (interes_102 - dec!(1000)).max(Decimal::ZERO));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_acuerdo_aprobado_por_otra_cuenta_suspende_la_mora(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    let a = mora::proponer_acuerdo(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        mora::NuevoAcuerdo {
+            bien: e.bienes[1],
+            numero_cuotas: 3,
+            primer_vencimiento: fecha(2026, 12, 15),
+            fecha: None,
+            observaciones: None,
+        },
+    )
+    .await
+    .expect("proponer");
+    assert_eq!(a.valor.valor(), dec!(303000));
+    assert_eq!(a.cuotas.len(), 3);
+
+    let misma = mora::aprobar_acuerdo(&e.unidad, &RelojFijo, &e.contador, a.id).await;
+    assert!(matches!(misma, Err(AppError::Conflicto(_))), "{misma:?}");
+    let otra = Contexto::de_cuenta(
+        e.contador.tenant_id,
+        crear_cuenta(&e.pool, "tesorero").await,
+        ConjuntoPermisos::todos(Ambito::Copropiedad),
+    );
+    mora::aprobar_acuerdo(&e.unidad, &RelojFijo, &otra, a.id)
+        .await
+        .expect("aprobar");
+    let c = mora::causar_intereses(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 11, 30))
+        .await
+        .expect("causar");
+
+    let del_102 = c
+        .calculo
+        .bienes
+        .iter()
+        .find(|b| b.bien_id == e.bienes[1])
+        .expect("102");
+    assert_eq!(del_102.detalle.iter().map(|d| d.dias).sum::<u32>(), 2);
+    let otro = mora::proponer_acuerdo(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        mora::NuevoAcuerdo {
+            bien: e.bienes[1],
+            numero_cuotas: 1,
+            primer_vencimiento: fecha(2026, 12, 15),
+            fecha: None,
+            observaciones: None,
+        },
+    )
+    .await;
+    assert!(matches!(otro, Err(AppError::Conflicto(_))), "{otro:?}");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_causacion_sin_pagos_se_anula_y_se_repite(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    let c = mora::causar_intereses(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 11, 30))
+        .await
+        .expect("causar");
+
+    mora::anular_causacion(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        c.causacion.id,
+        "Tasa equivocada",
+    )
+    .await
+    .expect("anular");
+
+    assert_eq!(e.saldo(e.bienes[2]).await, dec!(202000));
+    let otra = mora::causar_intereses(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 11, 30))
+        .await
+        .expect("repetir");
+    assert_eq!(otra.calculo.total, c.calculo.total);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn sin_tasa_de_referencia_no_se_causan_intereses(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+
+    let r = mora::causar_intereses(&e.unidad, &RelojFijo, &e.contador, fecha(2027, 1, 31)).await;
+
+    assert!(
+        matches!(r, Err(AppError::Dominio(DominioError::ReglaContable(_)))),
+        "{r:?}"
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_cartera_por_edades_clasifica_por_dias_de_vencida(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+
+    let (filas, total) = mora::cartera_por_edades(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        Some(fecha(2026, 12, 31)),
+    )
+    .await
+    .expect("edades");
+
+    assert_eq!(filas.len(), 3);
+    assert_eq!(total.de_31_a_60, dec!(1010000));
+    assert_eq!(total.total, dec!(1010000));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_certificado_se_verifica_por_su_codigo(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+
+    let paz = mora::emitir_certificado(
+        &e.unidad,
+        &PdfFalso,
+        &RelojFijo,
+        &e.contador,
+        e.bienes[0],
+        domain::contabilidad_ph::mora::TipoCertificado::PazYSalvo,
+    )
+    .await;
+    let deuda = mora::emitir_certificado(
+        &e.unidad,
+        &PdfFalso,
+        &RelojFijo,
+        &e.contador,
+        e.bienes[0],
+        domain::contabilidad_ph::mora::TipoCertificado::Deuda,
+    )
+    .await
+    .expect("deuda");
+
+    assert!(matches!(paz, Err(AppError::Conflicto(_))), "{paz:?}");
+    assert_eq!(deuda.certificado.saldo, dec!(505000));
+    assert_eq!(deuda.codigo.len(), 24);
+    let valido = mora::verificar_certificado(
+        &e.unidad,
+        e.contador.tenant_id,
+        &deuda.codigo.to_lowercase().replace('-', " "),
+    )
+    .await
+    .expect("verificar");
+    assert_eq!(
+        valido.map(|v| v.tipo),
+        Some(domain::contabilidad_ph::mora::TipoCertificado::Deuda)
+    );
+    let falso =
+        mora::verificar_certificado(&e.unidad, e.contador.tenant_id, "0000-0000-0000-0000-0000")
+            .await
+            .expect("verificar");
+    assert_eq!(falso, None);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_plataforma_carga_tasas_sin_solapes(pool: PgPool) {
+    let plataforma = UnidadDeTrabajoPlataformaPg::new(pool_como_app(&pool).await);
+    let tasa = |desde, hasta| mora::NuevaTasa {
+        vigente_desde: desde,
+        vigente_hasta: hasta,
+        tasa_efectiva_anual: dec!(18.5),
+        resolucion: "Resolución 0001".into(),
+        fuente: "Superintendencia Financiera".into(),
+    };
+
+    mora::crear_tasa_referencia(
+        &plataforma,
+        &RelojFijo,
+        &ContextoPlataforma::sistema(),
+        tasa(fecha(2027, 1, 1), fecha(2027, 1, 31)),
+    )
+    .await
+    .expect("enero");
+    let solapada = mora::crear_tasa_referencia(
+        &plataforma,
+        &RelojFijo,
+        &ContextoPlataforma::sistema(),
+        tasa(fecha(2027, 1, 15), fecha(2027, 2, 28)),
+    )
+    .await;
+
+    assert!(
+        matches!(solapada, Err(AppError::Conflicto(_))),
+        "{solapada:?}"
+    );
+    let tasas = mora::tasas_referencia_plataforma(&plataforma, &ContextoPlataforma::sistema())
+        .await
+        .expect("tasas");
+    assert_eq!(tasas.len(), 1);
 }

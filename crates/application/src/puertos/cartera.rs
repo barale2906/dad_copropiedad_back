@@ -9,15 +9,19 @@ use std::{collections::BTreeMap, future::Future};
 
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    AjusteObligacionId, BienPrivadoId, CentroCostoId, CodigoBienPrivado, ComprobanteId,
-    ConceptoCobroId, CuentaCobroId, CuentaContableId, CuentaId, CuotaExtraordinariaId,
-    LiquidacionExpensasId, ModuloContribucionId, ObligacionCobroId, PersonaId, PoliticaCarteraId,
-    PreguntaId, PresupuestoId, ReciboCajaId, RubroPresupuestoId, TipoBienPrivado,
+    AcuerdoPagoId, AjusteObligacionId, BienPrivadoId, CausacionMoraId, CentroCostoId,
+    CertificadoCarteraId, CodigoBienPrivado, ComprobanteId, ConceptoCobroId, CuentaCobroId,
+    CuentaContableId, CuentaId, CuotaExtraordinariaId, LiquidacionExpensasId, ModuloContribucionId,
+    ObligacionCobroId, PersonaId, PoliticaCarteraId, PreguntaId, PresupuestoId, ReciboCajaId,
+    RubroPresupuestoId, TasaReferenciaId, TipoBienPrivado,
     contabilidad::Monto,
     contabilidad_ph::{
         CriterioDistribucion, EstadoCuotaExtraordinaria, EstadoLiquidacionExpensas,
         EstadoObligacion, EstadoPresupuesto, OrigenObligacion, ParametrosPolitica, TipoAjuste,
         TipoConceptoCobro,
+        mora::{
+            CuotaAcuerdo, EstadoAcuerdo, EstadoCausacion, ModalidadTasa, Reduccion, TipoCertificado,
+        },
     },
 };
 use rust_decimal::Decimal;
@@ -175,6 +179,8 @@ pub struct ObligacionCobro {
     pub cuenta_cobro_id: Option<CuentaCobroId>,
     /// Solo las manuales.
     pub comprobante_id: Option<ComprobanteId>,
+    /// Solo las de intereses: la causación que las creó.
+    pub causacion_id: Option<CausacionMoraId>,
     pub descripcion: Option<String>,
     pub estado: EstadoObligacion,
     pub creada_en: DateTime<Utc>,
@@ -270,6 +276,111 @@ pub struct FiltroObligaciones {
     pub con_saldo: bool,
     /// Solo hasta este periodo (inclusive).
     pub hasta_periodo: Option<NaiveDate>,
+}
+
+/// Tasa de referencia certificada (interés bancario corriente) del catálogo de la plataforma.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TasaReferencia {
+    pub id: TasaReferenciaId,
+    pub modalidad: ModalidadTasa,
+    pub vigente_desde: NaiveDate,
+    /// Inclusive.
+    pub vigente_hasta: NaiveDate,
+    /// Efectiva anual, en %.
+    pub tasa_efectiva_anual: Decimal,
+    /// Resolución de la Superintendencia Financiera que la certifica.
+    pub resolucion: String,
+    pub fuente: String,
+    pub creada_en: DateTime<Utc>,
+}
+
+/// Causación mensual de intereses de mora.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CausacionMora {
+    pub id: CausacionMoraId,
+    pub periodo: NaiveDate,
+    /// Último día causado (inclusive).
+    pub hasta: NaiveDate,
+    pub estado: EstadoCausacion,
+    pub total: Monto,
+    pub comprobante_id: ComprobanteId,
+    pub motivo_anulacion: Option<String>,
+    pub causada_por: Option<CuentaId>,
+    pub causada_en: DateTime<Utc>,
+    pub anulada_en: Option<DateTime<Utc>>,
+}
+
+/// Tramo causado de una obligación (trazabilidad: base, días y tasa).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DetalleInteres {
+    pub causacion_id: CausacionMoraId,
+    pub obligacion_id: ObligacionCobroId,
+    pub obligacion_interes_id: ObligacionCobroId,
+    pub desde: NaiveDate,
+    /// Inclusive.
+    pub hasta: NaiveDate,
+    pub dias: u32,
+    pub base: Decimal,
+    /// Tasa de mora aplicada (efectiva anual, %).
+    pub tasa_efectiva_anual: Decimal,
+    pub tasa_referencia_id: TasaReferenciaId,
+    pub valor: Decimal,
+}
+
+/// Acuerdo de pago de un bien con sus cuotas.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AcuerdoPago {
+    pub id: AcuerdoPagoId,
+    pub bien_privado_id: BienPrivadoId,
+    pub deudor_persona_id: PersonaId,
+    /// Desde esta fecha se suspende la mora de lo que se debía.
+    pub fecha: NaiveDate,
+    pub valor: Monto,
+    pub estado: EstadoAcuerdo,
+    pub observaciones: Option<String>,
+    pub creado_por: CuentaId,
+    pub creado_en: DateTime<Utc>,
+    pub aprobado_por: Option<CuentaId>,
+    pub aprobado_en: Option<DateTime<Utc>>,
+    /// Cuándo se cumplió, se incumplió (desde ese día corre la mora) o se anuló.
+    pub cerrado_en: Option<DateTime<Utc>>,
+    pub cuotas: Vec<CuotaAcuerdo>,
+}
+
+/// Certificado de cartera emitido (del código solo queda su huella).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CertificadoCartera {
+    pub id: CertificadoCarteraId,
+    pub tipo: TipoCertificado,
+    pub bien_privado_id: BienPrivadoId,
+    pub corte: NaiveDate,
+    pub saldo: Decimal,
+    pub vencido: Decimal,
+    /// SHA-256 (hex) del código de verificación normalizado.
+    pub codigo_hash: String,
+    pub pdf_sha256: String,
+    pub emitido_por: Option<CuentaId>,
+    pub emitido_en: DateTime<Utc>,
+}
+
+/// Lectura del catálogo de tasas de referencia (desde cualquier transacción).
+pub trait CatalogoTasas: Send {
+    /// Tasas de la modalidad por fecha de vigencia.
+    fn tasas_referencia(
+        &mut self,
+        modalidad: ModalidadTasa,
+    ) -> impl Future<Output = AppResult<Vec<TasaReferencia>>> + Send;
+}
+
+/// Escritura del catálogo de tasas (solo en la transacción de plataforma).
+pub trait CatalogoTasasPlataforma: CatalogoTasas {
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si se solapa con otra tasa de la modalidad.
+    fn insertar_tasa_referencia(
+        &mut self,
+        t: &TasaReferencia,
+    ) -> impl Future<Output = AppResult<()>> + Send;
 }
 
 /// Persistencia de la cartera de la PH.
@@ -535,4 +646,110 @@ pub trait RepositorioCartera: Send {
         &mut self,
         tipo: TipoConceptoCobro,
     ) -> impl Future<Output = AppResult<Decimal>> + Send;
+    /// Último día causado (inclusive) de cada obligación con causaciones vigentes.
+    fn causado_hasta(
+        &mut self,
+    ) -> impl Future<Output = AppResult<BTreeMap<ObligacionCobroId, NaiveDate>>> + Send;
+
+    /// Pagos aplicados (fecha del recibo) y ajustes vigentes (fecha de creación) de las
+    /// obligaciones.
+    fn reducciones(
+        &mut self,
+        obligaciones: &[ObligacionCobroId],
+    ) -> impl Future<Output = AppResult<Vec<(ObligacionCobroId, Reduccion)>>> + Send;
+
+    /// Causación vigente del periodo.
+    fn causacion_del_periodo(
+        &mut self,
+        periodo: NaiveDate,
+    ) -> impl Future<Output = AppResult<Option<CausacionMora>>> + Send;
+
+    /// Causación por id, bloqueada para actualizar.
+    fn causacion(
+        &mut self,
+        id: CausacionMoraId,
+    ) -> impl Future<Output = AppResult<Option<CausacionMora>>> + Send;
+
+    /// Causaciones por periodo descendente, a lo sumo `limite`.
+    fn causaciones(
+        &mut self,
+        limite: u32,
+    ) -> impl Future<Output = AppResult<Vec<CausacionMora>>> + Send;
+
+    /// Detalle (tramos) de una causación.
+    fn detalle_causacion(
+        &mut self,
+        id: CausacionMoraId,
+    ) -> impl Future<Output = AppResult<Vec<DetalleInteres>>> + Send;
+
+    /// Guarda la causación (las obligaciones de intereses van aparte, antes del detalle).
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si el periodo ya tiene una causación vigente.
+    fn insertar_causacion(
+        &mut self,
+        c: &CausacionMora,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Guarda el detalle de una causación.
+    fn insertar_detalle_interes(
+        &mut self,
+        d: &[DetalleInteres],
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Marca anulada la causación y sus obligaciones de intereses.
+    fn anular_causacion(
+        &mut self,
+        id: CausacionMoraId,
+        motivo: &str,
+        en: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// ¿Hay pagos o ajustes vigentes sobre los intereses de la causación?
+    fn causacion_tiene_movimientos(
+        &mut self,
+        id: CausacionMoraId,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// Acuerdos (del bien, si se da), los más recientes primero, con sus cuotas.
+    fn acuerdos(
+        &mut self,
+        bien: Option<BienPrivadoId>,
+    ) -> impl Future<Output = AppResult<Vec<AcuerdoPago>>> + Send;
+
+    /// Acuerdo por id con sus cuotas, bloqueado para actualizar.
+    fn acuerdo(
+        &mut self,
+        id: AcuerdoPagoId,
+    ) -> impl Future<Output = AppResult<Option<AcuerdoPago>>> + Send;
+
+    /// Guarda un acuerdo propuesto con sus cuotas.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si el bien ya tiene un acuerdo activo.
+    fn insertar_acuerdo(&mut self, a: &AcuerdoPago) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Guarda el estado, la aprobación y el cierre del acuerdo.
+    fn actualizar_acuerdo(&mut self, a: &AcuerdoPago)
+    -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Guarda un certificado emitido.
+    fn insertar_certificado(
+        &mut self,
+        c: &CertificadoCartera,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Certificado por la huella de su código.
+    fn certificado_por_codigo(
+        &mut self,
+        codigo_hash: &str,
+    ) -> impl Future<Output = AppResult<Option<CertificadoCartera>>> + Send;
+
+    /// Certificados del bien, los más recientes primero.
+    fn certificados(
+        &mut self,
+        bien: BienPrivadoId,
+    ) -> impl Future<Output = AppResult<Vec<CertificadoCartera>>> + Send;
 }

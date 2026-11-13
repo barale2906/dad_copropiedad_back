@@ -8,30 +8,35 @@ use std::collections::BTreeMap;
 use application::{
     AppError, AppResult,
     puertos::cartera::{
-        AjusteObligacion, Anticipo, BienCartera, CargoPendiente, ConceptoCobro, CuentaCobro,
-        CuotaExtraordinaria, FiltroObligaciones, LiquidacionExpensas, ModuloContribucion,
-        ObligacionCobro, PagoAplicado, PoliticaCartera, Presupuesto, RepositorioCartera,
-        RubroPresupuesto, SaldoObligacion,
+        AcuerdoPago, AjusteObligacion, Anticipo, BienCartera, CargoPendiente, CatalogoTasas,
+        CatalogoTasasPlataforma, CausacionMora, CertificadoCartera, ConceptoCobro, CuentaCobro,
+        CuotaExtraordinaria, DetalleInteres, FiltroObligaciones, LiquidacionExpensas,
+        ModuloContribucion, ObligacionCobro, PagoAplicado, PoliticaCartera, Presupuesto,
+        RepositorioCartera, RubroPresupuesto, SaldoObligacion, TasaReferencia,
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    AjusteObligacionId, BienPrivadoId, CentroCostoId, CodigoBienPrivado, ComprobanteId,
-    ConceptoCobroId, CuentaCobroId, CuentaContableId, CuentaId, CuotaExtraordinariaId,
-    LiquidacionExpensasId, ModuloContribucionId, ObligacionCobroId, PersonaId, PoliticaCarteraId,
-    PreguntaId, PresupuestoId, ReciboCajaId, RubroPresupuestoId, TipoBienPrivado,
+    AcuerdoPagoId, AjusteObligacionId, BienPrivadoId, CausacionMoraId, CentroCostoId,
+    CertificadoCarteraId, CodigoBienPrivado, ComprobanteId, ConceptoCobroId, CuentaCobroId,
+    CuentaContableId, CuentaId, CuotaExtraordinariaId, LiquidacionExpensasId, ModuloContribucionId,
+    ObligacionCobroId, PersonaId, PoliticaCarteraId, PreguntaId, PresupuestoId, ReciboCajaId,
+    RubroPresupuestoId, TasaReferenciaId, TipoBienPrivado,
     contabilidad::Monto,
     contabilidad_ph::{
         CriterioDistribucion, EstadoCuotaExtraordinaria, EstadoLiquidacionExpensas,
         EstadoObligacion, EstadoPresupuesto, OrdenImputacion, OrigenObligacion, ParametrosPolitica,
         TipoAjuste, TipoConceptoCobro,
+        mora::{
+            CuotaAcuerdo, EstadoAcuerdo, EstadoCausacion, ModalidadTasa, Reduccion, TipoCertificado,
+        },
     },
 };
 use rust_decimal::Decimal;
 use uuid::Uuid;
 
 use crate::{
-    TransaccionPg,
+    TransaccionPg, TransaccionPlataformaPg,
     contabilidad::{error_contable, i16_de, u32_de},
 };
 
@@ -220,6 +225,7 @@ struct FilaSaldo {
     cuota_extraordinaria_id: Option<Uuid>,
     cuenta_cobro_id: Option<Uuid>,
     comprobante_id: Option<Uuid>,
+    causacion_id: Option<Uuid>,
     descripcion: Option<String>,
     estado: String,
     creada_en: DateTime<Utc>,
@@ -257,6 +263,7 @@ impl TryFrom<FilaSaldo> for SaldoObligacion {
                     .map(CuotaExtraordinariaId::from_uuid),
                 cuenta_cobro_id: f.cuenta_cobro_id.map(CuentaCobroId::from_uuid),
                 comprobante_id: f.comprobante_id.map(ComprobanteId::from_uuid),
+                causacion_id: f.causacion_id.map(CausacionMoraId::from_uuid),
                 descripcion: f.descripcion,
                 estado,
                 creada_en: f.creada_en,
@@ -516,7 +523,7 @@ impl TransaccionPg {
             r#"SELECT o.id, o.bien_privado_id, o.concepto_cobro_id, o.periodo, o.valor,
                       o.vencimiento, o.deudor_persona_id, o.origen, o.liquidacion_id,
                       o.cuota_extraordinaria_id, o.cuenta_cobro_id, o.comprobante_id,
-                      o.descripcion, o.estado, o.creada_en, o.anulada_en,
+                      o.causacion_id, o.descripcion, o.estado, o.creada_en, o.anulada_en,
                       c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,
                       c.tipo AS concepto_tipo, c.concepto_contable,
                       coalesce(aj.total, 0) AS "ajustes!", coalesce(ap.total, 0) AS "aplicado!"
@@ -1097,21 +1104,25 @@ impl RepositorioCartera for TransaccionPg {
             .iter()
             .map(|x| x.comprobante_id.map(ComprobanteId::as_uuid))
             .collect();
+        let causaciones: Vec<Option<Uuid>> = o
+            .iter()
+            .map(|x| x.causacion_id.map(CausacionMoraId::as_uuid))
+            .collect();
         let descripciones: Vec<Option<String>> = o.iter().map(|x| x.descripcion.clone()).collect();
         let creadas: Vec<DateTime<Utc>> = o.iter().map(|x| x.creada_en).collect();
         sqlx::query!(
             "INSERT INTO obligaciones (id, tenant_id, bien_privado_id, concepto_cobro_id, periodo,
                  valor, vencimiento, deudor_persona_id, origen, liquidacion_id,
                  cuota_extraordinaria_id, cuenta_cobro_id, comprobante_id, descripcion, estado,
-                 creada_en)
+                 creada_en, causacion_id)
              SELECT x.id, $1, x.bien, x.concepto, x.periodo, x.valor, x.vencimiento, x.deudor,
                     x.origen, x.liquidacion, x.cuota, x.cuenta, x.comprobante, x.descripcion,
-                    'vigente', x.creada
+                    'vigente', x.creada, x.causacion
              FROM unnest($2::uuid[], $3::uuid[], $4::uuid[], $5::date[], $6::numeric[],
                          $7::date[], $8::uuid[], $9::text[], $10::uuid[], $11::uuid[],
-                         $12::uuid[], $13::uuid[], $14::text[], $15::timestamptz[])
+                         $12::uuid[], $13::uuid[], $14::text[], $15::timestamptz[], $16::uuid[])
                   AS x (id, bien, concepto, periodo, valor, vencimiento, deudor, origen,
-                        liquidacion, cuota, cuenta, comprobante, descripcion, creada)",
+                        liquidacion, cuota, cuenta, comprobante, descripcion, creada, causacion)",
             self.ctx.tenant_id.as_uuid(),
             &ids,
             &bienes,
@@ -1127,6 +1138,7 @@ impl RepositorioCartera for TransaccionPg {
             &comprobantes as &[Option<Uuid>],
             &descripciones as &[Option<String>],
             &creadas,
+            &causaciones as &[Option<Uuid>],
         )
         .execute(&mut *self.tx)
         .await
@@ -1401,5 +1413,518 @@ impl RepositorioCartera for TransaccionPg {
         .fetch_one(&mut *self.tx)
         .await
         .map_err(AppError::infra)
+    }
+    async fn causado_hasta(&mut self) -> AppResult<BTreeMap<ObligacionCobroId, NaiveDate>> {
+        Ok(sqlx::query!(
+            r#"SELECT d.obligacion_id, max(d.hasta) AS "hasta!"
+               FROM causaciones_interes d
+               JOIN causaciones_mora c ON c.id = d.causacion_id
+               WHERE c.estado = 'contabilizada'
+               GROUP BY d.obligacion_id"#
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| (ObligacionCobroId::from_uuid(f.obligacion_id), f.hasta))
+        .collect())
+    }
+
+    async fn reducciones(
+        &mut self,
+        obligaciones: &[ObligacionCobroId],
+    ) -> AppResult<Vec<(ObligacionCobroId, Reduccion)>> {
+        let ids: Vec<Uuid> = obligaciones.iter().map(|o| o.as_uuid()).collect();
+        Ok(sqlx::query!(
+            r#"SELECT p.obligacion_id AS "obligacion_id!", r.fecha AS "fecha!", p.valor AS "valor!"
+               FROM aplicaciones_pago p JOIN recibos_caja r ON r.id = p.recibo_id
+               WHERE p.obligacion_id = ANY($1) AND p.anulada_en IS NULL
+               UNION ALL
+               SELECT a.obligacion_id, (a.creado_en AT TIME ZONE 'UTC')::date, a.valor
+               FROM ajustes_obligacion a
+               WHERE a.obligacion_id = ANY($1) AND a.anulado_en IS NULL"#,
+            &ids,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            (
+                ObligacionCobroId::from_uuid(f.obligacion_id),
+                Reduccion {
+                    fecha: f.fecha,
+                    valor: f.valor,
+                },
+            )
+        })
+        .collect())
+    }
+
+    async fn causacion_del_periodo(
+        &mut self,
+        periodo: NaiveDate,
+    ) -> AppResult<Option<CausacionMora>> {
+        Ok(self.causaciones_donde(None, Some(periodo), 1).await?.pop())
+    }
+
+    async fn causacion(&mut self, id: CausacionMoraId) -> AppResult<Option<CausacionMora>> {
+        sqlx::query!(
+            "SELECT id FROM causaciones_mora WHERE id = $1 FOR UPDATE",
+            id.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(self
+            .causaciones_donde(Some(id.as_uuid()), None, 1)
+            .await?
+            .pop())
+    }
+
+    async fn causaciones(&mut self, limite: u32) -> AppResult<Vec<CausacionMora>> {
+        self.causaciones_donde(None, None, i64::from(limite)).await
+    }
+
+    async fn detalle_causacion(&mut self, id: CausacionMoraId) -> AppResult<Vec<DetalleInteres>> {
+        sqlx::query!(
+            "SELECT causacion_id, obligacion_id, obligacion_interes_id, desde, hasta, dias, base,
+                    tasa_efectiva_anual, tasa_referencia_id, valor
+             FROM causaciones_interes WHERE causacion_id = $1
+             ORDER BY obligacion_interes_id, obligacion_id, desde",
+            id.as_uuid()
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            Ok(DetalleInteres {
+                causacion_id: CausacionMoraId::from_uuid(f.causacion_id),
+                obligacion_id: ObligacionCobroId::from_uuid(f.obligacion_id),
+                obligacion_interes_id: ObligacionCobroId::from_uuid(f.obligacion_interes_id),
+                desde: f.desde,
+                hasta: f.hasta,
+                dias: u32_de(f.dias, "dias")?,
+                base: f.base,
+                tasa_efectiva_anual: f.tasa_efectiva_anual,
+                tasa_referencia_id: TasaReferenciaId::from_uuid(f.tasa_referencia_id),
+                valor: f.valor,
+            })
+        })
+        .collect()
+    }
+
+    async fn insertar_causacion(&mut self, c: &CausacionMora) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO causaciones_mora (id, tenant_id, periodo, hasta, estado, total,
+                 comprobante_id, causada_por, causada_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+            c.id.as_uuid(),
+            self.ctx.tenant_id.as_uuid(),
+            c.periodo,
+            c.hasta,
+            c.estado.as_str(),
+            c.total.valor(),
+            c.comprobante_id.as_uuid(),
+            c.causada_por.map(CuentaId::as_uuid),
+            c.causada_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| {
+            error_contable(
+                e,
+                "los intereses del periodo ya están causados",
+                "comprobante",
+            )
+        })?;
+        Ok(())
+    }
+
+    async fn insertar_detalle_interes(&mut self, d: &[DetalleInteres]) -> AppResult<()> {
+        for x in d {
+            sqlx::query!(
+                "INSERT INTO causaciones_interes (id, tenant_id, causacion_id, obligacion_id,
+                     obligacion_interes_id, desde, hasta, dias, base, tasa_efectiva_anual,
+                     tasa_referencia_id, valor)
+                 VALUES (uuidv7(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+                self.ctx.tenant_id.as_uuid(),
+                x.causacion_id.as_uuid(),
+                x.obligacion_id.as_uuid(),
+                x.obligacion_interes_id.as_uuid(),
+                x.desde,
+                x.hasta,
+                i32_de(x.dias, "dias")?,
+                x.base,
+                x.tasa_efectiva_anual,
+                x.tasa_referencia_id.as_uuid(),
+                x.valor,
+            )
+            .execute(&mut *self.tx)
+            .await
+            .map_err(|e| error_contable(e, "tramo repetido", "obligación o tasa de referencia"))?;
+        }
+        Ok(())
+    }
+
+    async fn anular_causacion(
+        &mut self,
+        id: CausacionMoraId,
+        motivo: &str,
+        en: DateTime<Utc>,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE obligaciones SET estado = 'anulada', anulada_en = $2
+             WHERE causacion_id = $1 AND estado = 'vigente'",
+            id.as_uuid(),
+            en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        sqlx::query!(
+            "UPDATE causaciones_mora SET estado = 'anulada', motivo_anulacion = $2, anulada_en = $3
+             WHERE id = $1",
+            id.as_uuid(),
+            motivo,
+            en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
+    async fn causacion_tiene_movimientos(&mut self, id: CausacionMoraId) -> AppResult<bool> {
+        sqlx::query_scalar!(
+            r#"SELECT EXISTS (
+                   SELECT 1 FROM aplicaciones_pago p JOIN obligaciones o ON o.id = p.obligacion_id
+                   WHERE o.causacion_id = $1 AND p.anulada_en IS NULL
+                   UNION ALL
+                   SELECT 1 FROM ajustes_obligacion a JOIN obligaciones o ON o.id = a.obligacion_id
+                   WHERE o.causacion_id = $1 AND a.anulado_en IS NULL) AS "e!""#,
+            id.as_uuid()
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
+    async fn acuerdos(&mut self, bien: Option<BienPrivadoId>) -> AppResult<Vec<AcuerdoPago>> {
+        self.acuerdos_donde(None, bien.map(BienPrivadoId::as_uuid))
+            .await
+    }
+
+    async fn acuerdo(&mut self, id: AcuerdoPagoId) -> AppResult<Option<AcuerdoPago>> {
+        sqlx::query!(
+            "SELECT id FROM acuerdos_pago WHERE id = $1 FOR UPDATE",
+            id.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(self.acuerdos_donde(Some(id.as_uuid()), None).await?.pop())
+    }
+
+    async fn insertar_acuerdo(&mut self, a: &AcuerdoPago) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO acuerdos_pago (id, tenant_id, bien_privado_id, deudor_persona_id, fecha,
+                 valor, numero_cuotas, estado, observaciones, creado_por, creado_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+            a.id.as_uuid(),
+            self.ctx.tenant_id.as_uuid(),
+            a.bien_privado_id.as_uuid(),
+            a.deudor_persona_id.as_uuid(),
+            a.fecha,
+            a.valor.valor(),
+            i16_de(a.cuotas.len(), "numero_cuotas")?,
+            a.estado.as_str(),
+            a.observaciones,
+            a.creado_por.as_uuid(),
+            a.creado_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| {
+            error_contable(
+                e,
+                "el bien ya tiene un acuerdo de pago activo",
+                "bien o deudor",
+            )
+        })?;
+        for c in &a.cuotas {
+            sqlx::query!(
+                "INSERT INTO cuotas_acuerdo (tenant_id, acuerdo_id, numero, vencimiento, valor)
+                 VALUES ($1, $2, $3, $4, $5)",
+                self.ctx.tenant_id.as_uuid(),
+                a.id.as_uuid(),
+                i16_de(c.numero, "numero")?,
+                c.vencimiento,
+                c.valor,
+            )
+            .execute(&mut *self.tx)
+            .await
+            .map_err(AppError::infra)?;
+        }
+        Ok(())
+    }
+
+    async fn actualizar_acuerdo(&mut self, a: &AcuerdoPago) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE acuerdos_pago
+             SET estado = $2, aprobado_por = $3, aprobado_en = $4, cerrado_en = $5
+             WHERE id = $1",
+            a.id.as_uuid(),
+            a.estado.as_str(),
+            a.aprobado_por.map(CuentaId::as_uuid),
+            a.aprobado_en,
+            a.cerrado_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_contable(e, "el acuerdo lo aprueba otra cuenta", "acuerdo"))?;
+        Ok(())
+    }
+
+    async fn insertar_certificado(&mut self, c: &CertificadoCartera) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO certificados_emitidos (id, tenant_id, tipo, bien_privado_id, corte, saldo,
+                 vencido, codigo_hash, pdf_sha256, emitido_por, emitido_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+            c.id.as_uuid(),
+            self.ctx.tenant_id.as_uuid(),
+            c.tipo.as_str(),
+            c.bien_privado_id.as_uuid(),
+            c.corte,
+            c.saldo,
+            c.vencido,
+            c.codigo_hash,
+            c.pdf_sha256,
+            c.emitido_por.map(CuentaId::as_uuid),
+            c.emitido_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_contable(e, "código de verificación repetido", "bien"))?;
+        Ok(())
+    }
+
+    async fn certificado_por_codigo(
+        &mut self,
+        codigo_hash: &str,
+    ) -> AppResult<Option<CertificadoCartera>> {
+        Ok(self
+            .certificados_donde(Some(codigo_hash), None)
+            .await?
+            .pop())
+    }
+
+    async fn certificados(&mut self, bien: BienPrivadoId) -> AppResult<Vec<CertificadoCartera>> {
+        self.certificados_donde(None, Some(bien.as_uuid())).await
+    }
+}
+
+impl TransaccionPg {
+    async fn causaciones_donde(
+        &mut self,
+        id: Option<Uuid>,
+        periodo: Option<NaiveDate>,
+        limite: i64,
+    ) -> AppResult<Vec<CausacionMora>> {
+        sqlx::query!(
+            "SELECT id, periodo, hasta, estado, total, comprobante_id, motivo_anulacion,
+                    causada_por, causada_en, anulada_en
+             FROM causaciones_mora
+             WHERE ($1::uuid IS NULL OR id = $1)
+               AND ($2::date IS NULL OR (periodo = $2 AND estado = 'contabilizada'))
+             ORDER BY periodo DESC, causada_en DESC
+             LIMIT $3",
+            id,
+            periodo,
+            limite,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            Ok(CausacionMora {
+                id: CausacionMoraId::from_uuid(f.id),
+                periodo: f.periodo,
+                hasta: f.hasta,
+                estado: EstadoCausacion::try_from(f.estado.as_str())?,
+                total: monto(f.total)?,
+                comprobante_id: ComprobanteId::from_uuid(f.comprobante_id),
+                motivo_anulacion: f.motivo_anulacion,
+                causada_por: f.causada_por.map(CuentaId::from_uuid),
+                causada_en: f.causada_en,
+                anulada_en: f.anulada_en,
+            })
+        })
+        .collect()
+    }
+
+    async fn acuerdos_donde(
+        &mut self,
+        id: Option<Uuid>,
+        bien: Option<Uuid>,
+    ) -> AppResult<Vec<AcuerdoPago>> {
+        let filas = sqlx::query!(
+            "SELECT id, bien_privado_id, deudor_persona_id, fecha, valor, estado, observaciones,
+                    creado_por, creado_en, aprobado_por, aprobado_en, cerrado_en
+             FROM acuerdos_pago
+             WHERE ($1::uuid IS NULL OR id = $1) AND ($2::uuid IS NULL OR bien_privado_id = $2)
+             ORDER BY creado_en DESC, id",
+            id,
+            bien,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        let ids: Vec<Uuid> = filas.iter().map(|f| f.id).collect();
+        let cuotas = sqlx::query!(
+            "SELECT acuerdo_id, numero, vencimiento, valor FROM cuotas_acuerdo
+             WHERE acuerdo_id = ANY($1) ORDER BY acuerdo_id, numero",
+            &ids,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        let mut por_acuerdo: BTreeMap<Uuid, Vec<CuotaAcuerdo>> = BTreeMap::new();
+        for c in cuotas {
+            por_acuerdo
+                .entry(c.acuerdo_id)
+                .or_default()
+                .push(CuotaAcuerdo {
+                    numero: u16::try_from(c.numero).unwrap_or(0),
+                    vencimiento: c.vencimiento,
+                    valor: c.valor,
+                });
+        }
+        filas
+            .into_iter()
+            .map(|f| {
+                Ok(AcuerdoPago {
+                    id: AcuerdoPagoId::from_uuid(f.id),
+                    bien_privado_id: BienPrivadoId::from_uuid(f.bien_privado_id),
+                    deudor_persona_id: PersonaId::from_uuid(f.deudor_persona_id),
+                    fecha: f.fecha,
+                    valor: monto(f.valor)?,
+                    estado: EstadoAcuerdo::try_from(f.estado.as_str())?,
+                    observaciones: f.observaciones,
+                    creado_por: CuentaId::from_uuid(f.creado_por),
+                    creado_en: f.creado_en,
+                    aprobado_por: f.aprobado_por.map(CuentaId::from_uuid),
+                    aprobado_en: f.aprobado_en,
+                    cerrado_en: f.cerrado_en,
+                    cuotas: por_acuerdo.remove(&f.id).unwrap_or_default(),
+                })
+            })
+            .collect()
+    }
+
+    async fn certificados_donde(
+        &mut self,
+        codigo_hash: Option<&str>,
+        bien: Option<Uuid>,
+    ) -> AppResult<Vec<CertificadoCartera>> {
+        sqlx::query!(
+            "SELECT id, tipo, bien_privado_id, corte, saldo, vencido, codigo_hash, pdf_sha256,
+                    emitido_por, emitido_en
+             FROM certificados_emitidos
+             WHERE ($1::text IS NULL OR codigo_hash = $1) AND ($2::uuid IS NULL OR bien_privado_id = $2)
+             ORDER BY emitido_en DESC, id",
+            codigo_hash,
+            bien,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            Ok(CertificadoCartera {
+                id: CertificadoCarteraId::from_uuid(f.id),
+                tipo: TipoCertificado::try_from(f.tipo.as_str())?,
+                bien_privado_id: BienPrivadoId::from_uuid(f.bien_privado_id),
+                corte: f.corte,
+                saldo: f.saldo,
+                vencido: f.vencido,
+                codigo_hash: f.codigo_hash,
+                pdf_sha256: f.pdf_sha256,
+                emitido_por: f.emitido_por.map(CuentaId::from_uuid),
+                emitido_en: f.emitido_en,
+            })
+        })
+        .collect()
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Tasas de referencia (catálogo de plataforma)
+// ---------------------------------------------------------------------------------------------
+
+macro_rules! catalogo_tasas {
+    ($tipo:ty) => {
+        impl CatalogoTasas for $tipo {
+            async fn tasas_referencia(
+                &mut self,
+                modalidad: ModalidadTasa,
+            ) -> AppResult<Vec<TasaReferencia>> {
+                sqlx::query!(
+                    "SELECT id, modalidad, vigente_desde, vigente_hasta, tasa_efectiva_anual,
+                            resolucion, fuente, creada_en
+                     FROM tasas_referencia WHERE modalidad = $1 ORDER BY vigente_desde",
+                    modalidad.as_str()
+                )
+                .fetch_all(&mut *self.tx)
+                .await
+                .map_err(AppError::infra)?
+                .into_iter()
+                .map(|f| {
+                    Ok(TasaReferencia {
+                        id: TasaReferenciaId::from_uuid(f.id),
+                        modalidad: ModalidadTasa::try_from(f.modalidad.as_str())?,
+                        vigente_desde: f.vigente_desde,
+                        vigente_hasta: f.vigente_hasta,
+                        tasa_efectiva_anual: f.tasa_efectiva_anual,
+                        resolucion: f.resolucion,
+                        fuente: f.fuente,
+                        creada_en: f.creada_en,
+                    })
+                })
+                .collect()
+            }
+        }
+    };
+}
+
+catalogo_tasas!(TransaccionPg);
+catalogo_tasas!(TransaccionPlataformaPg);
+
+impl CatalogoTasasPlataforma for TransaccionPlataformaPg {
+    async fn insertar_tasa_referencia(&mut self, t: &TasaReferencia) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO tasas_referencia (id, modalidad, vigente_desde, vigente_hasta,
+                 tasa_efectiva_anual, resolucion, fuente, creada_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            t.id.as_uuid(),
+            t.modalidad.as_str(),
+            t.vigente_desde,
+            t.vigente_hasta,
+            t.tasa_efectiva_anual,
+            t.resolucion,
+            t.fuente,
+            t.creada_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| match e.as_database_error() {
+            Some(d) if d.code().as_deref() == Some("23P01") => {
+                AppError::Conflicto("la vigencia se solapa con otra tasa de la modalidad".into())
+            }
+            _ => error_contable(e, "tasa repetida", "tasa"),
+        })?;
+        Ok(())
     }
 }
