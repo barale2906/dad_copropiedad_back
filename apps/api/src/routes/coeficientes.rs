@@ -39,6 +39,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 pub struct CuadroRespuesta {
     pub id: Uuid,
     pub version: u32,
+    /// Módulo de contribución (vacío = el cuadro de la copropiedad).
+    pub modulo_id: Option<Uuid>,
     /// `borrador`, `vigente` o `historico`.
     #[schema(value_type = crate::esquemas::EstadoCuadro)]
     pub estado: EstadoCuadro,
@@ -55,6 +57,7 @@ impl From<CuadroCoeficientes> for CuadroRespuesta {
         Self {
             id: c.id.as_uuid(),
             version: c.version,
+            modulo_id: c.modulo_id.map(domain::ModuloContribucionId::as_uuid),
             estado: c.estado,
             descripcion: c.descripcion,
             soporte_archivo_id: c.soporte_archivo_id.map(ArchivoId::as_uuid),
@@ -168,6 +171,9 @@ pub struct NuevoCuadroPeticion {
     pub descripcion: Option<String>,
     /// Escritura o acta de la reforma (opcional).
     pub soporte_archivo_id: Option<Uuid>,
+    /// Módulo de contribución del cuadro (vacío = el cuadro de la copropiedad). El de un módulo
+    /// suma 1 dentro del módulo y solo lleva los bienes que contribuyen a él.
+    pub modulo_id: Option<Uuid>,
 }
 
 /// Crea un cuadro borrador (siguiente versión), opcionalmente copiando el vigente.
@@ -196,6 +202,7 @@ pub async fn crear(
             copiar_vigente: p.copiar_vigente,
             descripcion: p.descripcion,
             soporte_archivo_id: p.soporte_archivo_id.map(ArchivoId::from_uuid),
+            modulo: p.modulo_id.map(domain::ModuloContribucionId::from_uuid),
         },
     )
     .await?;

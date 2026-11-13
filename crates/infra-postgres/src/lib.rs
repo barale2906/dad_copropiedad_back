@@ -28,6 +28,7 @@ mod asambleas;
 mod bienes_privados;
 mod busqueda_proveedores;
 mod campanas_censo;
+mod cartera;
 mod censo;
 mod chat;
 mod coeficientes;

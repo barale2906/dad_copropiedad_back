@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM tarifas_concepto_cobro WHERE concepto_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "acec5730203a187e9cc99c3dd8bbeada51f106e005e80a3cdc92e2913ccf22b3"
+}

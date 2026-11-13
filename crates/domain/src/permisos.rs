@@ -227,6 +227,18 @@ catalogo_permisos! {
     TesoreriaFacturasVentaGestionar => "tesoreria.facturas_venta.gestionar", Copropiedad;
     /// Importar extractos y conciliar.
     TesoreriaConciliar => "tesoreria.conciliar", Copropiedad;
+    /// Consultar la cartera de la PH: obligaciones, estados de cuenta, cuentas de cobro y
+    /// presupuestos.
+    CarteraVer => "cartera.ver", Copropiedad;
+    /// Conceptos de cobro, políticas de cartera, módulos de contribución y datos de pago de los
+    /// bienes privados.
+    CarteraConfigurar => "cartera.configurar", Copropiedad;
+    /// Liquidar expensas (y anular una liquidación), cuotas extraordinarias y cuentas de cobro.
+    CarteraLiquidar => "cartera.liquidar", Copropiedad;
+    /// Cobros manuales, notas crédito y cartera inicial.
+    CarteraAjustar => "cartera.ajustar", Copropiedad;
+    /// Elaborar y aprobar el presupuesto de la PH.
+    PresupuestoGestionar => "presupuesto.gestionar", Copropiedad;
     /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
     DirectorioVer => "directorio.ver", Copropiedad;
     /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
@@ -462,6 +474,11 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TesoreriaFacturasProveedorGestionar,
             P::TesoreriaFacturasVentaGestionar,
             P::TesoreriaConciliar,
+            P::CarteraVer,
+            P::CarteraConfigurar,
+            P::CarteraLiquidar,
+            P::CarteraAjustar,
+            P::PresupuestoGestionar,
         ]),
     },
     RolPlantilla {
@@ -476,6 +493,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TitularesVer,
             P::ContabilidadVer,
             P::ContabilidadExportar,
+            P::CarteraVer,
             P::AsambleasVer,
             P::InventarioVer,
         ]),
@@ -491,6 +509,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::BienesComunesVer,
             P::AsambleasVer,
             P::ContabilidadVer,
+            P::CarteraVer,
             P::DirectorioVer,
         ]),
     },
@@ -506,6 +525,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AsambleasVer,
             P::AsambleasConvocar,
             P::ContabilidadVer,
+            P::CarteraVer,
             P::TesoreriaEgresosAutorizar,
             P::TicketsVerTodos,
             P::DirectorioVer,

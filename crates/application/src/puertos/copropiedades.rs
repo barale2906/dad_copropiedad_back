@@ -15,11 +15,11 @@ use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     AgrupacionId, ArchivoId, BienPrivadoId, CodigoAgrupacion, CodigoBienPrivado, CodigoDane,
     Coeficiente, CuadroCoeficientesId, CuentaId, DireccionCorreo, Documento, EstadoCopropiedad,
-    EstadoCuadro, EstadoImportacion, FormaCopropiedad, Horario, ImportacionId, Nit,
-    NumeroBienPrivado, PersonaId, PlantillaNomenclatura, Porcentaje, PuntoAtencionId, Telefono,
-    TipoAgrupacion, TipoBienPrivado, TipoCopropiedad, TipoCuadro, TipoDocumento, TipoImportacion,
-    TipoPersona, TipoPuntoAtencion, TipoTitularidad, TipoUsoExclusivo, TitularidadId,
-    UsoBienPrivado, UsoExclusivoId, importacion::ErrorFila,
+    EstadoCuadro, EstadoImportacion, FormaCopropiedad, Horario, ImportacionId,
+    ModuloContribucionId, Nit, NumeroBienPrivado, PersonaId, PlantillaNomenclatura, Porcentaje,
+    PuntoAtencionId, Telefono, TipoAgrupacion, TipoBienPrivado, TipoCopropiedad, TipoCuadro,
+    TipoDocumento, TipoImportacion, TipoPersona, TipoPuntoAtencion, TipoTitularidad,
+    TipoUsoExclusivo, TitularidadId, UsoBienPrivado, UsoExclusivoId, importacion::ErrorFila,
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -282,6 +282,8 @@ pub struct CuadroCoeficientes {
     pub id: CuadroCoeficientesId,
     pub version: u32,
     pub tipo: TipoCuadro,
+    /// Módulo de contribución (solo en los cuadros de tipo `modulo_contribucion`).
+    pub modulo_id: Option<ModuloContribucionId>,
     pub estado: EstadoCuadro,
     pub descripcion: Option<String>,
     pub soporte_archivo_id: Option<ArchivoId>,
@@ -301,13 +303,24 @@ pub trait RepositorioCoeficientes: Send {
         id: CuadroCoeficientesId,
     ) -> impl Future<Output = AppResult<Option<CuadroCoeficientes>>> + Send;
 
-    /// Cuadro de copropiedad vigente.
+    /// Cuadro vigente de la copropiedad (`None`) o del módulo de contribución.
     fn cuadro_vigente(
         &mut self,
+        modulo: Option<ModuloContribucionId>,
     ) -> impl Future<Output = AppResult<Option<CuadroCoeficientes>>> + Send;
 
-    /// Última versión usada (0 si no hay cuadros).
-    fn ultima_version(&mut self) -> impl Future<Output = AppResult<u32>> + Send;
+    /// Última versión usada en los cuadros de la copropiedad (`None`) o del módulo (0 si no
+    /// hay cuadros).
+    fn ultima_version(
+        &mut self,
+        modulo: Option<ModuloContribucionId>,
+    ) -> impl Future<Output = AppResult<u32>> + Send;
+
+    /// ¿Existe el módulo de contribución y está activo?
+    fn modulo_contribucion_activo(
+        &mut self,
+        modulo: ModuloContribucionId,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
 
     /// Guarda un cuadro nuevo en borrador.
     fn insertar_cuadro(

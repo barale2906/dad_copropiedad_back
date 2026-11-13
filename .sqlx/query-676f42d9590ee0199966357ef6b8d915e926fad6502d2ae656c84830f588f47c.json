@@ -1,0 +1,206 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, version, vigente_desde, dia_vencimiento, redondeo, pronto_pago_porcentaje,\n                    pronto_pago_dia, factor_mora, tasa_mora_mensual, imputacion,\n                    permite_elegir_obligacion, porcentaje_fondo, fondo_suspendido, pregunta_id,\n                    creada_por, creada_en\n             FROM politicas_cartera ORDER BY version DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "dia_vencimiento",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "dia_vencimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "redondeo",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "redondeo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "pronto_pago_porcentaje",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "pronto_pago_porcentaje"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "pronto_pago_dia",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "pronto_pago_dia"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "factor_mora",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "factor_mora"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "tasa_mora_mensual",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "tasa_mora_mensual"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "imputacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "imputacion"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "permite_elegir_obligacion",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "permite_elegir_obligacion"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "porcentaje_fondo",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "porcentaje_fondo"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "fondo_suspendido",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "fondo_suspendido"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "pregunta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "pregunta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "politicas_cartera",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "676f42d9590ee0199966357ef6b8d915e926fad6502d2ae656c84830f588f47c"
+}

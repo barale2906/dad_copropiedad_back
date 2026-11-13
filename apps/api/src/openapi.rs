@@ -63,6 +63,8 @@ pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 pub const ETIQUETA_CONTABILIDAD: &str = "contabilidad";
 /// Etiqueta de tesorería, cuentas por pagar, facturas de venta y conciliación (plan 13).
 pub const ETIQUETA_TESORERIA: &str = "tesoreria";
+/// Etiqueta de la cartera de la PH: presupuesto, liquidación de expensas y recaudo (plan 14).
+pub const ETIQUETA_CARTERA: &str = "cartera";
 
 /// Registra el esquema de seguridad `bearer` (token de acceso opaco).
 struct EsquemaBearer;
@@ -187,6 +189,12 @@ impl utoipa::Modify for EsquemaBearer {
             proveedores con retenciones, facturas de venta y cartera, extractos y conciliación \
             bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza \
             con la regla de su evento; anular es revertir"),
+        (name = ETIQUETA_CARTERA, description = "Cartera de la propiedad horizontal (módulo \
+            `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de \
+            cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, \
+            cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por \
+            bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y \
+            cuadre contra el mayor"),
     ),
     modifiers(&EsquemaBearer),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))

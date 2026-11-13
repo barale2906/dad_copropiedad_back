@@ -11,7 +11,7 @@ use std::collections::BTreeSet;
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     ArchivoId, CuentaContableId, CuentaTesoreriaId, EgresoId, EventoPasarelaId, FacturaProveedorId,
-    FacturaVentaId, Permiso, PersonaId, ReciboCajaId,
+    FacturaVentaId, ObligacionCobroId, Permiso, PersonaId, ReciboCajaId,
     contabilidad::{
         CodigoCuenta, ImporteDocumento, Monto, Naturaleza,
         tesoreria::{
@@ -163,7 +163,7 @@ pub(crate) async fn centro_por_codigo<T: TxTesoreria>(
         .ok_or_else(|| validacion(format!("el centro de costo {codigo} no existe")))
 }
 
-async fn cuenta_activa<T: TxTesoreria>(
+pub(crate) async fn cuenta_activa<T: TxTesoreria>(
     tx: &mut T,
     id: CuentaTesoreriaId,
 ) -> AppResult<CuentaTesoreria> {
@@ -179,7 +179,7 @@ async fn cuenta_activa<T: TxTesoreria>(
     Ok(c)
 }
 
-fn monto_de(valor: Decimal) -> AppResult<Monto> {
+pub(crate) fn monto_de(valor: Decimal) -> AppResult<Monto> {
     Ok(Monto::new(valor)?)
 }
 
@@ -387,6 +387,28 @@ pub(crate) async fn registrar_recibo_en<T: TxTesoreria>(
     ctx: &Contexto,
     nuevo: NuevoRecibo,
 ) -> AppResult<ReciboCaja> {
+    registrar_recibo_con(tx, reloj, ctx, nuevo, AplicacionesExternas::default()).await
+}
+
+/// Aplicaciones de un recibo a las obligaciones de una vertical (la PH): el evento que
+/// contabiliza el recibo, los importes de lo aplicado (con la cuenta por cobrar que defina su
+/// regla) y cuánto va a cada obligación. El núcleo no conoce esas obligaciones; solo guarda la
+/// aplicación.
+#[derive(Debug, Clone, Default)]
+pub(crate) struct AplicacionesExternas {
+    /// Evento de la regla (por defecto [`eventos::RECIBO`]).
+    pub(crate) evento: Option<&'static str>,
+    pub(crate) importes: Vec<ImporteDocumento>,
+    pub(crate) aplicaciones: Vec<(ObligacionCobroId, Monto)>,
+}
+
+pub(crate) async fn registrar_recibo_con<T: TxTesoreria>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    nuevo: NuevoRecibo,
+    externas: AplicacionesExternas,
+) -> AppResult<ReciboCaja> {
     if nuevo.valor.es_cero() {
         return Err(validacion("el valor del recibo debe ser mayor que cero"));
     }
@@ -396,7 +418,9 @@ pub(crate) async fn registrar_recibo_en<T: TxTesoreria>(
     if let Some(p) = nuevo.persona {
         exigir_persona(tx, p).await?;
     }
-    if !nuevo.aplicaciones.is_empty() && nuevo.persona.is_none() {
+    if !(nuevo.aplicaciones.is_empty() && externas.aplicaciones.is_empty())
+        && nuevo.persona.is_none()
+    {
         return Err(validacion(
             "un recibo sin pagador identificado no se aplica a facturas",
         ));
@@ -407,7 +431,12 @@ pub(crate) async fn registrar_recibo_en<T: TxTesoreria>(
             "una factura aparece dos veces en las aplicaciones",
         ));
     }
-    let aplicado: Monto = nuevo.aplicaciones.iter().map(|a| a.1).sum();
+    let aplicado: Monto = nuevo
+        .aplicaciones
+        .iter()
+        .map(|a| a.1)
+        .chain(externas.aplicaciones.iter().map(|a| a.1))
+        .sum();
     if aplicado > nuevo.valor {
         return Err(validacion("se aplica más de lo recibido"));
     }
@@ -426,7 +455,21 @@ pub(crate) async fn registrar_recibo_en<T: TxTesoreria>(
         aplicaciones.push(AplicacionPago {
             id: domain::AplicacionPagoId::nuevo(),
             recibo_id: id,
-            factura_venta_id: *factura,
+            factura_venta_id: Some(*factura),
+            obligacion_id: None,
+            valor: *valor,
+            aplicada_en: ahora,
+            comprobante_id: None,
+            anulada_en: None,
+        });
+    }
+    importes.extend(externas.importes);
+    for (obligacion, valor) in &externas.aplicaciones {
+        aplicaciones.push(AplicacionPago {
+            id: domain::AplicacionPagoId::nuevo(),
+            recibo_id: id,
+            factura_venta_id: None,
+            obligacion_id: Some(*obligacion),
             valor: *valor,
             aplicada_en: ahora,
             comprobante_id: None,
@@ -442,7 +485,7 @@ pub(crate) async fn registrar_recibo_en<T: TxTesoreria>(
         reloj,
         ctx,
         DocumentoOrigen {
-            evento: eventos::RECIBO.into(),
+            evento: externas.evento.unwrap_or(eventos::RECIBO).into(),
             origen: origen(eventos::RECIBO, id.as_uuid()),
             fecha: nuevo.fecha,
             descripcion: descripcion.clone(),
@@ -528,7 +571,8 @@ where
     let mut aplicacion = AplicacionPago {
         id: domain::AplicacionPagoId::nuevo(),
         recibo_id,
-        factura_venta_id: factura,
+        factura_venta_id: Some(factura),
+        obligacion_id: None,
         valor,
         aplicada_en: reloj.ahora(),
         comprobante_id: None,
@@ -573,7 +617,8 @@ where
 /// # Errors
 ///
 /// [`AppError::SinPermiso`] sin `tesoreria.recibos.registrar`; [`AppError::NoEncontrado`];
-/// [`AppError::Conflicto`] si ya está anulado; los del reverso (motivo, periodo).
+/// [`AppError::Conflicto`] si ya está anulado o pagó obligaciones de una vertical (se anula
+/// desde ella, que deshace también lo suyo); los del reverso (motivo, periodo).
 pub async fn anular_recibo<U>(
     unidad: &U,
     reloj: &impl Reloj,
@@ -586,6 +631,17 @@ where
     U::Transaccion: TxTesoreria,
 {
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TesoreriaRecibosRegistrar).await?;
+    let aplicado_a_vertical = tx.recibo(id).await?.is_some_and(|r| {
+        r.aplicaciones
+            .iter()
+            .any(|a| a.anulada_en.is_none() && a.obligacion_id.is_some())
+    });
+    if aplicado_a_vertical {
+        return Err(AppError::Conflicto(
+            "el recibo pagó obligaciones de la cartera: anúlelo desde el recaudo de la cartera"
+                .into(),
+        ));
+    }
     let recibo = anular_recibo_en(&mut tx, reloj, ctx, id, motivo).await?;
     tx.confirmar().await?;
     Ok(recibo)
@@ -615,7 +671,9 @@ pub(crate) async fn anular_recibo_en<T: TxTesoreria>(
         if let Some(c) = a.comprobante_id {
             revertir_en(tx, reloj, ctx, c, motivo, None).await?;
         }
-        ventas::desaplicar_de_factura(tx, a.factura_venta_id, a.valor).await?;
+        if let Some(factura) = a.factura_venta_id {
+            ventas::desaplicar_de_factura(tx, factura, a.valor).await?;
+        }
         a.anulada_en = Some(ahora);
     }
     tx.anular_aplicaciones(id, ahora).await?;

@@ -115,6 +115,24 @@ esquema_enum! {
         "Cómo se hizo una conciliación.";
     SeparadorDecimal = domain::contabilidad::extracto::SeparadorDecimal,
         "Separador decimal de los valores de una planilla.";
+    TipoConceptoCobro = domain::contabilidad_ph::TipoConceptoCobro,
+        "Clase de concepto de cobro de la cartera de la PH.";
+    CriterioDistribucion = domain::contabilidad_ph::CriterioDistribucion,
+        "Cómo se reparte un concepto de cobro entre los bienes privados.";
+    OrdenImputacion = domain::contabilidad_ph::OrdenImputacion,
+        "Orden en que un pago cubre las obligaciones (intereses antes que capital).";
+    EstadoPresupuesto = domain::contabilidad_ph::EstadoPresupuesto,
+        "Estado de un presupuesto de la PH.";
+    EstadoLiquidacionExpensas = domain::contabilidad_ph::EstadoLiquidacionExpensas,
+        "Estado de una liquidación de expensas.";
+    OrigenObligacion = domain::contabilidad_ph::OrigenObligacion,
+        "De dónde viene una obligación de cobro.";
+    EstadoObligacion = domain::contabilidad_ph::EstadoObligacion,
+        "Estado de una obligación de cobro.";
+    TipoAjuste = domain::contabilidad_ph::TipoAjuste,
+        "Clase de ajuste que reduce una obligación.";
+    EstadoCuotaExtraordinaria = domain::contabilidad_ph::EstadoCuotaExtraordinaria,
+        "Estado de una cuota extraordinaria.";
     NivelCuenta = domain::contabilidad::NivelCuenta,
         "Nivel de una cuenta según el largo de su código.";
     OrigenCentro = domain::contabilidad::OrigenCentro,

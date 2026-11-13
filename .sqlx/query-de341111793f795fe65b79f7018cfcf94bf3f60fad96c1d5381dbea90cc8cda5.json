@@ -1,0 +1,138 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, anio, version, estado, descripcion, pregunta_id, vigente_desde,\n                    aprobado_por, creado_por, creado_en\n             FROM presupuestos\n             WHERE ($1::uuid IS NULL OR id = $1) AND ($2::smallint IS NULL OR anio = $2)\n               AND (NOT $3 OR estado = 'vigente')\n             ORDER BY anio DESC, version DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "anio",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "anio"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "pregunta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "pregunta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "aprobado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "aprobado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "presupuestos",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int2",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "de341111793f795fe65b79f7018cfcf94bf3f60fad96c1d5381dbea90cc8cda5"
+}

@@ -531,6 +531,57 @@ id_entidad!(
     Uuid::now_v7
 );
 
+id_entidad!(
+    /// Módulo de contribución de una copropiedad mixta (Ley 675, art. 29).
+    ModuloContribucionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Concepto de cobro de la cartera de la PH (expensa ordinaria, fondo, multa…).
+    ConceptoCobroId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de la política de cartera de la PH.
+    PoliticaCarteraId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión del presupuesto anual de la PH.
+    PresupuestoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Rubro de un presupuesto.
+    RubroPresupuestoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Cuota extraordinaria aprobada por la asamblea.
+    CuotaExtraordinariaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Liquidación mensual de expensas.
+    LiquidacionExpensasId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Obligación de cobro de un bien privado (un concepto de un periodo; tabla `obligaciones`).
+    ObligacionCobroId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Cuenta de cobro de un bien privado en una liquidación.
+    CuentaCobroId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Ajuste (nota crédito o pronto pago) de una obligación.
+    AjusteObligacionId,
+    Uuid::now_v7
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;

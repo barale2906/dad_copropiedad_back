@@ -600,8 +600,9 @@ where
     if !coeficientes.is_empty() {
         let cuadro = CuadroCoeficientes {
             id: CuadroCoeficientesId::nuevo(),
-            version: tx.ultima_version().await? + 1,
+            version: tx.ultima_version(None).await? + 1,
             tipo: TipoCuadro::Copropiedad,
+            modulo_id: None,
             estado: EstadoCuadro::Borrador,
             descripcion: Some("Coeficientes de una importación masiva".into()),
             soporte_archivo_id: None,
@@ -611,7 +612,7 @@ where
         };
         tx.insertar_cuadro(&cuadro).await?;
         // Los bienes que no venían en el archivo conservan su coeficiente vigente.
-        let mut filas = match tx.cuadro_vigente().await? {
+        let mut filas = match tx.cuadro_vigente(None).await? {
             Some(v) => tx.coeficientes(v.id).await?,
             None => BTreeMap::new(),
         };

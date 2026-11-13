@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aplicaciones_pago (id, tenant_id, recibo_id, factura_venta_id, valor,\n                 aplicada_en, comprobante_id, anulada_en, obligacion_id)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Timestamptz",
+        "Uuid",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "981eafd30b0610cad81eb7786ab842528404954e17faf58d3473570dc4df7361"
+}

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cargos_pendientes SET estado = 'aplicado', obligacion_id = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "846a79d0cc65bfc6bbfed4e21b1ea4dd3d6ba2da51393d4337c9d88520dc4c34"
+}

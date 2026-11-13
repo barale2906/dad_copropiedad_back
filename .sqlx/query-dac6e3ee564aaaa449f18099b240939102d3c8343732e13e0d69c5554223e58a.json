@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO liquidaciones_expensas (id, tenant_id, periodo, estado, presupuesto_id,\n                 politica_id, total, vencimiento, comprobante_id, liquidada_por, liquidada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Date",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dac6e3ee564aaaa449f18099b240939102d3c8343732e13e0d69c5554223e58a"
+}

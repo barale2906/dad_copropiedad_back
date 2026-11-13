@@ -14,7 +14,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     AplicacionPagoId, ArchivoId, CentroCostoId, ComprobanteId, ConceptoRetencionId,
     CuentaContableId, CuentaId, CuentaTesoreriaId, EgresoId, EventoPasarelaId, FacturaProveedorId,
-    FacturaVentaId, PersonaId, ReciboCajaId,
+    FacturaVentaId, ObligacionCobroId, PersonaId, ReciboCajaId,
     contabilidad::{
         CodigoCuenta, Monto,
         tesoreria::{
@@ -101,7 +101,8 @@ struct FilaRecibo {
 struct FilaAplicacion {
     id: Uuid,
     recibo_id: Uuid,
-    factura_venta_id: Uuid,
+    factura_venta_id: Option<Uuid>,
+    obligacion_id: Option<Uuid>,
     valor: Decimal,
     aplicada_en: DateTime<Utc>,
     comprobante_id: Option<Uuid>,
@@ -115,7 +116,8 @@ impl TryFrom<FilaAplicacion> for AplicacionPago {
         Ok(Self {
             id: AplicacionPagoId::from_uuid(f.id),
             recibo_id: ReciboCajaId::from_uuid(f.recibo_id),
-            factura_venta_id: FacturaVentaId::from_uuid(f.factura_venta_id),
+            factura_venta_id: f.factura_venta_id.map(FacturaVentaId::from_uuid),
+            obligacion_id: f.obligacion_id.map(ObligacionCobroId::from_uuid),
             valor: monto(f.valor)?,
             aplicada_en: f.aplicada_en,
             comprobante_id: f.comprobante_id.map(ComprobanteId::from_uuid),
@@ -151,7 +153,8 @@ impl TransaccionPg {
         let ids: Vec<Uuid> = filas.iter().map(|f| f.id).collect();
         let aplicaciones = sqlx::query_as!(
             FilaAplicacion,
-            "SELECT id, recibo_id, factura_venta_id, valor, aplicada_en, comprobante_id, anulada_en
+            "SELECT id, recibo_id, factura_venta_id, obligacion_id, valor, aplicada_en,
+                    comprobante_id, anulada_en
              FROM aplicaciones_pago WHERE recibo_id = ANY($1) ORDER BY aplicada_en, id",
             &ids
         )
@@ -177,20 +180,21 @@ impl TransaccionPg {
     async fn insertar_aplicacion_en(&mut self, a: &AplicacionPago) -> AppResult<()> {
         sqlx::query!(
             "INSERT INTO aplicaciones_pago (id, tenant_id, recibo_id, factura_venta_id, valor,
-                 aplicada_en, comprobante_id, anulada_en)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+                 aplicada_en, comprobante_id, anulada_en, obligacion_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
             a.id.as_uuid(),
             self.ctx.tenant_id.as_uuid(),
             a.recibo_id.as_uuid(),
-            a.factura_venta_id.as_uuid(),
+            a.factura_venta_id.map(FacturaVentaId::as_uuid),
             a.valor.valor(),
             a.aplicada_en,
             a.comprobante_id.map(ComprobanteId::as_uuid),
             a.anulada_en,
+            a.obligacion_id.map(ObligacionCobroId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
-        .map_err(|e| error_contable(e, "aplicación repetida", "factura de venta"))?;
+        .map_err(|e| error_contable(e, "aplicación repetida", "factura de venta u obligación"))?;
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, recibo_id, factura_venta_id, valor, aplicada_en, comprobante_id, anulada_en\n             FROM aplicaciones_pago WHERE recibo_id = ANY($1) ORDER BY aplicada_en, id",
+  "query": "SELECT id, recibo_id, factura_venta_id, obligacion_id, valor, aplicada_en,\n                    comprobante_id, anulada_en\n             FROM aplicaciones_pago WHERE recibo_id = ANY($1) ORDER BY aplicada_en, id",
   "describe": {
     "columns": [
       {
@@ -38,6 +38,17 @@
       },
       {
         "ordinal": 3,
+        "name": "obligacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "aplicaciones_pago",
+            "name": "obligacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
         "name": "valor",
         "type_info": "Numeric",
         "origin": {
@@ -48,7 +59,7 @@
         }
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "aplicada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -59,7 +70,7 @@
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "comprobante_id",
         "type_info": "Uuid",
         "origin": {
@@ -70,7 +81,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "anulada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -89,12 +100,13 @@
     "nullable": [
       false,
       false,
-      false,
+      true,
+      true,
       false,
       false,
       true,
       true
     ]
   },
-  "hash": "c36f011baa576231e16eab07e881f2904cb342cc35d87dc38f20d0ebd4fb9f30"
+  "hash": "6d881752508f190d6d701ed97ab80db345731d9d4a2e7adfeefce3b88a787813"
 }

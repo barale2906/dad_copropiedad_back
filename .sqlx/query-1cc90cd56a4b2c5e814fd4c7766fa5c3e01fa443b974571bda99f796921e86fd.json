@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM rubros_presupuesto WHERE presupuesto_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1cc90cd56a4b2c5e814fd4c7766fa5c3e01fa443b974571bda99f796921e86fd"
+}

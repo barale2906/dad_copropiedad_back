@@ -1,0 +1,162 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, periodo, estado, presupuesto_id, politica_id, total, vencimiento,\n                    comprobante_id, motivo_anulacion, liquidada_por, liquidada_en, anulada_en\n             FROM liquidaciones_expensas\n             WHERE ($1::uuid IS NULL OR id = $1)\n               AND ($2::date IS NULL OR (periodo = $2 AND estado = 'contabilizada'))\n             ORDER BY periodo DESC, liquidada_en DESC\n             LIMIT $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "periodo",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "periodo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "presupuesto_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "presupuesto_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "politica_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "politica_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "total"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "vencimiento",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "vencimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "motivo_anulacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "motivo_anulacion"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "liquidada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "liquidada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "liquidada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "liquidada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "anulada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_expensas",
+            "name": "anulada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "910cdad1cc8736075f4153ee08853ba93af50ddeeffe0025394f78ec4174368f"
+}

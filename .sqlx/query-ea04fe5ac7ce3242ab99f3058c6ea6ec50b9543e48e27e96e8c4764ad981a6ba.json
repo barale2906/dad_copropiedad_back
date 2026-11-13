@@ -1,0 +1,146 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, codigo, nombre, tipo, criterio, modulo_id, valor_fijo, genera_interes,\n                    concepto_contable, activo, creado_en\n             FROM conceptos_cobro ORDER BY codigo",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "criterio",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "criterio"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "modulo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "modulo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "valor_fijo",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "valor_fijo"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "genera_interes",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "genera_interes"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "concepto_contable",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "concepto_contable"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "activo",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "activo"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "ea04fe5ac7ce3242ab99f3058c6ea6ec50b9543e48e27e96e8c4764ad981a6ba"
+}

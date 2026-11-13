@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.bien_privado_id, c.coeficiente FROM coeficientes_bien_privado c\n             WHERE c.cuadro_id = (\n                 SELECT q.id FROM cuadros_coeficientes q\n                 WHERE q.estado IN ('vigente', 'historico')\n                   AND q.modulo_id IS NOT DISTINCT FROM $1 AND q.vigente_desde <= $2\n                 ORDER BY q.vigente_desde DESC LIMIT 1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "coeficientes_bien_privado",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "coeficiente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "coeficientes_bien_privado",
+            "name": "coeficiente"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "48a9313978d406852736090c5c174baecf42774fdee70e908798bb1bf90aa048"
+}

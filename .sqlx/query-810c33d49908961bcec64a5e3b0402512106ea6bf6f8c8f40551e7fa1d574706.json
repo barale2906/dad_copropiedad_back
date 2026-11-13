@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE liquidaciones_expensas\n             SET estado = 'anulada', motivo_anulacion = $2, anulada_en = $3\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "810c33d49908961bcec64a5e3b0402512106ea6bf6f8c8f40551e7fa1d574706"
+}

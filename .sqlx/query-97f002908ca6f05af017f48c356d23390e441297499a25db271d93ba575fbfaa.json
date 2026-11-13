@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cuotas_extraordinarias SET estado = 'anulada'\n             WHERE id = $1 AND estado = 'vigente'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "97f002908ca6f05af017f48c356d23390e441297499a25db271d93ba575fbfaa"
+}

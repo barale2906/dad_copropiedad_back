@@ -1,0 +1,137 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, obligacion_id, tipo, valor, motivo, comprobante_id, recibo_id, creado_por,\n                    creado_en, anulado_en\n             FROM ajustes_obligacion\n             WHERE anulado_en IS NULL AND ($1::uuid IS NULL OR recibo_id = $1)\n               AND ($2::uuid IS NULL OR obligacion_id = $2)\n             ORDER BY creado_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "obligacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "obligacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "recibo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "recibo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "anulado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "ajustes_obligacion",
+            "name": "anulado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "79380951a518dfe3e6a46bb27252c120905bfdd9d9f59cf649f19455b44e4aa7"
+}

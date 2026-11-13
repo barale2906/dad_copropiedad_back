@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use domain::{
     BienPrivadoId, Coeficiente, CuadroCoeficientesId, CuentaId, Documento, EstadoCopropiedad,
     EstadoCuadro, FormaCopropiedad, Horario, PersonaId, PlantillaNomenclatura, PuntoAtencionId,
-    TipoCopropiedad, TipoCuadro, TitularidadId, UsoExclusivoId,
+    TipoCopropiedad, TitularidadId, UsoExclusivoId,
 };
 
 use super::TransaccionEnMemoria;
@@ -230,23 +230,37 @@ impl RepositorioCoeficientes for TransaccionEnMemoria {
         Ok(self.datos.cuadros.iter().find(|c| c.id == id).cloned())
     }
 
-    async fn cuadro_vigente(&mut self) -> AppResult<Option<CuadroCoeficientes>> {
+    async fn cuadro_vigente(
+        &mut self,
+        modulo: Option<domain::ModuloContribucionId>,
+    ) -> AppResult<Option<CuadroCoeficientes>> {
         Ok(self
             .datos
             .cuadros
             .iter()
-            .find(|c| c.estado == EstadoCuadro::Vigente && c.tipo == TipoCuadro::Copropiedad)
+            .find(|c| c.estado == EstadoCuadro::Vigente && c.modulo_id == modulo)
             .cloned())
     }
 
-    async fn ultima_version(&mut self) -> AppResult<u32> {
+    async fn ultima_version(
+        &mut self,
+        modulo: Option<domain::ModuloContribucionId>,
+    ) -> AppResult<u32> {
         Ok(self
             .datos
             .cuadros
             .iter()
+            .filter(|c| c.modulo_id == modulo)
             .map(|c| c.version)
             .max()
             .unwrap_or(0))
+    }
+
+    async fn modulo_contribucion_activo(
+        &mut self,
+        _modulo: domain::ModuloContribucionId,
+    ) -> AppResult<bool> {
+        Ok(false)
     }
 
     async fn insertar_cuadro(&mut self, cuadro: &CuadroCoeficientes) -> AppResult<()> {

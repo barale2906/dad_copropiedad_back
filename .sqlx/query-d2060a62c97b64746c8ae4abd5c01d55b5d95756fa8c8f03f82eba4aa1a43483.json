@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE bienes_privados SET referencia_pago = $2, pagador_persona_id = $3\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d2060a62c97b64746c8ae4abd5c01d55b5d95756fa8c8f03f82eba4aa1a43483"
+}

@@ -8,7 +8,8 @@ use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     AplicacionPagoId, ArchivoId, CentroCostoId, ComprobanteId, ConceptoRetencionId, ConciliacionId,
     CuentaContableId, CuentaId, CuentaTesoreriaId, EgresoId, EventoPasarelaId, ExtractoBancarioId,
-    FacturaProveedorId, FacturaVentaId, MovimientoExtractoId, PersonaId, ReciboCajaId,
+    FacturaProveedorId, FacturaVentaId, MovimientoExtractoId, ObligacionCobroId, PersonaId,
+    ReciboCajaId,
     contabilidad::{
         CodigoCuenta, Monto,
         tesoreria::{
@@ -43,12 +44,15 @@ pub struct CuentaTesoreria {
     pub creada_en: DateTime<Utc>,
 }
 
-/// Aplicación de un recibo a una factura de venta.
+/// Aplicación de un recibo a una factura de venta o a una obligación de cobro de una vertical
+/// (las de la PH): exactamente uno de los dos destinos.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AplicacionPago {
     pub id: AplicacionPagoId,
     pub recibo_id: ReciboCajaId,
-    pub factura_venta_id: FacturaVentaId,
+    pub factura_venta_id: Option<FacturaVentaId>,
+    /// Obligación de la vertical; su saldo lo reconstruye la vertical sumando aplicaciones.
+    pub obligacion_id: Option<ObligacionCobroId>,
     pub valor: Monto,
     pub aplicada_en: DateTime<Utc>,
     /// Solo si se aplicó después del recibo (reclasificación del anticipo).
