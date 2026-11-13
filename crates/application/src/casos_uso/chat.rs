@@ -93,6 +93,8 @@ const ID_NO_CONTACTAR: &str = "p:no";
 pub enum Paso {
     Menu,
     ElegirVinculo,
+    /// «Contactar administración»: escribir un mensaje o pedir una cita.
+    Contacto,
     Faq,
     ReporteCategoria,
     ReporteDescripcion {
@@ -218,6 +220,7 @@ pub trait TxConversacional:
     + crate::puertos::RepositorioCampanasCenso
     + TxBusquedaProveedores
     + crate::casos_uso::publicidad::TxPublicidad
+    + crate::puertos::cartera::ResumenCartera
 {
 }
 
@@ -231,6 +234,7 @@ impl<T> TxConversacional for T where
         + crate::puertos::RepositorioCampanasCenso
         + TxBusquedaProveedores
         + crate::casos_uso::publicidad::TxPublicidad
+        + crate::puertos::cartera::ResumenCartera
 {
 }
 
@@ -321,12 +325,13 @@ fn menu(v: &VinculoTelefono, varios: bool, votar: bool) -> ContenidoSaliente {
         Eleccion::new("m:paquetes", "Mis paquetes").con_descripcion("Correspondencia en portería"),
         Eleccion::new("m:reportar", "Reportar un daño").con_descripcion("Con foto si quiere"),
         Eleccion::new("m:estado", "Mis solicitudes"),
-        Eleccion::new("m:humano", "Contactar administración"),
+        Eleccion::new("m:saldo", "Mi saldo").con_descripcion("Lo que debe y cómo pagar"),
+        Eleccion::new("m:humano", "Contactar administración")
+            .con_descripcion("Mensaje o cita con la administración"),
         Eleccion::new("m:proveedor", "Buscar un proveedor")
             .con_descripcion("Técnicos, comercios y oficios cerca"),
         Eleccion::new("m:reservar", "Reservar bien común"),
         Eleccion::new("m:visitante", "Parqueadero visitante"),
-        Eleccion::new("m:cita", "Cita con administración"),
         Eleccion::new("m:info", "Información de la PH")
             .con_descripcion("Horarios, reglas y preguntas frecuentes"),
     ]);
@@ -698,6 +703,7 @@ where
     match paso {
         Paso::Menu | Paso::ElegirVinculo => elegir_del_menu(s, m, ctx, v, varios, turno).await,
         Paso::Faq => responder_faq(s, ctx, id, turno).await,
+        Paso::Contacto => atender_contacto(s, m, ctx, v, turno).await,
         Paso::ReporteCategoria => elegir_categoria_reporte(s, ctx, id, turno).await,
         Paso::ReporteDescripcion { categoria, nombre } => match texto_de(&m.contenido) {
             Some(t) => {
@@ -934,28 +940,18 @@ where
         Some("m:visitante") => {
             elegir_recurso(s, ctx, v, TipoRecurso::Parqueadero, true, turno).await
         }
+        // «m:cita» quedó dentro de «Contactar administración»; se atiende si llega de un menú
+        // enviado antes del cambio.
         Some("m:cita") => {
             elegir_recurso(s, ctx, v, TipoRecurso::AgendaAdministracion, false, turno).await
         }
         Some("m:humano") => {
-            let c = registrar_entrante(
-                s.unidad,
-                s.reloj,
-                ctx,
-                EntradaConversacion {
-                    linea: m.linea.clone(),
-                    telefono: m.telefono.clone(),
-                    persona_id: Some(v.persona_id),
-                    wamid: m.wamid.clone(),
-                    texto: None,
-                },
-            )
-            .await?;
-            turno.texto(
-                "Escriba su mensaje: la administración le responderá por aquí en su horario \
-                 de atención. Escriba «menú» para volver a las opciones.",
-            );
-            Ok(Paso::Humano { conversacion: c.id })
+            turno.responder(opciones_contacto());
+            Ok(Paso::Contacto)
+        }
+        Some("m:saldo") => {
+            mostrar_saldo(s, ctx, v, turno).await?;
+            Ok(Paso::Menu)
         }
         Some("m:visita") => {
             turno.texto(
@@ -996,6 +992,128 @@ where
             Ok(Paso::Menu)
         }
     }
+}
+
+const ID_CONTACTO_MENSAJE: &str = "h:mensaje";
+const ID_CONTACTO_CITA: &str = "h:cita";
+
+fn opciones_contacto() -> ContenidoSaliente {
+    ContenidoSaliente::Botones {
+        cuerpo: "¿Cómo quiere contactar a la administración?".into(),
+        botones: vec![
+            Eleccion::new(ID_CONTACTO_MENSAJE, "Escribir un mensaje"),
+            Eleccion::new(ID_CONTACTO_CITA, "Pedir una cita"),
+            Eleccion::new(ID_MENU, "Volver al menú"),
+        ],
+    }
+}
+
+/// «Contactar administración»: abre la conversación con la bandeja humana o agenda una cita.
+async fn atender_contacto<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    m: &MensajeEntrante,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    turno: &mut Turno,
+) -> AppResult<Paso>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    S: SesionesConversacion,
+    D: DirectorioTelefonos,
+    M: Mensajeria,
+    A: AlmacenArchivos,
+    R: Reloj,
+    DA: DirectorioAsambleas,
+    F: FirmaQr,
+    Q: GeneradorImagenQr,
+{
+    match respuesta_id(&m.contenido) {
+        Some(ID_CONTACTO_CITA) => {
+            elegir_recurso(s, ctx, v, TipoRecurso::AgendaAdministracion, false, turno).await
+        }
+        Some(ID_CONTACTO_MENSAJE) => {
+            let c = registrar_entrante(
+                s.unidad,
+                s.reloj,
+                ctx,
+                EntradaConversacion {
+                    linea: m.linea.clone(),
+                    telefono: m.telefono.clone(),
+                    persona_id: Some(v.persona_id),
+                    wamid: m.wamid.clone(),
+                    texto: None,
+                },
+            )
+            .await?;
+            turno.texto(
+                "Escriba su mensaje: la administración le responderá por aquí en su horario \
+                 de atención. Escriba «menú» para volver a las opciones.",
+            );
+            Ok(Paso::Humano { conversacion: c.id })
+        }
+        _ => {
+            turno.responder(opciones_contacto());
+            Ok(Paso::Contacto)
+        }
+    }
+}
+
+/// «Mi saldo»: lo que debe el bien y cómo pagar (solo el propietario o el pagador).
+async fn mostrar_saldo<U, S, D, M, A, R, DA, F, Q>(
+    s: &ServiciosChat<'_, U, S, D, M, A, R, DA, F, Q>,
+    ctx: &Contexto,
+    v: &VinculoTelefono,
+    turno: &mut Turno,
+) -> AppResult<()>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxConversacional,
+    R: Reloj,
+{
+    use crate::casos_uso::contabilidad_ph::portal::{SaldoChat, saldo_para_chat};
+    let texto = match saldo_para_chat(
+        s.unidad,
+        s.reloj,
+        ctx,
+        v.bien_privado_id,
+        v.persona_id,
+        v.es_propietario,
+    )
+    .await?
+    {
+        SaldoChat::SinCartera => {
+            "La consulta del saldo no está disponible en su copropiedad. Escríbale a la \
+             administración."
+                .to_owned()
+        }
+        SaldoChat::NoAutorizado => {
+            "El saldo solo lo puede consultar el propietario o quien paga la administración \
+             del bien."
+                .to_owned()
+        }
+        SaldoChat::Resumen(r) if r.saldo <= rust_decimal::Decimal::ZERO => format!(
+            "El bien {} está al día. Puede descargar su paz y salvo en la app, en «Mi cartera».",
+            v.codigo
+        ),
+        SaldoChat::Resumen(r) => {
+            let mut t = format!("Saldo del bien {}: ${}", v.codigo, r.saldo.round_dp(2));
+            if r.vencido > rust_decimal::Decimal::ZERO {
+                t.push_str(&format!(" (vencido: ${})", r.vencido.round_dp(2)));
+            }
+            if let Some(f) = r.proximo_vencimiento {
+                t.push_str(&format!(". Próximo vencimiento: {f}"));
+            }
+            if let Some(referencia) = r.referencia_pago {
+                t.push_str(&format!(". Referencia de pago: {referencia}"));
+            }
+            t.push('.');
+            t
+        }
+    };
+    turno.texto(texto);
+    turno.responder(boton_menu());
+    Ok(())
 }
 
 /// «Mis solicitudes»: las últimas cinco del residente con su estado.

@@ -16,6 +16,7 @@ use application::{
             tesoreria::{self as tes, NuevaCuentaTesoreria, conceptos},
         },
         contabilidad_ph::{
+            avisos,
             configuracion::{self as cfg, NuevoConcepto},
             eventos, informes, integraciones,
             liquidacion::{self as liq, NuevaCuota},
@@ -1640,4 +1641,86 @@ async fn informes_del_fondo_flujo_proyecto_y_asamblea(pool: PgPool) {
         dec!(1100000)
     );
     assert!(!pdf.is_empty());
+}
+
+struct RelojEn(NaiveDate);
+
+impl Reloj for RelojEn {
+    fn ahora(&self) -> DateTime<Utc> {
+        self.0.and_hms_opt(12, 0, 0).expect("hora").and_utc()
+    }
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn los_avisos_de_cartera_salen_una_vez_y_solo_a_quien_debe(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    sqlx::query("UPDATE modulos_habilitados SET desde = '2026-01-01'")
+        .execute(&e.pool)
+        .await
+        .expect("módulos desde enero");
+    let directorio = infra_postgres::DirectorioCarteraPg::new(pool_como_app(&e.pool).await);
+
+    let recordatorios =
+        avisos::avisar_cartera(&directorio, &e.unidad, &RelojEn(fecha(2026, 11, 8)))
+            .await
+            .expect("recordatorios");
+    let repetidos = avisos::avisar_cartera(&directorio, &e.unidad, &RelojEn(fecha(2026, 11, 8)))
+        .await
+        .expect("sin repetir");
+    e.recaudar(e.bienes[0], fecha(2026, 11, 9), 505_000)
+        .await
+        .expect("pago");
+    let mora = avisos::avisar_cartera(&directorio, &e.unidad, &RelojEn(fecha(2026, 11, 16)))
+        .await
+        .expect("mora");
+
+    assert_eq!((recordatorios, repetidos, mora), (3, 0, 2));
+    let correos: i64 = sqlx::query_scalar("SELECT count(*) FROM outbox WHERE canal = 'correo'")
+        .fetch_one(&e.pool)
+        .await
+        .expect("contar");
+    assert_eq!(correos, 5);
+    let constancias: i64 = sqlx::query_scalar("SELECT count(*) FROM avisos_cartera")
+        .fetch_one(&e.pool)
+        .await
+        .expect("contar");
+    assert_eq!(constancias, 6);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_chat_muestra_el_saldo_solo_al_propietario_o_al_pagador(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    let otra_persona = domain::PersonaId::nuevo();
+
+    let propietario = portal::saldo_para_chat(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        e.bienes[0],
+        otra_persona,
+        true,
+    )
+    .await
+    .expect("propietario");
+    let residente = portal::saldo_para_chat(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        e.bienes[0],
+        otra_persona,
+        false,
+    )
+    .await
+    .expect("residente");
+
+    match propietario {
+        portal::SaldoChat::Resumen(r) => {
+            assert_eq!(r.saldo, dec!(505000));
+            assert_eq!(r.vencido, dec!(505000));
+        }
+        otro => panic!("{otro:?}"),
+    }
+    assert_eq!(residente, portal::SaldoChat::NoAutorizado);
 }

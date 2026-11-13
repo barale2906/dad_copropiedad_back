@@ -10,9 +10,10 @@ use application::{
     puertos::cartera::{
         AcuerdoPago, AjusteObligacion, Anticipo, BienCartera, CargoPendiente, CatalogoTasas,
         CatalogoTasasPlataforma, CausacionMora, CertificadoCartera, ConceptoCobro, CuentaCobro,
-        CuotaExtraordinaria, DetalleInteres, FiltroObligaciones, LiquidacionExpensas,
-        ModuloContribucion, ObligacionCobro, PagoAplicado, PoliticaCartera, Presupuesto,
-        RepositorioCartera, RubroPresupuesto, SaldoObligacion, TasaReferencia,
+        CuotaExtraordinaria, DetalleInteres, DirectorioCartera, FiltroObligaciones,
+        LiquidacionExpensas, ModuloContribucion, ObligacionCobro, PagoAplicado, PoliticaCartera,
+        Presupuesto, RepositorioCartera, ResumenBien, ResumenCartera, RubroPresupuesto,
+        SaldoObligacion, TasaReferencia,
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
@@ -26,7 +27,7 @@ use domain::{
     contabilidad_ph::{
         CriterioDistribucion, EstadoCuotaExtraordinaria, EstadoLiquidacionExpensas,
         EstadoObligacion, EstadoPresupuesto, OrdenImputacion, OrigenObligacion, ParametrosPolitica,
-        TipoAjuste, TipoConceptoCobro,
+        TipoAjuste, TipoAvisoCartera, TipoConceptoCobro,
         mora::{
             CuotaAcuerdo, EstadoAcuerdo, EstadoCausacion, ModalidadTasa, Reduccion, TipoCertificado,
         },
@@ -1722,6 +1723,147 @@ impl RepositorioCartera for TransaccionPg {
 
     async fn certificados(&mut self, bien: BienPrivadoId) -> AppResult<Vec<CertificadoCartera>> {
         self.certificados_donde(None, Some(bien.as_uuid())).await
+    }
+
+    async fn cuentas_por_avisar(
+        &mut self,
+        hoy: NaiveDate,
+        dias_antes: u32,
+        dias_despues: u32,
+    ) -> AppResult<Vec<(CuentaCobro, TipoAvisoCartera)>> {
+        let antes = i32_de(dias_antes, "dias_antes")?;
+        let despues = i32_de(dias_despues, "dias_despues")?;
+        let filas = sqlx::query!(
+            r#"SELECT c.id, t.tipo AS "tipo!"
+               FROM cuentas_cobro c
+               JOIN liquidaciones_expensas l ON l.id = c.liquidacion_id
+                    AND l.estado = 'contabilizada'
+               CROSS JOIN LATERAL (VALUES
+                   (CASE WHEN c.vencimiento > $1::date AND c.vencimiento <= $1::date + $2::int
+                         THEN 'recordatorio' END),
+                   (CASE WHEN c.vencimiento <= $1::date - $3::int AND c.vencimiento > $1::date - 60
+                         THEN 'mora' END)) AS t (tipo)
+               WHERE t.tipo IS NOT NULL
+                 AND NOT EXISTS (SELECT 1 FROM avisos_cartera a
+                                 WHERE a.cuenta_cobro_id = c.id AND a.tipo = t.tipo)
+               ORDER BY c.anio, c.numero"#,
+            hoy,
+            antes,
+            despues,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        let mut v = Vec::with_capacity(filas.len());
+        for f in filas {
+            if let Some(c) = self
+                .cuentas_cobro_donde(Some(f.id), None, None)
+                .await?
+                .pop()
+            {
+                v.push((c, TipoAvisoCartera::try_from(f.tipo.as_str())?));
+            }
+        }
+        Ok(v)
+    }
+
+    async fn registrar_aviso(
+        &mut self,
+        cuenta: CuentaCobroId,
+        tipo: TipoAvisoCartera,
+        en: DateTime<Utc>,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO avisos_cartera (tenant_id, cuenta_cobro_id, tipo, enviado_en)
+             VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+            self.ctx.tenant_id.as_uuid(),
+            cuenta.as_uuid(),
+            tipo.as_str(),
+            en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+}
+
+impl ResumenCartera for TransaccionPg {
+    async fn resumen_bien(
+        &mut self,
+        bien: BienPrivadoId,
+        hoy: NaiveDate,
+    ) -> AppResult<Option<ResumenBien>> {
+        let Some(b) = sqlx::query!(
+            "SELECT referencia_pago, pagador_persona_id FROM bienes_privados WHERE id = $1",
+            bien.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        else {
+            return Ok(None);
+        };
+        let pendientes = self
+            .saldos_donde(
+                None,
+                &FiltroObligaciones {
+                    bien: Some(bien),
+                    con_saldo: true,
+                    ..FiltroObligaciones::default()
+                },
+            )
+            .await?;
+        Ok(Some(ResumenBien {
+            saldo: pendientes.iter().map(|o| o.saldo).sum(),
+            vencido: pendientes
+                .iter()
+                .filter(|o| o.obligacion.vencimiento < hoy)
+                .map(|o| o.saldo)
+                .sum(),
+            proximo_vencimiento: pendientes
+                .iter()
+                .map(|o| o.obligacion.vencimiento)
+                .filter(|v| *v >= hoy)
+                .min(),
+            referencia_pago: b.referencia_pago,
+            pagador_persona_id: b.pagador_persona_id.map(PersonaId::from_uuid),
+        }))
+    }
+}
+
+/// Directorio de copropiedades con avisos de cartera pendientes (función `SECURITY DEFINER`).
+#[derive(Debug, Clone)]
+pub struct DirectorioCarteraPg {
+    pool: sqlx::PgPool,
+}
+
+impl DirectorioCarteraPg {
+    /// Directorio sobre el pool de la app (`dad_app`).
+    pub fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+impl DirectorioCartera for DirectorioCarteraPg {
+    async fn copropiedades_con_avisos(
+        &self,
+        hoy: NaiveDate,
+        dias_antes: u32,
+        dias_despues: u32,
+    ) -> AppResult<Vec<domain::TenantId>> {
+        Ok(sqlx::query_scalar!(
+            r#"SELECT tenant_id AS "tenant_id!" FROM copropiedades_con_avisos_cartera($1, $2, $3)"#,
+            hoy,
+            i32_de(dias_antes, "dias_antes")?,
+            i32_de(dias_despues, "dias_despues")?,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(domain::TenantId::from_uuid)
+        .collect())
     }
 }
 

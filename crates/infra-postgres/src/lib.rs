@@ -60,6 +60,7 @@ mod unidad_trabajo;
 pub use acceso::DirectorioAccesoPg;
 pub use asambleas::{CANAL_EN_VIVO, DirectorioAsambleasPg, OyenteEnVivo};
 pub use busqueda_proveedores::PurgaDirectorioPg;
+pub use cartera::DirectorioCarteraPg;
 pub use chat::{DirectorioGestionPg, DirectorioTelefonosPg, SesionesChatPg};
 pub use cola_salida::{ColaSalidaPg, LoteSalidaPg};
 pub use error::InfraPgError;

@@ -449,3 +449,14 @@ impl RepositorioTitulares for TransaccionEnMemoria {
         Ok(ids)
     }
 }
+
+/// El doble en memoria no lleva cartera: el chat responde que no hay datos.
+impl crate::puertos::cartera::ResumenCartera for TransaccionEnMemoria {
+    async fn resumen_bien(
+        &mut self,
+        _bien: BienPrivadoId,
+        _hoy: chrono::NaiveDate,
+    ) -> AppResult<Option<crate::puertos::cartera::ResumenBien>> {
+        Ok(None)
+    }
+}

@@ -16,6 +16,7 @@
 //!   cobro y su paz y salvo).
 //! - [`integraciones`]: morosos de las asambleas y restricción de reservas por mora desde la
 //!   cartera.
+//! - [`avisos`]: recordatorio de pago y aviso de mora automáticos (worker del gateway).
 //! - [`informes`]: estado del fondo de imprevistos, flujo de caja, proyecto de presupuesto y el
 //!   paquete en PDF para la asamblea.
 //!
@@ -24,6 +25,7 @@
 //! el recaudo es un recibo de caja con aplicaciones a obligaciones. El núcleo no conoce esta
 //! vertical.
 
+pub mod avisos;
 pub mod configuracion;
 pub mod informes;
 pub mod integraciones;
