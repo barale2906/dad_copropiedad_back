@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT EXISTS (\n                   SELECT 1 FROM aplicaciones_pago p JOIN obligaciones o ON o.id = p.obligacion_id\n                   WHERE o.causacion_id = $1 AND p.anulada_en IS NULL\n                   UNION ALL\n                   SELECT 1 FROM ajustes_obligacion a JOIN obligaciones o ON o.id = a.obligacion_id\n                   WHERE o.causacion_id = $1 AND a.anulado_en IS NULL) AS \"e!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "e!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "c5a257198a3dcd4a3c4eb24979dd9e8bdbce141a54a4ef1a03fc397f989fd23b"
+}

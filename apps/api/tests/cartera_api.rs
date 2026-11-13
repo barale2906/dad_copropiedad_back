@@ -50,6 +50,8 @@ async fn copropiedad(pool: PgPool) -> (Ph, String, String) {
         ("4", false, false),
         ("41", false, false),
         ("4170", true, false),
+        ("42", false, false),
+        ("4210", true, false),
         ("5", false, false),
         ("51", false, false),
         ("5135", true, false),
@@ -103,7 +105,16 @@ async fn copropiedad(pool: PgPool) -> (Ph, String, String) {
             vec![
                 linea("recibido", "debito", "1110", false),
                 linea("administracion", "credito", "1305", true),
+                linea("intereses", "credito", "1305", true),
                 linea("sin_aplicar", "credito", "2805", false),
+            ],
+        ),
+        (
+            "ph.intereses",
+            "LQ",
+            vec![
+                linea("intereses", "debito", "1305", true),
+                linea("intereses", "credito", "4210", false),
             ],
         ),
     ] {
@@ -295,4 +306,174 @@ async fn la_politica_que_supera_el_tope_de_mora_se_rechaza(pool: PgPool) {
         .await;
 
     assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "{v}");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn intereses_edades_y_certificados_de_punta_a_punta(pool: PgPool) {
+    let (e, bien, _) = copropiedad(pool).await;
+    let (s, v) = e
+        .api
+        .pedir(
+            Method::POST,
+            "/api/v1/plataforma/tasas-referencia",
+            Some(&e.root),
+            Some(
+                json!({ "vigente_desde": "2026-01-01", "vigente_hasta": "2027-12-31",
+                         "tasa_efectiva_anual": "20", "resolucion": "Resolución de prueba",
+                         "fuente": "Superintendencia Financiera" }),
+            ),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    crear(
+        &e,
+        "/cartera/conceptos",
+        json!({ "codigo": "intereses", "nombre": "Intereses de mora", "tipo": "interes_mora",
+                "criterio": "coeficiente", "concepto_contable": "intereses" }),
+    )
+    .await;
+    crear(
+        &e,
+        "/cartera/liquidaciones",
+        json!({ "periodo": "2026-12-01" }),
+    )
+    .await;
+
+    let vista = crear(
+        &e,
+        "/cartera/intereses/vista-previa",
+        json!({ "hasta": "2026-12-31" }),
+    )
+    .await;
+    assert_eq!(vista["bienes"][0]["detalle"][0]["dias"], json!(21));
+    assert_eq!(
+        vista["bienes"][0]["detalle"][0]["tasa_efectiva_anual"],
+        json!("30.0000")
+    );
+    let causado = crear(&e, "/cartera/intereses", json!({ "hasta": "2026-12-31" })).await;
+    assert_eq!(causado["causacion"]["estado"], json!("contabilizada"));
+    let (s, _) = e
+        .pedir(
+            Method::POST,
+            "/cartera/intereses",
+            Some(json!({ "hasta": "2026-12-31" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "no se causa dos veces");
+
+    let (s, edades) = e
+        .pedir(Method::GET, "/cartera/edades?corte=2027-01-05", None)
+        .await;
+    assert_eq!(s, StatusCode::OK, "{edades}");
+    assert_eq!(edades["total"]["de_1_a_30"], edades["total"]["total"]);
+    assert_eq!(edades["total"]["corriente"], json!("0.00"));
+
+    let (s, _) = e
+        .pedir(
+            Method::POST,
+            &format!("/cartera/bienes/{bien}/certificados"),
+            Some(json!({ "tipo": "paz_y_salvo" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "no hay paz y salvo con deuda");
+    let deuda = crear(
+        &e,
+        &format!("/cartera/bienes/{bien}/certificados"),
+        json!({ "tipo": "deuda" }),
+    )
+    .await;
+    let codigo = deuda["codigo"].as_str().expect("código").to_owned();
+    assert!(deuda["pdf_base64"].as_str().is_some_and(|p| !p.is_empty()));
+
+    let (s, v) = e
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{}/certificados/verificacion", e.base),
+            None,
+            Some(json!({ "codigo": codigo })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(
+        v,
+        json!({ "valido": true, "tipo": "deuda", "corte": deuda["certificado"]["corte"] })
+    );
+    let (_, v) = e
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{}/certificados/verificacion", e.base),
+            None,
+            Some(json!({ "codigo": "0000-0000-0000-0000-0000" })),
+        )
+        .await;
+    assert_eq!(v["valido"], json!(false));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_propietario_consulta_su_cartera_y_el_consejo_sus_informes(pool: PgPool) {
+    let (e, bien, _) = copropiedad(pool).await;
+    crear(
+        &e,
+        "/cartera/liquidaciones",
+        json!({ "periodo": "2026-12-01" }),
+    )
+    .await;
+    let dueno = e.api.token("dueno").await;
+    let como_dueno = |metodo: Method, ruta: String| {
+        let token = dueno.clone();
+        let api = &e.api;
+        let ruta = format!("{}{ruta}", e.base);
+        async move { api.pedir(metodo, &ruta, Some(&token), None).await }
+    };
+
+    let (s, mios) = como_dueno(Method::GET, "/mi-cartera/bienes".into()).await;
+    assert_eq!(s, StatusCode::OK, "{mios}");
+    assert_eq!(mios[0]["id"], json!(bien));
+    let (s, estado) = como_dueno(
+        Method::GET,
+        format!("/mi-cartera/bienes/{bien}/estado-cuenta?corte=2026-12-31"),
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{estado}");
+    assert_eq!(estado["saldo"], json!("450000.00"));
+    let (s, _) = como_dueno(
+        Method::POST,
+        format!("/mi-cartera/bienes/{bien}/paz-y-salvo"),
+    )
+    .await;
+    assert_eq!(s, StatusCode::CONFLICT, "con deuda no hay paz y salvo");
+    let (s, _) = como_dueno(Method::GET, "/cartera/saldos".into()).await;
+    assert_eq!(
+        s,
+        StatusCode::FORBIDDEN,
+        "la cartera completa exige `cartera.ver`"
+    );
+
+    let (s, fondo) = e
+        .pedir(Method::GET, "/cartera/informes/fondo?anio=2026", None)
+        .await;
+    assert_eq!(s, StatusCode::OK, "{fondo}");
+    assert_eq!(fondo["presupuesto_anual"], json!("5400000.00"));
+    let proyecto = crear(
+        &e,
+        "/cartera/presupuestos/proyecto",
+        json!({ "anio_base": 2026, "ajuste_porcentual": "10" }),
+    )
+    .await;
+    assert_eq!(proyecto["anio"], json!(2027));
+    assert_eq!(proyecto["total_anual"], json!("5940000.00"));
+    let (s, tipo, _) = e
+        .api
+        .pedir_texto(
+            &format!(
+                "{}/cartera/informes/asamblea?anio=2026&hasta_mes=12",
+                e.base
+            ),
+            &e.admin,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(tipo, "application/pdf");
 }

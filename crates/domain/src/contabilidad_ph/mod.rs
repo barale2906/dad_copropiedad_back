@@ -5,6 +5,8 @@
 //! Lógica pura. Usa el núcleo contable ([`Monto`]) y los tipos de la PH; el núcleo nunca usa
 //! este módulo (ADR 0017).
 
+pub mod mora;
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{Datelike, NaiveDate};
@@ -185,6 +187,8 @@ pub enum OrigenObligacion {
     SaldoInicial,
     /// Cobro manual (multas, uso de bienes comunes) con su propio comprobante.
     Manual,
+    /// Intereses de mora de una causación (nunca generan intereses).
+    Interes,
 }
 
 enum_texto!(OrigenObligacion {
@@ -192,6 +196,7 @@ enum_texto!(OrigenObligacion {
     Cargo => "cargo",
     SaldoInicial => "saldo_inicial",
     Manual => "manual",
+    Interes => "interes",
 });
 
 /// Estado de una obligación.

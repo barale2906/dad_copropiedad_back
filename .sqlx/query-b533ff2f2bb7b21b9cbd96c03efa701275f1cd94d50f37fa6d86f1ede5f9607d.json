@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO acuerdos_pago (id, tenant_id, bien_privado_id, deudor_persona_id, fecha,\n                 valor, numero_cuotas, estado, observaciones, creado_por, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Numeric",
+        "Int2",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b533ff2f2bb7b21b9cbd96c03efa701275f1cd94d50f37fa6d86f1ede5f9607d"
+}

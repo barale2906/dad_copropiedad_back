@@ -743,6 +743,7 @@ where
         cuota_extraordinaria_id: None,
         cuenta_cobro_id: None,
         comprobante_id: Some(comprobante),
+        causacion_id: None,
         descripcion: Some(descripcion),
         estado: EstadoObligacion::Vigente,
         creada_en: reloj.ahora(),
@@ -980,6 +981,7 @@ where
             cuota_extraordinaria_id: None,
             cuenta_cobro_id: None,
             comprobante_id: None,
+            causacion_id: None,
             descripcion: Some("Cartera inicial".into()),
             estado: EstadoObligacion::Vigente,
             creada_en: ahora,
@@ -1045,7 +1047,17 @@ where
 {
     let corte = corte.unwrap_or_else(|| reloj.ahora().date_naive());
     let mut tx = abrir(unidad, reloj, ctx, Permiso::CarteraVer).await?;
-    let b = bien_cartera(&mut tx, bien).await?;
+    estado_cuenta_en(&mut tx, bien, corte).await
+}
+
+/// Estado de cuenta en la transacción (sin exigir permiso: lo usa también el portal del
+/// propietario, que exige ser titular o pagador).
+pub(crate) async fn estado_cuenta_en<T: TxCartera>(
+    tx: &mut T,
+    bien: BienPrivadoId,
+    corte: NaiveDate,
+) -> AppResult<EstadoCuenta> {
+    let b = bien_cartera(tx, bien).await?;
     let obligaciones: Vec<SaldoObligacion> = tx
         .saldos_obligaciones(&FiltroObligaciones {
             bien: Some(bien),
@@ -1154,8 +1166,9 @@ pub struct CuadreCuenta {
 }
 
 /// Cuadre de la cartera contra el mayor con todo lo contabilizado (también lo fechado después
-/// de hoy, como una liquidación anticipada): las cuentas de cartera son las que debita la regla
-/// vigente de [`eventos::LIQUIDACION`] para cada concepto contable; el saldo de cada una en el
+/// de hoy, como una liquidación anticipada): las cuentas de cartera son las que debitan las
+/// reglas vigentes de [`eventos::LIQUIDACION`], [`eventos::COBRO`] e [`eventos::INTERESES`] para
+/// cada concepto contable; el saldo de cada una en el
 /// mayor se compara con la suma de los saldos de las obligaciones de sus conceptos (incluida la
 /// cartera inicial).
 ///
@@ -1174,22 +1187,22 @@ where
 {
     let hoy = reloj.ahora().date_naive();
     let mut tx = abrir(unidad, reloj, ctx, Permiso::CarteraVer).await?;
-    let regla = tx
-        .regla_vigente(eventos::LIQUIDACION, hoy)
-        .await?
-        .ok_or_else(|| {
-            validacion(format!(
-                "no hay una regla vigente para `{}`",
-                eventos::LIQUIDACION
-            ))
-        })?;
-    let cuenta_de: BTreeMap<String, CuentaContableId> = regla
-        .regla
-        .lineas
-        .iter()
-        .filter(|l| l.cara == Cara::Debito)
-        .map(|l| (l.concepto.clone(), l.cuenta))
-        .collect();
+    let mut cuenta_de: BTreeMap<String, CuentaContableId> = BTreeMap::new();
+    let mut hay_regla = false;
+    for evento in [eventos::LIQUIDACION, eventos::COBRO, eventos::INTERESES] {
+        if let Some(regla) = tx.regla_vigente(evento, hoy).await? {
+            hay_regla = true;
+            for l in regla.regla.lineas.iter().filter(|l| l.cara == Cara::Debito) {
+                cuenta_de.entry(l.concepto.clone()).or_insert(l.cuenta);
+            }
+        }
+    }
+    if !hay_regla {
+        return Err(validacion(format!(
+            "no hay una regla vigente para `{}`",
+            eventos::LIQUIDACION
+        )));
+    }
     let mut cartera: BTreeMap<CuentaContableId, Decimal> =
         cuenta_de.values().map(|c| (*c, Decimal::ZERO)).collect();
     for o in tx

@@ -3,16 +3,19 @@
 
 use application::{
     casos_uso::contabilidad_ph::{
+        informes::{EstadoFondo, MesFlujo},
         liquidacion::{CobroPrevisto, EnvioCuentas, Liquidado, TotalConcepto, VistaLiquidacion},
+        mora::{AcuerdoConSituacion, CalculoMora, Causado, CertificadoEmitido, EdadesBien},
         presupuesto::{EjecucionPresupuestal, EjecucionRubro},
         recaudo::{
             CarteraInicial, CuadreCuenta, EstadoCuenta, Recaudo, RecaudoExtracto, SaldoBien,
         },
     },
     puertos::cartera::{
-        AjusteObligacion, BienCartera, ConceptoCobro, CuentaCobro, CuotaExtraordinaria,
-        LiquidacionExpensas, ModuloContribucion, PagoAplicado, PoliticaCartera, Presupuesto,
-        RubroPresupuesto, SaldoObligacion,
+        AcuerdoPago, AjusteObligacion, BienCartera, CausacionMora, CertificadoCartera,
+        ConceptoCobro, CuentaCobro, CuotaExtraordinaria, DetalleInteres, LiquidacionExpensas,
+        ModuloContribucion, PagoAplicado, PoliticaCartera, Presupuesto, RubroPresupuesto,
+        SaldoObligacion, TasaReferencia,
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
@@ -23,6 +26,7 @@ use domain::{
         CriterioDistribucion, EstadoCuotaExtraordinaria, EstadoLiquidacionExpensas,
         EstadoObligacion, EstadoPresupuesto, OrdenImputacion, OrigenObligacion, TipoAjuste,
         TipoConceptoCobro,
+        mora::{EstadoAcuerdo, EstadoCausacion, ModalidadTasa, SituacionAcuerdo, TipoCertificado},
     },
 };
 use rust_decimal::Decimal;
@@ -1107,4 +1111,509 @@ impl From<CuadreCuenta> for CuadreCuentaRespuesta {
             diferencia: pesos(c.diferencia),
         }
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Mora, acuerdos, edades y certificados (fase 5)
+// ---------------------------------------------------------------------------------------------
+
+/// Tasa de referencia nueva (interés bancario corriente certificado).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct NuevaTasaPeticion {
+    pub vigente_desde: NaiveDate,
+    pub vigente_hasta: NaiveDate,
+    /// Efectiva anual, en %.
+    #[schema(value_type = String, example = "18.95")]
+    pub tasa_efectiva_anual: Decimal,
+    #[schema(example = "Resolución 1234 de 2026")]
+    pub resolucion: String,
+    #[schema(example = "Superintendencia Financiera de Colombia")]
+    pub fuente: String,
+}
+
+/// Tasa de referencia.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct TasaReferenciaRespuesta {
+    pub id: Uuid,
+    #[schema(value_type = crate::esquemas::ModalidadTasa)]
+    pub modalidad: ModalidadTasa,
+    pub vigente_desde: NaiveDate,
+    pub vigente_hasta: NaiveDate,
+    #[schema(value_type = String)]
+    pub tasa_efectiva_anual: Decimal,
+    pub resolucion: String,
+    pub fuente: String,
+    pub creada_en: DateTime<Utc>,
+}
+
+impl From<TasaReferencia> for TasaReferenciaRespuesta {
+    fn from(t: TasaReferencia) -> Self {
+        Self {
+            id: t.id.as_uuid(),
+            modalidad: t.modalidad,
+            vigente_desde: t.vigente_desde,
+            vigente_hasta: t.vigente_hasta,
+            tasa_efectiva_anual: t.tasa_efectiva_anual,
+            resolucion: t.resolucion,
+            fuente: t.fuente,
+            creada_en: t.creada_en,
+        }
+    }
+}
+
+/// Fecha hasta la que se causan los intereses (inclusive).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct HastaPeticion {
+    #[schema(example = "2026-11-30")]
+    pub hasta: NaiveDate,
+}
+
+/// Tramo causado (base, días y tasa).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DetalleInteresRespuesta {
+    pub obligacion_id: Uuid,
+    pub obligacion_interes_id: Uuid,
+    pub desde: NaiveDate,
+    pub hasta: NaiveDate,
+    pub dias: u32,
+    #[schema(value_type = String)]
+    pub base: Decimal,
+    /// Tasa de mora aplicada (efectiva anual, %).
+    #[schema(value_type = String)]
+    pub tasa_efectiva_anual: Decimal,
+    pub tasa_referencia_id: Uuid,
+    #[schema(value_type = String)]
+    pub valor: Decimal,
+}
+
+impl From<DetalleInteres> for DetalleInteresRespuesta {
+    fn from(d: DetalleInteres) -> Self {
+        Self {
+            obligacion_id: d.obligacion_id.as_uuid(),
+            obligacion_interes_id: d.obligacion_interes_id.as_uuid(),
+            desde: d.desde,
+            hasta: d.hasta,
+            dias: d.dias,
+            base: pesos(d.base),
+            tasa_efectiva_anual: d.tasa_efectiva_anual,
+            tasa_referencia_id: d.tasa_referencia_id.as_uuid(),
+            valor: pesos(d.valor),
+        }
+    }
+}
+
+/// Intereses de un bien.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct InteresesBienRespuesta {
+    pub bien_privado_id: Uuid,
+    pub bien_codigo: String,
+    pub deudor_persona_id: Uuid,
+    #[schema(value_type = String)]
+    pub total: Decimal,
+    pub detalle: Vec<DetalleInteresRespuesta>,
+}
+
+/// Cálculo de intereses (vista previa o lo causado).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CalculoMoraRespuesta {
+    pub periodo: NaiveDate,
+    pub hasta: NaiveDate,
+    #[schema(value_type = String)]
+    pub total: Decimal,
+    pub bienes: Vec<InteresesBienRespuesta>,
+}
+
+impl From<CalculoMora> for CalculoMoraRespuesta {
+    fn from(c: CalculoMora) -> Self {
+        Self {
+            periodo: c.periodo,
+            hasta: c.hasta,
+            total: pesos(c.total),
+            bienes: c
+                .bienes
+                .into_iter()
+                .map(|b| InteresesBienRespuesta {
+                    bien_privado_id: b.bien_id.as_uuid(),
+                    bien_codigo: b.bien_codigo,
+                    deudor_persona_id: b.deudor.as_uuid(),
+                    total: pesos(b.total),
+                    detalle: b.detalle.into_iter().map(Into::into).collect(),
+                })
+                .collect(),
+        }
+    }
+}
+
+/// Causación de intereses.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CausacionRespuesta {
+    pub id: Uuid,
+    pub periodo: NaiveDate,
+    pub hasta: NaiveDate,
+    #[schema(value_type = crate::esquemas::EstadoCausacion)]
+    pub estado: EstadoCausacion,
+    #[schema(value_type = String)]
+    pub total: Monto,
+    pub comprobante_id: Uuid,
+    pub motivo_anulacion: Option<String>,
+    pub causada_en: DateTime<Utc>,
+    pub anulada_en: Option<DateTime<Utc>>,
+}
+
+impl From<CausacionMora> for CausacionRespuesta {
+    fn from(c: CausacionMora) -> Self {
+        Self {
+            id: c.id.as_uuid(),
+            periodo: c.periodo,
+            hasta: c.hasta,
+            estado: c.estado,
+            total: c.total,
+            comprobante_id: c.comprobante_id.as_uuid(),
+            motivo_anulacion: c.motivo_anulacion,
+            causada_en: c.causada_en,
+            anulada_en: c.anulada_en,
+        }
+    }
+}
+
+/// Resultado de causar los intereses.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CausadoRespuesta {
+    pub causacion: CausacionRespuesta,
+    pub calculo: CalculoMoraRespuesta,
+    /// Acuerdos que cambiaron de estado al revisarlos.
+    pub acuerdos_revisados: usize,
+}
+
+impl From<Causado> for CausadoRespuesta {
+    fn from(c: Causado) -> Self {
+        Self {
+            causacion: c.causacion.into(),
+            calculo: c.calculo.into(),
+            acuerdos_revisados: c.acuerdos_revisados,
+        }
+    }
+}
+
+/// Causación con su detalle.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DetalleCausacionRespuesta {
+    pub causacion: CausacionRespuesta,
+    pub detalle: Vec<DetalleInteresRespuesta>,
+}
+
+/// Acuerdo de pago nuevo.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct NuevoAcuerdoPeticion {
+    pub bien_privado_id: Uuid,
+    #[schema(example = 6)]
+    pub numero_cuotas: u16,
+    pub primer_vencimiento: NaiveDate,
+    /// Desde cuándo se suspende la mora (por defecto, hoy).
+    pub fecha: Option<NaiveDate>,
+    pub observaciones: Option<String>,
+}
+
+/// Cuota de un acuerdo.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CuotaAcuerdoRespuesta {
+    pub numero: u16,
+    pub vencimiento: NaiveDate,
+    #[schema(value_type = String)]
+    pub valor: Decimal,
+}
+
+/// Acuerdo de pago.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct AcuerdoRespuesta {
+    pub id: Uuid,
+    pub bien_privado_id: Uuid,
+    pub deudor_persona_id: Uuid,
+    pub fecha: NaiveDate,
+    #[schema(value_type = String)]
+    pub valor: Monto,
+    #[schema(value_type = crate::esquemas::EstadoAcuerdo)]
+    pub estado: EstadoAcuerdo,
+    pub observaciones: Option<String>,
+    pub creado_en: DateTime<Utc>,
+    pub aprobado_en: Option<DateTime<Utc>>,
+    pub cerrado_en: Option<DateTime<Utc>>,
+    pub cuotas: Vec<CuotaAcuerdoRespuesta>,
+    /// Lo pagado al bien desde la fecha del acuerdo (en los listados).
+    #[schema(value_type = Option<String>)]
+    pub pagado: Option<Decimal>,
+    /// Situación hoy de un acuerdo vigente: `al_dia`, `cumplido` o `incumplido` (aún sin
+    /// guardar: se guarda al causar los intereses).
+    pub situacion: Option<String>,
+}
+
+impl From<AcuerdoPago> for AcuerdoRespuesta {
+    fn from(a: AcuerdoPago) -> Self {
+        Self {
+            id: a.id.as_uuid(),
+            bien_privado_id: a.bien_privado_id.as_uuid(),
+            deudor_persona_id: a.deudor_persona_id.as_uuid(),
+            fecha: a.fecha,
+            valor: a.valor,
+            estado: a.estado,
+            observaciones: a.observaciones,
+            creado_en: a.creado_en,
+            aprobado_en: a.aprobado_en,
+            cerrado_en: a.cerrado_en,
+            cuotas: a
+                .cuotas
+                .into_iter()
+                .map(|c| CuotaAcuerdoRespuesta {
+                    numero: c.numero,
+                    vencimiento: c.vencimiento,
+                    valor: pesos(c.valor),
+                })
+                .collect(),
+            pagado: None,
+            situacion: None,
+        }
+    }
+}
+
+impl From<AcuerdoConSituacion> for AcuerdoRespuesta {
+    fn from(a: AcuerdoConSituacion) -> Self {
+        let situacion = a.situacion.map(|s| {
+            match s {
+                SituacionAcuerdo::AlDia => "al_dia",
+                SituacionAcuerdo::Cumplido => "cumplido",
+                SituacionAcuerdo::Incumplido { .. } => "incumplido",
+            }
+            .to_owned()
+        });
+        Self {
+            pagado: Some(pesos(a.pagado)),
+            situacion,
+            ..a.acuerdo.into()
+        }
+    }
+}
+
+/// Edades de la deuda de un bien (o el total, sin bien).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct EdadesRespuesta {
+    pub bien_privado_id: Option<Uuid>,
+    pub codigo: String,
+    pub deudor_persona_id: Option<Uuid>,
+    #[schema(value_type = String)]
+    pub corriente: Decimal,
+    #[schema(value_type = String)]
+    pub de_1_a_30: Decimal,
+    #[schema(value_type = String)]
+    pub de_31_a_60: Decimal,
+    #[schema(value_type = String)]
+    pub de_61_a_90: Decimal,
+    #[schema(value_type = String)]
+    pub mas_de_90: Decimal,
+    #[schema(value_type = String)]
+    pub total: Decimal,
+}
+
+impl From<EdadesBien> for EdadesRespuesta {
+    fn from(e: EdadesBien) -> Self {
+        Self {
+            bien_privado_id: e.bien_id.map(|b| b.as_uuid()),
+            codigo: e.codigo,
+            deudor_persona_id: e.deudor_persona_id.map(|p| p.as_uuid()),
+            corriente: pesos(e.corriente),
+            de_1_a_30: pesos(e.de_1_a_30),
+            de_31_a_60: pesos(e.de_31_a_60),
+            de_61_a_90: pesos(e.de_61_a_90),
+            mas_de_90: pesos(e.mas_de_90),
+            total: pesos(e.total),
+        }
+    }
+}
+
+/// Cartera por edades al corte.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CarteraEdadesRespuesta {
+    pub corte: NaiveDate,
+    pub bienes: Vec<EdadesRespuesta>,
+    pub total: EdadesRespuesta,
+}
+
+/// Certificado por emitir.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct NuevoCertificadoPeticion {
+    #[schema(value_type = crate::esquemas::TipoCertificado)]
+    pub tipo: TipoCertificado,
+}
+
+/// Certificado emitido.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CertificadoRespuesta {
+    pub id: Uuid,
+    #[schema(value_type = crate::esquemas::TipoCertificado)]
+    pub tipo: TipoCertificado,
+    pub bien_privado_id: Uuid,
+    pub corte: NaiveDate,
+    #[schema(value_type = String)]
+    pub saldo: Decimal,
+    #[schema(value_type = String)]
+    pub vencido: Decimal,
+    /// SHA-256 del PDF entregado.
+    pub pdf_sha256: String,
+    pub emitido_en: DateTime<Utc>,
+}
+
+impl From<CertificadoCartera> for CertificadoRespuesta {
+    fn from(c: CertificadoCartera) -> Self {
+        Self {
+            id: c.id.as_uuid(),
+            tipo: c.tipo,
+            bien_privado_id: c.bien_privado_id.as_uuid(),
+            corte: c.corte,
+            saldo: pesos(c.saldo),
+            vencido: pesos(c.vencido),
+            pdf_sha256: c.pdf_sha256,
+            emitido_en: c.emitido_en,
+        }
+    }
+}
+
+/// Certificado recién emitido: el código y el PDF se entregan **una sola vez**.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CertificadoEmitidoRespuesta {
+    pub certificado: CertificadoRespuesta,
+    /// Código de verificación (impreso en el PDF; solo se guarda su huella).
+    #[schema(example = "8F3A-21C0-9B7E-44D2-A1F0")]
+    pub codigo: String,
+    /// El PDF en Base64.
+    pub pdf_base64: String,
+}
+
+impl From<CertificadoEmitido> for CertificadoEmitidoRespuesta {
+    fn from(c: CertificadoEmitido) -> Self {
+        use base64::{Engine, engine::general_purpose::STANDARD};
+        Self {
+            certificado: c.certificado.into(),
+            codigo: c.codigo,
+            pdf_base64: STANDARD.encode(&c.pdf),
+        }
+    }
+}
+
+/// Código por verificar.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct VerificacionPeticion {
+    #[schema(example = "8F3A-21C0-9B7E-44D2-A1F0")]
+    pub codigo: String,
+}
+
+/// Resultado de la verificación: solo si es válido, su clase y su corte.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct VerificacionRespuesta {
+    pub valido: bool,
+    #[schema(value_type = Option<crate::esquemas::TipoCertificado>)]
+    pub tipo: Option<TipoCertificado>,
+    pub corte: Option<NaiveDate>,
+}
+
+// ---------------------------------------------------------------------------------------------
+// Integraciones e informes (fases 6 y 7)
+// ---------------------------------------------------------------------------------------------
+
+/// Fecha de corte de los morosos (por defecto, hoy).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CorteMorososPeticion {
+    pub corte: Option<NaiveDate>,
+}
+
+/// Morosos fijados en la reunión.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MorososRespuesta {
+    pub marcados: u32,
+    /// Bienes con cartera vencida que no están en el padrón.
+    pub no_encontrados: Vec<String>,
+}
+
+/// Umbral de vencido desde el que se restringen las reservas.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UmbralMoraPeticion {
+    #[schema(value_type = String, example = "300000")]
+    pub umbral: Monto,
+}
+
+/// Resultado de sincronizar las restricciones por mora.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SincronizacionMoraRespuesta {
+    pub restringidos: usize,
+    pub levantadas: usize,
+}
+
+/// Estado del fondo de imprevistos.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct EstadoFondoRespuesta {
+    pub anio: i32,
+    #[schema(value_type = String)]
+    pub liquidado: Decimal,
+    #[schema(value_type = String)]
+    pub recaudado: Decimal,
+    #[schema(value_type = String)]
+    pub presupuesto_anual: Decimal,
+    /// Liquidado / presupuesto ordinario anual, en %.
+    #[schema(value_type = String)]
+    pub porcentaje: Decimal,
+    /// Llegó al 50 %: la asamblea puede suspender los aportes (art. 35).
+    pub llego_a_la_mitad: bool,
+    #[schema(value_type = String)]
+    pub porcentaje_politica: Decimal,
+    pub suspendido: bool,
+}
+
+impl From<EstadoFondo> for EstadoFondoRespuesta {
+    fn from(f: EstadoFondo) -> Self {
+        Self {
+            anio: f.anio,
+            liquidado: pesos(f.liquidado),
+            recaudado: pesos(f.recaudado),
+            presupuesto_anual: pesos(f.presupuesto_anual),
+            porcentaje: f.porcentaje,
+            llego_a_la_mitad: f.llego_a_la_mitad,
+            porcentaje_politica: f.porcentaje_politica,
+            suspendido: f.suspendido,
+        }
+    }
+}
+
+/// Flujo de caja de un mes.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MesFlujoRespuesta {
+    pub mes: NaiveDate,
+    #[schema(value_type = String)]
+    pub saldo_inicial: Decimal,
+    #[schema(value_type = String)]
+    pub entradas: Decimal,
+    #[schema(value_type = String)]
+    pub salidas: Decimal,
+    #[schema(value_type = String)]
+    pub saldo_final: Decimal,
+}
+
+impl From<MesFlujo> for MesFlujoRespuesta {
+    fn from(m: MesFlujo) -> Self {
+        Self {
+            mes: m.mes,
+            saldo_inicial: pesos(m.saldo_inicial),
+            entradas: pesos(m.entradas),
+            salidas: pesos(m.salidas),
+            saldo_final: pesos(m.saldo_final),
+        }
+    }
+}
+
+/// Proyecto de presupuesto del año siguiente.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ProyectoPresupuestoPeticion {
+    /// Año del presupuesto vigente que se copia.
+    #[schema(example = 2026)]
+    pub anio_base: i32,
+    /// Ajuste en % (entre -50 y 100).
+    #[schema(value_type = String, example = "9.5")]
+    pub ajuste_porcentual: Decimal,
 }

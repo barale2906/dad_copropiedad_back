@@ -1,0 +1,137 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, tipo, bien_privado_id, corte, saldo, vencido, codigo_hash, pdf_sha256,\n                    emitido_por, emitido_en\n             FROM certificados_emitidos\n             WHERE ($1::text IS NULL OR codigo_hash = $1) AND ($2::uuid IS NULL OR bien_privado_id = $2)\n             ORDER BY emitido_en DESC, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "corte",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "corte"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "saldo",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "saldo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "vencido",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "vencido"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "codigo_hash",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "codigo_hash"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "pdf_sha256",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "pdf_sha256"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "emitido_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "emitido_por"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "emitido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "certificados_emitidos",
+            "name": "emitido_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "b3dc494cf94a9f5e51a99d55b615db8952f64dab5371e8b628025d3182ee08f2"
+}

@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT acuerdo_id, numero, vencimiento, valor FROM cuotas_acuerdo\n             WHERE acuerdo_id = ANY($1) ORDER BY acuerdo_id, numero",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "acuerdo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuotas_acuerdo",
+            "name": "acuerdo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "numero",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "cuotas_acuerdo",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vencimiento",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cuotas_acuerdo",
+            "name": "vencimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "cuotas_acuerdo",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "9e4f56ed9b0b853ce3fbd16b4acf479b2a57170dc06bd07b46ba0ba5bf63ef41"
+}

@@ -620,6 +620,7 @@ where
                 cuota_extraordinaria_id: c.cuota_id,
                 cuenta_cobro_id: Some(cuenta.id),
                 comprobante_id: None,
+                causacion_id: None,
                 descripcion: None,
                 estado: EstadoObligacion::Vigente,
                 creada_en: ahora,
@@ -1040,8 +1041,17 @@ where
         .cuenta_cobro(id)
         .await?
         .ok_or(AppError::NoEncontrado("cuenta de cobro"))?;
-    let armada = armar_cuenta(&mut tx, cuenta).await?;
-    drop(tx);
+    pdf_cuenta_cobro_en(&mut tx, generador, reloj, cuenta).await
+}
+
+/// PDF de una cuenta de cobro ya leída (sin exigir permiso: lo usa también el portal).
+pub(crate) async fn pdf_cuenta_cobro_en<T: TxCartera, G: GeneradorActas>(
+    tx: &mut T,
+    generador: &G,
+    reloj: &impl Reloj,
+    cuenta: CuentaCobro,
+) -> AppResult<Vec<u8>> {
+    let armada = armar_cuenta(tx, cuenta).await?;
     generador
         .tabla(&TablaPdf {
             titulo: "Cuenta de cobro".into(),

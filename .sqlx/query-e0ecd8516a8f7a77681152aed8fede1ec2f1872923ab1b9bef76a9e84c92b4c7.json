@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE obligaciones SET estado = 'anulada', anulada_en = $2\n             WHERE causacion_id = $1 AND estado = 'vigente'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e0ecd8516a8f7a77681152aed8fede1ec2f1872923ab1b9bef76a9e84c92b4c7"
+}

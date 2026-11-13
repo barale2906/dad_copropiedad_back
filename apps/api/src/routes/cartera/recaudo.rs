@@ -387,7 +387,8 @@ pub async fn saldos(
     Ok(Json(v.into_iter().map(Into::into).collect()))
 }
 
-/// Cuadre de la cartera contra el mayor (cuentas que debita la regla `ph.liquidacion`).
+/// Cuadre de la cartera contra el mayor (cuentas que debitan las reglas `ph.liquidacion`,
+/// `ph.cobro` y `ph.intereses`).
 #[utoipa::path(
     get,
     path = "/cartera/cuadre",

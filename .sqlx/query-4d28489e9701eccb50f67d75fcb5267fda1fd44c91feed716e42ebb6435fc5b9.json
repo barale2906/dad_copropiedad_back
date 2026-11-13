@@ -1,0 +1,136 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT causacion_id, obligacion_id, obligacion_interes_id, desde, hasta, dias, base,\n                    tasa_efectiva_anual, tasa_referencia_id, valor\n             FROM causaciones_interes WHERE causacion_id = $1\n             ORDER BY obligacion_interes_id, obligacion_id, desde",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "causacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "causacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "obligacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "obligacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "obligacion_interes_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "obligacion_interes_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "dias",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "dias"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "base",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "base"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "tasa_efectiva_anual",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "tasa_efectiva_anual"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "tasa_referencia_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "tasa_referencia_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "causaciones_interes",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4d28489e9701eccb50f67d75fcb5267fda1fd44c91feed716e42ebb6435fc5b9"
+}
