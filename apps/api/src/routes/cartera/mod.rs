@@ -1,12 +1,14 @@
 //! Rutas de la cartera de la PH (plan 14, ADR 0019; módulo `contabilidad_ph`):
 //! `/api/v1/copropiedades/{copropiedad_id}/cartera/…` con el extractor
 //! [`crate::sesion::EnCopropiedad`]. Los recaudos son recibos de caja de la tesorería
-//! (`/entidades/{id}/contabilidad/tesoreria/…`) aplicados a las obligaciones de cada bien.
+//! (`/entidades/{id}/contabilidad/tesoreria/…`) aplicados a las obligaciones de cada bien. El
+//! portal del propietario va en `/copropiedades/{copropiedad_id}/mi-cartera/…` (solo sus bienes).
 
 mod configuracion;
 mod dto;
 mod liquidacion;
 mod mora;
+mod portal;
 mod recaudo;
 
 use utoipa_axum::router::OpenApiRouter;
@@ -20,6 +22,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(liquidacion::rutas())
         .merge(recaudo::rutas())
         .merge(mora::rutas())
+        .merge(portal::rutas())
 }
 
 /// Rutas de plataforma de la cartera (tasas de referencia; se montan en `/plataforma`).

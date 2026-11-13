@@ -12,6 +12,12 @@
 //!   cartera por bien y cuadre contra el mayor.
 //! - [`mora`]: tasas de referencia, causación de intereses de mora, acuerdos de pago, cartera
 //!   por edades y certificados (paz y salvo y deuda) verificables.
+//! - [`portal`]: lo que ve el propietario o pagador de sus bienes (estado de cuenta, cuentas de
+//!   cobro y su paz y salvo).
+//! - [`integraciones`]: morosos de las asambleas y restricción de reservas por mora desde la
+//!   cartera.
+//! - [`informes`]: estado del fondo de imprevistos, flujo de caja, proyecto de presupuesto y el
+//!   paquete en PDF para la asamblea.
 //!
 //! Se monta sobre el núcleo contable y la tesorería (ADR 0017, 0018): los documentos se
 //! entregan al contabilizador con los eventos de [`eventos`] (el contador define sus reglas) y
@@ -19,8 +25,11 @@
 //! vertical.
 
 pub mod configuracion;
+pub mod informes;
+pub mod integraciones;
 pub mod liquidacion;
 pub mod mora;
+pub mod portal;
 pub mod presupuesto;
 pub mod recaudo;
 
@@ -32,8 +41,8 @@ use crate::{
     AppError, AppResult, Contexto,
     casos_uso::modulos::exigir_modulo_en,
     puertos::{
-        RegistroOutbox, Reloj, RepositorioCartera, RepositorioTickets, UnidadDeTrabajo,
-        cartera::CatalogoTasas,
+        RegistroOutbox, Reloj, RepositorioCartera, RepositorioTickets, RepositorioTitulares,
+        UnidadDeTrabajo, cartera::CatalogoTasas,
     },
 };
 
@@ -64,12 +73,22 @@ pub const SERIE_CUENTA_COBRO: &str = "CB";
 
 /// Lo que usa una transacción de la cartera: la de tesorería, la cartera y los avisos.
 pub trait TxCartera:
-    TxTesoreria + RepositorioCartera + CatalogoTasas + RepositorioTickets + RegistroOutbox
+    TxTesoreria
+    + RepositorioCartera
+    + CatalogoTasas
+    + RepositorioTickets
+    + RepositorioTitulares
+    + RegistroOutbox
 {
 }
 
 impl<T> TxCartera for T where
-    T: TxTesoreria + RepositorioCartera + CatalogoTasas + RepositorioTickets + RegistroOutbox
+    T: TxTesoreria
+        + RepositorioCartera
+        + CatalogoTasas
+        + RepositorioTickets
+        + RepositorioTitulares
+        + RegistroOutbox
 {
 }
 

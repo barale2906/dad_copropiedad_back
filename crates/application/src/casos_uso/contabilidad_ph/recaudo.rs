@@ -1047,7 +1047,17 @@ where
 {
     let corte = corte.unwrap_or_else(|| reloj.ahora().date_naive());
     let mut tx = abrir(unidad, reloj, ctx, Permiso::CarteraVer).await?;
-    let b = bien_cartera(&mut tx, bien).await?;
+    estado_cuenta_en(&mut tx, bien, corte).await
+}
+
+/// Estado de cuenta en la transacción (sin exigir permiso: lo usa también el portal del
+/// propietario, que exige ser titular o pagador).
+pub(crate) async fn estado_cuenta_en<T: TxCartera>(
+    tx: &mut T,
+    bien: BienPrivadoId,
+    corte: NaiveDate,
+) -> AppResult<EstadoCuenta> {
+    let b = bien_cartera(tx, bien).await?;
     let obligaciones: Vec<SaldoObligacion> = tx
         .saldos_obligaciones(&FiltroObligaciones {
             bien: Some(bien),

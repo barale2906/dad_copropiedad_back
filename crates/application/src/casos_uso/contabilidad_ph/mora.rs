@@ -963,10 +963,25 @@ where
     U::Transaccion: TxCartera,
     G: GeneradorActas,
 {
+    let mut tx = abrir(unidad, reloj, ctx, Permiso::CarteraCertificadosEmitir).await?;
+    let emitido = emitir_certificado_en(&mut tx, generador, reloj, ctx, bien, tipo).await?;
+    tx.confirmar().await?;
+    Ok(emitido)
+}
+
+/// Emite el certificado en la transacción sin confirmarla (sin exigir permiso: lo usa también
+/// el portal del propietario para su paz y salvo).
+pub(crate) async fn emitir_certificado_en<T: TxCartera, G: GeneradorActas>(
+    tx: &mut T,
+    generador: &G,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    bien: BienPrivadoId,
+    tipo: TipoCertificado,
+) -> AppResult<CertificadoEmitido> {
     let ahora = reloj.ahora();
     let corte = ahora.date_naive();
-    let mut tx = abrir(unidad, reloj, ctx, Permiso::CarteraCertificadosEmitir).await?;
-    let b = bien_cartera(&mut tx, bien).await?;
+    let b = bien_cartera(tx, bien).await?;
     let pendientes = tx
         .saldos_obligaciones(&FiltroObligaciones {
             bien: Some(bien),
@@ -1071,7 +1086,6 @@ where
         .con_detalle(detalle),
     )
     .await?;
-    tx.confirmar().await?;
     Ok(CertificadoEmitido {
         certificado,
         codigo,

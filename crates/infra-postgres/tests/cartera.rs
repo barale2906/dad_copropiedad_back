@@ -17,9 +17,9 @@ use application::{
         },
         contabilidad_ph::{
             configuracion::{self as cfg, NuevoConcepto},
-            eventos,
+            eventos, informes, integraciones,
             liquidacion::{self as liq, NuevaCuota},
-            mora,
+            mora, portal,
             presupuesto::{self as pres, NuevoRubro},
             recaudo::{self as rec, FilaCarteraInicial, NuevoCobro, NuevoRecaudo},
         },
@@ -1486,4 +1486,158 @@ async fn la_plataforma_carga_tasas_sin_solapes(pool: PgPool) {
         .await
         .expect("tasas");
     assert_eq!(tasas.len(), 1);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Fases 6 y 7: portal, integraciones e informes
+// ---------------------------------------------------------------------------------------------
+
+/// Cuenta del propietario del bien 101 (su persona queda vinculada a ella) sin permisos de
+/// cartera.
+async fn propietario_101(e: &Entorno) -> Contexto {
+    let cuenta = crear_cuenta(&e.pool, "propietario101").await;
+    sqlx::query(
+        "UPDATE personas SET cuenta_id = $1 WHERE id = (SELECT persona_id FROM titularidades
+             WHERE bien_privado_id = $2 AND vigente_hasta IS NULL)",
+    )
+    .bind(cuenta.as_uuid())
+    .bind(e.bienes[0].as_uuid())
+    .execute(&e.pool)
+    .await
+    .expect("vincular cuenta");
+    Contexto::de_cuenta(e.contador.tenant_id, cuenta, ConjuntoPermisos::vacio())
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_propietario_ve_solo_lo_suyo_y_saca_su_paz_y_salvo(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    let yo = propietario_101(&e).await;
+
+    let mios = portal::mis_bienes(&e.unidad, &RelojFijo, &yo)
+        .await
+        .expect("mis bienes");
+    let ajeno = portal::mi_estado_cuenta(&e.unidad, &RelojFijo, &yo, e.bienes[1], None).await;
+    let estado = portal::mi_estado_cuenta(&e.unidad, &RelojFijo, &yo, e.bienes[0], None)
+        .await
+        .expect("estado");
+    let cuentas = portal::mis_cuentas_cobro(&e.unidad, &RelojFijo, &yo, e.bienes[0])
+        .await
+        .expect("cuentas");
+    let pdf = portal::mi_cuenta_cobro_pdf(&e.unidad, &PdfFalso, &RelojFijo, &yo, cuentas[0].id)
+        .await
+        .expect("pdf");
+    let con_deuda =
+        portal::mi_paz_y_salvo(&e.unidad, &PdfFalso, &RelojFijo, &yo, e.bienes[0]).await;
+    e.recaudar(e.bienes[0], fecha(2026, 11, 13), 505_000)
+        .await
+        .expect("pago");
+    let paz = portal::mi_paz_y_salvo(&e.unidad, &PdfFalso, &RelojFijo, &yo, e.bienes[0])
+        .await
+        .expect("paz y salvo");
+
+    assert_eq!(
+        mios.iter().map(|b| b.id).collect::<Vec<_>>(),
+        vec![e.bienes[0]]
+    );
+    assert!(matches!(ajeno, Err(AppError::NoEncontrado(_))), "{ajeno:?}");
+    assert_eq!(estado.saldo, dec!(505000));
+    assert_eq!(cuentas.len(), 1);
+    assert!(!pdf.is_empty());
+    assert!(
+        matches!(con_deuda, Err(AppError::Conflicto(_))),
+        "{con_deuda:?}"
+    );
+    assert_eq!(
+        paz.certificado.tipo,
+        domain::contabilidad_ph::mora::TipoCertificado::PazYSalvo
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_mora_restringe_y_libera_las_reservas(pool: PgPool) {
+    let e = entorno(pool).await;
+    sqlx::query(
+        "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
+         VALUES (uuidv7(), $1, 'bienes_comunes', now() - interval '1 day')",
+    )
+    .bind(e.contador.tenant_id.as_uuid())
+    .execute(&e.pool)
+    .await
+    .expect("módulo");
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+
+    let primera = integraciones::sincronizar_restricciones_mora(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        m(300_000),
+    )
+    .await
+    .expect("sincronizar");
+    e.recaudar(e.bienes[0], fecha(2026, 11, 13), 505_000)
+        .await
+        .expect("pago");
+    let segunda = integraciones::sincronizar_restricciones_mora(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        m(300_000),
+    )
+    .await
+    .expect("sincronizar");
+
+    assert_eq!((primera.restringidos, primera.levantadas), (2, 0));
+    assert_eq!((segunda.restringidos, segunda.levantadas), (0, 1));
+    let vigentes: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM restricciones_reserva WHERE hasta IS NULL OR hasta > now()",
+    )
+    .fetch_one(&e.pool)
+    .await
+    .expect("contar");
+    assert_eq!(vigentes, 1);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn informes_del_fondo_flujo_proyecto_y_asamblea(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.liquidar(fecha(2026, 11, 1)).await.expect("liquidar");
+    e.recaudar(e.bienes[0], fecha(2026, 11, 13), 505_000)
+        .await
+        .expect("pago");
+
+    let fondo = informes::estado_fondo(&e.unidad, &RelojFijo, &e.contador, None)
+        .await
+        .expect("fondo");
+    let flujo = informes::flujo_caja(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        fecha(2026, 10, 1),
+        fecha(2026, 11, 30),
+    )
+    .await
+    .expect("flujo");
+    let proyecto =
+        informes::proyectar_presupuesto(&e.unidad, &RelojFijo, &e.contador, 2026, dec!(10))
+            .await
+            .expect("proyecto");
+    let pdf =
+        informes::informe_asamblea_pdf(&e.unidad, &PdfFalso, &RelojFijo, &e.contador, 2026, 11)
+            .await
+            .expect("informe");
+
+    assert_eq!(fondo.liquidado, dec!(10000));
+    assert_eq!(fondo.recaudado, dec!(5000));
+    assert_eq!(fondo.porcentaje, dec!(0.08));
+    assert!(!fondo.llego_a_la_mitad);
+    assert_eq!(flujo.len(), 2);
+    assert_eq!(flujo[1].entradas, dec!(505000));
+    assert_eq!(flujo[1].saldo_final, dec!(505000));
+    assert_eq!(proyecto.anio, 2027);
+    assert_eq!(
+        proyecto.rubros[0].valores_mensuales[0].valor(),
+        dec!(1100000)
+    );
+    assert!(!pdf.is_empty());
 }

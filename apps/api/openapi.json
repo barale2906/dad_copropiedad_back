@@ -13231,6 +13231,971 @@
         }
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/mi-cartera/bienes": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Bienes de la cuenta (titular vigente o pagador) con sus datos de pago.",
+        "operationId": "mis_bienes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mis bienes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BienCarteraRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mi-cartera/bienes/{bien_privado_id}/estado-cuenta": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Estado de cuenta de un bien propio.",
+        "operationId": "mi_estado_cuenta",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "path",
+            "description": "Bien privado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "description": "Por defecto, hoy.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoCuentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El bien no es de la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mi-cartera/bienes/{bien_privado_id}/cuentas-cobro": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Cuentas de cobro de un bien propio.",
+        "operationId": "mis_cuentas_cobro",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "path",
+            "description": "Bien privado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas de cobro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CuentaCobroRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El bien no es de la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mi-cartera/cuentas-cobro/{cuenta_cobro_id}/pdf": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "PDF de una cuenta de cobro de un bien propio.",
+        "operationId": "mi_cuenta_cobro_pdf",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_cobro_id",
+            "in": "path",
+            "description": "Cuenta de cobro",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No es de un bien de la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/mi-cartera/bienes/{bien_privado_id}/paz-y-salvo": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "El propietario o pagador descarga el paz y salvo de su bien (solo si no debe nada). El\ncódigo y el PDF se entregan una sola vez.",
+        "operationId": "mi_paz_y_salvo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "path",
+            "description": "Bien privado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Paz y salvo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificadoEmitidoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El bien no es de la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El bien tiene saldo (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/asambleas/{reunion_id}/morosos": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Fija los morosos de una reunión con los bienes que tienen cartera vencida al corte.",
+        "operationId": "morosos_asamblea",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reunion_id",
+            "in": "path",
+            "description": "Reunión",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorteMorososPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Morosos fijados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MorososRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver`, sin `asambleas.convocar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Reunión inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Reunión instalada o sin padrón (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/reservas/restricciones-mora": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Restringe las reservas de los bienes con vencido desde el umbral y levanta las que ya no lo\nsuperan (solo las que creó la cartera).",
+        "operationId": "restricciones_mora",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UmbralMoraPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Restricciones sincronizadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SincronizacionMoraRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver`, sin `reservas.restringir` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/informes/fondo": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Estado del fondo de imprevistos frente al presupuesto ordinario del año.",
+        "operationId": "estado_fondo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "description": "Por defecto, el año en curso.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado del fondo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoFondoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin política vigente (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/informes/flujo-caja": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Flujo de caja mensual de las cuentas de tesorería (de 1 a 24 meses).",
+        "operationId": "flujo_caja",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flujo por mes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MesFlujoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rango inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/presupuestos/proyecto": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Proyecto de presupuesto del año siguiente: copia el vigente con un ajuste porcentual (queda en\nborrador).",
+        "operationId": "proyectar_presupuesto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProyectoPresupuestoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Borrador del año siguiente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresupuestoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `presupuesto.gestionar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin presupuesto vigente o ajuste fuera de rango (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/informes/asamblea": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Paquete en PDF para la asamblea: ejecución presupuestal, cartera por edades y fondo.",
+        "operationId": "informe_asamblea",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "hasta_mes",
+            "in": "query",
+            "description": "Mes del corte (1 a 12).",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del informe",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin presupuesto vigente o mes inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/residencias": {
       "get": {
         "tags": [
@@ -48462,6 +49427,19 @@
           }
         }
       },
+      "CorteMorososPeticion": {
+        "type": "object",
+        "description": "Fecha de corte de los morosos (por defecto, hoy).",
+        "properties": {
+          "corte": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        }
+      },
       "CostoActivo": {
         "type": "object",
         "description": "Costo acumulado de un activo.",
@@ -51286,6 +52264,49 @@
           "pagada",
           "anulada"
         ]
+      },
+      "EstadoFondoRespuesta": {
+        "type": "object",
+        "description": "Estado del fondo de imprevistos.",
+        "required": [
+          "anio",
+          "liquidado",
+          "recaudado",
+          "presupuesto_anual",
+          "porcentaje",
+          "llego_a_la_mitad",
+          "porcentaje_politica",
+          "suspendido"
+        ],
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "liquidado": {
+            "type": "string"
+          },
+          "recaudado": {
+            "type": "string"
+          },
+          "presupuesto_anual": {
+            "type": "string"
+          },
+          "porcentaje": {
+            "type": "string",
+            "description": "Liquidado / presupuesto ordinario anual, en %."
+          },
+          "llego_a_la_mitad": {
+            "type": "boolean",
+            "description": "Llegó al 50 %: la asamblea puede suspender los aportes (art. 35)."
+          },
+          "porcentaje_politica": {
+            "type": "string"
+          },
+          "suspendido": {
+            "type": "boolean"
+          }
+        }
       },
       "EstadoImportacion": {
         "type": "string",
@@ -54954,6 +55975,35 @@
           }
         }
       },
+      "MesFlujoRespuesta": {
+        "type": "object",
+        "description": "Flujo de caja de un mes.",
+        "required": [
+          "mes",
+          "saldo_inicial",
+          "entradas",
+          "salidas",
+          "saldo_final"
+        ],
+        "properties": {
+          "mes": {
+            "type": "string",
+            "format": "date"
+          },
+          "saldo_inicial": {
+            "type": "string"
+          },
+          "entradas": {
+            "type": "string"
+          },
+          "salidas": {
+            "type": "string"
+          },
+          "saldo_final": {
+            "type": "string"
+          }
+        }
+      },
       "MesQuery": {
         "type": "object",
         "description": "Mes a liquidar o consultar.",
@@ -55303,7 +56353,7 @@
       },
       "MorososRespuesta": {
         "type": "object",
-        "description": "Resultado de fijar los morosos.",
+        "description": "Morosos fijados en la reunión.",
         "required": [
           "marcados",
           "no_encontrados"
@@ -55319,7 +56369,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Códigos que no están en el padrón."
+            "description": "Bienes con cartera vencida que no están en el padrón."
           }
         }
       },
@@ -62054,6 +63104,27 @@
           }
         }
       },
+      "ProyectoPresupuestoPeticion": {
+        "type": "object",
+        "description": "Proyecto de presupuesto del año siguiente.",
+        "required": [
+          "anio_base",
+          "ajuste_porcentual"
+        ],
+        "properties": {
+          "anio_base": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Año del presupuesto vigente que se copia.",
+            "example": 2026
+          },
+          "ajuste_porcentual": {
+            "type": "string",
+            "description": "Ajuste en % (entre -50 y 100).",
+            "example": "9.5"
+          }
+        }
+      },
       "PublicarPeticion": {
         "type": "object",
         "description": "Publicación: sin fecha (o con una pasada) sale de inmediato.",
@@ -65060,6 +66131,24 @@
           }
         }
       },
+      "SincronizacionMoraRespuesta": {
+        "type": "object",
+        "description": "Resultado de sincronizar las restricciones por mora.",
+        "required": [
+          "restringidos",
+          "levantadas"
+        ],
+        "properties": {
+          "restringidos": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "levantadas": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
       "SincronizacionRespuesta": {
         "type": "object",
         "description": "Cambios para el puente.",
@@ -66683,6 +67772,19 @@
             ],
             "format": "uuid",
             "description": "Obligatorio al marcar `duplicado`."
+          }
+        }
+      },
+      "UmbralMoraPeticion": {
+        "type": "object",
+        "description": "Umbral de vencido desde el que se restringen las reservas.",
+        "required": [
+          "umbral"
+        ],
+        "properties": {
+          "umbral": {
+            "type": "string",
+            "example": "300000"
           }
         }
       },

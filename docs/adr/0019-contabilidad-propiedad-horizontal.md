@@ -2,7 +2,7 @@
 
 - **Estado:** aceptada
 - **Fecha:** 2026-11-14
-- **Plan:** `docs/planes/14-contabilidad-vertical-ph.md` (fases 1–5)
+- **Plan:** `docs/planes/14-contabilidad-vertical-ph.md` (fases 1–7)
 
 ## Contexto
 Sobre el núcleo contable (ADR 0017) y la tesorería (ADR 0018), una copropiedad necesita liquidar
@@ -86,6 +86,17 @@ de pago de la tesorería, sin maestros paralelos ni asientos fuera del contabili
   solo se guarda el SHA-256, y se verifica sin sesión en
   `POST /copropiedades/{id}/certificados/verificacion` (límite por IP; responde solo válido,
   clase y corte). El PDF y el código se entregan una sola vez.
+- **Portal del propietario** (`/copropiedades/{id}/mi-cartera/…`): la cuenta que es titular
+  vigente o pagador de un bien ve su estado de cuenta y sus cuentas de cobro (con PDF) y descarga
+  su paz y salvo, sin permisos de cartera; el bien de otro responde 404.
+- **Integraciones** (las dos son PH, así que la cartera puede usarlas): los morosos de una
+  reunión salen de la cartera vencida al corte con el caso de uso de asambleas (que sigue sin
+  conocer la contabilidad); la restricción de reservas por mora se sincroniza con un umbral de
+  vencido usando `restricciones_reserva` (solo toca las que creó la cartera).
+- **Informes** (fase 7): estado del fondo de imprevistos frente al presupuesto, flujo de caja
+  mensual de las cuentas de tesorería según el mayor, proyecto de presupuesto del año siguiente
+  (copia del vigente con ajuste, en borrador) y paquete PDF para la asamblea (ejecución, edades y
+  fondo).
 - Seis permisos nuevos: `cartera.ver`, `cartera.configurar`, `cartera.liquidar`,
   `cartera.ajustar`, `cartera.certificados.emitir`, `presupuesto.gestionar` (contador y
   administrador todos; revisor fiscal, consejero y presidente del consejo `cartera.ver`).
@@ -100,6 +111,8 @@ de pago de la tesorería, sin maestros paralelos ni asientos fuera del contabili
   la cuenta del pagador).
 - La causación de intereses se dispara por la API (mensual); falta la tarea programada del
   worker del gateway.
-- Pendiente (plan 14 fases 6–7): portal del propietario, chat, recordatorios, morosos de la
-  asamblea y restricción de reservas desde la cartera, informes para la asamblea; cobros de zonas
-  comunes facturables (plan 15) y pago por PSE (D8).
+- El umbral de mora de las reservas se pasa al sincronizar (no está en la política de reserva) y
+  la sincronización y los morosos se disparan por la API.
+- Pendiente: "Mi saldo" y "Paz y salvo" en el chat de WhatsApp, recordatorios de pago y aviso de
+  mora (plantilla `recordatorio_pago`), tareas programadas del worker (causación, sincronización),
+  cobros de zonas comunes facturables (plan 15) y pago por PSE (D8).

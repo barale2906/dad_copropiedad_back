@@ -90,6 +90,13 @@ cuenta (el nombre de la ruta es histórico).
   `…/edades`. Paz y salvo o certificado de deuda: `POST …/bienes/{id}/certificados` devuelve el
   `codigo` y el PDF en Base64 **una sola vez** (guárdelos). La verificación es pública:
   `POST /copropiedades/{id}/certificados/verificacion` con el código (sin sesión, límite por IP).
+  Portal del propietario o pagador: `/copropiedades/{id}/mi-cartera/bienes`, `…/estado-cuenta`,
+  `…/cuentas-cobro` (y `…/cuentas-cobro/{id}/pdf`) y `POST …/paz-y-salvo` (409 si debe); no
+  requiere permisos de cartera, solo ser titular o pagador del bien (404 si no). Informes:
+  `…/cartera/informes/fondo`, `…/flujo-caja`, `…/asamblea` (PDF) y
+  `POST …/cartera/presupuestos/proyecto`. Morosos de una asamblea desde la cartera:
+  `POST …/cartera/asambleas/{reunion_id}/morosos`; restricción de reservas por mora:
+  `POST …/cartera/reservas/restricciones-mora` con el umbral.
 
 ## 4. Sesión
 

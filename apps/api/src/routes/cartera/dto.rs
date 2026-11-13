@@ -3,6 +3,7 @@
 
 use application::{
     casos_uso::contabilidad_ph::{
+        informes::{EstadoFondo, MesFlujo},
         liquidacion::{CobroPrevisto, EnvioCuentas, Liquidado, TotalConcepto, VistaLiquidacion},
         mora::{AcuerdoConSituacion, CalculoMora, Causado, CertificadoEmitido, EdadesBien},
         presupuesto::{EjecucionPresupuestal, EjecucionRubro},
@@ -1511,4 +1512,108 @@ pub struct VerificacionRespuesta {
     #[schema(value_type = Option<crate::esquemas::TipoCertificado>)]
     pub tipo: Option<TipoCertificado>,
     pub corte: Option<NaiveDate>,
+}
+
+// ---------------------------------------------------------------------------------------------
+// Integraciones e informes (fases 6 y 7)
+// ---------------------------------------------------------------------------------------------
+
+/// Fecha de corte de los morosos (por defecto, hoy).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct CorteMorososPeticion {
+    pub corte: Option<NaiveDate>,
+}
+
+/// Morosos fijados en la reunión.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MorososRespuesta {
+    pub marcados: u32,
+    /// Bienes con cartera vencida que no están en el padrón.
+    pub no_encontrados: Vec<String>,
+}
+
+/// Umbral de vencido desde el que se restringen las reservas.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UmbralMoraPeticion {
+    #[schema(value_type = String, example = "300000")]
+    pub umbral: Monto,
+}
+
+/// Resultado de sincronizar las restricciones por mora.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SincronizacionMoraRespuesta {
+    pub restringidos: usize,
+    pub levantadas: usize,
+}
+
+/// Estado del fondo de imprevistos.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct EstadoFondoRespuesta {
+    pub anio: i32,
+    #[schema(value_type = String)]
+    pub liquidado: Decimal,
+    #[schema(value_type = String)]
+    pub recaudado: Decimal,
+    #[schema(value_type = String)]
+    pub presupuesto_anual: Decimal,
+    /// Liquidado / presupuesto ordinario anual, en %.
+    #[schema(value_type = String)]
+    pub porcentaje: Decimal,
+    /// Llegó al 50 %: la asamblea puede suspender los aportes (art. 35).
+    pub llego_a_la_mitad: bool,
+    #[schema(value_type = String)]
+    pub porcentaje_politica: Decimal,
+    pub suspendido: bool,
+}
+
+impl From<EstadoFondo> for EstadoFondoRespuesta {
+    fn from(f: EstadoFondo) -> Self {
+        Self {
+            anio: f.anio,
+            liquidado: pesos(f.liquidado),
+            recaudado: pesos(f.recaudado),
+            presupuesto_anual: pesos(f.presupuesto_anual),
+            porcentaje: f.porcentaje,
+            llego_a_la_mitad: f.llego_a_la_mitad,
+            porcentaje_politica: f.porcentaje_politica,
+            suspendido: f.suspendido,
+        }
+    }
+}
+
+/// Flujo de caja de un mes.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MesFlujoRespuesta {
+    pub mes: NaiveDate,
+    #[schema(value_type = String)]
+    pub saldo_inicial: Decimal,
+    #[schema(value_type = String)]
+    pub entradas: Decimal,
+    #[schema(value_type = String)]
+    pub salidas: Decimal,
+    #[schema(value_type = String)]
+    pub saldo_final: Decimal,
+}
+
+impl From<MesFlujo> for MesFlujoRespuesta {
+    fn from(m: MesFlujo) -> Self {
+        Self {
+            mes: m.mes,
+            saldo_inicial: pesos(m.saldo_inicial),
+            entradas: pesos(m.entradas),
+            salidas: pesos(m.salidas),
+            saldo_final: pesos(m.saldo_final),
+        }
+    }
+}
+
+/// Proyecto de presupuesto del año siguiente.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ProyectoPresupuestoPeticion {
+    /// Año del presupuesto vigente que se copia.
+    #[schema(example = 2026)]
+    pub anio_base: i32,
+    /// Ajuste en % (entre -50 y 100).
+    #[schema(value_type = String, example = "9.5")]
+    pub ajuste_porcentual: Decimal,
 }
