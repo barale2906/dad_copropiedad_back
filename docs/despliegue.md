@@ -28,6 +28,8 @@ Parten de `.env.example`. Las de producción que no pueden faltar:
 - Secretos generados con `openssl rand -hex 32`: `ARCHIVOS_SECRETO_ENLACES`,
   `ACCESO_QR_SECRETO`. Rotarlos invalida enlaces de descarga y QR de visitas vigentes.
 - `ARCHIVOS_URL_PUBLICA=https://api.<dominio>`.
+- `CORS_ORIGENES=https://app.<dominio>` si la web (Vue) se sirve en otro dominio que la API
+  (varios separados por comas, sin `/` final). Vacío si la web y la API comparten dominio.
 - Límites: `CONFIAR_PROXY=true` (Nginx fija `X-Real-IP`), `LIMITE_AUTH_POR_MINUTO`,
   `LIMITE_PUBLICO_POR_MINUTO`.
 - `SMTP_*` (HestiaCP), `WHATSAPP_*` (Meta), `FCM_CREDENCIALES=/app/secretos/firebase.json`
@@ -131,6 +133,8 @@ location ~ ^/api/v1/copropiedades/[^/]+/asambleas/[^/]+/en-vivo$ {
 ```
 
 `wa.<dominio>` (webhook de Meta) apunta a `127.0.0.1:8081` con el mismo bloque `location /`.
+La API responde ella misma el CORS (incluida la verificación previa `OPTIONS`) para los orígenes
+de `CORS_ORIGENES`: no agregue cabeceras `Access-Control-*` en Nginx (quedarían duplicadas).
 Nginx debe **reemplazar** `X-Real-IP` (no pasar la del cliente): por eso `CONFIAR_PROXY=true`
 solo es seguro detrás de este proxy. Para varias instancias de la API, agregar `limit_req` en
 Nginx: el limitador en memoria es por proceso.

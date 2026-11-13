@@ -97,7 +97,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Área | Tecnología | Estado | Notas |
 |---|---|---|---|
 | Lenguaje backend | Rust 1.99, edición 2024 | En uso | Fijado en `rust-toolchain.toml`. |
-| HTTP / WebSocket | Axum 0.8 + Tokio + tower-http | En uso | Middlewares: request-id, trace, timeout, límite de cuerpo. |
+| HTTP / WebSocket | Axum 0.8 + Tokio + tower-http | En uso | Middlewares: request-id, trace, timeout, límite de cuerpo y CORS (solo los orígenes exactos de `CORS_ORIGENES`, sin credenciales; vacío = sin CORS). |
 | Persistencia | PostgreSQL 18 + SQLx 0.9 (rustls) | En uso | Consultas verificadas en compilación; RLS por tenant. Extensiones `unaccent` y `pg_trgm` (búsqueda normalizada) y `btree_gist` (reservas y asignaciones sin solapes con `EXCLUDE`). |
 | Tiempo real | PostgreSQL `LISTEN/NOTIFY` + WebSocket de Axum | En uso | Tablero en vivo de las asambleas (`api::en_vivo`, ADR 0010): `pg_notify` en la transacción del cambio, recálculo desde la BD cada ~500 ms. Redis se retiró (sin uso); las sesiones del chat viven en PostgreSQL (`sesiones_chat`, ADR 0009). |
 | Serialización / errores / logs | Serde · thiserror/anyhow · tracing | En uso | |

@@ -13,6 +13,13 @@ convenciones.
 | `GET /api-docs/openapi.json` | El mismo documento servido por la API (solo con `API_DOCS_HABILITADA=true`). |
 | `GET /docs` | Interfaz interactiva (Scalar) para explorar y probar (misma condición). |
 
+**Dominio de la web.** Si la web se publica en otro dominio que la API (`app.<dominio>` y
+`api.<dominio>`), ese origen exacto debe estar en `CORS_ORIGENES` del backend; si no, el navegador
+bloquea las llamadas. En desarrollo viene permitido `http://localhost:5173` (Vite). La sesión va en
+`Authorization`, nunca en cookies, así que no se usa `credentials: 'include'`. Las cabeceras de
+respuesta que puede leer la web son `X-Request-Id`, `Idempotency-Replayed`, `X-Contenido-Sha256`,
+`Retry-After` y `Content-Disposition`.
+
 Cliente TypeScript tipado:
 
 ```bash

@@ -46,6 +46,7 @@ async fn levantar_api(duenio: &PgPool) -> String {
         request_timeout: Duration::from_secs(30),
         log_format: shared::LogFormat::Pretty,
         docs_api_habilitada: false,
+        cors_origenes: Vec::new(),
     };
     let state = AppState::new(
         app,

@@ -49,12 +49,13 @@ mod yo;
 use axum::{
     Router,
     extract::Request,
-    http::{HeaderName, StatusCode},
+    http::{HeaderName, HeaderValue, Method, StatusCode, header},
     routing::get,
 };
 use shared::AppConfig;
 use tower::ServiceBuilder;
 use tower_http::{
+    cors::{AllowOrigin, CorsLayer},
     request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer},
     timeout::TimeoutLayer,
     trace::{DefaultOnFailure, DefaultOnResponse, TraceLayer},
@@ -84,38 +85,45 @@ pub fn router(state: AppState, config: &AppConfig) -> Router {
         app = app.merge(documentacion(api));
     }
 
-    app.layer(axum::middleware::from_fn_with_state(
-        state.clone(),
-        crate::idempotencia::capa,
-    ))
-    .layer(
-        ServiceBuilder::new()
-            .layer(SetRequestIdLayer::new(REQUEST_ID, MakeRequestUuid))
-            .layer(
-                TraceLayer::new_for_http()
-                    .make_span_with(|req: &Request| {
-                        let request_id = req
-                            .headers()
-                            .get(REQUEST_ID)
-                            .and_then(|v| v.to_str().ok())
-                            .unwrap_or("-");
-                        tracing::info_span!(
-                            "http",
-                            method = %req.method(),
-                            uri = %req.uri(),
-                            request_id
-                        )
-                    })
-                    .on_response(DefaultOnResponse::new().level(Level::INFO))
-                    .on_failure(DefaultOnFailure::new().level(Level::ERROR)),
-            )
-            .layer(TimeoutLayer::with_status_code(
-                StatusCode::REQUEST_TIMEOUT,
-                config.request_timeout,
-            ))
-            .layer(PropagateRequestIdLayer::new(REQUEST_ID)),
-    )
-    .with_state(state)
+    let app = app
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            crate::idempotencia::capa,
+        ))
+        .layer(
+            ServiceBuilder::new()
+                .layer(SetRequestIdLayer::new(REQUEST_ID, MakeRequestUuid))
+                .layer(
+                    TraceLayer::new_for_http()
+                        .make_span_with(|req: &Request| {
+                            let request_id = req
+                                .headers()
+                                .get(REQUEST_ID)
+                                .and_then(|v| v.to_str().ok())
+                                .unwrap_or("-");
+                            tracing::info_span!(
+                                "http",
+                                method = %req.method(),
+                                uri = %req.uri(),
+                                request_id
+                            )
+                        })
+                        .on_response(DefaultOnResponse::new().level(Level::INFO))
+                        .on_failure(DefaultOnFailure::new().level(Level::ERROR)),
+                )
+                .layer(TimeoutLayer::with_status_code(
+                    StatusCode::REQUEST_TIMEOUT,
+                    config.request_timeout,
+                ))
+                .layer(PropagateRequestIdLayer::new(REQUEST_ID)),
+        )
+        .with_state(state);
+    // Afuera de todo: la verificación previa (OPTIONS) del navegador se responde antes de la
+    // sesión y del límite de peticiones.
+    match cors(&config.cors_origenes) {
+        Some(capa) => app.layer(capa),
+        None => app,
+    }
 }
 
 /// Contrato OpenAPI generado a partir de las rutas registradas.
@@ -155,6 +163,48 @@ fn api_v1() -> OpenApiRouter<AppState> {
         )
 }
 
+/// CORS para la web en otro dominio (`CORS_ORIGENES`): solo esos orígenes exactos, sin
+/// credenciales del navegador (la sesión va en `Authorization`, no en cookies). Sin orígenes no
+/// hay capa: el navegador solo permite el mismo dominio.
+fn cors(origenes: &[String]) -> Option<CorsLayer> {
+    let permitidos: Vec<HeaderValue> = origenes
+        .iter()
+        .filter_map(|o| HeaderValue::from_str(o).ok())
+        .collect();
+    if permitidos.is_empty() {
+        return None;
+    }
+    Some(
+        CorsLayer::new()
+            .allow_origin(AllowOrigin::list(permitidos))
+            .allow_methods([
+                Method::GET,
+                Method::POST,
+                Method::PUT,
+                Method::PATCH,
+                Method::DELETE,
+            ])
+            .allow_headers([
+                header::AUTHORIZATION,
+                header::CONTENT_TYPE,
+                header::ACCEPT,
+                HeaderName::from_static("idempotency-key"),
+                REQUEST_ID,
+                HeaderName::from_static("x-papeleta"),
+                HeaderName::from_static("x-enlace-directorio"),
+                HeaderName::from_static("x-pantalla"),
+            ])
+            .expose_headers([
+                REQUEST_ID,
+                HeaderName::from_static("idempotency-replayed"),
+                HeaderName::from_static("x-contenido-sha256"),
+                header::RETRY_AFTER,
+                header::CONTENT_DISPOSITION,
+            ])
+            .max_age(std::time::Duration::from_secs(3600)),
+    )
+}
+
 /// Contrato en JSON y UI interactiva (Scalar).
 fn documentacion(api: utoipa::openapi::OpenApi) -> Router<AppState> {
     let json = axum::Json(api.clone());
@@ -187,11 +237,18 @@ mod tests {
             request_timeout: std::time::Duration::from_secs(5),
             log_format: shared::LogFormat::Pretty,
             docs_api_habilitada,
+            cors_origenes: vec!["https://app.dominio.co".into()],
         }
     }
 
     async fn pedir(docs_api_habilitada: bool, uri: &str) -> Response {
-        let cfg = config_prueba(docs_api_habilitada);
+        let peticion = Request::get(uri)
+            .body(Body::empty())
+            .expect("petición válida");
+        enviar(config_prueba(docs_api_habilitada), peticion).await
+    }
+
+    async fn enviar(cfg: AppConfig, peticion: Request<Body>) -> Response {
         let db = PgPoolOptions::new()
             .connect_lazy(&cfg.database_url)
             .expect("URL de prueba válida");
@@ -206,13 +263,72 @@ mod tests {
             infra_seguridad::FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
         );
         router(state, &cfg)
-            .oneshot(
-                Request::get(uri)
-                    .body(Body::empty())
-                    .expect("petición válida"),
-            )
+            .oneshot(peticion)
             .await
             .expect("el router no falla")
+    }
+
+    fn preflight(origen: &str) -> Request<Body> {
+        Request::builder()
+            .method(Method::OPTIONS)
+            .uri("/api/v1/yo/copropiedades")
+            .header(header::ORIGIN, origen)
+            .header(header::ACCESS_CONTROL_REQUEST_METHOD, "GET")
+            .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "authorization")
+            .body(Body::empty())
+            .expect("petición válida")
+    }
+
+    #[tokio::test]
+    async fn cors_permite_solo_los_origenes_configurados() {
+        let permitido = enviar(config_prueba(false), preflight("https://app.dominio.co")).await;
+        let ajeno = enviar(config_prueba(false), preflight("https://otro.co")).await;
+        let mut sin_cors = config_prueba(false);
+        sin_cors.cors_origenes.clear();
+        let sin_capa = enviar(sin_cors, preflight("https://app.dominio.co")).await;
+
+        assert_eq!(
+            permitido
+                .headers()
+                .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+                .and_then(|v| v.to_str().ok()),
+            Some("https://app.dominio.co")
+        );
+        assert!(
+            permitido
+                .headers()
+                .get(header::ACCESS_CONTROL_ALLOW_HEADERS)
+                .and_then(|v| v.to_str().ok())
+                .is_some_and(|h| h.contains("authorization"))
+        );
+        assert!(
+            !ajeno
+                .headers()
+                .contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+        );
+        assert!(
+            !sin_capa
+                .headers()
+                .contains_key(header::ACCESS_CONTROL_ALLOW_ORIGIN)
+        );
+    }
+
+    #[tokio::test]
+    async fn cors_expone_el_request_id_en_respuestas_normales() {
+        let peticion = Request::get("/health")
+            .header(header::ORIGIN, "https://app.dominio.co")
+            .body(Body::empty())
+            .expect("petición válida");
+
+        let res = enviar(config_prueba(false), peticion).await;
+
+        assert_eq!(res.status(), StatusCode::OK);
+        assert!(
+            res.headers()
+                .get(header::ACCESS_CONTROL_EXPOSE_HEADERS)
+                .and_then(|v| v.to_str().ok())
+                .is_some_and(|h| h.contains("x-request-id"))
+        );
     }
 
     async fn cuerpo_json(res: Response) -> Value {
