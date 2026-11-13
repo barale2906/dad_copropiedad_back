@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM lineas_comprobante WHERE comprobante_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fcbbc9c063e9de35f7ea5ddc492a73598c9251d4fd3c0967cb324ab23bd9d634"
+}

@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT organizacion_id, regimen_iva, responsabilidades_fiscales, actividad_ciiu,\n                    direccion_fiscal, municipio_fiscal_dane, correo_facturacion\n             FROM personas WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "regimen_iva",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "regimen_iva"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "responsabilidades_fiscales",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "responsabilidades_fiscales"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "actividad_ciiu",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "actividad_ciiu"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "direccion_fiscal",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "direccion_fiscal"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "municipio_fiscal_dane",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "municipio_fiscal_dane"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "correo_facturacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "correo_facturacion"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "89691bc18ddbebe326a46a73a60271b8163f7c2bc1755776b4afc6c584ce2f24"
+}

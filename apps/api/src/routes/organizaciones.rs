@@ -48,6 +48,7 @@ pub fn rutas_cuenta() -> OpenApiRouter<AppState> {
         .routes(routes!(editar_ficha))
         .routes(routes!(guardar_miembro))
         .routes(routes!(reclamar))
+        .merge(super::contabilidad::rutas_organizacion())
 }
 
 fn texto_valor<T: Copy>(v: &[T], f: fn(T) -> &'static str) -> Vec<String> {

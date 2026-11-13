@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE centros_costo SET nombre = $2, activo = $3 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3107a7e7faab8897819c54ebdc833fbb4d5cc60a08da6e6c91d5c4ff26b95675"
+}

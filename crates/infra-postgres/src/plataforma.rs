@@ -830,18 +830,19 @@ impl RepositorioPlataforma for TransaccionPlataformaPg {
     }
 
     async fn copropiedades(&mut self) -> AppResult<Vec<CopropiedadResumen>> {
-        Ok(
-            sqlx::query!("SELECT id, nombre FROM copropiedades ORDER BY nombre")
-                .fetch_all(&mut *self.tx)
-                .await
-                .map_err(AppError::infra)?
-                .into_iter()
-                .map(|f| CopropiedadResumen {
-                    id: TenantId::from_uuid(f.id),
-                    nombre: f.nombre,
-                })
-                .collect(),
+        Ok(sqlx::query!(
+            "SELECT e.id, e.nombre FROM entidades e
+                 JOIN copropiedades c ON c.id = e.id ORDER BY e.nombre"
         )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| CopropiedadResumen {
+            id: TenantId::from_uuid(f.id),
+            nombre: f.nombre,
+        })
+        .collect())
     }
 }
 

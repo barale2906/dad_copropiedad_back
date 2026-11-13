@@ -66,6 +66,12 @@ catalogo_permisos! {
     /// Revisar reclamaciones de organizaciones y corregir fichas.
     PlataformaOrganizacionesRevisar => "plataforma.organizaciones.revisar", Plataforma;
     PlataformaModulosGestionar => "plataforma.modulos.gestionar", Plataforma;
+    /// Dar de alta una entidad sin vertical (cualquier empresa de la contabilidad base).
+    PlataformaEntidadesCrear => "plataforma.entidades.crear", Plataforma;
+    /// Crear, publicar y retirar las plantillas contables estándar de la plataforma.
+    PlataformaPlantillasContablesPublicar => "plataforma.plantillas_contables.publicar", Plataforma;
+    /// Cargar catálogos normativos (PUC; más adelante UVT, retenciones, tasas).
+    PlataformaNormativaGestionar => "plataforma.normativa.gestionar", Plataforma;
     PlataformaAuditoriaVer => "plataforma.auditoria.ver", Plataforma;
     PlataformaPublicidadModerar => "plataforma.publicidad.moderar", Plataforma;
     /// Tarifas de la pauta, política de publicidad de la plataforma y liquidaciones.
@@ -188,6 +194,25 @@ catalogo_permisos! {
     /// Redactar, programar, enviar y anular comunicados; ver su tablero de lectura.
     ComunicadosGestionar => "comunicados.gestionar", Copropiedad;
     ContabilidadVer => "contabilidad.ver", Copropiedad;
+    /// Configuración contable, plan de cuentas, centros de costo, tipos de comprobante, reglas,
+    /// rubros y aplicar o guardar plantillas.
+    ContabilidadConfigurar => "contabilidad.configurar", Copropiedad;
+    /// Datos fiscales de los terceros (personas de la entidad).
+    ContabilidadTercerosGestionar => "contabilidad.terceros.gestionar", Copropiedad;
+    /// Crear y editar comprobantes en borrador.
+    ContabilidadComprobantesCrear => "contabilidad.comprobantes.crear", Copropiedad;
+    /// Contabilizar comprobantes, saldos iniciales y cierre anual.
+    ContabilidadComprobantesContabilizar => "contabilidad.comprobantes.contabilizar", Copropiedad;
+    /// Revertir un comprobante contabilizado.
+    ContabilidadComprobantesRevertir => "contabilidad.comprobantes.revertir", Copropiedad;
+    /// Abrir periodos, pasarlos a revisión y cerrarlos.
+    ContabilidadPeriodosCerrar => "contabilidad.periodos.cerrar", Copropiedad;
+    /// Solicitar la reapertura de un periodo cerrado.
+    ContabilidadPeriodosReabrir => "contabilidad.periodos.reabrir", Copropiedad;
+    /// Aprobar o rechazar la reapertura que pidió otra cuenta.
+    ContabilidadPeriodosAprobarReapertura => "contabilidad.periodos.aprobar_reapertura", Copropiedad;
+    /// Exportar libros y estados financieros (CSV).
+    ContabilidadExportar => "contabilidad.exportar", Copropiedad;
     /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
     DirectorioVer => "directorio.ver", Copropiedad;
     /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
@@ -325,6 +350,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
         ambito: Ambito::Plataforma,
         permisos: Some(&[
             P::PlataformaCopropiedadesCrear,
+            P::PlataformaEntidadesCrear,
             P::PlataformaCopropiedadesVer,
             P::PlataformaModulosGestionar,
             P::PlataformaDirectorioGestionar,
@@ -408,6 +434,14 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::ArchivosSubir,
             P::BienesPrivadosVer,
             P::ContabilidadVer,
+            P::ContabilidadConfigurar,
+            P::ContabilidadTercerosGestionar,
+            P::ContabilidadComprobantesCrear,
+            P::ContabilidadComprobantesContabilizar,
+            P::ContabilidadComprobantesRevertir,
+            P::ContabilidadPeriodosCerrar,
+            P::ContabilidadPeriodosReabrir,
+            P::ContabilidadExportar,
         ]),
     },
     RolPlantilla {
@@ -421,6 +455,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::BienesPrivadosVer,
             P::TitularesVer,
             P::ContabilidadVer,
+            P::ContabilidadExportar,
             P::AsambleasVer,
             P::InventarioVer,
         ]),

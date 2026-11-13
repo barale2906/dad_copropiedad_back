@@ -99,4 +99,9 @@ pub enum DominioError {
 
     #[error("valor desconocido `{valor}` para {tipo}")]
     ValorDesconocido { tipo: &'static str, valor: String },
+
+    /// Regla contable incumplida (partida doble, cuentas, periodos, plantillas). El texto nombra
+    /// cuentas, conceptos o códigos, nunca datos de terceros.
+    #[error("regla contable: {0}")]
+    ReglaContable(String),
 }

@@ -2899,6 +2899,481 @@
         ]
       }
     },
+    "/api/v1/plataforma/entidades": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Da de alta una entidad sin vertical (cualquier empresa de la contabilidad base); sus módulos\nse habilitan después, uno a uno.",
+        "operationId": "crear_entidad",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaEntidadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Entidad creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntidadRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.entidades.crear`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta del administrador no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Otra entidad tiene ese NIT (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/puc": {
+      "put": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Carga (inserta o actualiza) cuentas del catálogo PUC.",
+        "operationId": "cargar_puc",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CargaPucPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Cuentas cargadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CargaPucRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Auxiliares, códigos repetidos o inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/plantillas-contables": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Plantillas estándar de la plataforma (todas sus versiones y estados).",
+        "operationId": "listar_plantillas",
+        "responses": {
+          "200": {
+            "description": "Plantillas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlantillaResumenRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.plantillas_contables.publicar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Crea una plantilla estándar en borrador (p. ej. la de propiedad horizontal).",
+        "operationId": "crear_plantilla",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaPlantillaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Plantilla creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantillaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.plantillas_contables.publicar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Contenido incoherente (`validacion`, `regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/plantillas-contables/{plantilla_id}": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Plantilla con su contenido.",
+        "operationId": "ver_plantilla",
+        "parameters": [
+          {
+            "name": "plantilla_id",
+            "in": "path",
+            "description": "Plantilla",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantilla",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantillaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no la puede gestionar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/plantillas-contables/{plantilla_id}/contenido": {
+      "put": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Reemplaza el contenido de una plantilla en borrador.",
+        "operationId": "actualizar_plantilla",
+        "parameters": [
+          {
+            "name": "plantilla_id",
+            "in": "path",
+            "description": "Plantilla",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContenidoPlantillaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Contenido guardado"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está publicada: cree una versión nueva (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Contenido incoherente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/plantillas-contables/{plantilla_id}/estado": {
+      "put": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Publica o retira una plantilla estándar.",
+        "operationId": "estado_plantilla",
+        "parameters": [
+          {
+            "name": "plantilla_id",
+            "in": "path",
+            "description": "Plantilla",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoPlantillaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Estado cambiado"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición no permitida (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/yo": {
       "get": {
         "tags": [
@@ -4242,6 +4717,148 @@
           },
           "409": {
             "description": "Ya reclamada o con una pendiente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/organizaciones/{organizacion_id}/plantillas-contables": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Plantillas de la firma contable (la cuenta debe ser dueña o gestora).",
+        "operationId": "plantillas_organizacion",
+        "parameters": [
+          {
+            "name": "organizacion_id",
+            "in": "path",
+            "description": "Firma contable",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantillas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlantillaResumenRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No es dueña o gestora de la organización",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/organizaciones/{organizacion_id}/plantillas-contables/{plantilla_id}/estado": {
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Publica o retira una plantilla de la firma contable.",
+        "operationId": "estado_plantilla_organizacion",
+        "parameters": [
+          {
+            "name": "organizacion_id",
+            "in": "path",
+            "description": "Firma contable",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "plantilla_id",
+            "in": "path",
+            "description": "Plantilla",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoPlantillaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Estado cambiado"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no la puede gestionar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición no permitida (`conflicto`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30587,10 +31204,3589 @@
           }
         ]
       }
+    },
+    "/api/v1/entidades/{entidad_id}/capacidades": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Permisos de la cuenta en la entidad y módulos habilitados (para cualquier entidad).",
+        "operationId": "capacidades_entidad",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Permisos y módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapacidadesRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no tiene roles en la entidad (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/configuracion": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Configuración contable vigente (`null` si aún no la tiene).",
+        "operationId": "ver_configuracion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuración",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ConfiguracionRespuesta"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo `contabilidad`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Guarda una versión nueva de la configuración contable.",
+        "operationId": "guardar_configuracion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfiguracionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Configuración guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cuenta de resultado inválida (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/puc": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Catálogo PUC de la plataforma (solo lectura).",
+        "operationId": "catalogo_puc",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "prefijo",
+            "in": "query",
+            "description": "Solo las cuentas cuyo código empieza así.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas del PUC",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CuentaPucDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Plan de cuentas de la entidad, por código.",
+        "operationId": "listar_cuentas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CuentaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Crea una cuenta (su padre debe existir, salvo que sea una clase).",
+        "operationId": "crear_cuenta",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaCuentaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Cuenta creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El código ya existe (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Código inválido, falta el padre o naturaleza (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas/{cuenta_id}": {
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Edita una cuenta (el código y la naturaleza no cambian).",
+        "operationId": "editar_cuenta",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_id",
+            "in": "path",
+            "description": "Cuenta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambioCuentaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Cuenta editada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tiene movimientos y se le quitan (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/centros-costo": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Centros de costo.",
+        "operationId": "listar_centros",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Centros de costo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CentroCostoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Crea un centro de costo.",
+        "operationId": "crear_centro",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CentroCostoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Centro creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentroCostoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El código ya existe (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/centros-costo/{centro_id}": {
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Edita un centro de costo (nombre y estado).",
+        "operationId": "editar_centro",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "centro_id",
+            "in": "path",
+            "description": "Centro de costo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CentroCostoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Centro editado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CentroCostoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El centro no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tipos-comprobante": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Tipos de comprobante.",
+        "operationId": "listar_tipos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tipos de comprobante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoComprobanteRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Crea un tipo de comprobante (su consecutivo es por año).",
+        "operationId": "crear_tipo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TipoComprobantePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Tipo creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El código ya existe (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Código inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tipos-comprobante/{tipo_id}": {
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Edita un tipo de comprobante (nombre, uso manual y estado).",
+        "operationId": "editar_tipo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tipo_id",
+            "in": "path",
+            "description": "Tipo de comprobante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TipoComprobantePeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tipo editado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TipoComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "El tipo no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/reglas": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Reglas de contabilización (última versión de cada evento).",
+        "operationId": "listar_reglas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reglas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReglaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Crea una versión nueva de la regla de un evento.",
+        "operationId": "crear_regla",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaReglaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReglaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cuenta, tipo o centro inexistente (`validacion`) o regla mal formada (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/rubros": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Rubros de los estados financieros.",
+        "operationId": "ver_rubros",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rubros",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RubroDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Reemplaza los rubros de los estados financieros.",
+        "operationId": "reemplazar_rubros",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/RubroDto"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rubros guardados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RubroDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Se quita un rubro con notas (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rubro mal formado (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/notas": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Notas a los estados financieros del año (última versión de cada una).",
+        "operationId": "listar_notas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Guarda una versión nueva de una nota.",
+        "operationId": "guardar_nota",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Nota guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Falta título o texto, o el rubro no existe (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/terceros": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Terceros de la entidad (sus personas) con datos fiscales.",
+        "operationId": "listar_terceros",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "texto",
+            "in": "query",
+            "description": "Fragmento del nombre o del documento.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Terceros",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_TerceroRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Crea un tercero (reutiliza la persona si el documento ya existe).",
+        "operationId": "crear_tercero",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoTerceroPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Tercero creado o completado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TerceroRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.terceros.gestionar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dato inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/terceros/{persona_id}/datos-fiscales": {
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Reemplaza los datos fiscales de una persona de la entidad.",
+        "operationId": "guardar_datos_fiscales",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "persona_id",
+            "in": "path",
+            "description": "Persona",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosFiscalesDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Datos guardados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosFiscalesDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La persona no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dato inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/plantillas": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Plantillas que la cuenta puede aplicar (estándar y de sus firmas contables).",
+        "operationId": "plantillas_disponibles",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantillas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlantillaResumenRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/plantillas/aplicar": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Aplica una plantilla (o muestra qué haría con `previsualizar`).",
+        "operationId": "aplicar_plantilla",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AplicarPlantillaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Resumen de lo aplicado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenAplicacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La plantilla no existe, no está publicada o no es de su firma",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No es coherente con el plan de la entidad (`regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/plantillas/guardar": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Guarda la configuración de la entidad como plantilla en borrador (de su firma contable o,\ncon el permiso de plataforma, estándar).",
+        "operationId": "guardar_como_plantilla",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarPlantillaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Plantilla guardada en borrador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantillaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.configurar`, sin el módulo o sin el permiso de plataforma",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No es dueño o gestor de la organización",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/periodos": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Periodos contables (del año o todos).",
+        "operationId": "listar_periodos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Periodos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PeriodoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Abre un periodo (si ya existe, lo devuelve como está).",
+        "operationId": "abrir_periodo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AbrirPeriodoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Periodo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.periodos.cerrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Año o mes inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/periodos/{periodo_id}/estado": {
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Cambia el estado del periodo (revisión, cierre, o vuelta a abierto desde revisión).",
+        "operationId": "cambiar_estado_periodo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstadoPeriodoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Periodo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.periodos.cerrar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Transición no permitida o reabrir un cerrado sin reapertura (`conflicto_estado`, `conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/periodos/{periodo_id}/reaperturas": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Reaperturas de un periodo.",
+        "operationId": "listar_reaperturas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reaperturas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReaperturaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Solicita reabrir un periodo cerrado (la aprueba otra cuenta).",
+        "operationId": "solicitar_reapertura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitudReaperturaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Solicitud registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaperturaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.periodos.reabrir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está cerrado o ya hay una pendiente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/reaperturas/{reapertura_id}": {
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Aprueba o rechaza una reapertura (quien la solicitó no puede).",
+        "operationId": "decidir_reapertura",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "reapertura_id",
+            "in": "path",
+            "description": "Reapertura",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecisionReaperturaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Decisión registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaperturaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.periodos.aprobar_reapertura` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se decidió o es su propia solicitud (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/comprobantes": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Comprobantes por fecha, más recientes primero (sin líneas; a lo sumo 500).",
+        "operationId": "listar_comprobantes",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "tipo_comprobante_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoComprobante"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comprobantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ComprobanteRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Guarda un comprobante manual en borrador (se valida al contabilizar).",
+        "operationId": "crear_borrador",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BorradorPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Borrador guardado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.comprobantes.crear` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Tipo no manual, cuenta o centro inexistente (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/comprobantes/{comprobante_id}": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Comprobante con sus líneas.",
+        "operationId": "ver_comprobante",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comprobante_id",
+            "in": "path",
+            "description": "Comprobante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comprobante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Reemplaza un borrador.",
+        "operationId": "editar_borrador",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comprobante_id",
+            "in": "path",
+            "description": "Comprobante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BorradorPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Borrador guardado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está contabilizado: se revierte (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Borra un borrador.",
+        "operationId": "eliminar_borrador",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comprobante_id",
+            "in": "path",
+            "description": "Comprobante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Borrado"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está contabilizado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/comprobantes/previsualizar": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Valida un comprobante sin guardarlo y devuelve el asiento.",
+        "operationId": "previsualizar",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BorradorPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Asiento válido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsientoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No cuadra o una cuenta no admite la línea (`regla_contable`, `validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/comprobantes/{comprobante_id}/contabilizar": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Contabiliza un borrador (partida doble, cuentas y periodo abierto; asigna número).",
+        "operationId": "contabilizar",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comprobante_id",
+            "in": "path",
+            "description": "Comprobante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contabilizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.comprobantes.contabilizar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está contabilizado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No cuadra, cuenta inválida o periodo no abierto (`regla_contable`, `validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/comprobantes/{comprobante_id}/revertir": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Revierte un comprobante contabilizado con otro de caras invertidas.",
+        "operationId": "revertir",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "comprobante_id",
+            "in": "path",
+            "description": "Comprobante",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevertirPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Reverso contabilizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.comprobantes.revertir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está contabilizado, ya se revirtió o es un reverso (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/documentos/previsualizar": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Muestra el asiento que produciría un documento origen con la regla vigente (sin guardarlo).",
+        "operationId": "previsualizar_documento",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Asiento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsientoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin regla vigente, concepto desconocido o no cuadra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/saldos-iniciales": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Contabiliza los saldos iniciales en un comprobante de apertura.",
+        "operationId": "saldos_iniciales",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaldosInicialesPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Apertura contabilizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.comprobantes.contabilizar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No cuadra, cuenta inválida o periodo no abierto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cierre-anual": {
+      "post": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Cierre anual: lleva a cero las cuentas de resultado contra la cuenta de excedente o déficit.",
+        "operationId": "cierre_anual",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CierreAnualPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Cierre contabilizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComprobanteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.comprobantes.contabilizar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Meses sin cerrar o ya hay un cierre vigente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin cuenta de resultado o sin saldos que cerrar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/reportes/balance-prueba": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Balance de prueba entre dos fechas (por cuenta, tercero y centro de costo).",
+        "operationId": "balance_prueba",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "por_tercero",
+            "in": "query",
+            "description": "Una fila por tercero.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "por_centro_costo",
+            "in": "query",
+            "description": "Una fila por centro de costo.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "formato",
+            "in": "query",
+            "description": "`json` (por defecto) o `csv` (exige `contabilidad.exportar`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance de prueba (JSON o `text/csv`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaSaldoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` (o `contabilidad.exportar` para CSV) o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/reportes/libro-diario": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Libro diario: comprobantes contabilizados con sus líneas.",
+        "operationId": "libro_diario",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "formato",
+            "in": "query",
+            "description": "`json` (por defecto) o `csv` (exige `contabilidad.exportar`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Libro diario (JSON o `text/csv`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ComprobanteRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` (o `contabilidad.exportar` para CSV) o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/reportes/libro-mayor": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Libro mayor de una cuenta (o auxiliar de un tercero).",
+        "operationId": "libro_mayor",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "110505"
+          },
+          {
+            "name": "persona_id",
+            "in": "query",
+            "description": "Con tercero: el auxiliar de ese tercero.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "formato",
+            "in": "query",
+            "description": "`json` (por defecto) o `csv` (exige `contabilidad.exportar`).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Libro mayor (JSON o `text/csv`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MayorRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/reportes/estados-financieros": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Estados financieros (situación financiera y resultados) a la fecha de corte, con notas.",
+        "operationId": "estados_financieros",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estados financieros",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadosFinancierosRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "AbrirPeriodoPeticion": {
+        "type": "object",
+        "description": "Periodo por abrir.",
+        "required": [
+          "anio",
+          "mes"
+        ],
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1 a 12, o 13 (cierre anual).",
+            "minimum": 0
+          }
+        }
+      },
       "AccionCampanaPeticion": {
         "type": "object",
         "description": "Cambio de estado de una campaña.",
@@ -31210,6 +35406,23 @@
           }
         }
       },
+      "AplicarPlantillaPeticion": {
+        "type": "object",
+        "description": "Aplicar una plantilla a la entidad.",
+        "required": [
+          "plantilla_id"
+        ],
+        "properties": {
+          "plantilla_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "previsualizar": {
+            "type": "boolean",
+            "description": "`true` = solo mostrar qué haría, sin cambiar nada."
+          }
+        }
+      },
       "ArbolRespuesta": {
         "type": "object",
         "description": "Árbol de agrupaciones con los bienes privados activos.",
@@ -31289,6 +35502,25 @@
           "creado_en": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "AsientoRespuesta": {
+        "type": "object",
+        "description": "Asiento validado (previsualización).",
+        "required": [
+          "total",
+          "lineas"
+        ],
+        "properties": {
+          "total": {
+            "type": "string"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaRespuesta"
+            }
           }
         }
       },
@@ -32143,6 +36375,36 @@
           }
         }
       },
+      "BorradorPeticion": {
+        "type": "object",
+        "description": "Comprobante manual (borrador, previsualización).",
+        "required": [
+          "tipo",
+          "fecha",
+          "descripcion",
+          "lineas"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string",
+            "description": "Código del tipo de comprobante (manual).",
+            "example": "CC"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaPeticion"
+            }
+          }
+        }
+      },
       "BusquedaPeticion": {
         "type": "object",
         "description": "Lo que busca el residente.",
@@ -32227,6 +36489,34 @@
           },
           "contrasena_nueva": {
             "type": "string"
+          }
+        }
+      },
+      "CambioCuentaPeticion": {
+        "type": "object",
+        "description": "Cambios de una cuenta (el código y la naturaleza no cambian).",
+        "required": [
+          "nombre",
+          "acepta_movimiento",
+          "exige_tercero",
+          "exige_centro_costo",
+          "activa"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "acepta_movimiento": {
+            "type": "boolean"
+          },
+          "exige_tercero": {
+            "type": "boolean"
+          },
+          "exige_centro_costo": {
+            "type": "boolean"
+          },
+          "activa": {
+            "type": "boolean"
           }
         }
       },
@@ -33163,6 +37453,44 @@
           }
         }
       },
+      "Cara": {
+        "type": "string",
+        "description": "Cara de una línea de regla contable.",
+        "enum": [
+          "debito",
+          "credito"
+        ]
+      },
+      "CargaPucPeticion": {
+        "type": "object",
+        "description": "Cuentas del PUC para cargar.",
+        "required": [
+          "cuentas"
+        ],
+        "properties": {
+          "cuentas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CuentaPucDto"
+            }
+          }
+        }
+      },
+      "CargaPucRespuesta": {
+        "type": "object",
+        "description": "Resultado de la carga del PUC.",
+        "required": [
+          "cuentas"
+        ],
+        "properties": {
+          "cuentas": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Cuentas insertadas o actualizadas.",
+            "minimum": 0
+          }
+        }
+      },
       "CargoEleccion": {
         "type": "string",
         "description": "Cargo o designación que se elige con una pregunta de elección.",
@@ -33356,6 +37684,51 @@
           }
         }
       },
+      "CentroCostoPeticion": {
+        "type": "object",
+        "description": "Centro de costo nuevo o editado (al editar, el código no cambia).",
+        "required": [
+          "codigo",
+          "nombre"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "ADM"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CentroCostoRespuesta": {
+        "type": "object",
+        "description": "Centro de costo.",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "activo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
       "ChecklistDto": {
         "type": "object",
         "description": "Elemento del checklist.",
@@ -33381,6 +37754,26 @@
               "null"
             ],
             "example": "bueno"
+          }
+        }
+      },
+      "CierreAnualPeticion": {
+        "type": "object",
+        "description": "Cierre anual.",
+        "required": [
+          "anio"
+        ],
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código del tipo de comprobante; por defecto `CI`."
           }
         }
       },
@@ -33447,7 +37840,7 @@
       },
       "CodigoError": {
         "type": "string",
-        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_autenticado` | 401 | Falta la sesión o venció (`Authorization: Bearer …`). |\n| `credenciales_invalidas` | 401 | Usuario/correo o contraseña (o código) incorrectos. |\n| `sin_permiso` | 403 | La cuenta no tiene el permiso necesario en esta copropiedad o en la plataforma. |\n| `segundo_factor_requerido` | 403 | La operación de plataforma exige una sesión con segundo factor. |\n| `conflicto` | 409 | Ya existe (usuario, correo, código de rol) o rompe una regla (último administrador). |\n| `demasiados_intentos` | 429 | Demasiados intentos fallidos; esperar unos minutos. |\n| `demasiadas_peticiones` | 429 | Superó el límite de peticiones por minuto de la ruta; reintentar tras `Retry-After`. |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |\n| `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `idempotencia_reusada` | 422 | La `Idempotency-Key` ya se usó con otra petición (otro método, ruta o cuerpo). |\n| `coeficientes_no_suman_uno` | 422 | El cuadro de coeficientes no suma exactamente 1 (el mensaje trae la diferencia). |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
+        "description": "Catálogo de códigos de error de la API. **Contrato**: no renombrar ni reutilizar un código\ncon otro significado; agregar uno nuevo es un cambio compatible.\n\n| Código | HTTP | Significado |\n|---|---|---|\n| `peticion_invalida` | 400 | Petición mal formada (JSON inválido, parámetro con tipo incorrecto). |\n| `no_autenticado` | 401 | Falta la sesión o venció (`Authorization: Bearer …`). |\n| `credenciales_invalidas` | 401 | Usuario/correo o contraseña (o código) incorrectos. |\n| `sin_permiso` | 403 | La cuenta no tiene el permiso necesario en esta copropiedad o en la plataforma. |\n| `segundo_factor_requerido` | 403 | La operación de plataforma exige una sesión con segundo factor. |\n| `conflicto` | 409 | Ya existe (usuario, correo, código de rol) o rompe una regla (último administrador). |\n| `demasiados_intentos` | 429 | Demasiados intentos fallidos; esperar unos minutos. |\n| `demasiadas_peticiones` | 429 | Superó el límite de peticiones por minuto de la ruta; reintentar tras `Retry-After`. |\n| `no_encontrado` | 404 | El recurso o la ruta no existen (o no pertenecen a la copropiedad). |\n| `conflicto_estado` | 409 | La operación no es válida en el estado actual del recurso. |\n| `ya_voto` | 409 | El bien privado ya votó en esta pregunta. |\n| `no_inscrito` | 403 | La persona no representa al bien privado en la reunión. |\n| `enlace_invalido` | 403 | Enlace de descarga con firma inválida o vencido. |\n| `modulo_no_habilitado` | 403 | La copropiedad no tiene contratado el módulo. |\n| `validacion` | 422 | Datos bien formados que violan una regla de negocio. |\n| `idempotencia_reusada` | 422 | La `Idempotency-Key` ya se usó con otra petición (otro método, ruta o cuerpo). |\n| `coeficientes_no_suman_uno` | 422 | El cuadro de coeficientes no suma exactamente 1 (el mensaje trae la diferencia). |\n| `regla_contable` | 422 | Incumple una regla contable: partida doble, periodo no abierto, cuenta que no admite la línea, plantilla inválida (el mensaje dice cuál). |\n| `interno` | 500 | Error inesperado; el detalle queda en logs con el `x-request-id`. |\n| `no_disponible` | 503 | Una dependencia (p. ej. la base de datos) no está disponible. |",
         "enum": [
           "peticion_invalida",
           "no_autenticado",
@@ -33466,6 +37859,7 @@
           "validacion",
           "idempotencia_reusada",
           "coeficientes_no_suman_uno",
+          "regla_contable",
           "interno",
           "no_disponible"
         ]
@@ -33577,6 +37971,111 @@
             ],
             "format": "uuid",
             "description": "Asistente que ya representa el bien."
+          }
+        }
+      },
+      "ComprobanteRespuesta": {
+        "type": "object",
+        "description": "Comprobante.",
+        "required": [
+          "id",
+          "tipo",
+          "fecha",
+          "anio",
+          "mes",
+          "descripcion",
+          "estado",
+          "lineas",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string",
+            "example": "RC"
+          },
+          "numero": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Se asigna al contabilizar.",
+            "minimum": 0
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "13 = cierre anual.",
+            "minimum": 0
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoComprobante"
+          },
+          "origen_tipo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "origen_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "revierte_a": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "motivo_reverso": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "revertido_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaRespuesta"
+            },
+            "description": "Vacío en los listados."
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "contabilizado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -33864,6 +38363,90 @@
           }
         }
       },
+      "ConfiguracionPeticion": {
+        "type": "object",
+        "description": "Versión nueva de la configuración.",
+        "required": [
+          "marco_tecnico",
+          "vigente_desde"
+        ],
+        "properties": {
+          "marco_tecnico": {
+            "$ref": "#/components/schemas/MarcoTecnico"
+          },
+          "cuenta_resultado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código de la cuenta de excedente o déficit (clase 3, de movimiento).",
+            "example": "360505"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Soporte de la clasificación (archivo ya subido)."
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date",
+            "description": "Desde cuándo se contabiliza (no se aceptan comprobantes anteriores al primer inicio)."
+          }
+        }
+      },
+      "ConfiguracionRespuesta": {
+        "type": "object",
+        "description": "Configuración contable vigente.",
+        "required": [
+          "version",
+          "marco_tecnico",
+          "vigente_desde",
+          "creada_en"
+        ],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "marco_tecnico": {
+            "$ref": "#/components/schemas/MarcoTecnico"
+          },
+          "cuenta_resultado_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cuenta de excedente o déficit del ejercicio."
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "plantilla_origen": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Plantilla (nombre y versión) de la que partió."
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ConfiguracionTicketsDto": {
         "type": "object",
         "description": "Configuración de tickets. Los tipos sin regla usan los plazos por defecto (Ley 1755: 15 días\nhábiles para peticiones, 10 para documentos; mantenimiento según la prioridad).",
@@ -34085,6 +38668,18 @@
           },
           "telefono": {
             "type": "string"
+          }
+        }
+      },
+      "ContenidoPlantillaPeticion": {
+        "type": "object",
+        "description": "Contenido nuevo de una plantilla en borrador.",
+        "required": [
+          "contenido"
+        ],
+        "properties": {
+          "contenido": {
+            "type": "object"
           }
         }
       },
@@ -34956,6 +39551,73 @@
           }
         }
       },
+      "CuentaPucDto": {
+        "type": "object",
+        "description": "Cuenta del catálogo PUC.",
+        "required": [
+          "codigo",
+          "nombre",
+          "naturaleza"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "1105"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "naturaleza": {
+            "$ref": "#/components/schemas/Naturaleza"
+          }
+        }
+      },
+      "CuentaRespuesta": {
+        "type": "object",
+        "description": "Cuenta del plan de cuentas.",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "naturaleza",
+          "nivel",
+          "acepta_movimiento",
+          "exige_tercero",
+          "exige_centro_costo",
+          "activa"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "110505"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "naturaleza": {
+            "$ref": "#/components/schemas/Naturaleza"
+          },
+          "nivel": {
+            "$ref": "#/components/schemas/NivelCuenta"
+          },
+          "acepta_movimiento": {
+            "type": "boolean"
+          },
+          "exige_tercero": {
+            "type": "boolean"
+          },
+          "exige_centro_costo": {
+            "type": "boolean"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
       "CumplimientoPeticion": {
         "type": "object",
         "description": "Cumplimiento nuevo.",
@@ -35246,6 +39908,61 @@
           }
         }
       },
+      "DatosFiscalesDto": {
+        "type": "object",
+        "description": "Datos fiscales del tercero. La dirección y el correo son datos personales.",
+        "properties": {
+          "organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "regimen_iva": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RegimenIva"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "responsabilidades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsabilidadFiscal"
+            }
+          },
+          "actividad_ciiu": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "8110"
+          },
+          "direccion_fiscal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_fiscal_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "11001"
+          },
+          "correo_facturacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "DatosTitularRespuesta": {
         "type": "object",
         "description": "Lo que la PH trata del titular (art. 14).",
@@ -35290,6 +40007,18 @@
               "null"
             ],
             "description": "Obligatorio al rechazar."
+          }
+        }
+      },
+      "DecisionReaperturaPeticion": {
+        "type": "object",
+        "description": "Decisión sobre una reapertura (la toma otra cuenta).",
+        "required": [
+          "aprobar"
+        ],
+        "properties": {
+          "aprobar": {
+            "type": "boolean"
           }
         }
       },
@@ -35911,6 +40640,23 @@
           }
         }
       },
+      "EntidadRespuesta": {
+        "type": "object",
+        "description": "Entidad creada.",
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        }
+      },
       "EntregaCorrespondenciaRespuesta": {
         "type": "object",
         "description": "Entrega de una correspondencia. El documento del tercero solo lo ve la portería.",
@@ -36197,6 +40943,14 @@
           "finalizada"
         ]
       },
+      "EstadoComprobante": {
+        "type": "string",
+        "description": "Estado de un comprobante contable.",
+        "enum": [
+          "borrador",
+          "contabilizado"
+        ]
+      },
       "EstadoComunicado": {
         "type": "string",
         "description": "Estado de un comunicado.",
@@ -36425,6 +41179,27 @@
           "exonerado"
         ]
       },
+      "EstadoPeriodo": {
+        "type": "string",
+        "description": "Estado de un periodo contable.",
+        "enum": [
+          "abierto",
+          "en_revision",
+          "cerrado"
+        ]
+      },
+      "EstadoPeriodoPeticion": {
+        "type": "object",
+        "description": "Estado nuevo del periodo (`en_revision`, `cerrado` o `abierto` desde revisión).",
+        "required": [
+          "estado"
+        ],
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPeriodo"
+          }
+        }
+      },
       "EstadoPeticion": {
         "type": "object",
         "description": "Estado nuevo.",
@@ -36435,6 +41210,27 @@
           "estado": {
             "$ref": "#/components/schemas/EstadoCredencial",
             "description": "`activa` (reactivar), `suspendida`, `revocada` o `perdida`."
+          }
+        }
+      },
+      "EstadoPlantilla": {
+        "type": "string",
+        "description": "Estado de una plantilla contable.",
+        "enum": [
+          "borrador",
+          "publicada",
+          "retirada"
+        ]
+      },
+      "EstadoPlantillaPeticion": {
+        "type": "object",
+        "description": "Cambio de estado de una plantilla (`publicada` o `retirada`).",
+        "required": [
+          "estado"
+        ],
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPlantilla"
           }
         }
       },
@@ -36507,6 +41303,15 @@
             "description": "`en_curso`, `terminado` o `aplazado`."
           }
         }
+      },
+      "EstadoReapertura": {
+        "type": "string",
+        "description": "Estado de una solicitud de reapertura de periodo.",
+        "enum": [
+          "pendiente",
+          "aprobada",
+          "rechazada"
+        ]
       },
       "EstadoReclamacion": {
         "type": "string",
@@ -36661,6 +41466,50 @@
             "type": "string",
             "description": "Versión del binario desplegado.",
             "example": "0.1.0"
+          }
+        }
+      },
+      "EstadosFinancierosRespuesta": {
+        "type": "object",
+        "description": "Estados financieros a una fecha de corte.",
+        "required": [
+          "corte",
+          "situacion_financiera",
+          "resultados",
+          "resultado_ejercicio",
+          "cierre_contabilizado",
+          "notas"
+        ],
+        "properties": {
+          "corte": {
+            "type": "string",
+            "format": "date"
+          },
+          "situacion_financiera": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValorRubroRespuesta"
+            }
+          },
+          "resultados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ValorRubroRespuesta"
+            }
+          },
+          "resultado_ejercicio": {
+            "type": "string",
+            "description": "Ingresos − gastos − costos del año (sin el cierre anual)."
+          },
+          "cierre_contabilizado": {
+            "type": "boolean",
+            "description": "Si ya hay cierre anual, el resultado ya está en el patrimonio."
+          },
+          "notas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotaRespuesta"
+            }
           }
         }
       },
@@ -37640,6 +42489,62 @@
           }
         }
       },
+      "FilaSaldoRespuesta": {
+        "type": "object",
+        "description": "Fila del balance de prueba.",
+        "required": [
+          "cuenta_id",
+          "codigo",
+          "nombre",
+          "naturaleza",
+          "saldo_inicial",
+          "debitos",
+          "creditos",
+          "saldo_final"
+        ],
+        "properties": {
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "naturaleza": {
+            "$ref": "#/components/schemas/Naturaleza"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "saldo_inicial": {
+            "type": "string",
+            "description": "Débitos − créditos antes de `desde`."
+          },
+          "debitos": {
+            "type": "string"
+          },
+          "creditos": {
+            "type": "string"
+          },
+          "saldo_final": {
+            "type": "string"
+          }
+        }
+      },
       "FilaVistaPreviaRespuesta": {
         "type": "object",
         "description": "Fila de la vista previa (sin datos personales).",
@@ -37834,6 +42739,31 @@
           "meses"
         ]
       },
+      "GuardarPlantillaPeticion": {
+        "type": "object",
+        "description": "Guardar la configuración de la entidad como plantilla (en borrador).",
+        "required": [
+          "nombre",
+          "tipo_empresa"
+        ],
+        "properties": {
+          "organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Firma contable donde se guarda; sin valor = estándar de la plataforma (exige el permiso\n`plataforma.plantillas_contables.publicar`)."
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_empresa": {
+            "type": "string",
+            "example": "propiedad_horizontal"
+          }
+        }
+      },
       "HabilitarModuloPeticion": {
         "type": "object",
         "description": "Contrato de un módulo para una copropiedad.",
@@ -37974,6 +42904,44 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "ImportePeticion": {
+        "type": "object",
+        "description": "Importe de un documento origen.",
+        "required": [
+          "concepto",
+          "monto"
+        ],
+        "properties": {
+          "concepto": {
+            "type": "string",
+            "example": "venta"
+          },
+          "monto": {
+            "type": "string",
+            "example": "100000"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -38159,6 +43127,79 @@
           }
         }
       },
+      "LineaReglaPeticion": {
+        "type": "object",
+        "description": "Línea de una regla nueva (por códigos).",
+        "required": [
+          "concepto",
+          "cara",
+          "cuenta",
+          "tercero",
+          "centro"
+        ],
+        "properties": {
+          "concepto": {
+            "type": "string",
+            "example": "venta"
+          },
+          "cara": {
+            "$ref": "#/components/schemas/Cara"
+          },
+          "cuenta": {
+            "type": "string",
+            "example": "130505"
+          },
+          "tercero": {
+            "$ref": "#/components/schemas/OrigenTercero"
+          },
+          "centro": {
+            "$ref": "#/components/schemas/OrigenCentro"
+          },
+          "centro_costo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código del centro de costo si `centro = fijo`."
+          }
+        }
+      },
+      "LineaReglaRespuesta": {
+        "type": "object",
+        "description": "Línea de una regla.",
+        "required": [
+          "concepto",
+          "cara",
+          "cuenta_id",
+          "tercero",
+          "centro"
+        ],
+        "properties": {
+          "concepto": {
+            "type": "string"
+          },
+          "cara": {
+            "$ref": "#/components/schemas/Cara"
+          },
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tercero": {
+            "$ref": "#/components/schemas/OrigenTercero"
+          },
+          "centro": {
+            "$ref": "#/components/schemas/OrigenCentro"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "LineaRespuesta": {
         "type": "object",
         "description": "Línea de WhatsApp con su uso del mes.",
@@ -38304,6 +43345,16 @@
             "description": "Persona que atendió la llamada (si contestó)."
           }
         }
+      },
+      "MarcoTecnico": {
+        "type": "string",
+        "description": "Marco técnico contable (grupo NIIF).",
+        "enum": [
+          "grupo_1",
+          "grupo_2",
+          "grupo_3",
+          "otro"
+        ]
       },
       "MascotaDatos": {
         "type": "object",
@@ -38473,6 +43524,40 @@
           "estado": {
             "$ref": "#/components/schemas/EstadoMascota",
             "description": "`activa`, `fallecida` o `trasladada`."
+          }
+        }
+      },
+      "MayorRespuesta": {
+        "type": "object",
+        "description": "Libro mayor (o auxiliar de un tercero) de una cuenta.",
+        "required": [
+          "cuenta",
+          "saldo_inicial",
+          "movimientos",
+          "saldo_final"
+        ],
+        "properties": {
+          "cuenta": {
+            "$ref": "#/components/schemas/CuentaRespuesta"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "saldo_inicial": {
+            "type": "string"
+          },
+          "movimientos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovimientoRespuesta"
+            }
+          },
+          "saldo_final": {
+            "type": "string"
           }
         }
       },
@@ -38878,6 +43963,7 @@
         "type": "string",
         "description": "Módulo contratable por la copropiedad.",
         "enum": [
+          "contabilidad",
           "bienes_comunes",
           "control_acceso",
           "asambleas",
@@ -39070,6 +44156,14 @@
           }
         }
       },
+      "Naturaleza": {
+        "type": "string",
+        "description": "Naturaleza de una cuenta contable.",
+        "enum": [
+          "debito",
+          "credito"
+        ]
+      },
       "NaturalezaOrganizacion": {
         "type": "string",
         "description": "Persona jurídica o persona natural con RUT (su NIT es su cédula: dato personal).",
@@ -39086,6 +44180,17 @@
           "uso_exclusivo",
           "comunal",
           "visitantes"
+        ]
+      },
+      "NivelCuenta": {
+        "type": "string",
+        "description": "Nivel de una cuenta según el largo de su código.",
+        "enum": [
+          "clase",
+          "grupo",
+          "cuenta",
+          "subcuenta",
+          "auxiliar"
         ]
       },
       "NodoRespuesta": {
@@ -39111,6 +44216,90 @@
             "items": {
               "$ref": "#/components/schemas/NodoRespuesta"
             }
+          }
+        }
+      },
+      "NotaPeticion": {
+        "type": "object",
+        "description": "Versión nueva de una nota.",
+        "required": [
+          "anio",
+          "numero",
+          "titulo",
+          "texto"
+        ],
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numero": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "rubro": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código del rubro al que se asocia."
+          }
+        }
+      },
+      "NotaRespuesta": {
+        "type": "object",
+        "description": "Nota a los estados financieros (última versión).",
+        "required": [
+          "id",
+          "anio",
+          "numero",
+          "version",
+          "titulo",
+          "texto",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numero": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "rubro_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -39278,6 +44467,71 @@
           }
         }
       },
+      "NuevaCuentaPeticion": {
+        "type": "object",
+        "description": "Cuenta nueva.",
+        "required": [
+          "codigo",
+          "nombre",
+          "acepta_movimiento"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "11050501"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "naturaleza": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Naturaleza",
+                "description": "Sin valor: la del PUC si el código está en el catálogo; si no, la de la cuenta padre."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "acepta_movimiento": {
+            "type": "boolean"
+          },
+          "exige_tercero": {
+            "type": "boolean"
+          },
+          "exige_centro_costo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NuevaEntidadPeticion": {
+        "type": "object",
+        "description": "Entidad sin vertical por crear.",
+        "required": [
+          "nombre",
+          "administrador_cuenta_id"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Gimnasio Fuerza S.A.S."
+          },
+          "nit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "NIT con o sin dígito de verificación.",
+            "example": "900123456-8"
+          },
+          "administrador_cuenta_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cuenta que será su primer administrador."
+          }
+        }
+      },
       "NuevaMascotaPeticion": {
         "allOf": [
           {
@@ -39339,6 +44593,65 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "NuevaPlantillaPeticion": {
+        "type": "object",
+        "description": "Plantilla nueva de la plataforma.",
+        "required": [
+          "nombre",
+          "tipo_empresa",
+          "contenido"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_empresa": {
+            "type": "string",
+            "example": "propiedad_horizontal"
+          },
+          "contenido": {
+            "type": "object",
+            "description": "Contenido (`PlantillaContable`)."
+          }
+        }
+      },
+      "NuevaReglaPeticion": {
+        "type": "object",
+        "description": "Versión nueva de una regla.",
+        "required": [
+          "evento",
+          "tipo_comprobante",
+          "vigente_desde",
+          "lineas"
+        ],
+        "properties": {
+          "evento": {
+            "type": "string",
+            "example": "ventas.factura"
+          },
+          "tipo_comprobante": {
+            "type": "string",
+            "description": "Código del tipo de comprobante que produce.",
+            "example": "FV"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaReglaPeticion"
+            }
           }
         }
       },
@@ -39688,6 +45001,40 @@
                 "type": "null"
               }
             ]
+          }
+        }
+      },
+      "NuevoTerceroPeticion": {
+        "type": "object",
+        "description": "Tercero nuevo (si ya hay una persona con ese documento, se reutiliza).",
+        "required": [
+          "tipo",
+          "nombre",
+          "documento"
+        ],
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoPersona"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_documento": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TipoDocumento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documento": {
+            "type": "string",
+            "example": "900123456"
+          },
+          "fiscal": {
+            "$ref": "#/components/schemas/DatosFiscalesDto"
           }
         }
       },
@@ -40200,6 +45547,15 @@
           "manual"
         ]
       },
+      "OrigenCentro": {
+        "type": "string",
+        "description": "De dónde sale el centro de costo de una línea de regla.",
+        "enum": [
+          "documento",
+          "fijo",
+          "ninguno"
+        ]
+      },
       "OrigenOrden": {
         "type": "string",
         "description": "De dónde nace una orden de trabajo.",
@@ -40207,6 +45563,14 @@
           "plan_preventivo",
           "ticket",
           "inspeccion"
+        ]
+      },
+      "OrigenTercero": {
+        "type": "string",
+        "description": "De dónde sale el tercero de una línea de regla.",
+        "enum": [
+          "documento",
+          "ninguno"
         ]
       },
       "OrigenVisita": {
@@ -42228,6 +47592,69 @@
           }
         }
       },
+      "PaginaRespuesta_TerceroRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Tercero: persona de la entidad con sus datos fiscales.",
+              "required": [
+                "persona_id",
+                "tipo",
+                "nombre",
+                "fiscal"
+              ],
+              "properties": {
+                "persona_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "tipo": {
+                  "$ref": "#/components/schemas/TipoPersona"
+                },
+                "nombre": {
+                  "type": "string"
+                },
+                "tipo_documento": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/TipoDocumento"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "documento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Dato personal."
+                },
+                "fiscal": {
+                  "$ref": "#/components/schemas/DatosFiscalesDto"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_TicketRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -42776,6 +48203,41 @@
           }
         }
       },
+      "PeriodoRespuesta": {
+        "type": "object",
+        "description": "Periodo contable (mes 13 = cierre anual).",
+        "required": [
+          "id",
+          "anio",
+          "mes",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPeriodo"
+          },
+          "cerrado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "Permiso": {
         "type": "string",
         "description": "Permiso del catálogo. El texto (`modulo.recurso.accion`) es contrato con la BD y con los clientes: no se renombra sin migración.",
@@ -42788,6 +48250,9 @@
           "plataforma.roles.asignar",
           "plataforma.organizaciones.revisar",
           "plataforma.modulos.gestionar",
+          "plataforma.entidades.crear",
+          "plataforma.plantillas_contables.publicar",
+          "plataforma.normativa.gestionar",
           "plataforma.auditoria.ver",
           "plataforma.publicidad.moderar",
           "plataforma.publicidad.liquidar",
@@ -42864,6 +48329,15 @@
           "acceso.biometria.enrolar",
           "comunicados.gestionar",
           "contabilidad.ver",
+          "contabilidad.configurar",
+          "contabilidad.terceros.gestionar",
+          "contabilidad.comprobantes.crear",
+          "contabilidad.comprobantes.contabilizar",
+          "contabilidad.comprobantes.revertir",
+          "contabilidad.periodos.cerrar",
+          "contabilidad.periodos.reabrir",
+          "contabilidad.periodos.aprobar_reapertura",
+          "contabilidad.exportar",
           "directorio.ver",
           "directorio.resenar",
           "directorio.compartir"
@@ -43264,6 +48738,104 @@
           },
           "activo": {
             "type": "boolean"
+          }
+        }
+      },
+      "PlantillaRespuesta": {
+        "type": "object",
+        "description": "Plantilla con su contenido.",
+        "required": [
+          "id",
+          "nombre",
+          "tipo_empresa",
+          "version",
+          "estado",
+          "contenido",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_empresa": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPlantilla"
+          },
+          "contenido": {
+            "type": "object",
+            "description": "Contenido (`PlantillaContable`): marco técnico, cuentas, tipos de comprobante, reglas,\nrubros y cuenta de resultado."
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publicada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "PlantillaResumenRespuesta": {
+        "type": "object",
+        "description": "Plantilla en un listado.",
+        "required": [
+          "id",
+          "ambito",
+          "nombre",
+          "tipo_empresa",
+          "version",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ambito": {
+            "type": "string",
+            "description": "`plataforma` u `organizacion`."
+          },
+          "organizacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_empresa": {
+            "type": "string",
+            "example": "propiedad_horizontal"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPlantilla"
+          },
+          "publicada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -44466,6 +50038,62 @@
           }
         }
       },
+      "ReaperturaRespuesta": {
+        "type": "object",
+        "description": "Reapertura de un periodo.",
+        "required": [
+          "id",
+          "periodo_id",
+          "motivo",
+          "solicitada_por",
+          "solicitada_en",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "alcance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "solicitada_por": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "solicitada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoReapertura"
+          },
+          "decidida_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "decidida_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "RechazoPeticion": {
         "type": "object",
         "description": "Motivo del rechazo.",
@@ -44678,6 +50306,15 @@
             "example": "ROSA10"
           }
         }
+      },
+      "RegimenIva": {
+        "type": "string",
+        "description": "Régimen de IVA de un tercero.",
+        "enum": [
+          "responsable",
+          "no_responsable",
+          "simple"
+        ]
       },
       "RegistrarCorrespondenciaPeticion": {
         "type": "object",
@@ -44959,6 +50596,58 @@
           },
           "plazo": {
             "$ref": "#/components/schemas/PlazoDto"
+          }
+        }
+      },
+      "ReglaRespuesta": {
+        "type": "object",
+        "description": "Versión de una regla de contabilización.",
+        "required": [
+          "id",
+          "evento",
+          "version",
+          "tipo_comprobante_id",
+          "vigente_desde",
+          "lineas",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "evento": {
+            "type": "string",
+            "example": "ventas.factura"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "tipo_comprobante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaReglaRespuesta"
+            }
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -45482,6 +51171,17 @@
           }
         }
       },
+      "ResponsabilidadFiscal": {
+        "type": "string",
+        "description": "Responsabilidad fiscal del RUT.",
+        "enum": [
+          "O-13",
+          "O-15",
+          "O-23",
+          "O-47",
+          "R-99-PN"
+        ]
+      },
       "ResponsableDto": {
         "type": "object",
         "description": "Responsable: una cuenta **o** una organización con contrato de servicio.",
@@ -45740,6 +51440,58 @@
           "escrutinio": {
             "type": "object",
             "description": "Totales por opción por coeficiente y por unidades, habilitados, votantes, decisión y\nreparto de cupos (elecciones). Decimales como texto."
+          }
+        }
+      },
+      "ResumenAplicacionRespuesta": {
+        "type": "object",
+        "description": "Lo que hizo (o haría) aplicar la plantilla.",
+        "required": [
+          "cuentas_creadas",
+          "cuentas_existentes",
+          "tipos_creados",
+          "tipos_existentes",
+          "reglas_creadas",
+          "rubros",
+          "configuracion",
+          "previsualizacion"
+        ],
+        "properties": {
+          "cuentas_creadas": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "cuentas_existentes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "tipos_creados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "tipos_existentes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "reglas_creadas": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "rubros": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "configuracion": {
+            "type": "boolean"
+          },
+          "previsualizacion": {
+            "type": "boolean"
           }
         }
       },
@@ -46052,6 +51804,26 @@
           }
         }
       },
+      "RevertirPeticion": {
+        "type": "object",
+        "description": "Reverso de un comprobante.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Fecha del reverso; sin valor = hoy."
+          }
+        }
+      },
       "RevisionPoderPeticion": {
         "type": "object",
         "description": "Revisión de un poder.",
@@ -46263,6 +52035,79 @@
             "format": "int32",
             "example": 300,
             "minimum": 0
+          }
+        }
+      },
+      "RubroDto": {
+        "type": "object",
+        "description": "Rubro de un estado financiero.",
+        "required": [
+          "estado",
+          "codigo",
+          "nombre",
+          "orden",
+          "prefijos"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "description": "`situacion_financiera` o `resultados`.",
+            "example": "situacion_financiera"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "efectivo"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "prefijos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Prefijos de código de cuenta que suma.",
+            "example": [
+              "11"
+            ]
+          }
+        }
+      },
+      "SaldosInicialesPeticion": {
+        "type": "object",
+        "description": "Saldos iniciales.",
+        "required": [
+          "fecha",
+          "lineas"
+        ],
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "tipo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código del tipo de comprobante; por defecto `AP`."
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaPeticion"
+            }
           }
         }
       },
@@ -46519,6 +52364,24 @@
             ],
             "description": "Obligatoria en parqueaderos de visitantes.",
             "example": "ABC123"
+          }
+        }
+      },
+      "SolicitudReaperturaPeticion": {
+        "type": "object",
+        "description": "Solicitud de reapertura.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string"
+          },
+          "alcance": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -46900,6 +52763,48 @@
           }
         }
       },
+      "TerceroRespuesta": {
+        "type": "object",
+        "description": "Tercero: persona de la entidad con sus datos fiscales.",
+        "required": [
+          "persona_id",
+          "tipo",
+          "nombre",
+          "fiscal"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoPersona"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo_documento": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TipoDocumento"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Dato personal."
+          },
+          "fiscal": {
+            "$ref": "#/components/schemas/DatosFiscalesDto"
+          }
+        }
+      },
       "TicketDeCuentaRespuesta": {
         "type": "object",
         "description": "Solicitud de la cuenta en una de sus copropiedades.",
@@ -47210,6 +53115,60 @@
           "municipio",
           "radio"
         ]
+      },
+      "TipoComprobantePeticion": {
+        "type": "object",
+        "description": "Tipo de comprobante nuevo o editado (al editar, el código no cambia).",
+        "required": [
+          "codigo",
+          "nombre"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "RC"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "manual": {
+            "type": "boolean"
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TipoComprobanteRespuesta": {
+        "type": "object",
+        "description": "Tipo de comprobante.",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "manual",
+          "activo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "RC"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "manual": {
+            "type": "boolean",
+            "description": "`false` = solo lo usa el sistema (cierre, apertura, documentos de los módulos)."
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
       },
       "TipoCopropiedad": {
         "type": "string",
@@ -47823,6 +53782,26 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "ValorRubroRespuesta": {
+        "type": "object",
+        "description": "Valor de un rubro.",
+        "required": [
+          "codigo",
+          "nombre",
+          "valor"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "string"
           }
         }
       },
@@ -48443,6 +54422,10 @@
     {
       "name": "plataforma",
       "description": "Operación de la plataforma (exige segundo factor)"
+    },
+    {
+      "name": "contabilidad",
+      "description": "Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)"
     }
   ]
 }

@@ -25,6 +25,8 @@ use crate::{
 
 pub(crate) const ACCION_CREAR_COPROPIEDAD: AccionAuditoria =
     AccionAuditoria::new("plataforma.copropiedad.crear");
+pub(crate) const ACCION_CREAR_ENTIDAD: AccionAuditoria =
+    AccionAuditoria::new("plataforma.entidad.crear");
 pub(crate) const ACCION_CREAR_ROL: AccionAuditoria = AccionAuditoria::new("plataforma.rol.crear");
 pub(crate) const ACCION_EDITAR_ROL: AccionAuditoria =
     AccionAuditoria::new("plataforma.rol.editar_permisos");
@@ -38,7 +40,8 @@ pub(crate) const ACCION_BLOQUEAR: AccionAuditoria =
 pub(crate) const ACCION_CAMBIAR_ESTADO: AccionAuditoria =
     AccionAuditoria::new("plataforma.copropiedad.cambiar_estado");
 
-/// Da de alta una copropiedad (en configuración) y le asigna su primer administrador.
+/// Da de alta una copropiedad (en configuración): la entidad y su extensión de la vertical PH
+/// (ADR 0016), sin módulos vendibles; le asigna su primer administrador.
 ///
 /// # Errors
 ///
@@ -65,6 +68,72 @@ where
         nombre: domain::copropiedad::texto_obligatorio("nombre", &alta.nombre, 200)?,
         ..alta
     };
+    dar_de_alta(
+        plataforma,
+        unidad,
+        reloj,
+        ctx,
+        (alta.nombre.clone(), alta.nit.clone()),
+        Some(&alta),
+        administrador,
+    )
+    .await
+}
+
+/// Da de alta una entidad sin vertical (cualquier empresa que contrata la contabilidad base,
+/// ADR 0016) y le asigna su primer administrador. Sus módulos se habilitan después, uno a uno.
+///
+/// # Errors
+///
+/// - [`AppError::SinPermiso`] sin `plataforma.entidades.crear`.
+/// - [`AppError::Validacion`] si el nombre está vacío.
+/// - [`AppError::NoEncontrado`] si la cuenta del administrador no existe.
+/// - [`AppError::Conflicto`] si el NIT ya lo usa otra entidad.
+pub async fn crear_entidad<UP, U>(
+    plataforma: &UP,
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    nombre: &str,
+    nit: Option<domain::Nit>,
+    administrador: CuentaId,
+) -> AppResult<TenantId>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioCuentas,
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioRoles + RegistroAuditoria,
+{
+    ctx.exigir(Permiso::PlataformaEntidadesCrear)?;
+    let nombre = domain::copropiedad::texto_obligatorio("nombre", nombre, 200)?;
+    dar_de_alta(
+        plataforma,
+        unidad,
+        reloj,
+        ctx,
+        (nombre, nit),
+        None,
+        administrador,
+    )
+    .await
+}
+
+/// Crea la entidad (y, si viene, su extensión de copropiedad) y asigna el administrador.
+async fn dar_de_alta<UP, U>(
+    plataforma: &UP,
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    (nombre, nit): (String, Option<domain::Nit>),
+    copropiedad: Option<&AltaCopropiedad>,
+    administrador: CuentaId,
+) -> AppResult<TenantId>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioCuentas,
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioRoles + RegistroAuditoria,
+{
     plataforma
         .iniciar_plataforma(ctx)
         .await?
@@ -74,8 +143,8 @@ where
         .ok_or(AppError::NoEncontrado("cuenta"))?;
 
     let tenant = TenantId::nuevo();
-    // Quien da de alta actúa en la PH nueva con todos los permisos de copropiedad, solo para
-    // dejarla con su administrador; queda auditado a su nombre.
+    // Quien da de alta actúa en la entidad nueva con todos los permisos, solo para dejarla con
+    // su administrador; queda auditado a su nombre.
     let ctx_ph = Contexto {
         tenant_id: tenant,
         actor_id: ctx.actor_id,
@@ -83,17 +152,20 @@ where
         permisos: ConjuntoPermisos::todos(Ambito::Copropiedad),
     };
     let mut tx = unidad.iniciar(&ctx_ph).await?;
-    tx.insertar_copropiedad(&alta).await?;
+    tx.insertar_entidad(&nombre, nit.as_ref()).await?;
+    let (accion, entidad) = match copropiedad {
+        Some(alta) => {
+            tx.insertar_copropiedad(alta).await?;
+            (ACCION_CREAR_COPROPIEDAD, "copropiedad")
+        }
+        None => (ACCION_CREAR_ENTIDAD, "entidad"),
+    };
     let rol = tx
         .rol_por_codigo(CODIGO_ADMINISTRADOR)
         .await?
         .ok_or(AppError::NoEncontrado("rol administrador"))?;
-    tx.registrar(EventoAuditoria::ok(
-        ACCION_CREAR_COPROPIEDAD,
-        "copropiedad",
-        tenant.as_uuid(),
-    ))
-    .await?;
+    tx.registrar(EventoAuditoria::ok(accion, entidad, tenant.as_uuid()))
+        .await?;
     asignar_en(
         &mut tx,
         reloj,

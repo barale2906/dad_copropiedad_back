@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT k.id FROM comprobantes k\n             JOIN periodos_contables p ON p.tenant_id = k.tenant_id AND p.id = k.periodo_id\n             WHERE p.anio = $1 AND p.mes = 13 AND k.estado = 'contabilizado'\n               AND k.origen_tipo = 'contabilidad.cierre_anual'\n               AND NOT EXISTS (SELECT 1 FROM comprobantes r WHERE r.revierte_a = k.id)\n             LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "07f9e5980337e547aef09aac2d27af285f8c3641c00e1ef69ba35857031a29dc"
+}

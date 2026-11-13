@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT nombre, razon_social, nit, tipo, forma, direccion, municipio_dane, departamento,\n                    barrio, latitud, longitud, estrato, telefono, correo, sitio_web,\n                    escritura_numero, notaria, escritura_fecha, matricula_matriz,\n                    reglamento_archivo_id, certificado_archivo_id, zona_horaria, estado,\n                    plantilla_codigo\n             FROM copropiedades WHERE id = $1",
+  "query": "SELECT e.nombre, e.razon_social, e.nit, c.tipo, c.forma, e.direccion,\n                    e.municipio_dane, e.departamento, e.barrio, e.latitud, e.longitud, c.estrato,\n                    e.telefono, e.correo, e.sitio_web, c.escritura_numero, c.notaria,\n                    c.escritura_fecha, c.matricula_matriz, c.reglamento_archivo_id,\n                    c.certificado_archivo_id, e.zona_horaria, e.estado, c.plantilla_codigo\n             FROM entidades e JOIN copropiedades c ON c.id = e.id\n             WHERE e.id = $1",
   "describe": {
     "columns": [
       {
@@ -9,7 +9,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "nombre"
           }
         }
@@ -20,7 +20,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "razon_social"
           }
         }
@@ -31,7 +31,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "nit"
           }
         }
@@ -64,7 +64,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "direccion"
           }
         }
@@ -75,7 +75,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "municipio_dane"
           }
         }
@@ -86,7 +86,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "departamento"
           }
         }
@@ -97,7 +97,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "barrio"
           }
         }
@@ -108,7 +108,7 @@
         "type_info": "Numeric",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "latitud"
           }
         }
@@ -119,7 +119,7 @@
         "type_info": "Numeric",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "longitud"
           }
         }
@@ -141,7 +141,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "telefono"
           }
         }
@@ -152,7 +152,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "correo"
           }
         }
@@ -163,7 +163,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "sitio_web"
           }
         }
@@ -240,7 +240,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "zona_horaria"
           }
         }
@@ -251,7 +251,7 @@
         "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "copropiedades",
+            "table": "entidades",
             "name": "estado"
           }
         }
@@ -300,5 +300,5 @@
       false
     ]
   },
-  "hash": "b39f396cb2fb2230361049e28566a27cd014740eb6d21cbf1bc0c9fb0db85f3f"
+  "hash": "19ea1300acd6f86ad31da759be66387353568a8ec73762127a09adbf31da8405"
 }

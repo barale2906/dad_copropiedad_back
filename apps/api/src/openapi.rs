@@ -59,6 +59,8 @@ pub const ETIQUETA_DIRECTORIO: &str = "directorio";
 pub const ETIQUETA_PUBLICIDAD: &str = "publicidad";
 /// Etiqueta de las operaciones de plataforma.
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
+/// Etiqueta de las rutas del núcleo contable (entidades, plan de cuentas, comprobantes, reportes).
+pub const ETIQUETA_CONTABILIDAD: &str = "contabilidad";
 
 /// Registra el esquema de seguridad `bearer` (token de acceso opaco).
 struct EsquemaBearer;
@@ -175,6 +177,9 @@ impl utoipa::Modify for EsquemaBearer {
             solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni \
             configuran pauta"),
         (name = ETIQUETA_PLATAFORMA, description = "Operación de la plataforma (exige segundo factor)"),
+        (name = ETIQUETA_CONTABILIDAD, description = "Contabilidad de cualquier entidad: configuración, \
+            plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, \
+            plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)"),
     ),
     modifiers(&EsquemaBearer),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))

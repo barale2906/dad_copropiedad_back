@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO catalogo_puc (codigo, nombre, naturaleza) VALUES ($1, $2, $3)\n                 ON CONFLICT (codigo) DO UPDATE SET nombre = EXCLUDED.nombre,\n                     naturaleza = EXCLUDED.naturaleza, actualizado_en = now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "798df001762bd076f05cb9899d86a661e85ec3e849a61e2f1f7078ee19d03273"
+}

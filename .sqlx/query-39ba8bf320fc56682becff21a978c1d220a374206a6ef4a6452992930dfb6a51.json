@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT coalesce(max(version), 0) AS \"v!\" FROM plantillas_contables\n               WHERE ambito = $1 AND organizacion_id IS NOT DISTINCT FROM $2 AND nombre = $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "v!",
+        "type_info": "Int4",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "39ba8bf320fc56682becff21a978c1d220a374206a6ef4a6452992930dfb6a51"
+}

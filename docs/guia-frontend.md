@@ -51,6 +51,23 @@ botones; no deduzca permisos de los nombres de los roles, porque cada copropieda
 El backend vuelve a exigirlos: 403 `sin_permiso` o `modulo_no_habilitado`. Vuelva a pedir las
 capacidades si recibe uno de esos 403 (pudieron cambiar los roles o el contrato).
 
+### Entidades y contabilidad (ADR 0016, 0017)
+
+Toda empresa que usa la plataforma es una **entidad**; una copropiedad es una entidad con la
+vertical PH y **el mismo id**. Lo de cualquier entidad va en `/api/v1/entidades/{id}/…`:
+`/capacidades` y la contabilidad (`/contabilidad/…`: configuración, PUC, cuentas, terceros,
+periodos, comprobantes, reglas, plantillas, reportes). Una entidad que no es copropiedad
+responde 404 en `/copropiedades/{id}/…`. `GET /yo/copropiedades` lista todas las entidades de la
+cuenta (el nombre de la ruta es histórico).
+
+- Los **montos** viajan como texto decimal (`"150000.00"`), nunca como número de punto flotante.
+- Un comprobante se guarda en **borrador**, se puede **previsualizar** y se **contabiliza**; ya
+  contabilizado no se edita (409): se **revierte**. Las reglas contables incumplidas responden
+  422 `regla_contable` con el motivo (partida doble, periodo no abierto, cuenta que no admite la
+  línea).
+- Los reportes aceptan `formato=csv` (exige `contabilidad.exportar`); la respuesta trae la
+  cabecera `X-Contenido-Sha256` y queda en la auditoría.
+
 ## 4. Sesión
 
 1. `POST /api/v1/auth/sesion` con usuario o correo y contraseña. La respuesta (`InicioRespuesta`)

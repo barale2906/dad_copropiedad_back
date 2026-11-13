@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT coalesce(max(version), 0) AS \"v!\" FROM notas_estados\n               WHERE anio = $1 AND numero = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "v!",
+        "type_info": "Int4",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2",
+        "Int2"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "03f3e7a17bdd9acf7c5fbd73c984dbc90fd7c0daef09410418039bac212a9fef"
+}

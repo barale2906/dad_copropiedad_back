@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE personas SET organizacion_id = $2, regimen_iva = $3,\n                 responsabilidades_fiscales = $4, actividad_ciiu = $5, direccion_fiscal = $6,\n                 municipio_fiscal_dane = $7, correo_facturacion = $8\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "TextArray",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ecdfc02ec51430c218702477235b00e19ce0ba3025a09c48a63ade061ecd4af2"
+}

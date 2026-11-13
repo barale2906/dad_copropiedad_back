@@ -73,6 +73,30 @@ esquema_enum! {
         "Por dónde llegó el ticket.";
     CanalVoto = domain::voto::Canal,
         "Canal por el que llegó el voto (queda en el acta).";
+    Cara = domain::contabilidad::Cara,
+        "Cara de una línea de regla contable.";
+    EstadoComprobante = domain::contabilidad::EstadoComprobante,
+        "Estado de un comprobante contable.";
+    EstadoPeriodo = domain::contabilidad::EstadoPeriodo,
+        "Estado de un periodo contable.";
+    EstadoPlantilla = application::puertos::contabilidad::EstadoPlantilla,
+        "Estado de una plantilla contable.";
+    EstadoReapertura = domain::contabilidad::EstadoReapertura,
+        "Estado de una solicitud de reapertura de periodo.";
+    MarcoTecnico = domain::contabilidad::MarcoTecnico,
+        "Marco técnico contable (grupo NIIF).";
+    Naturaleza = domain::contabilidad::Naturaleza,
+        "Naturaleza de una cuenta contable.";
+    NivelCuenta = domain::contabilidad::NivelCuenta,
+        "Nivel de una cuenta según el largo de su código.";
+    OrigenCentro = domain::contabilidad::OrigenCentro,
+        "De dónde sale el centro de costo de una línea de regla.";
+    OrigenTercero = domain::contabilidad::OrigenTercero,
+        "De dónde sale el tercero de una línea de regla.";
+    RegimenIva = domain::contabilidad::RegimenIva,
+        "Régimen de IVA de un tercero.";
+    ResponsabilidadFiscal = domain::contabilidad::ResponsabilidadFiscal,
+        "Responsabilidad fiscal del RUT.";
     CargoEleccion = domain::pregunta::CargoEleccion,
         "Cargo o designación que se elige con una pregunta de elección.";
     CategoriaBienComun = domain::reserva::CategoriaBienComun,

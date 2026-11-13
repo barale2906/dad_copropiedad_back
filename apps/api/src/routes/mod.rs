@@ -4,6 +4,8 @@
 //! - `/api/v1/plataforma/…` — operaciones globales (módulo `plataforma`).
 //! - `/api/v1/yo/…` — la cuenta autenticada (módulo `yo`).
 //! - `/api/v1/copropiedades/{copropiedad_id}/…` — todo lo de una copropiedad (módulo `copropiedades`).
+//! - `/api/v1/entidades/{entidad_id}/…` — lo de cualquier entidad, p. ej. su contabilidad
+//!   (módulo `entidades`, ADR 0016).
 //! - `/api/v1/auth/…` — registro, inicio y cierre de sesión (módulo `auth`, sin sesión).
 //! - `/api/v1/organizaciones/{organizacion_id}/…` — ficha global de una organización
 //!   (módulo `organizaciones`), y `/api/v1/permisos` — catálogo.
@@ -24,9 +26,11 @@ mod campanas_censo;
 mod censo;
 mod coeficientes;
 mod comunicados;
+mod contabilidad;
 mod conversaciones;
 mod copropiedades;
 mod directorio;
+mod entidades;
 mod ficha;
 mod health;
 mod importaciones;
@@ -143,6 +147,10 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .nest(
             &format!("/copropiedades/{{{PARAMETRO_COPROPIEDAD}}}"),
             copropiedades::rutas(),
+        )
+        .nest(
+            &format!("/entidades/{{{}}}", crate::sesion::PARAMETRO_ENTIDAD),
+            entidades::rutas(),
         )
 }
 

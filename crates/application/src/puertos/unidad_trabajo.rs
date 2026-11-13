@@ -646,6 +646,14 @@ pub(crate) mod memoria {
             Ok(None)
         }
 
+        async fn insertar_entidad(
+            &mut self,
+            _nombre: &str,
+            _nit: Option<&domain::Nit>,
+        ) -> AppResult<()> {
+            Ok(())
+        }
+
         async fn insertar_copropiedad(
             &mut self,
             _alta: &crate::puertos::copropiedades::AltaCopropiedad,

@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT regla_id, concepto, cara, cuenta_id, tercero, centro, centro_costo_id\n             FROM lineas_regla WHERE regla_id = ANY($1) ORDER BY regla_id, orden",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "regla_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_regla",
+            "name": "regla_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "concepto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "lineas_regla",
+            "name": "concepto"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "cara",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "lineas_regla",
+            "name": "cara"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_regla",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "tercero",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "lineas_regla",
+            "name": "tercero"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "centro",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "lineas_regla",
+            "name": "centro"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_regla",
+            "name": "centro_costo_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "46ca167773529c586e20deae59d3d85bb9855844028285630e5f33d872ef7ba2"
+}

@@ -1,0 +1,103 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT l.cuenta_id, c.codigo, c.nombre, c.naturaleza,\n                      CASE WHEN $3 THEN l.persona_id END AS persona_id,\n                      CASE WHEN $4 THEN l.centro_costo_id END AS centro_costo_id,\n                      coalesce(sum(l.debito - l.credito) FILTER (WHERE k.fecha < $1), 0) AS \"saldo_inicial!\",\n                      coalesce(sum(l.debito) FILTER (WHERE k.fecha >= $1), 0) AS \"debitos!\",\n                      coalesce(sum(l.credito) FILTER (WHERE k.fecha >= $1), 0) AS \"creditos!\"\n               FROM lineas_comprobante l\n               JOIN comprobantes k ON k.tenant_id = l.tenant_id AND k.id = l.comprobante_id\n               JOIN cuentas_contables c ON c.tenant_id = l.tenant_id AND c.id = l.cuenta_id\n               JOIN periodos_contables p ON p.tenant_id = k.tenant_id AND p.id = k.periodo_id\n               WHERE k.estado = 'contabilizado' AND k.fecha <= $2 AND (NOT $5 OR p.mes <> 13)\n               GROUP BY l.cuenta_id, c.codigo, c.nombre, c.naturaleza, 5, 6\n               ORDER BY c.codigo, 5, 6",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_contables",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_contables",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "naturaleza",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_contables",
+            "name": "naturaleza"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "saldo_inicial!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
+        "name": "debitos!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 8,
+        "name": "creditos!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date",
+        "Bool",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "d1a16a440011eb0cd19f4350eaa95310af52f63f0d5cad2c1f26da7d0a9d9e7c"
+}

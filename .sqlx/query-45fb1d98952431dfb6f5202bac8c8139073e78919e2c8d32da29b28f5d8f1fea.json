@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE plantillas_contables SET contenido = $2 WHERE id = $1 AND estado = 'borrador'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "45fb1d98952431dfb6f5202bac8c8139073e78919e2c8d32da29b28f5d8f1fea"
+}

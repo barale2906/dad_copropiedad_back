@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, codigo, nombre, manual, activo FROM tipos_comprobante ORDER BY codigo",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "manual",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "manual"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "activo",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "activo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "94a0a28b88512e0f2213ef87e0578d42b1c7487cf150d38042a14fcbe1539d91"
+}

@@ -1,0 +1,251 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT k.id, k.tipo_comprobante_id, t.codigo AS tipo_codigo, k.periodo_id,\n                      p.anio, p.mes, k.numero, k.fecha, k.descripcion, k.estado, k.origen_tipo,\n                      k.origen_id, k.regla_id, k.revierte_a, k.motivo_reverso,\n                      (SELECT r.id FROM comprobantes r WHERE r.revierte_a = k.id) AS revertido_por,\n                      k.creado_por, k.creado_en, k.contabilizado_por, k.contabilizado_en\n               FROM comprobantes k\n               JOIN tipos_comprobante t ON t.tenant_id = k.tenant_id AND t.id = k.tipo_comprobante_id\n               JOIN periodos_contables p ON p.tenant_id = k.tenant_id AND p.id = k.periodo_id WHERE k.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo_comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "tipo_comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo_codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tipos_comprobante",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "periodo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "periodo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "anio",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "periodos_contables",
+            "name": "anio"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "mes",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "periodos_contables",
+            "name": "mes"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "numero",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "origen_tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "origen_tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "origen_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "origen_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "regla_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "regla_id"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "revierte_a",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "revierte_a"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "motivo_reverso",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "motivo_reverso"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "revertido_por",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 16,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "contabilizado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "contabilizado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "contabilizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "comprobantes",
+            "name": "contabilizado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      null,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "5f37f52f9d71bb932a6aa7446f9e19714bc72e857ea86decec498ad432c65f06"
+}

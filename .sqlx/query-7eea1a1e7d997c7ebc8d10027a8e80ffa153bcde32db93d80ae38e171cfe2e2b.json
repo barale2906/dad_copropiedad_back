@@ -1,0 +1,101 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, evento, version, tipo_comprobante_id, descripcion, vigente_desde, creada_en\n             FROM reglas_contabilizacion WHERE evento = $1 AND vigente_desde <= $2\n             ORDER BY version DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reglas_contabilizacion",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "evento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reglas_contabilizacion",
+            "name": "evento"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "reglas_contabilizacion",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tipo_comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "reglas_contabilizacion",
+            "name": "tipo_comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "reglas_contabilizacion",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "reglas_contabilizacion",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "reglas_contabilizacion",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "7eea1a1e7d997c7ebc8d10027a8e80ffa153bcde32db93d80ae38e171cfe2e2b"
+}

@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE comprobantes SET tipo_comprobante_id = $2, periodo_id = $3, fecha = $4,\n                 descripcion = $5\n             WHERE id = $1 AND estado = 'borrador'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c32a7f32b54a45b010d8a97965ffa533f5a76729ee2d3478d6748b189fc70445"
+}

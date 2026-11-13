@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO periodos_contables (id, tenant_id, anio, mes) VALUES ($1, $2, $3, $4)\n             ON CONFLICT (tenant_id, anio, mes) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2d3d4bbcf2ee470af6d11efad6bfd5c16202e2948336af4c31a16617565fd485"
+}
