@@ -62,6 +62,7 @@ pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api
         request_timeout: std::time::Duration::from_secs(10),
         log_format: shared::LogFormat::Pretty,
         docs_api_habilitada: false,
+        cors_origenes: Vec::new(),
     };
     Api {
         router: routes::router(

@@ -239,6 +239,7 @@ mod tests {
             request_timeout: Duration::from_secs(5),
             log_format: LogFormat::Pretty,
             docs_api_habilitada: false,
+            cors_origenes: Vec::new(),
         };
         let enlaces =
             infra_archivos::FirmanteEnlaces::new(&[7; 32], "http://localhost").expect("firmante");

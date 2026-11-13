@@ -52,6 +52,9 @@ pub struct AppConfig {
     /// Publica la documentación interactiva (`/docs`) y el contrato (`/api-docs/openapi.json`).
     /// Desactivada por defecto: en producción solo se activa si el acceso está protegido.
     pub docs_api_habilitada: bool,
+    /// Orígenes (`https://app.dominio.co`) que pueden llamar la API desde un navegador en otro
+    /// dominio (`CORS_ORIGENES`, separados por comas). Vacío = sin CORS: solo el mismo dominio.
+    pub cors_origenes: Vec<String>,
 }
 
 // `Debug` manual para no imprimir credenciales de la base de datos en los logs.
@@ -70,6 +73,7 @@ impl std::fmt::Debug for AppConfig {
             .field("request_timeout", &self.request_timeout)
             .field("log_format", &self.log_format)
             .field("docs_api_habilitada", &self.docs_api_habilitada)
+            .field("cors_origenes", &self.cors_origenes)
             .finish()
     }
 }
@@ -96,6 +100,7 @@ impl AppConfig {
             request_timeout: Duration::from_secs(parse_or("REQUEST_TIMEOUT_SECS", 30)?),
             log_format: parse_or("LOG_FORMAT", LogFormat::Pretty)?,
             docs_api_habilitada: parse_or("API_DOCS_HABILITADA", false)?,
+            cors_origenes: origenes_cors(optional("CORS_ORIGENES").as_deref())?,
         };
         if config.run_migrations && config.migrations_database_url.is_none() {
             return Err(ConfigError::Missing("DATABASE_URL"));
@@ -469,6 +474,47 @@ impl SeguridadConfig {
     }
 }
 
+/// Valida la lista de orígenes de CORS: `esquema://host[:puerto]` exacto (sin ruta, sin `/`
+/// final y sin comodines; `http` solo para `localhost`). Vacía o ausente = sin CORS.
+///
+/// # Errors
+///
+/// [`ConfigError::Invalid`] con el origen que no cumple.
+pub fn origenes_cors(texto: Option<&str>) -> Result<Vec<String>, ConfigError> {
+    let invalido = |o: &str, detalle: &str| ConfigError::Invalid {
+        var: "CORS_ORIGENES",
+        detail: format!("`{o}`: {detalle}"),
+    };
+    let mut origenes = Vec::new();
+    for o in texto
+        .unwrap_or_default()
+        .split(',')
+        .map(str::trim)
+        .filter(|o| !o.is_empty())
+    {
+        let (esquema, resto) = o
+            .split_once("://")
+            .ok_or_else(|| invalido(o, "falta el esquema (https://)"))?;
+        let host = resto.split(':').next().unwrap_or_default();
+        let local = host == "localhost" || host == "127.0.0.1";
+        if !(esquema == "https" || (esquema == "http" && local)) {
+            return Err(invalido(o, "use https (http solo para localhost)"));
+        }
+        let valido = !resto.is_empty()
+            && resto
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | ':'));
+        if !valido {
+            return Err(invalido(
+                o,
+                "solo el dominio y el puerto: sin ruta, sin `/` final y sin `*`",
+            ));
+        }
+        origenes.push(o.to_ascii_lowercase());
+    }
+    Ok(origenes)
+}
+
 fn optional(var: &'static str) -> Option<String> {
     env::var(var).ok().filter(|v| !v.trim().is_empty())
 }
@@ -488,5 +534,30 @@ where
             var,
             detail: e.to_string(),
         }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn los_origenes_de_cors_se_validan_y_se_normalizan() {
+        assert_eq!(
+            origenes_cors(Some(" https://App.Dominio.co , http://localhost:5173 ,"))
+                .expect("válidos"),
+            vec!["https://app.dominio.co", "http://localhost:5173"]
+        );
+        assert!(origenes_cors(None).expect("vacío").is_empty());
+        for malo in [
+            "app.dominio.co",
+            "http://app.dominio.co",
+            "https://app.dominio.co/",
+            "https://app.dominio.co/web",
+            "https://*.dominio.co",
+            "*",
+        ] {
+            assert!(origenes_cors(Some(malo)).is_err(), "{malo}");
+        }
     }
 }
