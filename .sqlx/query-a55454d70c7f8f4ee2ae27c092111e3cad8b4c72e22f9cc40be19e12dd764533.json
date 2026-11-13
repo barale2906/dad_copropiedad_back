@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cuadros_coeficientes\n                 (id, tenant_id, version, tipo, modulo_id, estado, descripcion, soporte_archivo_id,\n                  creado_en)\n             VALUES ($1, $2, $3, $4, $8, 'borrador', $5, $6, $7)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a55454d70c7f8f4ee2ae27c092111e3cad8b4c72e22f9cc40be19e12dd764533"
+}

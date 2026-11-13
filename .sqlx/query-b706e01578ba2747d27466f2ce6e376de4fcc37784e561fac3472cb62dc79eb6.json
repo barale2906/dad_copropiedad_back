@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO obligaciones (id, tenant_id, bien_privado_id, concepto_cobro_id, periodo,\n                 valor, vencimiento, deudor_persona_id, origen, liquidacion_id,\n                 cuota_extraordinaria_id, cuenta_cobro_id, comprobante_id, descripcion, estado,\n                 creada_en)\n             SELECT x.id, $1, x.bien, x.concepto, x.periodo, x.valor, x.vencimiento, x.deudor,\n                    x.origen, x.liquidacion, x.cuota, x.cuenta, x.comprobante, x.descripcion,\n                    'vigente', x.creada\n             FROM unnest($2::uuid[], $3::uuid[], $4::uuid[], $5::date[], $6::numeric[],\n                         $7::date[], $8::uuid[], $9::text[], $10::uuid[], $11::uuid[],\n                         $12::uuid[], $13::uuid[], $14::text[], $15::timestamptz[])\n                  AS x (id, bien, concepto, periodo, valor, vencimiento, deudor, origen,\n                        liquidacion, cuota, cuenta, comprobante, descripcion, creada)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray",
+        "UuidArray",
+        "UuidArray",
+        "DateArray",
+        "NumericArray",
+        "DateArray",
+        "UuidArray",
+        "TextArray",
+        "UuidArray",
+        "UuidArray",
+        "UuidArray",
+        "UuidArray",
+        "TextArray",
+        "TimestamptzArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b706e01578ba2747d27466f2ce6e376de4fcc37784e561fac3472cb62dc79eb6"
+}

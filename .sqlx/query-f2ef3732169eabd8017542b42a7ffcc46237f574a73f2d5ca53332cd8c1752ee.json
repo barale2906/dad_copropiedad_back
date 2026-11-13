@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tarifas_concepto_cobro (tenant_id, concepto_id, tipo_bien, valor)\n             SELECT $1, $2, t, v FROM unnest($3::text[], $4::numeric[]) AS x (t, v)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "TextArray",
+        "NumericArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f2ef3732169eabd8017542b42a7ffcc46237f574a73f2d5ca53332cd8c1752ee"
+}

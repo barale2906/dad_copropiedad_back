@@ -145,11 +145,13 @@ pub struct AnulacionPeticion {
     pub motivo: String,
 }
 
-/// Aplicación de un recibo.
+/// Aplicación de un recibo: a una factura de venta o a una obligación de la cartera de la PH.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct AplicacionRespuesta {
     pub id: Uuid,
-    pub factura_venta_id: Uuid,
+    pub factura_venta_id: Option<Uuid>,
+    /// Obligación de la cartera de la PH (`/copropiedades/{id}/cartera`).
+    pub obligacion_id: Option<Uuid>,
     #[schema(value_type = String, example = "250000")]
     pub valor: Decimal,
     pub aplicada_en: DateTime<Utc>,
@@ -161,7 +163,8 @@ impl From<AplicacionPago> for AplicacionRespuesta {
     fn from(a: AplicacionPago) -> Self {
         Self {
             id: a.id.as_uuid(),
-            factura_venta_id: a.factura_venta_id.as_uuid(),
+            factura_venta_id: a.factura_venta_id.map(|f| f.as_uuid()),
+            obligacion_id: a.obligacion_id.map(|o| o.as_uuid()),
             valor: a.valor.valor(),
             aplicada_en: a.aplicada_en,
             comprobante_id: a.comprobante_id.map(|c| c.as_uuid()),

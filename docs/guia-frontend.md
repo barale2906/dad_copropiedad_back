@@ -75,6 +75,15 @@ cuenta (el nombre de la ruta es histórico).
   bancario viaja en Base64 dentro del JSON (`archivo_base64`) con el mapeo de columnas del banco;
   primero `…/extractos/vista-previa` y luego `…/extractos`. El certificado de retenciones en PDF
   es `GET …/certificados/{persona_id}/pdf`.
+- **Cartera de la PH** (ADR 0019, etiqueta `cartera`, módulo `contabilidad_ph`):
+  `/copropiedades/{id}/cartera/…`. Orden de configuración: conceptos de cobro → política →
+  presupuesto (`…/presupuestos`, luego `…/aprobacion`) → referencia de pago de cada bien. Cada mes:
+  `…/liquidaciones/vista-previa` (no guarda) y `POST …/liquidaciones` (409 si el periodo ya está
+  liquidado); las cuentas de cobro se descargan en `…/cuentas-cobro/{id}/pdf` y se envían con
+  `…/liquidaciones/{id}/envio`. Un pago es `POST …/cartera/recaudos` (se imputa solo; lo que
+  sobra queda como `anticipo`); se anula con `…/recaudos/{recibo_id}/anulacion`, no desde la
+  tesorería (409). Lo liquidado se corrige con `…/obligaciones/{id}/notas-credito`. Los saldos
+  nunca se editan: `…/bienes/{id}/estado-cuenta`, `…/saldos` y `…/cuadre` los calculan.
 
 ## 4. Sesión
 

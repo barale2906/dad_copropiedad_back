@@ -9,7 +9,7 @@ mod conciliacion;
 mod configuracion;
 mod cuentas_por_pagar;
 mod dto;
-mod dto_tesoreria;
+pub(crate) mod dto_tesoreria;
 mod plataforma;
 mod reportes;
 mod tesoreria;

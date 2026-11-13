@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, version, tipo, estado, descripcion, soporte_archivo_id, vigente_desde,\n                    aprobado_por, creado_en\n             FROM cuadros_coeficientes\n             WHERE ($1::uuid IS NULL OR id = $1)\n               AND (NOT $2 OR (estado = 'vigente' AND tipo = 'copropiedad'))\n             ORDER BY version DESC",
+  "query": "SELECT id, version, tipo, modulo_id, estado, descripcion, soporte_archivo_id,\n                    vigente_desde, aprobado_por, creado_en\n             FROM cuadros_coeficientes\n             WHERE ($1::uuid IS NULL OR id = $1)\n               AND (NOT $2 OR (estado = 'vigente' AND modulo_id IS NOT DISTINCT FROM $3))\n             ORDER BY modulo_id NULLS FIRST, version DESC",
   "describe": {
     "columns": [
       {
@@ -38,6 +38,17 @@
       },
       {
         "ordinal": 3,
+        "name": "modulo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuadros_coeficientes",
+            "name": "modulo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
         "name": "estado",
         "type_info": "Text",
         "origin": {
@@ -48,7 +59,7 @@
         }
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "descripcion",
         "type_info": "Text",
         "origin": {
@@ -59,7 +70,7 @@
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "soporte_archivo_id",
         "type_info": "Uuid",
         "origin": {
@@ -70,7 +81,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "vigente_desde",
         "type_info": "Timestamptz",
         "origin": {
@@ -81,7 +92,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "aprobado_por",
         "type_info": "Uuid",
         "origin": {
@@ -92,7 +103,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 9,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -106,13 +117,15 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Bool"
+        "Bool",
+        "Uuid"
       ]
     },
     "nullable": [
       false,
       false,
       false,
+      true,
       false,
       true,
       true,
@@ -121,5 +134,5 @@
       false
     ]
   },
-  "hash": "3bb194304e3a59c2ba65604f1e1dac2c650b8021abbe899dedfc71bb33dc34c6"
+  "hash": "892598cb22797a7602dcedff0e8e79b9e1eafada6b95ba325abafbafd542e430"
 }

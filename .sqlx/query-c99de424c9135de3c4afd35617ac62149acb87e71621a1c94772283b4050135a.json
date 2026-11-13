@@ -1,0 +1,275 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT o.id, o.bien_privado_id, o.concepto_cobro_id, o.periodo, o.valor,\n                      o.vencimiento, o.deudor_persona_id, o.origen, o.liquidacion_id,\n                      o.cuota_extraordinaria_id, o.cuenta_cobro_id, o.comprobante_id,\n                      o.descripcion, o.estado, o.creada_en, o.anulada_en,\n                      c.codigo AS concepto_codigo, c.nombre AS concepto_nombre,\n                      c.tipo AS concepto_tipo, c.concepto_contable,\n                      coalesce(aj.total, 0) AS \"ajustes!\", coalesce(ap.total, 0) AS \"aplicado!\"\n               FROM obligaciones o\n               JOIN conceptos_cobro c ON c.id = o.concepto_cobro_id\n               LEFT JOIN LATERAL (SELECT sum(a.valor) AS total FROM ajustes_obligacion a\n                                  WHERE a.obligacion_id = o.id AND a.anulado_en IS NULL) aj ON TRUE\n               LEFT JOIN LATERAL (SELECT sum(p.valor) AS total FROM aplicaciones_pago p\n                                  WHERE p.obligacion_id = o.id AND p.anulada_en IS NULL) ap ON TRUE\n               WHERE ($1::uuid IS NULL OR o.id = $1)\n                 AND ($2::uuid IS NULL OR o.bien_privado_id = $2)\n                 AND ($3::uuid IS NULL OR o.liquidacion_id = $3)\n                 AND ($4::uuid IS NULL OR o.cuenta_cobro_id = $4)\n                 AND ($5::date IS NULL OR o.periodo <= $5)\n                 AND (NOT $6 OR (o.estado = 'vigente'\n                                 AND o.valor - coalesce(aj.total, 0) - coalesce(ap.total, 0) > 0))\n               ORDER BY o.bien_privado_id, o.periodo, o.creada_en, o.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "concepto_cobro_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "concepto_cobro_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "periodo",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "periodo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "vencimiento",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "vencimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "deudor_persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "deudor_persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "origen",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "origen"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "liquidacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "liquidacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "cuota_extraordinaria_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "cuota_extraordinaria_id"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "cuenta_cobro_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "cuenta_cobro_id"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "anulada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "obligaciones",
+            "name": "anulada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "concepto_codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "concepto_nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "concepto_tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "concepto_contable",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_cobro",
+            "name": "concepto_contable"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "ajustes!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 21,
+        "name": "aplicado!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "c99de424c9135de3c4afd35617ac62149acb87e71621a1c94772283b4050135a"
+}

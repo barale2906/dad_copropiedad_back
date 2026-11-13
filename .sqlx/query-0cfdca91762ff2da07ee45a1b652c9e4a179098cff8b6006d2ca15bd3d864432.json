@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cargos_pendientes SET estado = 'pendiente', obligacion_id = NULL\n             WHERE obligacion_id IN (SELECT id FROM obligaciones WHERE liquidacion_id = $1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0cfdca91762ff2da07ee45a1b652c9e4a179098cff8b6006d2ca15bd3d864432"
+}

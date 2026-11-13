@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE presupuestos SET estado = 'reemplazado' WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "488e3a4334c709b20118f350c8d5d0d08077ae464ce9177e8be7f4d1c05036a1"
+}

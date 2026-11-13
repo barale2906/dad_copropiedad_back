@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE ajustes_obligacion SET anulado_en = $2 WHERE id = $1 AND anulado_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "60194c4c6640e2b0ea296106b5420c77cecea37fdefcd00520d7c052aa3da795"
+}

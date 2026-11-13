@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, presupuesto_id, concepto_cobro_id, cuenta_contable_id, centro_costo_id,\n                      nombre, valores_mensuales AS \"valores_mensuales!: Vec<Decimal>\"\n               FROM rubros_presupuesto WHERE presupuesto_id = ANY($1) ORDER BY nombre, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "rubros_presupuesto",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "presupuesto_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "rubros_presupuesto",
+            "name": "presupuesto_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "concepto_cobro_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "rubros_presupuesto",
+            "name": "concepto_cobro_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "cuenta_contable_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "rubros_presupuesto",
+            "name": "cuenta_contable_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "rubros_presupuesto",
+            "name": "centro_costo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "rubros_presupuesto",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "valores_mensuales!: Vec<Decimal>",
+        "type_info": "NumericArray",
+        "origin": {
+          "Table": {
+            "table": "rubros_presupuesto",
+            "name": "valores_mensuales"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "0f77a58b828442ca2811103d819eb7c8e333805eef482f506672c198574ad16f"
+}

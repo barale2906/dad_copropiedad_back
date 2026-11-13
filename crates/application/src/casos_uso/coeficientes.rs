@@ -1,6 +1,10 @@
 //! Cuadros de coeficientes versionados: crear un borrador (opcionalmente copiando el vigente),
 //! cargar sus coeficientes, revisarlo (suma, diferencia, faltantes) y activarlo.
 //!
+//! Además del cuadro de la copropiedad, cada módulo de contribución (conjuntos mixtos, art. 29;
+//! plan 14) tiene sus propios cuadros con el mismo flujo: suman 1 dentro del módulo y solo
+//! llevan los bienes que contribuyen a él.
+//!
 //! Invariantes (plan 03 §5):
 //! 1. Exactamente un cuadro vigente por copropiedad y su suma es 1 exacta.
 //! 2. `bienes_privados.coeficiente` = coeficiente del cuadro vigente (lo copia la activación).
@@ -14,7 +18,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use domain::{
     ArchivoId, BienPrivadoId, CodigoBienPrivado, Coeficiente, CuadroCoeficientesId, EstadoCuadro,
-    Permiso, RevisionCuadro, TipoCuadro, copropiedad::texto_opcional,
+    ModuloContribucionId, Permiso, RevisionCuadro, TipoCuadro, copropiedad::texto_opcional,
 };
 
 use crate::{
@@ -42,13 +46,16 @@ pub struct NuevoCuadro {
     pub descripcion: Option<String>,
     /// Escritura o acta de la reforma (opcional).
     pub soporte_archivo_id: Option<ArchivoId>,
+    /// Cuadro de un módulo de contribución (`None` = el de la copropiedad).
+    pub modulo: Option<ModuloContribucionId>,
 }
 
 /// Crea un cuadro borrador con la siguiente versión.
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`] sin `bienes_privados.coeficientes.editar`.
+/// [`AppError::SinPermiso`] sin `bienes_privados.coeficientes.editar`;
+/// [`AppError::NoEncontrado`] si el módulo de contribución no existe o está inactivo.
 pub async fn crear_cuadro<U>(
     unidad: &U,
     reloj: &impl Reloj,
@@ -62,10 +69,19 @@ where
     ctx.exigir(Permiso::BienesPrivadosCoeficientesEditar)?;
     let descripcion = texto_opcional("descripcion", nuevo.descripcion.as_deref(), 300)?;
     let mut tx = unidad.iniciar(ctx).await?;
+    if let Some(m) = nuevo.modulo
+        && !tx.modulo_contribucion_activo(m).await?
+    {
+        return Err(AppError::NoEncontrado("módulo de contribución"));
+    }
     let cuadro = CuadroCoeficientes {
         id: CuadroCoeficientesId::nuevo(),
-        version: tx.ultima_version().await? + 1,
-        tipo: TipoCuadro::Copropiedad,
+        version: tx.ultima_version(nuevo.modulo).await? + 1,
+        tipo: match nuevo.modulo {
+            None => TipoCuadro::Copropiedad,
+            Some(_) => TipoCuadro::ModuloContribucion,
+        },
+        modulo_id: nuevo.modulo,
         estado: EstadoCuadro::Borrador,
         descripcion,
         soporte_archivo_id: nuevo.soporte_archivo_id,
@@ -75,7 +91,7 @@ where
     };
     tx.insertar_cuadro(&cuadro).await?;
     if nuevo.copiar_vigente
-        && let Some(vigente) = tx.cuadro_vigente().await?
+        && let Some(vigente) = tx.cuadro_vigente(nuevo.modulo).await?
     {
         let coeficientes = tx.coeficientes(vigente.id).await?;
         tx.reemplazar_coeficientes(cuadro.id, &coeficientes).await?;
@@ -138,7 +154,7 @@ where
         }
     }
     tx.reemplazar_coeficientes(cuadro_id, &coeficientes).await?;
-    let activos = activos(&bienes);
+    let activos = exigidos(&cuadro, &coeficientes, activos(&bienes));
     let revision = RevisionCuadro::revisar(&coeficientes, &activos);
     let detalle = DetalleAuditoria::vacio()
         .con("filas", coeficientes.len())?
@@ -154,6 +170,22 @@ where
 
 fn activos(bienes: &[crate::puertos::copropiedades::BienPrivado]) -> BTreeSet<BienPrivadoId> {
     bienes.iter().filter(|b| b.activo).map(|b| b.id).collect()
+}
+
+/// Bienes que el cuadro debe cubrir: todos los activos en el de la copropiedad; en el de un
+/// módulo, solo los activos que el cuadro trae (los que contribuyen al módulo).
+fn exigidos(
+    cuadro: &CuadroCoeficientes,
+    coeficientes: &BTreeMap<BienPrivadoId, Coeficiente>,
+    activos: BTreeSet<BienPrivadoId>,
+) -> BTreeSet<BienPrivadoId> {
+    match cuadro.modulo_id {
+        None => activos,
+        Some(_) => activos
+            .into_iter()
+            .filter(|b| coeficientes.contains_key(b))
+            .collect(),
+    }
 }
 
 /// Cuadro con sus coeficientes y su revisión contra los bienes privados activos.
@@ -193,7 +225,11 @@ where
         .await?
         .ok_or(AppError::NoEncontrado("cuadro de coeficientes"))?;
     let coeficientes = tx.coeficientes(cuadro_id).await?;
-    let activos = activos(&tx.todos_los_bienes().await?);
+    let activos = exigidos(
+        &cuadro,
+        &coeficientes,
+        activos(&tx.todos_los_bienes().await?),
+    );
     Ok(DetalleCuadro {
         revision: RevisionCuadro::revisar(&coeficientes, &activos),
         cuadro,
@@ -244,12 +280,13 @@ where
     } = detalle(&mut tx, cuadro_id).await?;
     cuadro.estado = cuadro.estado.transicionar(EstadoCuadro::Vigente)?;
     revision.exigir_valido()?;
-    if tx.reuniones_instaladas().await? > 0 {
+    // Las votaciones solo usan el cuadro de la copropiedad.
+    if cuadro.modulo_id.is_none() && tx.reuniones_instaladas().await? > 0 {
         return Err(AppError::Conflicto(
             "hay una reunión instalada: los coeficientes no cambian durante una asamblea".into(),
         ));
     }
-    let anterior = tx.cuadro_vigente().await?.map(|c| c.id);
+    let anterior = tx.cuadro_vigente(cuadro.modulo_id).await?.map(|c| c.id);
     let ahora = reloj.ahora();
     tx.activar(cuadro_id, anterior, ahora, ctx.actor_id).await?;
     let mut detalle = DetalleAuditoria::vacio().con("version", cuadro.version)?;

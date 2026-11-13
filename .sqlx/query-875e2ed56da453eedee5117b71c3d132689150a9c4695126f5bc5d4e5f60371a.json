@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE presupuestos\n             SET estado = 'vigente', vigente_desde = $2, pregunta_id = $3, aprobado_por = $4\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "875e2ed56da453eedee5117b71c3d132689150a9c4695126f5bc5d4e5f60371a"
+}

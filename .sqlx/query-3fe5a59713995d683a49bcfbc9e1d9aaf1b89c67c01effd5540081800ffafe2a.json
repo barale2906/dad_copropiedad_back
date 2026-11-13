@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO rubros_presupuesto (id, tenant_id, presupuesto_id, concepto_cobro_id,\n                     cuenta_contable_id, centro_costo_id, nombre, valores_mensuales)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "NumericArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3fe5a59713995d683a49bcfbc9e1d9aaf1b89c67c01effd5540081800ffafe2a"
+}

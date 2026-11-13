@@ -23,6 +23,7 @@ mod auth;
 mod bienes_privados;
 mod busqueda_proveedores;
 mod campanas_censo;
+mod cartera;
 mod censo;
 mod coeficientes;
 mod comunicados;

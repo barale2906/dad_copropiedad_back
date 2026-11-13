@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cuentas_cobro (id, tenant_id, anio, numero, liquidacion_id,\n                     bien_privado_id, periodo, deudor_persona_id, saldo_anterior, cargos, total,\n                     vencimiento, pronto_pago_hasta, descuento_pronto_pago, referencia_pago,\n                     creada_en)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Int4",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Uuid",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Date",
+        "Date",
+        "Numeric",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "069ef1e7e0869a686ed010c78bf821ab90080aa6f0bd985780cc1b23a6d7fe2b"
+}

@@ -1,0 +1,83 @@
+# ADR 0019 · Vertical contable de la propiedad horizontal (cartera por bien privado)
+
+- **Estado:** aceptada
+- **Fecha:** 2026-11-14
+- **Plan:** `docs/planes/14-contabilidad-vertical-ph.md` (fases 1–4)
+
+## Contexto
+Sobre el núcleo contable (ADR 0017) y la tesorería (ADR 0018), una copropiedad necesita liquidar
+sus expensas (Ley 675 arts. 29, 30, 35, 48, 51), cobrar con cuentas de cobro (las expensas no se
+facturan), llevar la cartera **por bien privado** con imputación de pagos (Código Civil art.
+1653), pronto pago, anticipos y cartera inicial, y cuadrar el sub-libro contra el mayor (CTCP).
+Todo debe montarse sobre lo que la PH ya tiene (bienes privados, cuadros de coeficientes,
+titulares, preguntas de la asamblea, cargos de las reservas) y sobre los recibos y aplicaciones
+de pago de la tesorería, sin maestros paralelos ni asientos fuera del contabilizador.
+
+## Decisión
+- **Módulo `contabilidad_ph`** (`Modulo::ContabilidadPh`, solo en una copropiedad). Sus casos de
+  uso exigen además `contabilidad`. Código propio en `domain::contabilidad_ph`,
+  `casos_uso::contabilidad_ph` y `puertos::cartera`: usan el núcleo; el núcleo no los conoce
+  (las pruebas de fronteras siguen igual).
+- **Eventos y conceptos.** Cada documento entra al contabilizador con un evento `ph.*`
+  (`ph.liquidacion`, `ph.cobro`, `ph.recaudo`, `ph.aplicacion`, `ph.nota_credito`,
+  `ph.pronto_pago`); los conceptos de cada regla son el `concepto_contable` de los conceptos de
+  cobro, que elige el contador (P1). El deudor en el mayor es el **propietario representante**
+  del bien (decisión del usuario); el pagador (tenedor, art. 29) solo recibe la cuenta de cobro y
+  firma el recibo.
+- **Conceptos de cobro** con tipo (`ordinaria`, `fondo_imprevistos`, `extraordinaria`,
+  `uso_bien_comun`, `multa`, `interes_mora`, `dano`, `otro`) y criterio de reparto
+  (`coeficiente`, `modulo`, `valor_fijo`, `por_tipo_bien` con `tarifas_concepto_cobro`, `area`).
+  **Política de cartera** versionada y de solo inserción (vencimiento, redondeo, pronto pago,
+  factor de mora ≤ 1,5, imputación, fondo ≥ 1 % salvo suspensión; pregunta de la asamblea).
+- **Módulos de contribución sin tablas nuevas de coeficientes:** `cuadros_coeficientes` ganó
+  `modulo_id`; el índice de "un vigente" y el de versión pasaron a `(tenant, tipo, módulo)`. El
+  cuadro de un módulo usa el mismo flujo (crear, cargar, revisar, activar), suma 1 dentro del
+  módulo y solo lleva sus bienes; no exige todos los bienes activos ni bloquea por asamblea.
+- **Presupuesto** por versiones (`borrador` → `vigente` → `reemplazado`) con rubros mensuales por
+  concepto y cuenta (inmutables una vez aprobado, trigger). La ejecución presupuestal es un
+  reporte contra el mayor (sin tabla).
+- **Liquidación** en dominio puro (`liquidar`): lo ordinario se reparte con **el método del mayor
+  residuo** (`repartir`), así que cada concepto cuadra al peso; el fondo es el porcentaje de lo
+  ordinario de cada bien en línea aparte; las cuotas extraordinarias siguen su calendario. Usa el
+  presupuesto vigente del año, la política vigente en el periodo y el **cuadro vigente al cierre
+  del periodo** (QA-008). La "liquidación en borrador" es la **vista previa** (no se guarda); al
+  liquidar se guardan la liquidación (una vigente por periodo), las obligaciones (índice único
+  por bien, concepto, periodo y cuota: QA-005), un comprobante con una línea por concepto y
+  deudor, y una **cuenta de cobro** inmutable por bien (consecutivo `CB` por año en
+  `consecutivos`). Los cargos pendientes de las reservas entran en la liquidación como
+  obligaciones (`origen = cargo`). Anular una liquidación sin pagos revierte su comprobante;
+  con pagos se corrige con notas crédito.
+- **Recaudo = recibo de caja de la tesorería** con aplicaciones a obligaciones:
+  `aplicaciones_pago` ganó `obligacion_id` (exactamente un destino). El núcleo solo guarda la
+  aplicación (`AplicacionesExternas` en `registrar_recibo_con`); el **saldo se reconstruye**
+  (valor − ajustes − aplicaciones vigentes, QA-012). La imputación es dominio (intereses antes que
+  capital; el pagador elige solo si la política lo consiente). Lo que sobra queda sin aplicar en
+  el recibo (**anticipo**, sin tabla nueva) y la siguiente liquidación lo aplica si su dueño paga
+  un solo bien. El **pronto pago** es un ajuste con su comprobante cuando el pago llega a tiempo y
+  cubre la deuda menos el descuento; anular el recaudo lo revierte. El núcleo rechaza anular desde
+  la tesorería un recibo que pagó obligaciones: se anula desde la cartera.
+- **Recaudo bancario por referencia:** `bienes_privados.referencia_pago` (numérica, única); los
+  créditos pendientes del extracto (planilla o Asobancaria) con esa referencia se vuelven recaudos
+  conciliados en la misma transacción (`recibo_de_movimiento_en`).
+- **Ajustes** (`ajustes_obligacion`): nota crédito o pronto pago, cada uno con su comprobante;
+  se anulan marcando `anulado_en` y revirtiendo el comprobante.
+- **Cartera inicial** por JSON con vista previa (`solo_validar`): obligaciones `saldo_inicial`
+  sin comprobante (su contabilidad son los saldos iniciales del núcleo); con errores no carga
+  nada. El **cuadre** compara, por cada cuenta que debita la regla de `ph.liquidacion`, el saldo
+  del mayor con la suma de los saldos de las obligaciones.
+- Cinco permisos nuevos: `cartera.ver`, `cartera.configurar`, `cartera.liquidar`,
+  `cartera.ajustar`, `presupuesto.gestionar` (contador y administrador todos; revisor fiscal,
+  consejero y presidente del consejo `cartera.ver`).
+
+## Consecuencias
+- Rutas en `/api/v1/copropiedades/{copropiedad_id}/cartera/…` (etiqueta `cartera`); el PDF de la
+  cuenta de cobro se genera al vuelo con `GeneradorActas::tabla` (la cuenta es inmutable).
+- Desviaciones del plan: la plantilla estándar PH no trae conceptos ni políticas (el núcleo de
+  plantillas no conoce la PH; se crean por la API); la cuenta de cobro no guarda el PDF en
+  `archivos`; la cartera inicial es JSON (no el flujo de `importaciones`); el envío masivo es por
+  correo (la plantilla de WhatsApp `cuenta_cobro` está por aprobar en Meta y el push necesita
+  la cuenta del pagador).
+- Pendiente (plan 14 fases 5–7): intereses de mora con `tasas_referencia`, acuerdos de pago,
+  edades por bien, paz y salvo y certificado de deuda verificables, portal `/yo/bienes`, chat,
+  morosos de la asamblea y restricción de reservas desde la cartera, informes para la asamblea;
+  cobros de zonas comunes facturables (plan 15) y pago por PSE (D8).

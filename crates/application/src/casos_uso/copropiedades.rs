@@ -61,7 +61,7 @@ where
             .iter()
             .any(|c| c.rol == "consejero" || c.rol == "presidente_consejo"),
         bienes_para_consejo: tx.bienes_para_consejo().await?,
-        tiene_cuadro_vigente: tx.cuadro_vigente().await?.is_some(),
+        tiene_cuadro_vigente: tx.cuadro_vigente(None).await?.is_some(),
     };
     Ok(FichaCompleta {
         advertencias: legal.advertencias(),

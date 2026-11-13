@@ -8602,6 +8602,3350 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/modulos-contribucion": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Módulos de contribución por nombre.",
+        "operationId": "listar_modulos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModuloContribucionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Crea un módulo de contribución (conjuntos mixtos, art. 29). Sus coeficientes se cargan como\nun cuadro de coeficientes con `modulo_id`.",
+        "operationId": "crear_modulo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModuloContribucionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Módulo creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuloContribucionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.configurar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El nombre ya existe (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Nombre inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/modulos-contribucion/{modulo_id}": {
+      "put": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Actualiza un módulo de contribución.",
+        "operationId": "actualizar_modulo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "modulo_id",
+            "in": "path",
+            "description": "Módulo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModuloContribucionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Módulo actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModuloContribucionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.configurar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Módulo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El nombre ya existe (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/conceptos": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Conceptos de cobro por código.",
+        "operationId": "listar_conceptos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conceptos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConceptoCobroRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Crea un concepto de cobro (su `concepto_contable` es el de las reglas `ph.*`).",
+        "operationId": "crear_concepto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoConceptoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Concepto creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConceptoCobroRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.configurar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Módulo inexistente o inactivo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Código repetido o ya hay un fondo activo (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Incoherente con su criterio o tipo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/conceptos/{concepto_id}": {
+      "put": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Actualiza un concepto de cobro (código, tipo y criterio no cambian).",
+        "operationId": "actualizar_concepto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "concepto_id",
+            "in": "path",
+            "description": "Concepto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambioConceptoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Concepto actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConceptoCobroRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.configurar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Concepto inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Incoherente con su criterio o tipo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/politicas": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Versiones de la política de cartera, la más reciente primero.",
+        "operationId": "listar_politicas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Versiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PoliticaCarteraRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Crea una versión de la política de cartera (vencimiento, redondeo, pronto pago, mora,\nimputación y fondo de imprevistos).",
+        "operationId": "crear_politica",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaPoliticaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaCarteraRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.configurar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay una versión con esa fecha (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Incumple un tope legal (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/bienes": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Bienes privados con su referencia de pago, pagador y deudor.",
+        "operationId": "listar_bienes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bienes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BienCarteraRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/bienes/{bien_privado_id}/datos-pago": {
+      "put": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Fija la referencia de pago y el pagador (tenedor) de un bien.",
+        "operationId": "guardar_datos_pago",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "path",
+            "description": "Bien privado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosPagoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Bien actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BienCarteraRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.configurar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bien o persona inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Otro bien usa la referencia (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Referencia no numérica (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/presupuestos": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Presupuestos (del año, si se da), del más reciente al más antiguo.",
+        "operationId": "listar_presupuestos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Presupuestos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PresupuestoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Crea un presupuesto en borrador (siguiente versión del año).",
+        "operationId": "crear_presupuesto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoPresupuestoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Borrador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresupuestoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `presupuesto.gestionar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Concepto o cuenta inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rubro inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/presupuestos/{presupuesto_id}": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Presupuesto con sus rubros.",
+        "operationId": "ver_presupuesto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "presupuesto_id",
+            "in": "path",
+            "description": "Presupuesto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Presupuesto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresupuestoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Presupuesto inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/presupuestos/{presupuesto_id}/rubros": {
+      "put": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Reemplaza los rubros de un borrador.",
+        "operationId": "reemplazar_rubros",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "presupuesto_id",
+            "in": "path",
+            "description": "Presupuesto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RubrosPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Borrador actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresupuestoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `presupuesto.gestionar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Presupuesto, concepto o cuenta inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya fue aprobado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rubro inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/presupuestos/{presupuesto_id}/aprobacion": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Aprueba el borrador (asamblea): pasa a vigente y reemplaza la versión vigente del año.",
+        "operationId": "aprobar_presupuesto",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "presupuesto_id",
+            "in": "path",
+            "description": "Presupuesto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AprobacionPresupuestoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Presupuesto vigente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresupuestoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `presupuesto.gestionar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Presupuesto inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No es un borrador (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin rubros o fecha de otro año (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/presupuestos/{presupuesto_id}/ejecucion": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Ejecución presupuestal: lo presupuestado contra el mayor, de enero al mes del corte.",
+        "operationId": "ejecucion_presupuestal",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "presupuesto_id",
+            "in": "path",
+            "description": "Presupuesto",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "hasta_mes",
+            "in": "query",
+            "description": "Mes del corte (1 a 12).",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ejecución",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EjecucionPresupuestalRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Presupuesto inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Mes inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/cuotas-extraordinarias": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Cuotas extraordinarias, las más recientes primero.",
+        "operationId": "listar_cuotas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuotas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CuotaExtraordinariaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Registra una cuota extraordinaria aprobada: se cobra en las liquidaciones de su calendario.",
+        "operationId": "crear_cuota",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaCuotaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Cuota registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CuotaExtraordinariaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.liquidar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Concepto inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Concepto no extraordinario, valor o número de cuotas inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/cuotas-extraordinarias/{cuota_id}/anulacion": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Anula una cuota extraordinaria: las liquidaciones siguientes ya no la cobran.",
+        "operationId": "anular_cuota",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuota_id",
+            "in": "path",
+            "description": "Cuota",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cuota anulada"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.liquidar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cuota inexistente o ya anulada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/liquidaciones/vista-previa": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Calcula la liquidación del periodo sin guardar nada.",
+        "operationId": "vista_previa",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Liquidación calculada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VistaLiquidacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.liquidar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin política, presupuesto o cuadro vigentes, o un concepto no se puede repartir (`validacion`, `regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/liquidaciones": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Liquidaciones por periodo descendente.",
+        "operationId": "listar_liquidaciones",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liquidaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LiquidacionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Liquida y contabiliza el periodo: obligaciones de cada bien, comprobante (evento\n`ph.liquidacion`), una cuenta de cobro por bien y la aplicación de los anticipos.",
+        "operationId": "liquidar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Liquidación contabilizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidadoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.liquidar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El periodo ya está liquidado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin política, presupuesto, cuadro o regla; bienes sin propietario; periodo contable no abierto (`validacion`, `regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/liquidaciones/{liquidacion_id}": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Liquidación con sus obligaciones y su saldo actual.",
+        "operationId": "ver_liquidacion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "liquidacion_id",
+            "in": "path",
+            "description": "Liquidación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liquidación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalleLiquidacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Liquidación inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/liquidaciones/{liquidacion_id}/anulacion": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Anula una liquidación sin pagos ni ajustes (revierte su comprobante; los cargos de reservas\nvuelven a pendientes). Con pagos se corrige con notas crédito.",
+        "operationId": "anular_liquidacion",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "liquidacion_id",
+            "in": "path",
+            "description": "Liquidación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Liquidación anulada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiquidacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.liquidar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Liquidación inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya anulada o con pagos o ajustes (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/liquidaciones/{liquidacion_id}/envio": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Envía por correo cada cuenta de cobro de la liquidación a su pagador.",
+        "operationId": "enviar_cuentas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "liquidacion_id",
+            "in": "path",
+            "description": "Liquidación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas encoladas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvioCuentasRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.liquidar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Liquidación inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Liquidación anulada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/cuentas-cobro": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Cuentas de cobro de una liquidación o de un bien, por número.",
+        "operationId": "listar_cuentas_cobro",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "liquidacion_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas de cobro",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CuentaCobroRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/cuentas-cobro/{cuenta_cobro_id}/pdf": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "La cuenta de cobro en PDF.",
+        "operationId": "cuenta_cobro_pdf",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "cuenta_cobro_id",
+            "in": "path",
+            "description": "Cuenta de cobro",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF de la cuenta de cobro",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cuenta de cobro inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/recaudos": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Registra un pago para un bien: se imputa a sus obligaciones según la política, gana el pronto\npago si llega a tiempo y cubre la deuda, y lo que sobra queda como anticipo.",
+        "operationId": "recaudar",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoRecaudoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Recaudo registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecaudoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.recibos.registrar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bien o cuenta de tesorería inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin política vigente, sin pagador u obligaciones elegidas sin permitirlo (`validacion`, `regla_contable`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/recaudos/por-referencia": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Recauda los créditos pendientes del extracto cuya referencia es la de un bien (archivo\nAsobancaria o extracto con referencia) y los concilia.",
+        "operationId": "recaudar_por_referencia",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecaudoReferenciaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recaudos creados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecaudoExtractoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.conciliar`, `tesoreria.recibos.registrar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/recaudos/{recibo_id}/anulacion": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Anula un recaudo: revierte su pronto pago y anula el recibo (las obligaciones recuperan su\nsaldo).",
+        "operationId": "anular_recaudo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibo_id",
+            "in": "path",
+            "description": "Recibo de caja",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Recibo anulado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReciboRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.recibos.registrar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recibo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya anulado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/recibos/{recibo_id}/aplicacion": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Aplica lo sin aplicar de un recibo (anticipo o por identificar) a las obligaciones de un bien.",
+        "operationId": "aplicar_recibo",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibo_id",
+            "in": "path",
+            "description": "Recibo de caja",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AplicacionBienPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Lo aplicado a cada obligación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AplicadoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tesoreria.recibos.registrar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recibo o bien inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recibo anulado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Recibo de otra persona o nada que aplicar (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/cobros": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Registra un cobro manual (multa, uso de un bien común, daño, otro) con su comprobante (evento\n`ph.cobro`).",
+        "operationId": "registrar_cobro",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoCobroPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Obligación creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObligacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ajustar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bien o concepto inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Concepto que solo se liquida, valor o fechas inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/obligaciones/{obligacion_id}/anulacion": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Anula un cobro manual sin pagos ni ajustes (revierte su comprobante).",
+        "operationId": "anular_cobro",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "obligacion_id",
+            "in": "path",
+            "description": "Obligación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Cobro anulado"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ajustar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Obligación inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No es manual, ya anulada o con pagos o ajustes (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/obligaciones/{obligacion_id}/notas-credito": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Nota crédito sobre una obligación (corrige lo liquidado; evento `ph.nota_credito`).",
+        "operationId": "nota_credito",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "obligacion_id",
+            "in": "path",
+            "description": "Obligación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotaCreditoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Nota crédito registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AjusteRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ajustar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Obligación inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Valor cero o mayor que el saldo, motivo corto (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/inicial": {
+      "post": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Carga (o valida) la cartera inicial por bien, concepto y antigüedad. Con errores no carga\nnada.",
+        "operationId": "cartera_inicial",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CarteraInicialPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado (con errores por fila si los hay)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarteraInicialRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ajustar` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin filas (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/bienes/{bien_privado_id}/estado-cuenta": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Estado de cuenta de un bien al corte.",
+        "operationId": "estado_cuenta",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "bien_privado_id",
+            "in": "path",
+            "description": "Bien privado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "description": "Por defecto, hoy.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadoCuentaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Bien inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/saldos": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Cartera por bien al corte (solo los bienes con saldo).",
+        "operationId": "saldos",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "description": "Por defecto, hoy.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saldos por bien",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SaldoBienRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/cartera/cuadre": {
+      "get": {
+        "tags": [
+          "cartera"
+        ],
+        "summary": "Cuadre de la cartera contra el mayor (cuentas que debita la regla `ph.liquidacion`).",
+        "operationId": "cuadre",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuadre por cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CuadreCuentaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `cartera.ver` o sin los módulos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin regla vigente de la liquidación (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/residencias": {
       "get": {
         "tags": [
@@ -38978,6 +42322,53 @@
           }
         }
       },
+      "AjusteRespuesta": {
+        "type": "object",
+        "description": "Ajuste de una obligación.",
+        "required": [
+          "id",
+          "obligacion_id",
+          "tipo",
+          "valor",
+          "motivo",
+          "comprobante_id",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "obligacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoAjuste"
+          },
+          "valor": {
+            "type": "string"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "comprobante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recibo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "AlertaMascota": {
         "type": "string",
         "description": "Alerta del censo.",
@@ -39258,6 +42649,27 @@
           }
         }
       },
+      "AplicacionBienPeticion": {
+        "type": "object",
+        "description": "Aplicación de lo sin aplicar de un recibo a un bien.",
+        "required": [
+          "bien_privado_id"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Fecha contable (por defecto, hoy)."
+          }
+        }
+      },
       "AplicacionPeticion": {
         "type": "object",
         "description": "Aplicación de un recibo a una factura de venta.",
@@ -39278,10 +42690,9 @@
       },
       "AplicacionRespuesta": {
         "type": "object",
-        "description": "Aplicación de un recibo.",
+        "description": "Aplicación de un recibo: a una factura de venta o a una obligación de la cartera de la PH.",
         "required": [
           "id",
-          "factura_venta_id",
           "valor",
           "aplicada_en"
         ],
@@ -39291,8 +42702,19 @@
             "format": "uuid"
           },
           "factura_venta_id": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
+          },
+          "obligacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Obligación de la cartera de la PH (`/copropiedades/{id}/cartera`)."
           },
           "valor": {
             "type": "string",
@@ -39315,6 +42737,23 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "AplicadoRespuesta": {
+        "type": "object",
+        "description": "Lo aplicado a una obligación.",
+        "required": [
+          "obligacion_id",
+          "valor"
+        ],
+        "properties": {
+          "obligacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string"
           }
         }
       },
@@ -39358,6 +42797,27 @@
             ],
             "format": "date",
             "description": "Fecha contable (por defecto, hoy)."
+          }
+        }
+      },
+      "AprobacionPresupuestoPeticion": {
+        "type": "object",
+        "description": "Aprobación de un presupuesto por la asamblea.",
+        "required": [
+          "vigente_desde"
+        ],
+        "properties": {
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "pregunta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Pregunta de la asamblea que lo aprobó."
           }
         }
       },
@@ -40191,6 +43651,58 @@
           }
         }
       },
+      "BienCarteraRespuesta": {
+        "type": "object",
+        "description": "Bien privado visto por la cartera.",
+        "required": [
+          "id",
+          "codigo",
+          "tipo",
+          "activo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoBienPrivado"
+          },
+          "area_m2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "referencia_pago": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pagador_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "deudor_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Propietario representante: el deudor en el mayor."
+          }
+        }
+      },
       "BienComunDto": {
         "type": "object",
         "description": "Detalle de un bien común.",
@@ -40413,6 +43925,40 @@
           "huesped_temporal",
           "empleado_domestico"
         ]
+      },
+      "CambioConceptoPeticion": {
+        "type": "object",
+        "description": "Cambios de un concepto de cobro (código, tipo y criterio no cambian).",
+        "required": [
+          "nombre",
+          "concepto_contable"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "valor_fijo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tarifas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TarifaDto"
+            }
+          },
+          "genera_interes": {
+            "type": "boolean"
+          },
+          "concepto_contable": {
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
       },
       "CambioContrasenaPeticion": {
         "type": "object",
@@ -41502,6 +45048,54 @@
           }
         }
       },
+      "CarteraInicialPeticion": {
+        "type": "object",
+        "description": "Cartera inicial (deuda por bien, concepto y antigüedad).",
+        "required": [
+          "filas"
+        ],
+        "properties": {
+          "filas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaCarteraInicialPeticion"
+            }
+          },
+          "solo_validar": {
+            "type": "boolean",
+            "description": "Solo valida (vista previa)."
+          }
+        }
+      },
+      "CarteraInicialRespuesta": {
+        "type": "object",
+        "description": "Resultado de la cartera inicial.",
+        "required": [
+          "filas",
+          "total",
+          "errores",
+          "cargada"
+        ],
+        "properties": {
+          "filas": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "total": {
+            "type": "string"
+          },
+          "errores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ErrorFilaRespuesta"
+            },
+            "description": "Con errores no se carga nada."
+          },
+          "cargada": {
+            "type": "boolean"
+          }
+        }
+      },
       "CatalogoRetencionesRespuesta": {
         "type": "object",
         "description": "Catálogo de retenciones de la plataforma: todas las versiones de los conceptos y la UVT.",
@@ -41873,6 +45467,54 @@
           "reserva",
           "hora"
         ]
+      },
+      "CobroPrevistoRespuesta": {
+        "type": "object",
+        "description": "Cobro previsto de un bien.",
+        "required": [
+          "bien_privado_id",
+          "bien_codigo",
+          "concepto_cobro_id",
+          "concepto_codigo",
+          "origen",
+          "valor"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_codigo": {
+            "type": "string"
+          },
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto_codigo": {
+            "type": "string"
+          },
+          "cuota_extraordinaria_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "origen": {
+            "$ref": "#/components/schemas/OrigenObligacion"
+          },
+          "valor": {
+            "type": "string"
+          },
+          "deudor_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
       },
       "CodigoError": {
         "type": "string",
@@ -42291,6 +45933,72 @@
             "format": "date-time"
           },
           "actualizado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ConceptoCobroRespuesta": {
+        "type": "object",
+        "description": "Concepto de cobro.",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "tipo",
+          "criterio",
+          "tarifas",
+          "genera_interes",
+          "concepto_contable",
+          "activo",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoConceptoCobro"
+          },
+          "criterio": {
+            "$ref": "#/components/schemas/CriterioDistribucion"
+          },
+          "modulo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "valor_fijo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tarifas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TarifaDto"
+            }
+          },
+          "genera_interes": {
+            "type": "boolean"
+          },
+          "concepto_contable": {
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "creado_en": {
             "type": "string",
             "format": "date-time"
           }
@@ -43655,6 +47363,17 @@
           }
         }
       },
+      "CriterioDistribucion": {
+        "type": "string",
+        "description": "Cómo se reparte un concepto de cobro entre los bienes privados.",
+        "enum": [
+          "coeficiente",
+          "modulo",
+          "valor_fijo",
+          "por_tipo_bien",
+          "area"
+        ]
+      },
       "CriteriosDto": {
         "type": "object",
         "description": "Puntos de cada prioridad del sorteo.",
@@ -43677,6 +47396,40 @@
           }
         }
       },
+      "CuadreCuentaRespuesta": {
+        "type": "object",
+        "description": "Cuadre de una cuenta de cartera.",
+        "required": [
+          "cuenta_contable_id",
+          "codigo",
+          "nombre",
+          "saldo_mayor",
+          "saldo_cartera",
+          "diferencia"
+        ],
+        "properties": {
+          "cuenta_contable_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "saldo_mayor": {
+            "type": "string"
+          },
+          "saldo_cartera": {
+            "type": "string"
+          },
+          "diferencia": {
+            "type": "string",
+            "description": "Mayor − cartera (cero si cuadra)."
+          }
+        }
+      },
       "CuadroRespuesta": {
         "type": "object",
         "description": "Cuadro de coeficientes.",
@@ -43695,6 +47448,14 @@
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          },
+          "modulo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Módulo de contribución (vacío = el cuadro de la copropiedad)."
           },
           "estado": {
             "$ref": "#/components/schemas/EstadoCuadro",
@@ -43729,6 +47490,85 @@
             "description": "Cuenta que lo activó."
           },
           "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CuentaCobroRespuesta": {
+        "type": "object",
+        "description": "Cuenta de cobro (inmutable).",
+        "required": [
+          "id",
+          "numero",
+          "liquidacion_id",
+          "bien_privado_id",
+          "periodo",
+          "deudor_persona_id",
+          "saldo_anterior",
+          "cargos",
+          "total",
+          "vencimiento",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "numero": {
+            "type": "string",
+            "description": "`CB-2026-00012`."
+          },
+          "liquidacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodo": {
+            "type": "string",
+            "format": "date"
+          },
+          "deudor_persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "saldo_anterior": {
+            "type": "string"
+          },
+          "cargos": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "pronto_pago_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "descuento_pronto_pago": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "referencia_pago": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creada_en": {
             "type": "string",
             "format": "date-time"
           }
@@ -43955,6 +47795,63 @@
             "format": "uuid"
           },
           "registrado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CuotaExtraordinariaRespuesta": {
+        "type": "object",
+        "description": "Cuota extraordinaria.",
+        "required": [
+          "id",
+          "concepto_cobro_id",
+          "finalidad",
+          "valor_total",
+          "numero_cuotas",
+          "primer_periodo",
+          "destinacion_especifica",
+          "estado",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "finalidad": {
+            "type": "string"
+          },
+          "valor_total": {
+            "type": "string"
+          },
+          "numero_cuotas": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "primer_periodo": {
+            "type": "string",
+            "format": "date"
+          },
+          "destinacion_especifica": {
+            "type": "boolean"
+          },
+          "pregunta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoCuotaExtraordinaria"
+          },
+          "creada_en": {
             "type": "string",
             "format": "date-time"
           }
@@ -44240,6 +48137,28 @@
           }
         }
       },
+      "DatosPagoPeticion": {
+        "type": "object",
+        "description": "Datos de pago de un bien privado.",
+        "properties": {
+          "referencia_pago": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Referencia numérica del recaudo (1 a 24 dígitos, única en la copropiedad).",
+            "example": "101"
+          },
+          "pagador_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Quien paga (tenedor); vacío = el propietario representante."
+          }
+        }
+      },
       "DatosTitularRespuesta": {
         "type": "object",
         "description": "Lo que la PH trata del titular (art. 14).",
@@ -44394,6 +48313,25 @@
           "mensaje": {
             "type": "string",
             "description": "Mensaje para mostrar o registrar; nunca incluye detalles internos."
+          }
+        }
+      },
+      "DetalleLiquidacionRespuesta": {
+        "type": "object",
+        "description": "Liquidación con sus obligaciones.",
+        "required": [
+          "liquidacion",
+          "obligaciones"
+        ],
+        "properties": {
+          "liquidacion": {
+            "$ref": "#/components/schemas/LiquidacionRespuesta"
+          },
+          "obligaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ObligacionRespuesta"
+            }
           }
         }
       },
@@ -44860,6 +48798,86 @@
           }
         }
       },
+      "EjecucionPresupuestalRespuesta": {
+        "type": "object",
+        "description": "Ejecución presupuestal de enero al mes del corte.",
+        "required": [
+          "presupuesto_id",
+          "anio",
+          "hasta_mes",
+          "rubros"
+        ],
+        "properties": {
+          "presupuesto_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "hasta_mes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "rubros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EjecucionRubroRespuesta"
+            }
+          }
+        }
+      },
+      "EjecucionRubroRespuesta": {
+        "type": "object",
+        "description": "Ejecución de un rubro.",
+        "required": [
+          "rubro_id",
+          "nombre",
+          "cuenta_contable_id",
+          "cuenta_codigo",
+          "presupuestado",
+          "ejecutado",
+          "diferencia",
+          "presupuesto_anual"
+        ],
+        "properties": {
+          "rubro_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "cuenta_contable_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_codigo": {
+            "type": "string"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "presupuestado": {
+            "type": "string"
+          },
+          "ejecutado": {
+            "type": "string"
+          },
+          "diferencia": {
+            "type": "string"
+          },
+          "presupuesto_anual": {
+            "type": "string"
+          }
+        }
+      },
       "EleccionPeticion": {
         "type": "object",
         "description": "Vigencia de los roles de los elegidos.",
@@ -45233,9 +49251,28 @@
           }
         }
       },
+      "EnvioCuentasRespuesta": {
+        "type": "object",
+        "description": "Resultado del envío de las cuentas de cobro.",
+        "required": [
+          "enviadas",
+          "sin_correo"
+        ],
+        "properties": {
+          "enviadas": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sin_correo": {
+            "type": "integer",
+            "description": "Pagadores sin correo.",
+            "minimum": 0
+          }
+        }
+      },
       "ErrorFilaRespuesta": {
         "type": "object",
-        "description": "Error de una fila (sin el valor de la celda).",
+        "description": "Error de una fila.",
         "required": [
           "fila",
           "mensaje"
@@ -45243,15 +49280,8 @@
         "properties": {
           "fila": {
             "type": "integer",
-            "format": "int32",
-            "description": "Fila como se ve en la hoja de cálculo (la 1 es el encabezado).",
+            "description": "Número de fila desde 1.",
             "minimum": 0
-          },
-          "columna": {
-            "type": [
-              "string",
-              "null"
-            ]
           },
           "mensaje": {
             "type": "string"
@@ -45472,6 +49502,58 @@
           "historico"
         ]
       },
+      "EstadoCuentaRespuesta": {
+        "type": "object",
+        "description": "Estado de cuenta de un bien.",
+        "required": [
+          "bien",
+          "corte",
+          "obligaciones",
+          "pagos",
+          "saldo",
+          "vencido",
+          "anticipos"
+        ],
+        "properties": {
+          "bien": {
+            "$ref": "#/components/schemas/BienCarteraRespuesta"
+          },
+          "corte": {
+            "type": "string",
+            "format": "date"
+          },
+          "obligaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ObligacionRespuesta"
+            }
+          },
+          "pagos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PagoAplicadoRespuesta"
+            }
+          },
+          "saldo": {
+            "type": "string"
+          },
+          "vencido": {
+            "type": "string"
+          },
+          "anticipos": {
+            "type": "string",
+            "description": "Dinero sin aplicar de los recibos del pagador y del deudor."
+          }
+        }
+      },
+      "EstadoCuotaExtraordinaria": {
+        "type": "string",
+        "description": "Estado de una cuota extraordinaria.",
+        "enum": [
+          "vigente",
+          "anulada"
+        ]
+      },
       "EstadoEgreso": {
         "type": "string",
         "description": "Estado de un egreso (registrar → autorizar → pagar).",
@@ -45559,6 +49641,14 @@
           "pagada"
         ]
       },
+      "EstadoLiquidacionExpensas": {
+        "type": "string",
+        "description": "Estado de una liquidación de expensas.",
+        "enum": [
+          "contabilizada",
+          "anulada"
+        ]
+      },
       "EstadoLiquidacionPeticion": {
         "type": "object",
         "description": "Estado nuevo de una liquidación.",
@@ -45611,6 +49701,14 @@
           "pendiente",
           "conciliado",
           "partida_conciliatoria"
+        ]
+      },
+      "EstadoObligacion": {
+        "type": "string",
+        "description": "Estado de una obligación de cobro.",
+        "enum": [
+          "vigente",
+          "anulada"
         ]
       },
       "EstadoOrden": {
@@ -45736,6 +49834,15 @@
             "description": "Obligatorio al anular."
           }
         }
+      },
+      "EstadoPresupuesto": {
+        "type": "string",
+        "description": "Estado de un presupuesto de la PH.",
+        "enum": [
+          "borrador",
+          "vigente",
+          "reemplazado"
+        ]
       },
       "EstadoPuente": {
         "type": "string",
@@ -47171,6 +51278,41 @@
           }
         }
       },
+      "FilaCarteraInicialPeticion": {
+        "type": "object",
+        "description": "Fila de la cartera inicial.",
+        "required": [
+          "bien",
+          "concepto",
+          "periodo",
+          "valor",
+          "vencimiento"
+        ],
+        "properties": {
+          "bien": {
+            "type": "string",
+            "description": "Código del bien privado.",
+            "example": "T1-101"
+          },
+          "concepto": {
+            "type": "string",
+            "description": "Código del concepto de cobro.",
+            "example": "administracion"
+          },
+          "periodo": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor": {
+            "type": "string",
+            "example": "350000"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "FilaCarteraRespuesta": {
         "type": "object",
         "description": "Cartera de un cliente por edades.",
@@ -48562,6 +52704,43 @@
           }
         }
       },
+      "LiquidadoRespuesta": {
+        "type": "object",
+        "description": "Resultado de liquidar.",
+        "required": [
+          "liquidacion",
+          "cuentas_cobro",
+          "anticipos_aplicados",
+          "aviso_fondo",
+          "avisos"
+        ],
+        "properties": {
+          "liquidacion": {
+            "$ref": "#/components/schemas/LiquidacionRespuesta"
+          },
+          "cuentas_cobro": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CuentaCobroRespuesta"
+            }
+          },
+          "anticipos_aplicados": {
+            "type": "integer",
+            "description": "Anticipos que se aplicaron a lo liquidado.",
+            "minimum": 0
+          },
+          "aviso_fondo": {
+            "type": "boolean",
+            "description": "Se avisó que el fondo de imprevistos llegó al 50 % del presupuesto."
+          },
+          "avisos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "LlamadaPeticion": {
         "type": "object",
         "description": "Resultado de la llamada.",
@@ -49289,12 +53468,67 @@
         "description": "Módulo contratable por la copropiedad.",
         "enum": [
           "contabilidad",
+          "contabilidad_ph",
           "bienes_comunes",
           "control_acceso",
           "asambleas",
           "gestion_administrativa",
           "publicidad"
         ]
+      },
+      "ModuloContribucionPeticion": {
+        "type": "object",
+        "description": "Módulo de contribución (crear o actualizar).",
+        "required": [
+          "nombre"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Torre con ascensor"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "activo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ModuloContribucionRespuesta": {
+        "type": "object",
+        "description": "Módulo de contribución. Sus coeficientes son un cuadro con `modulo_id`\n(`/copropiedades/{id}/cuadros-coeficientes`).",
+        "required": [
+          "id",
+          "nombre",
+          "activo",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       },
       "ModuloTerminadoRespuesta": {
         "type": "object",
@@ -49364,13 +53598,14 @@
       },
       "MotivoPeticion": {
         "type": "object",
-        "description": "Motivo opcional.",
+        "description": "Anulación con motivo.",
+        "required": [
+          "motivo"
+        ],
         "properties": {
           "motivo": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string",
+            "example": "Se liquidó con el presupuesto equivocado"
           }
         }
       },
@@ -49617,6 +53852,32 @@
             "items": {
               "$ref": "#/components/schemas/NodoRespuesta"
             }
+          }
+        }
+      },
+      "NotaCreditoPeticion": {
+        "type": "object",
+        "description": "Nota crédito sobre una obligación.",
+        "required": [
+          "valor",
+          "motivo"
+        ],
+        "properties": {
+          "valor": {
+            "type": "string",
+            "example": "20000"
+          },
+          "motivo": {
+            "type": "string",
+            "example": "Rebaja aprobada por el consejo"
+          },
+          "fecha": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Fecha contable (por defecto, hoy)."
           }
         }
       },
@@ -49961,6 +54222,53 @@
           }
         }
       },
+      "NuevaCuotaPeticion": {
+        "type": "object",
+        "description": "Cuota extraordinaria nueva.",
+        "required": [
+          "concepto_cobro_id",
+          "finalidad",
+          "valor_total",
+          "numero_cuotas",
+          "primer_periodo"
+        ],
+        "properties": {
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Concepto de tipo `extraordinaria`."
+          },
+          "finalidad": {
+            "type": "string",
+            "example": "Impermeabilización de cubiertas"
+          },
+          "valor_total": {
+            "type": "string",
+            "example": "30000000"
+          },
+          "numero_cuotas": {
+            "type": "integer",
+            "format": "int32",
+            "example": 6,
+            "minimum": 0
+          },
+          "primer_periodo": {
+            "type": "string",
+            "format": "date",
+            "description": "Mes de la primera cuota."
+          },
+          "destinacion_especifica": {
+            "type": "boolean"
+          },
+          "pregunta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "NuevaEntidadPeticion": {
         "type": "object",
         "description": "Entidad sin vertical por crear.",
@@ -50192,6 +54500,87 @@
           }
         }
       },
+      "NuevaPoliticaPeticion": {
+        "type": "object",
+        "description": "Versión nueva de la política de cartera.",
+        "required": [
+          "vigente_desde",
+          "dia_vencimiento",
+          "redondeo",
+          "factor_mora",
+          "imputacion",
+          "porcentaje_fondo"
+        ],
+        "properties": {
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "dia_vencimiento": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Día del mes en que vence la cuenta de cobro (1 a 28).",
+            "example": 10,
+            "minimum": 0
+          },
+          "redondeo": {
+            "type": "string",
+            "description": "Múltiplo al que se redondea cada cobro (1 = al peso).",
+            "example": "100"
+          },
+          "pronto_pago_porcentaje": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Descuento por pronto pago sobre lo ordinario del periodo (%).",
+            "example": "5"
+          },
+          "pronto_pago_dia": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Día límite del pronto pago (no posterior al vencimiento).",
+            "minimum": 0
+          },
+          "factor_mora": {
+            "type": "string",
+            "description": "Veces el interés bancario corriente (a lo sumo 1,5).",
+            "example": "1.5"
+          },
+          "tasa_mora_mensual": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Tasa mensual inferior aprobada por la asamblea (%)."
+          },
+          "imputacion": {
+            "$ref": "#/components/schemas/OrdenImputacion"
+          },
+          "permite_elegir_obligacion": {
+            "type": "boolean"
+          },
+          "porcentaje_fondo": {
+            "type": "string",
+            "description": "Porcentaje del fondo de imprevistos (al menos 1 salvo suspensión).",
+            "example": "1"
+          },
+          "fondo_suspendido": {
+            "type": "boolean"
+          },
+          "pregunta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Pregunta de la asamblea que la aprobó."
+          }
+        }
+      },
       "NuevaReglaPeticion": {
         "type": "object",
         "description": "Versión nueva de una regla.",
@@ -50344,6 +54733,101 @@
           }
         }
       },
+      "NuevoCobroPeticion": {
+        "type": "object",
+        "description": "Cobro manual.",
+        "required": [
+          "bien_privado_id",
+          "concepto_cobro_id",
+          "valor",
+          "fecha",
+          "vencimiento",
+          "descripcion"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string",
+            "example": "150000"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string",
+            "example": "Multa por ruido (acta del comité de convivencia 12)"
+          }
+        }
+      },
+      "NuevoConceptoPeticion": {
+        "type": "object",
+        "description": "Concepto de cobro nuevo.",
+        "required": [
+          "codigo",
+          "nombre",
+          "tipo",
+          "criterio",
+          "concepto_contable"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "administracion"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Cuota de administración"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoConceptoCobro"
+          },
+          "criterio": {
+            "$ref": "#/components/schemas/CriterioDistribucion"
+          },
+          "modulo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Solo con el criterio `modulo`."
+          },
+          "valor_fijo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Solo con el criterio `valor_fijo` (valor mensual por bien)."
+          },
+          "tarifas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TarifaDto"
+            },
+            "description": "Solo con el criterio `por_tipo_bien`."
+          },
+          "genera_interes": {
+            "type": "boolean"
+          },
+          "concepto_contable": {
+            "type": "string",
+            "description": "Concepto de las reglas `ph.*` del contador (elige las cuentas).",
+            "example": "administracion"
+          }
+        }
+      },
       "NuevoConceptoRetencionPeticion": {
         "type": "object",
         "description": "Versión nueva de un concepto de retención (la anterior del código queda vigente hasta el día\nantes).",
@@ -50422,6 +54906,14 @@
             ],
             "format": "uuid",
             "description": "Escritura o acta de la reforma (opcional)."
+          },
+          "modulo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Módulo de contribución del cuadro (vacío = el cuadro de la copropiedad). El de un módulo\nsuma 1 dentro del módulo y solo lleva los bienes que contribuyen a él."
           }
         }
       },
@@ -50534,6 +55026,33 @@
           }
         }
       },
+      "NuevoPresupuestoPeticion": {
+        "type": "object",
+        "description": "Presupuesto nuevo (borrador).",
+        "required": [
+          "anio",
+          "rubros"
+        ],
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32",
+            "example": 2027
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rubros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RubroPeticion"
+            }
+          }
+        }
+      },
       "NuevoPuntoPeticion": {
         "type": "object",
         "description": "Punto de atención nuevo.",
@@ -50563,6 +55082,65 @@
           },
           "horario": {
             "$ref": "#/components/schemas/HorarioDto"
+          }
+        }
+      },
+      "NuevoRecaudoPeticion": {
+        "type": "object",
+        "description": "Pago recibido para un bien privado.",
+        "required": [
+          "bien_privado_id",
+          "cuenta_tesoreria_id",
+          "fecha",
+          "valor",
+          "medio"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor": {
+            "type": "string",
+            "example": "505000"
+          },
+          "medio": {
+            "$ref": "#/components/schemas/MedioRecibo"
+          },
+          "referencia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "obligaciones_elegidas": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Obligaciones que se cubren primero (solo si la política lo permite)."
           }
         }
       },
@@ -50918,28 +55496,91 @@
       },
       "ObligacionRespuesta": {
         "type": "object",
-        "description": "Obligación periódica.",
+        "description": "Obligación con su saldo.",
         "required": [
           "id",
-          "nombre",
-          "periodicidad_meses",
-          "proxima",
-          "dias_alerta",
-          "activa"
+          "bien_privado_id",
+          "concepto_cobro_id",
+          "concepto_codigo",
+          "concepto_nombre",
+          "concepto_tipo",
+          "periodo",
+          "valor",
+          "vencimiento",
+          "deudor_persona_id",
+          "origen",
+          "estado",
+          "ajustes",
+          "aplicado",
+          "saldo"
         ],
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid"
           },
-          "codigo_sugerido": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto_codigo": {
+            "type": "string"
+          },
+          "concepto_nombre": {
+            "type": "string"
+          },
+          "concepto_tipo": {
+            "$ref": "#/components/schemas/TipoConceptoCobro"
+          },
+          "periodo": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor": {
+            "type": "string"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "deudor_persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "origen": {
+            "$ref": "#/components/schemas/OrigenObligacion"
+          },
+          "liquidacion_id": {
             "type": [
               "string",
               "null"
-            ]
+            ],
+            "format": "uuid"
           },
-          "nombre": {
-            "type": "string"
+          "cuota_extraordinaria_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "cuenta_cobro_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "comprobante_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           },
           "descripcion": {
             "type": [
@@ -50947,36 +55588,17 @@
               "null"
             ]
           },
-          "periodicidad_meses": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
+          "estado": {
+            "$ref": "#/components/schemas/EstadoObligacion"
           },
-          "proxima": {
-            "type": "string",
-            "format": "date"
+          "ajustes": {
+            "type": "string"
           },
-          "dias_alerta": {
-            "type": "integer",
-            "format": "int32",
-            "minimum": 0
+          "aplicado": {
+            "type": "string"
           },
-          "activo_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "responsable_organizacion_id": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "uuid"
-          },
-          "activa": {
-            "type": "boolean"
+          "saldo": {
+            "type": "string"
           }
         }
       },
@@ -51039,6 +55661,14 @@
             "description": "Integrantes de la plancha (elecciones)."
           }
         }
+      },
+      "OrdenImputacion": {
+        "type": "string",
+        "description": "Orden en que un pago cubre las obligaciones (intereses antes que capital).",
+        "enum": [
+          "intereses_primero",
+          "por_antiguedad"
+        ]
       },
       "OrdenPeticion": {
         "type": "object",
@@ -51321,6 +55951,16 @@
             "format": "uuid"
           }
         }
+      },
+      "OrigenObligacion": {
+        "type": "string",
+        "description": "De dónde viene una obligación de cobro.",
+        "enum": [
+          "liquidacion",
+          "cargo",
+          "saldo_inicial",
+          "manual"
+        ]
       },
       "OrigenOrden": {
         "type": "string",
@@ -53770,6 +58410,33 @@
           }
         }
       },
+      "PagoAplicadoRespuesta": {
+        "type": "object",
+        "description": "Pago aplicado a una obligación.",
+        "required": [
+          "recibo_id",
+          "fecha",
+          "obligacion_id",
+          "valor"
+        ],
+        "properties": {
+          "recibo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "obligacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string"
+          }
+        }
+      },
       "PagoEgresoPeticion": {
         "type": "object",
         "description": "Pago de un egreso autorizado.",
@@ -54013,6 +58680,20 @@
           }
         }
       },
+      "PeriodoPeticion": {
+        "type": "object",
+        "description": "Periodo a liquidar (cualquier día del mes).",
+        "required": [
+          "periodo"
+        ],
+        "properties": {
+          "periodo": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-01"
+          }
+        }
+      },
       "PeriodoRespuesta": {
         "type": "object",
         "description": "Periodo contable (mes 13 = cierre anual).",
@@ -54155,6 +58836,11 @@
           "tesoreria.facturas_proveedor.gestionar",
           "tesoreria.facturas_venta.gestionar",
           "tesoreria.conciliar",
+          "cartera.ver",
+          "cartera.configurar",
+          "cartera.liquidar",
+          "cartera.ajustar",
+          "presupuesto.gestionar",
           "directorio.ver",
           "directorio.resenar",
           "directorio.compartir"
@@ -54765,6 +59451,92 @@
           }
         }
       },
+      "PoliticaCarteraRespuesta": {
+        "type": "object",
+        "description": "Versión de la política de cartera.",
+        "required": [
+          "id",
+          "version",
+          "vigente_desde",
+          "dia_vencimiento",
+          "redondeo",
+          "factor_mora",
+          "imputacion",
+          "permite_elegir_obligacion",
+          "porcentaje_fondo",
+          "fondo_suspendido",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "dia_vencimiento": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "redondeo": {
+            "type": "string"
+          },
+          "pronto_pago_porcentaje": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pronto_pago_dia": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "minimum": 0
+          },
+          "factor_mora": {
+            "type": "string"
+          },
+          "tasa_mora_mensual": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "imputacion": {
+            "$ref": "#/components/schemas/OrdenImputacion"
+          },
+          "permite_elegir_obligacion": {
+            "type": "boolean"
+          },
+          "porcentaje_fondo": {
+            "type": "string"
+          },
+          "fondo_suspendido": {
+            "type": "boolean"
+          },
+          "pregunta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PoliticaDto": {
         "type": "object",
         "description": "Política de reserva de un recurso. Montos en pesos (texto decimal).",
@@ -55360,6 +60132,70 @@
           }
         }
       },
+      "PresupuestoRespuesta": {
+        "type": "object",
+        "description": "Presupuesto con sus rubros.",
+        "required": [
+          "id",
+          "anio",
+          "version",
+          "estado",
+          "creado_en",
+          "total_anual",
+          "rubros"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPresupuesto"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pregunta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total_anual": {
+            "type": "string"
+          },
+          "rubros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RubroRespuesta"
+            }
+          }
+        }
+      },
       "PrioridadTicket": {
         "type": "string",
         "description": "Prioridad de atención.",
@@ -55908,6 +60744,86 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "RecaudoExtractoRespuesta": {
+        "type": "object",
+        "description": "Resultado del recaudo desde el extracto.",
+        "required": [
+          "recaudos",
+          "sin_identificar"
+        ],
+        "properties": {
+          "recaudos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecaudoRespuesta"
+            }
+          },
+          "sin_identificar": {
+            "type": "integer",
+            "description": "Créditos cuya referencia no es de ningún bien.",
+            "minimum": 0
+          }
+        }
+      },
+      "RecaudoReferenciaPeticion": {
+        "type": "object",
+        "description": "Recaudo desde el extracto por referencia de pago.",
+        "required": [
+          "cuenta_tesoreria_id",
+          "desde",
+          "hasta"
+        ],
+        "properties": {
+          "cuenta_tesoreria_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "RecaudoRespuesta": {
+        "type": "object",
+        "description": "Resultado de un recaudo.",
+        "required": [
+          "bien_privado_id",
+          "recibo",
+          "aplicado",
+          "anticipo"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recibo": {
+            "$ref": "#/components/schemas/ReciboRespuesta"
+          },
+          "aplicado": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AplicadoRespuesta"
+            }
+          },
+          "anticipo": {
+            "type": "string",
+            "description": "Lo que quedó sin aplicar en el recibo."
+          },
+          "descuento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Descuento por pronto pago ganado."
           }
         }
       },
@@ -58026,6 +62942,138 @@
           }
         }
       },
+      "RubroPeticion": {
+        "type": "object",
+        "description": "Rubro de un presupuesto.",
+        "required": [
+          "concepto_cobro_id",
+          "cuenta_contable_id",
+          "nombre",
+          "valores_mensuales"
+        ],
+        "properties": {
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Concepto ordinario que lo financia."
+          },
+          "cuenta_contable_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cuenta contra la que se mide la ejecución."
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Vigilancia"
+          },
+          "valores_mensuales": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Enero a diciembre (12 valores)."
+          }
+        }
+      },
+      "RubroRespuesta": {
+        "type": "object",
+        "description": "Rubro de un presupuesto.",
+        "required": [
+          "id",
+          "concepto_cobro_id",
+          "cuenta_contable_id",
+          "nombre",
+          "valores_mensuales",
+          "valor_anual"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cuenta_contable_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "valores_mensuales": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "valor_anual": {
+            "type": "string"
+          }
+        }
+      },
+      "RubrosPeticion": {
+        "type": "object",
+        "description": "Rubros de un borrador.",
+        "required": [
+          "rubros"
+        ],
+        "properties": {
+          "rubros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RubroPeticion"
+            }
+          }
+        }
+      },
+      "SaldoBienRespuesta": {
+        "type": "object",
+        "description": "Saldo de un bien.",
+        "required": [
+          "bien_privado_id",
+          "codigo",
+          "saldo",
+          "vencido"
+        ],
+        "properties": {
+          "bien_privado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "deudor_persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "saldo": {
+            "type": "string"
+          },
+          "vencido": {
+            "type": "string"
+          }
+        }
+      },
       "SaldosInicialesPeticion": {
         "type": "object",
         "description": "Saldos iniciales.",
@@ -59001,6 +64049,14 @@
           "sector"
         ]
       },
+      "TipoAjuste": {
+        "type": "string",
+        "description": "Clase de ajuste que reduce una obligación.",
+        "enum": [
+          "nota_credito",
+          "pronto_pago"
+        ]
+      },
       "TipoArchivo": {
         "type": "string",
         "description": "Tipos de archivo admitidos (lista blanca). Se detecta por los primeros bytes del contenido (*magic bytes*), **nunca** por la extensión ni por el `Content-Type` que envía el cliente.",
@@ -59125,6 +64181,20 @@
             "type": "boolean"
           }
         }
+      },
+      "TipoConceptoCobro": {
+        "type": "string",
+        "description": "Clase de concepto de cobro de la cartera de la PH.",
+        "enum": [
+          "ordinaria",
+          "fondo_imprevistos",
+          "extraordinaria",
+          "uso_bien_comun",
+          "multa",
+          "interes_mora",
+          "dano",
+          "otro"
+        ]
       },
       "TipoCopropiedad": {
         "type": "string",
@@ -59649,6 +64719,31 @@
             "type": "string",
             "format": "date-time",
             "description": "Después de esto hay que volver a iniciar sesión (30 días; 12 h en equipo compartido)."
+          }
+        }
+      },
+      "TotalConceptoRespuesta": {
+        "type": "object",
+        "description": "Total de un concepto.",
+        "required": [
+          "concepto_cobro_id",
+          "codigo",
+          "nombre",
+          "total"
+        ],
+        "properties": {
+          "concepto_cobro_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
           }
         }
       },
@@ -60242,6 +65337,62 @@
           }
         }
       },
+      "VistaLiquidacionRespuesta": {
+        "type": "object",
+        "description": "Vista previa de una liquidación (no guarda nada).",
+        "required": [
+          "periodo",
+          "vencimiento",
+          "politica_id",
+          "total",
+          "por_concepto",
+          "cobros",
+          "avisos"
+        ],
+        "properties": {
+          "periodo": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "politica_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "presupuesto_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "total": {
+            "type": "string"
+          },
+          "por_concepto": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TotalConceptoRespuesta"
+            }
+          },
+          "cobros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CobroPrevistoRespuesta"
+            }
+          },
+          "avisos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Advertencias que no impiden liquidar."
+          }
+        }
+      },
       "VistaPreviaExtractoRespuesta": {
         "type": "object",
         "description": "Vista previa del extracto.",
@@ -60493,6 +65644,10 @@
     {
       "name": "tesoreria",
       "description": "Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir"
+    },
+    {
+      "name": "cartera",
+      "description": "Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor"
     }
   ]
 }

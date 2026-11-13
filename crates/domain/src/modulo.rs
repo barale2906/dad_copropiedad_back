@@ -14,6 +14,9 @@ pub enum Modulo {
     /// Contabilidad base para cualquier entidad (plan 12): plan de cuentas, comprobantes,
     /// periodos, reportes y estados financieros.
     Contabilidad,
+    /// Contabilidad de la propiedad horizontal (plan 14): presupuesto, liquidación de expensas,
+    /// cartera por bien privado y recaudo. Exige además [`Modulo::Contabilidad`].
+    ContabilidadPh,
     /// Bienes comunes, reservas y parqueaderos (plan 04).
     BienesComunes,
     /// Control de acceso de residentes, visitantes y vehículos (plan 05).
@@ -28,6 +31,7 @@ pub enum Modulo {
 
 enum_texto!(Modulo {
     Contabilidad => "contabilidad",
+    ContabilidadPh => "contabilidad_ph",
     BienesComunes => "bienes_comunes",
     ControlAcceso => "control_acceso",
     Asambleas => "asambleas",
@@ -40,7 +44,8 @@ impl Modulo {
     pub fn exige_copropiedad(self) -> bool {
         match self {
             Modulo::Contabilidad => false,
-            Modulo::BienesComunes
+            Modulo::ContabilidadPh
+            | Modulo::BienesComunes
             | Modulo::ControlAcceso
             | Modulo::Asambleas
             | Modulo::GestionAdministrativa

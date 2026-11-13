@@ -20,6 +20,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(super::ficha::rutas())
         .merge(super::bienes_privados::rutas())
         .merge(super::coeficientes::rutas())
+        .merge(super::cartera::rutas())
         .merge(super::censo::rutas())
         .merge(super::campanas_censo::rutas())
         .merge(super::reservas::rutas())

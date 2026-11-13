@@ -1,0 +1,146 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, concepto_cobro_id, finalidad, valor_total, numero_cuotas, primer_periodo,\n                    destinacion_especifica, pregunta_id, estado, creada_por, creada_en\n             FROM cuotas_extraordinarias ORDER BY creada_en DESC, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "concepto_cobro_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "concepto_cobro_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "finalidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "finalidad"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "valor_total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "valor_total"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "numero_cuotas",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "numero_cuotas"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "primer_periodo",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "primer_periodo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "destinacion_especifica",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "destinacion_especifica"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "pregunta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "pregunta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cuotas_extraordinarias",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "5d80ac2e02207498906073bb0bbdbc1ca1d1fefbfbd7d0d564eeb24a0055e061"
+}

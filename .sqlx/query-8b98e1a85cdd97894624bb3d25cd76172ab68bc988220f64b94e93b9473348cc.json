@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, bien_privado_id, concepto, descripcion, valor FROM cargos_pendientes\n             WHERE estado = 'pendiente' ORDER BY creado_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cargos_pendientes",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "bien_privado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cargos_pendientes",
+            "name": "bien_privado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "concepto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cargos_pendientes",
+            "name": "concepto"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cargos_pendientes",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "cargos_pendientes",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "8b98e1a85cdd97894624bb3d25cd76172ab68bc988220f64b94e93b9473348cc"
+}

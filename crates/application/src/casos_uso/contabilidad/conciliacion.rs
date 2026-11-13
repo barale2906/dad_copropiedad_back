@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 use chrono::{Duration, NaiveDate};
 use domain::{
     ClasificacionArchivo, ComprobanteId, ConciliacionId, CuentaTesoreriaId, ExtractoBancarioId,
-    MovimientoExtractoId, NombreArchivo, Permiso, TipoArchivo,
+    MovimientoExtractoId, NombreArchivo, Permiso, PersonaId, TipoArchivo,
     contabilidad::{
         Monto,
         extracto::{
@@ -25,7 +25,7 @@ use domain::{
 use rust_decimal::Decimal;
 
 use super::prelude::*;
-use super::tesoreria::{NuevoRecibo, abrir, registrar_recibo_en};
+use super::tesoreria::{AplicacionesExternas, NuevoRecibo, abrir, registrar_recibo_con};
 use super::{TxTesoreria, texto};
 use crate::{
     AppError, AppResult, Contexto,
@@ -638,8 +638,26 @@ where
     U::Transaccion: TxTesoreria,
 {
     ctx.exigir(Permiso::TesoreriaRecibosRegistrar)?;
-    let descripcion = texto("descripcion", descripcion, 300)?;
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TesoreriaConciliar).await?;
+    let recibo = recibo_de_movimiento_en(
+        &mut tx,
+        reloj,
+        ctx,
+        movimiento,
+        None,
+        descripcion,
+        AplicacionesExternas::default(),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(recibo)
+}
+
+/// Crédito pendiente del extracto, bloqueado para conciliar.
+pub(crate) async fn credito_pendiente<T: TxTesoreria>(
+    tx: &mut T,
+    movimiento: MovimientoExtractoId,
+) -> AppResult<MovimientoExtracto> {
     let m = tx
         .movimientos_por_id(&[movimiento])
         .await?
@@ -647,17 +665,33 @@ where
         .ok_or(AppError::NoEncontrado("movimiento del extracto"))?;
     if m.valor <= Decimal::ZERO || m.estado == EstadoMovimientoExtracto::Conciliado {
         return Err(validacion(
-            "solo un crédito (entrada de dinero) pendiente genera un recibo no identificado",
+            "solo un crédito (entrada de dinero) pendiente genera un recibo",
         ));
     }
-    let cuenta = cuenta_existente(&mut tx, m.cuenta_tesoreria_id).await?;
-    let recibo = registrar_recibo_en(
-        &mut tx,
+    Ok(m)
+}
+
+/// Registra el recibo de un crédito del extracto (del pagador dado, o no identificado) con las
+/// aplicaciones de una vertical, y lo concilia con el movimiento en la misma transacción.
+pub(crate) async fn recibo_de_movimiento_en<T: TxTesoreria>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    movimiento: MovimientoExtractoId,
+    persona: Option<PersonaId>,
+    descripcion: &str,
+    externas: AplicacionesExternas,
+) -> AppResult<ReciboCaja> {
+    let descripcion = texto("descripcion", descripcion, 300)?;
+    let m = credito_pendiente(tx, movimiento).await?;
+    let cuenta = cuenta_existente(tx, m.cuenta_tesoreria_id).await?;
+    let recibo = registrar_recibo_con(
+        tx,
         reloj,
         ctx,
         NuevoRecibo {
             cuenta_tesoreria: cuenta.id,
-            persona: None,
+            persona,
             fecha: m.fecha,
             valor: Monto::new(m.valor)?,
             medio: MedioRecibo::Consignacion,
@@ -666,6 +700,7 @@ where
             soporte_archivo_id: None,
             aplicaciones: Vec::new(),
         },
+        externas,
     )
     .await?;
     let orden = tx
@@ -681,7 +716,7 @@ where
             validacion("la regla del recibo no lleva el dinero a la cuenta del banco")
         })?;
     conciliar_manual_en(
-        &mut tx,
+        tx,
         reloj,
         ctx,
         cuenta.id,
@@ -689,7 +724,6 @@ where
         vec![(recibo.comprobante_id, orden)],
     )
     .await?;
-    tx.confirmar().await?;
     Ok(recibo)
 }
 

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT coalesce(sum(o.valor), 0) AS \"t!\"\n               FROM obligaciones o JOIN conceptos_cobro c ON c.id = o.concepto_cobro_id\n               WHERE o.estado = 'vigente' AND c.tipo = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "t!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "95b54eb0c4d97e360d901a46bcc6bfa5b67a914d856327938a3649196465a03d"
+}

@@ -10,7 +10,8 @@ use application::{
 };
 use chrono::{DateTime, Utc};
 use domain::{
-    ArchivoId, BienPrivadoId, Coeficiente, CuadroCoeficientesId, CuentaId, EstadoCuadro, TipoCuadro,
+    ArchivoId, BienPrivadoId, Coeficiente, CuadroCoeficientesId, CuentaId, EstadoCuadro,
+    ModuloContribucionId, TipoCuadro,
 };
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -21,6 +22,7 @@ struct FilaCuadro {
     id: Uuid,
     version: i32,
     tipo: String,
+    modulo_id: Option<Uuid>,
     estado: String,
     descripcion: Option<String>,
     soporte_archivo_id: Option<Uuid>,
@@ -37,6 +39,7 @@ impl TryFrom<FilaCuadro> for CuadroCoeficientes {
             id: CuadroCoeficientesId::from_uuid(f.id),
             version: u32::try_from(f.version).unwrap_or(0),
             tipo: TipoCuadro::try_from(f.tipo.as_str())?,
+            modulo_id: f.modulo_id.map(ModuloContribucionId::from_uuid),
             estado: EstadoCuadro::try_from(f.estado.as_str())?,
             descripcion: f.descripcion,
             soporte_archivo_id: f.soporte_archivo_id.map(ArchivoId::from_uuid),
@@ -51,18 +54,20 @@ impl TransaccionPg {
     async fn cuadros_donde(
         &mut self,
         id: Option<Uuid>,
-        solo_vigente: bool,
+        vigente_de: Option<Option<ModuloContribucionId>>,
     ) -> AppResult<Vec<CuadroCoeficientes>> {
+        let modulo = vigente_de.flatten().map(ModuloContribucionId::as_uuid);
         sqlx::query_as!(
             FilaCuadro,
-            "SELECT id, version, tipo, estado, descripcion, soporte_archivo_id, vigente_desde,
-                    aprobado_por, creado_en
+            "SELECT id, version, tipo, modulo_id, estado, descripcion, soporte_archivo_id,
+                    vigente_desde, aprobado_por, creado_en
              FROM cuadros_coeficientes
              WHERE ($1::uuid IS NULL OR id = $1)
-               AND (NOT $2 OR (estado = 'vigente' AND tipo = 'copropiedad'))
-             ORDER BY version DESC",
+               AND (NOT $2 OR (estado = 'vigente' AND modulo_id IS NOT DISTINCT FROM $3))
+             ORDER BY modulo_id NULLS FIRST, version DESC",
             id,
-            solo_vigente,
+            vigente_de.is_some(),
+            modulo,
         )
         .fetch_all(&mut *self.tx)
         .await
@@ -75,21 +80,25 @@ impl TransaccionPg {
 
 impl RepositorioCoeficientes for TransaccionPg {
     async fn cuadros(&mut self) -> AppResult<Vec<CuadroCoeficientes>> {
-        self.cuadros_donde(None, false).await
+        self.cuadros_donde(None, None).await
     }
 
     async fn cuadro(&mut self, id: CuadroCoeficientesId) -> AppResult<Option<CuadroCoeficientes>> {
-        Ok(self.cuadros_donde(Some(id.as_uuid()), false).await?.pop())
+        Ok(self.cuadros_donde(Some(id.as_uuid()), None).await?.pop())
     }
 
-    async fn cuadro_vigente(&mut self) -> AppResult<Option<CuadroCoeficientes>> {
-        Ok(self.cuadros_donde(None, true).await?.pop())
+    async fn cuadro_vigente(
+        &mut self,
+        modulo: Option<ModuloContribucionId>,
+    ) -> AppResult<Option<CuadroCoeficientes>> {
+        Ok(self.cuadros_donde(None, Some(modulo)).await?.pop())
     }
 
-    async fn ultima_version(&mut self) -> AppResult<u32> {
+    async fn ultima_version(&mut self, modulo: Option<ModuloContribucionId>) -> AppResult<u32> {
         let v = sqlx::query_scalar!(
             r#"SELECT coalesce(max(version), 0) AS "v!" FROM cuadros_coeficientes
-               WHERE tipo = 'copropiedad'"#
+               WHERE modulo_id IS NOT DISTINCT FROM $1"#,
+            modulo.map(ModuloContribucionId::as_uuid),
         )
         .fetch_one(&mut *self.tx)
         .await
@@ -97,11 +106,25 @@ impl RepositorioCoeficientes for TransaccionPg {
         Ok(u32::try_from(v).unwrap_or(0))
     }
 
+    async fn modulo_contribucion_activo(
+        &mut self,
+        modulo: ModuloContribucionId,
+    ) -> AppResult<bool> {
+        sqlx::query_scalar!(
+            r#"SELECT EXISTS (SELECT 1 FROM modulos_contribucion WHERE id = $1 AND activo) AS "e!""#,
+            modulo.as_uuid(),
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
     async fn insertar_cuadro(&mut self, c: &CuadroCoeficientes) -> AppResult<()> {
         sqlx::query!(
             "INSERT INTO cuadros_coeficientes
-                 (id, tenant_id, version, tipo, estado, descripcion, soporte_archivo_id, creado_en)
-             VALUES ($1, $2, $3, $4, 'borrador', $5, $6, $7)",
+                 (id, tenant_id, version, tipo, modulo_id, estado, descripcion, soporte_archivo_id,
+                  creado_en)
+             VALUES ($1, $2, $3, $4, $8, 'borrador', $5, $6, $7)",
             c.id.as_uuid(),
             self.ctx.tenant_id.as_uuid(),
             i32::try_from(c.version).unwrap_or(i32::MAX),
@@ -109,6 +132,7 @@ impl RepositorioCoeficientes for TransaccionPg {
             c.descripcion,
             c.soporte_archivo_id.map(ArchivoId::as_uuid),
             c.creado_en,
+            c.modulo_id.map(ModuloContribucionId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await

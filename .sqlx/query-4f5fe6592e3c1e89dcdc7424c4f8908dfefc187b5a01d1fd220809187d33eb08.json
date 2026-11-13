@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO conceptos_cobro (id, tenant_id, codigo, nombre, tipo, criterio, modulo_id,\n                 valor_fijo, genera_interes, concepto_contable, activo, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n             ON CONFLICT (id) DO UPDATE\n             SET nombre = EXCLUDED.nombre, valor_fijo = EXCLUDED.valor_fijo,\n                 genera_interes = EXCLUDED.genera_interes,\n                 concepto_contable = EXCLUDED.concepto_contable, activo = EXCLUDED.activo",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Numeric",
+        "Bool",
+        "Text",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4f5fe6592e3c1e89dcdc7424c4f8908dfefc187b5a01d1fd220809187d33eb08"
+}

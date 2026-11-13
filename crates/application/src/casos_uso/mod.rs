@@ -14,6 +14,7 @@ pub mod chat;
 pub mod coeficientes;
 pub mod comunicados;
 pub mod contabilidad;
+pub mod contabilidad_ph;
 pub mod conversaciones;
 pub mod copropiedades;
 pub mod despachar_salida;

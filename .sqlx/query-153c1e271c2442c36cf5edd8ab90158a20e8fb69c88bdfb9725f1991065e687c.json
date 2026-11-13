@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cuotas_extraordinarias (id, tenant_id, concepto_cobro_id, finalidad,\n                 valor_total, numero_cuotas, primer_periodo, destinacion_especifica, pregunta_id,\n                 estado, creada_por, creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'vigente', $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Int2",
+        "Date",
+        "Bool",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "153c1e271c2442c36cf5edd8ab90158a20e8fb69c88bdfb9725f1991065e687c"
+}
