@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO lineas_factura_proveedor (tenant_id, factura_id, orden, descripcion,\n                     cuenta_id, centro_costo_id, base, iva, iva_descontable)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Numeric",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7319bb208c449c875cf702a61b1c9a1b86a4a24c9c3c920a7f49a99f618cb287"
+}

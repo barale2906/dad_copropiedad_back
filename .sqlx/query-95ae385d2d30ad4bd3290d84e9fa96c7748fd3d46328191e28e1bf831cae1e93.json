@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT factura_proveedor_id, valor FROM egreso_facturas\n             WHERE egreso_id = $1 ORDER BY factura_proveedor_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "factura_proveedor_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "egreso_facturas",
+            "name": "factura_proveedor_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "egreso_facturas",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "95ae385d2d30ad4bd3290d84e9fa96c7748fd3d46328191e28e1bf831cae1e93"
+}

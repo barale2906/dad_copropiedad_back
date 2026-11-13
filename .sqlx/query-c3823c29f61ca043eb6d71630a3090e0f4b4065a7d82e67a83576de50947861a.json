@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recibos_caja SET estado = 'anulado', motivo_anulacion = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c3823c29f61ca043eb6d71630a3090e0f4b4065a7d82e67a83576de50947861a"
+}

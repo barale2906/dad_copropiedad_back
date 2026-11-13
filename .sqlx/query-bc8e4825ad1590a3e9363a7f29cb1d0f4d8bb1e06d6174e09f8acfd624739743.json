@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT conciliacion_id, movimiento_id, comprobante_id, linea_orden\n             FROM conciliacion_partidas WHERE conciliacion_id = ANY($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "conciliacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conciliacion_partidas",
+            "name": "conciliacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "movimiento_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conciliacion_partidas",
+            "name": "movimiento_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "conciliacion_partidas",
+            "name": "comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "linea_orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "conciliacion_partidas",
+            "name": "linea_orden"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "bc8e4825ad1590a3e9363a7f29cb1d0f4d8bb1e06d6174e09f8acfd624739743"
+}

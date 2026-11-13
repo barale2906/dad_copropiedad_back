@@ -61,6 +61,8 @@ pub const ETIQUETA_PUBLICIDAD: &str = "publicidad";
 pub const ETIQUETA_PLATAFORMA: &str = "plataforma";
 /// Etiqueta de las rutas del núcleo contable (entidades, plan de cuentas, comprobantes, reportes).
 pub const ETIQUETA_CONTABILIDAD: &str = "contabilidad";
+/// Etiqueta de tesorería, cuentas por pagar, facturas de venta y conciliación (plan 13).
+pub const ETIQUETA_TESORERIA: &str = "tesoreria";
 
 /// Registra el esquema de seguridad `bearer` (token de acceso opaco).
 struct EsquemaBearer;
@@ -180,6 +182,11 @@ impl utoipa::Modify for EsquemaBearer {
         (name = ETIQUETA_CONTABILIDAD, description = "Contabilidad de cualquier entidad: configuración, \
             plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, \
             plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)"),
+        (name = ETIQUETA_TESORERIA, description = "Tesorería de cualquier entidad: cuentas de \
+            tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de \
+            proveedores con retenciones, facturas de venta y cartera, extractos y conciliación \
+            bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza \
+            con la regla de su evento; anular es revertir"),
     ),
     modifiers(&EsquemaBearer),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))

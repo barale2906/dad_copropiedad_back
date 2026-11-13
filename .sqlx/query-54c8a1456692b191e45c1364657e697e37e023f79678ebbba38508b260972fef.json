@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE facturas_proveedor SET estado = $2, pagado = $3, comprobante_id = $4,\n                 motivo_anulacion = $5\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "54c8a1456692b191e45c1364657e697e37e023f79678ebbba38508b260972fef"
+}

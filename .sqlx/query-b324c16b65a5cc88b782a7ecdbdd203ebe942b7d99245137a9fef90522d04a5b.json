@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT anio, valor, fuente FROM uvt ORDER BY anio DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "anio",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "uvt",
+            "name": "anio"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "uvt",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "fuente",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "uvt",
+            "name": "fuente"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b324c16b65a5cc88b782a7ecdbdd203ebe942b7d99245137a9fef90522d04a5b"
+}

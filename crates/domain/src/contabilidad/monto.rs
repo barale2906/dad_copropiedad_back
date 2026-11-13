@@ -7,15 +7,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::DominioError;
 
-/// Valor monetario en la moneda funcional (COP): `Decimal` con dos decimales como máximo y
-/// nunca negativo. Las caras del asiento (débito o crédito) dan el signo; un monto no lo lleva.
+/// Valor monetario en la moneda funcional (COP): `Decimal` con exactamente dos decimales
+/// (`"1500.00"`, igual que `NUMERIC(18,2)`) y nunca negativo. Las caras del asiento (débito o
+/// crédito) dan el signo; un monto no lo lleva.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize)]
 #[serde(transparent)]
 pub struct Monto(Decimal);
 
 impl Monto {
     /// Cero.
-    pub const CERO: Monto = Monto(Decimal::ZERO);
+    pub const CERO: Monto = Monto(Decimal::from_parts(0, 0, 0, false, 2));
 
     /// Valida el monto.
     ///
@@ -35,7 +36,9 @@ impl Monto {
                 regla: "máximo dos decimales",
             });
         }
-        Ok(Self(valor.round_dp(2)))
+        let mut v = valor.round_dp(2);
+        v.rescale(2);
+        Ok(Self(v))
     }
 
     /// El valor como `Decimal`.
@@ -96,6 +99,16 @@ mod tests {
             Monto::new(dec("10.500")).expect("ceros sobrantes").valor(),
             dec("10.50")
         );
+    }
+
+    #[test]
+    fn siempre_viaja_con_dos_decimales() {
+        let json = |m: Monto| serde_json::to_value(m).expect("json");
+        assert_eq!(
+            json(Monto::new(dec("40000")).expect("ok")),
+            serde_json::json!("40000.00")
+        );
+        assert_eq!(json(Monto::CERO), serde_json::json!("0.00"));
     }
 
     #[test]

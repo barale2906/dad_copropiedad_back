@@ -213,6 +213,20 @@ catalogo_permisos! {
     ContabilidadPeriodosAprobarReapertura => "contabilidad.periodos.aprobar_reapertura", Copropiedad;
     /// Exportar libros y estados financieros (CSV).
     ContabilidadExportar => "contabilidad.exportar", Copropiedad;
+    /// Cuentas de tesorería (bancos, cajas y fondos).
+    TesoreriaConfigurar => "tesoreria.configurar", Copropiedad;
+    /// Registrar, aplicar y anular recibos de caja.
+    TesoreriaRecibosRegistrar => "tesoreria.recibos.registrar", Copropiedad;
+    /// Registrar, pagar y anular egresos.
+    TesoreriaEgresosRegistrar => "tesoreria.egresos.registrar", Copropiedad;
+    /// Autorizar egresos que registró otra cuenta y la excepción de una factura duplicada.
+    TesoreriaEgresosAutorizar => "tesoreria.egresos.autorizar", Copropiedad;
+    /// Registrar, causar y anular facturas de proveedores; certificados de retención.
+    TesoreriaFacturasProveedorGestionar => "tesoreria.facturas_proveedor.gestionar", Copropiedad;
+    /// Crear, emitir y anular facturas de venta.
+    TesoreriaFacturasVentaGestionar => "tesoreria.facturas_venta.gestionar", Copropiedad;
+    /// Importar extractos y conciliar.
+    TesoreriaConciliar => "tesoreria.conciliar", Copropiedad;
     /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
     DirectorioVer => "directorio.ver", Copropiedad;
     /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
@@ -442,6 +456,12 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::ContabilidadPeriodosCerrar,
             P::ContabilidadPeriodosReabrir,
             P::ContabilidadExportar,
+            P::TesoreriaConfigurar,
+            P::TesoreriaRecibosRegistrar,
+            P::TesoreriaEgresosRegistrar,
+            P::TesoreriaFacturasProveedorGestionar,
+            P::TesoreriaFacturasVentaGestionar,
+            P::TesoreriaConciliar,
         ]),
     },
     RolPlantilla {
@@ -486,6 +506,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::AsambleasVer,
             P::AsambleasConvocar,
             P::ContabilidadVer,
+            P::TesoreriaEgresosAutorizar,
             P::TicketsVerTodos,
             P::DirectorioVer,
         ]),

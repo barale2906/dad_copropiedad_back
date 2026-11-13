@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE aplicaciones_pago SET anulada_en = $2 WHERE recibo_id = $1 AND anulada_en IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a87b6972c8fe432c3c5d37d8c8670d1381be75cff4566efb0e08748fe217b748"
+}

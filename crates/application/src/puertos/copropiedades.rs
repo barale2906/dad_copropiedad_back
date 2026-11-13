@@ -7,7 +7,7 @@
 //! - [`RepositorioPersonas`]: personas registradas en la copropiedad.
 //! - [`RepositorioTitulares`]: titularidades de los bienes privados.
 //! - [`RepositorioImportaciones`]: importaciones masivas.
-//! - [`LectorPlanillas`]: lee CSV/XLSX (adaptador `infra-planillas`).
+//! - [`LectorPlanillas`](super::planillas::LectorPlanillas): lee CSV/XLSX (adaptador `infra-planillas`).
 
 use std::{collections::BTreeMap, future::Future};
 
@@ -17,9 +17,9 @@ use domain::{
     Coeficiente, CuadroCoeficientesId, CuentaId, DireccionCorreo, Documento, EstadoCopropiedad,
     EstadoCuadro, EstadoImportacion, FormaCopropiedad, Horario, ImportacionId, Nit,
     NumeroBienPrivado, PersonaId, PlantillaNomenclatura, Porcentaje, PuntoAtencionId, Telefono,
-    TipoAgrupacion, TipoArchivo, TipoBienPrivado, TipoCopropiedad, TipoCuadro, TipoDocumento,
-    TipoImportacion, TipoPersona, TipoPuntoAtencion, TipoTitularidad, TipoUsoExclusivo,
-    TitularidadId, UsoBienPrivado, UsoExclusivoId, importacion::ErrorFila,
+    TipoAgrupacion, TipoBienPrivado, TipoCopropiedad, TipoCuadro, TipoDocumento, TipoImportacion,
+    TipoPersona, TipoPuntoAtencion, TipoTitularidad, TipoUsoExclusivo, TitularidadId,
+    UsoBienPrivado, UsoExclusivoId, importacion::ErrorFila,
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -552,13 +552,4 @@ pub trait RepositorioImportaciones: Send {
         resumen: &ResumenImportacion,
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
-}
-
-/// Lector de planillas: convierte un CSV o XLSX en filas de texto (la primera, los
-/// encabezados). Solo CPU, sin IO: por eso es síncrono.
-pub trait LectorPlanillas: Send + Sync {
-    /// # Errors
-    ///
-    /// [`crate::AppError::Validacion`] si el archivo no se puede leer como planilla.
-    fn leer(&self, tipo: TipoArchivo, contenido: &[u8]) -> AppResult<Vec<Vec<String>>>;
 }

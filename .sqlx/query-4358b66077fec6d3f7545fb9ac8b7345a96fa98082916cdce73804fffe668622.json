@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO uvt (anio, valor, fuente) VALUES ($1, $2, $3)\n             ON CONFLICT (anio) DO UPDATE SET valor = EXCLUDED.valor, fuente = EXCLUDED.fuente",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int2",
+        "Numeric",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4358b66077fec6d3f7545fb9ac8b7345a96fa98082916cdce73804fffe668622"
+}

@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT linea_orden, concepto_retencion_id, impuesto, base, tarifa, valor\n             FROM retenciones_factura_proveedor WHERE factura_id = $1 ORDER BY linea_orden, impuesto",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "linea_orden",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "linea_orden"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "concepto_retencion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "concepto_retencion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "impuesto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "impuesto"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "base",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "base"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "tarifa",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "tarifa"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4a14e1aa3e12b49399ec6f4d0e86c7d6a7c53d0566114eaa63cd795d465069a7"
+}

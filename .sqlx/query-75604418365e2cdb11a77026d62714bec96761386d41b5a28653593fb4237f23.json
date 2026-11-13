@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE conceptos_retencion SET vigente_hasta = $2::date - 1\n             WHERE codigo = $1 AND vigente_desde < $2\n               AND (vigente_hasta IS NULL OR vigente_hasta >= $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "75604418365e2cdb11a77026d62714bec96761386d41b5a28653593fb4237f23"
+}

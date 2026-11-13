@@ -2,10 +2,17 @@
 //! contables estándar. Firmas contables (cuenta autenticada, dueña o gestora): sus plantillas.
 
 use application::{
-    casos_uso::{contabilidad::plantillas as uc, plataforma as uc_plataforma},
+    casos_uso::{
+        contabilidad::{
+            cuentas_por_pagar::{self as uc_cxp, NuevoConceptoRetencion},
+            plantillas as uc,
+        },
+        plataforma as uc_plataforma,
+    },
     puertos::{
         RelojSistema,
         contabilidad::{AmbitoPlantilla, CuentaPuc},
+        tesoreria::ValorUvt,
     },
 };
 use axum::{extract::State, http::StatusCode};
@@ -16,6 +23,9 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use super::dto::*;
+use super::dto_tesoreria::{
+    ConceptoRetencionRespuesta, NuevoConceptoRetencionPeticion, UvtPeticion, UvtRespuesta,
+};
 use crate::{
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::{Json, Path},
@@ -29,6 +39,8 @@ pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(crear_entidad))
         .routes(routes!(cargar_puc))
+        .routes(routes!(catalogo_retenciones, crear_concepto_retencion))
+        .routes(routes!(guardar_uvt))
         .routes(routes!(listar_plantillas, crear_plantilla))
         .routes(routes!(ver_plantilla))
         .routes(routes!(actualizar_plantilla))
@@ -139,6 +151,108 @@ pub async fn cargar_puc(
         .collect::<ApiResult<Vec<_>>>()?;
     let n = uc::cargar_puc(&state.plataforma, &op.ctx, cuentas).await?;
     Ok(Json(CargaPucRespuesta { cuentas: n }))
+}
+
+/// Catálogo de retenciones de la plataforma: todas las versiones de los conceptos y la UVT.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct CatalogoRetencionesRespuesta {
+    pub conceptos: Vec<ConceptoRetencionRespuesta>,
+    pub uvt: Vec<UvtRespuesta>,
+}
+
+/// Catálogo de retenciones (todas las versiones) y valores de la UVT.
+#[utoipa::path(
+    get,
+    path = "/retenciones",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    responses(
+        (status = OK, description = "Catálogo", body = CatalogoRetencionesRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.normativa.gestionar`", body = ErrorRespuesta),
+    )
+)]
+pub async fn catalogo_retenciones(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+) -> ApiResult<Json<CatalogoRetencionesRespuesta>> {
+    let (conceptos, uvt) =
+        uc_cxp::catalogo_retenciones_plataforma(&state.plataforma, &op.ctx).await?;
+    Ok(Json(CatalogoRetencionesRespuesta {
+        conceptos: conceptos.into_iter().map(Into::into).collect(),
+        uvt: uvt.into_iter().map(Into::into).collect(),
+    }))
+}
+
+/// Agrega una versión de un concepto de retención (la anterior del mismo código queda vigente
+/// hasta el día antes de `vigente_desde`).
+#[utoipa::path(
+    post,
+    path = "/retenciones",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    request_body = NuevoConceptoRetencionPeticion,
+    responses(
+        (status = CREATED, description = "Versión creada", body = ConceptoRetencionRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.normativa.gestionar`", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Ya hay una versión con esa fecha (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Código, tarifa o municipio inválidos (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn crear_concepto_retencion(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Json(p): Json<NuevoConceptoRetencionPeticion>,
+) -> ApiResult<(StatusCode, Json<ConceptoRetencionRespuesta>)> {
+    let c = uc_cxp::crear_concepto_retencion(
+        &state.plataforma,
+        &op.ctx,
+        NuevoConceptoRetencion {
+            codigo: p.codigo,
+            impuesto: p.impuesto,
+            nombre: p.nombre,
+            base_minima_uvt: p.base_minima_uvt,
+            tarifa: p.tarifa,
+            cuenta_sugerida: p.cuenta_sugerida.as_deref().map(codigo).transpose()?,
+            municipio_dane: p.municipio_dane,
+            fuente: p.fuente,
+            vigente_desde: p.vigente_desde,
+        },
+    )
+    .await?;
+    Ok((StatusCode::CREATED, Json(c.into())))
+}
+
+/// Crea o corrige el valor de la UVT del año.
+#[utoipa::path(
+    put,
+    path = "/uvt/{anio}",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    params(("anio" = i32, Path, description = "Año")),
+    request_body = UvtPeticion,
+    responses(
+        (status = OK, description = "UVT", body = UvtRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.normativa.gestionar`", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Año o valor inválidos (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn guardar_uvt(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Path(anio): Path<i32>,
+    Json(p): Json<UvtPeticion>,
+) -> ApiResult<Json<UvtRespuesta>> {
+    let u = uc_cxp::guardar_uvt(
+        &state.plataforma,
+        &op.ctx,
+        ValorUvt {
+            anio,
+            valor: p.valor,
+            fuente: p.fuente,
+        },
+    )
+    .await?;
+    Ok(Json(u.into()))
 }
 
 /// Plantillas estándar de la plataforma (todas sus versiones y estados).

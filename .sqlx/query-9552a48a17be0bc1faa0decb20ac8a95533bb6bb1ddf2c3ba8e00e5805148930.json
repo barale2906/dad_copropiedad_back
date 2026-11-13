@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recibos_caja SET persona_id = $2 WHERE id = $1 AND persona_id IS NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9552a48a17be0bc1faa0decb20ac8a95533bb6bb1ddf2c3ba8e00e5805148930"
+}

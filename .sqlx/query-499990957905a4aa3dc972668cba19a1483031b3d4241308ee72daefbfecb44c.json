@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT cuenta_id, persona_id, centro_costo_id, valor, descripcion\n             FROM egreso_gastos WHERE egreso_id = $1 ORDER BY orden",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "egreso_gastos",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "egreso_gastos",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "egreso_gastos",
+            "name": "centro_costo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "egreso_gastos",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "egreso_gastos",
+            "name": "descripcion"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "499990957905a4aa3dc972668cba19a1483031b3d4241308ee72daefbfecb44c"
+}

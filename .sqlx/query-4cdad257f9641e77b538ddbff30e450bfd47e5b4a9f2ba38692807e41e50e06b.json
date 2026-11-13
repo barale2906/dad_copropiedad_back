@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO conciliacion_partidas (tenant_id, conciliacion_id, movimiento_id)\n                 VALUES ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4cdad257f9641e77b538ddbff30e450bfd47e5b4a9f2ba38692807e41e50e06b"
+}

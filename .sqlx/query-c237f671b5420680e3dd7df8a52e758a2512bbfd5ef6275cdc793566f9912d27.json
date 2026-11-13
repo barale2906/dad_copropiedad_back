@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT valor FROM uvt WHERE anio = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "uvt",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c237f671b5420680e3dd7df8a52e758a2512bbfd5ef6275cdc793566f9912d27"
+}

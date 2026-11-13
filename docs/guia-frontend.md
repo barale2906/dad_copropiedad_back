@@ -67,6 +67,14 @@ cuenta (el nombre de la ruta es histórico).
   línea).
 - Los reportes aceptan `formato=csv` (exige `contabilidad.exportar`); la respuesta trae la
   cabecera `X-Contenido-Sha256` y queda en la auditoría.
+- **Tesorería** (ADR 0018, etiqueta `tesoreria`): `/contabilidad/tesoreria/…` (cuentas,
+  recibos, egresos, extractos y conciliación), `/contabilidad/cuentas-por-pagar/…` y
+  `/contabilidad/ventas/…`. Los documentos no se editan ni se borran: se **anulan** con
+  `POST …/anulacion` y un motivo (se revierte su comprobante). Un egreso pasa por
+  `…/autorizacion` (otra cuenta: si es la misma responde 409 `conflicto`) y `…/pago`. El extracto
+  bancario viaja en Base64 dentro del JSON (`archivo_base64`) con el mapeo de columnas del banco;
+  primero `…/extractos/vista-previa` y luego `…/extractos`. El certificado de retenciones en PDF
+  es `GET …/certificados/{persona_id}/pdf`.
 
 ## 4. Sesión
 

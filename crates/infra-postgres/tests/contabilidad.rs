@@ -521,13 +521,7 @@ async fn el_contabilizador_aplica_la_regla_y_es_idempotente_por_origen(pool: PgP
         origen: origen.clone(),
         fecha: fecha(2026, 4, 10),
         descripcion: "Factura FV-1".into(),
-        importes: vec![ImporteDocumento {
-            concepto: "venta".into(),
-            monto: m(250),
-            persona: Some(cliente),
-            centro_costo: None,
-            descripcion: None,
-        }],
+        importes: vec![ImporteDocumento::new("venta", m(250)).con_persona(Some(cliente))],
     };
 
     let mut ids = Vec::new();

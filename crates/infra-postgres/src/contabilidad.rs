@@ -32,7 +32,7 @@ use crate::{TransaccionPg, plataforma::TransaccionPlataformaPg};
 /// Traduce los errores de escritura contables: únicos → conflicto; llaves foráneas → no
 /// encontrado; reglas de los triggers (`ck_…`) → regla contable; protección de lo contabilizado
 /// → conflicto.
-fn error_contable(e: sqlx::Error, unico: &str, foranea: &'static str) -> AppError {
+pub(crate) fn error_contable(e: sqlx::Error, unico: &str, foranea: &'static str) -> AppError {
     match e.as_database_error() {
         Some(d) if d.is_unique_violation() => AppError::Conflicto(unico.to_owned()),
         Some(d) if d.is_foreign_key_violation() => AppError::NoEncontrado(foranea),
@@ -49,7 +49,7 @@ fn error_contable(e: sqlx::Error, unico: &str, foranea: &'static str) -> AppErro
     }
 }
 
-fn u32_de(v: i32, campo: &'static str) -> AppResult<u32> {
+pub(crate) fn u32_de(v: i32, campo: &'static str) -> AppResult<u32> {
     u32::try_from(v).map_err(|_| AppError::Validacion(format!("`{campo}` fuera de rango")))
 }
 
@@ -57,7 +57,7 @@ fn i32_de(v: u32, campo: &'static str) -> AppResult<i32> {
     i32::try_from(v).map_err(|_| AppError::Validacion(format!("`{campo}` fuera de rango")))
 }
 
-fn i16_de<T: TryInto<i16>>(v: T, campo: &'static str) -> AppResult<i16> {
+pub(crate) fn i16_de<T: TryInto<i16>>(v: T, campo: &'static str) -> AppResult<i16> {
     v.try_into()
         .map_err(|_| AppError::Validacion(format!("`{campo}` fuera de rango")))
 }

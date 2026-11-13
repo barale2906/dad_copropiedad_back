@@ -1,0 +1,236 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,\n                    subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,\n                    creada_por, creada_en, emitida_en\n             FROM facturas_venta\n             WHERE ($1::uuid IS NULL OR persona_id = $1) AND ($2::text IS NULL OR estado = $2)\n               AND ($3::date IS NULL OR fecha >= $3) AND ($4::date IS NULL OR fecha <= $4)\n             ORDER BY vencimiento, id LIMIT $5",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "numero",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "vencimiento",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "vencimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "origen_tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "origen_tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "origen_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "origen_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "subtotal",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "subtotal"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "iva",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "iva"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "total"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "pagado",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "pagado"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "comprobante_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "comprobante_id"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "motivo_anulacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "motivo_anulacion"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "creada_en"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "emitida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "emitida_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Date",
+        "Date",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "b3c5ddb7d64e0f9ac6f8dd896059899f49a314ec8af8a3b6c2832f511dfff169"
+}

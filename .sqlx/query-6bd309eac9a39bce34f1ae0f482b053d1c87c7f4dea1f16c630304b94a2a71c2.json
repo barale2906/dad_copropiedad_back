@@ -1,0 +1,173 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, proveedor, evento_externo, referencia, estado, valor, comision, retenciones,\n                    cuenta_tesoreria_id, persona_id, recibo_id, ocurrido_en, recibido_en\n             FROM eventos_pasarela WHERE proveedor = $1 AND evento_externo = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "proveedor",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "proveedor"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "evento_externo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "evento_externo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "referencia",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "referencia"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "comision",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "comision"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "retenciones",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "retenciones"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "cuenta_tesoreria_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "cuenta_tesoreria_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "recibo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "recibo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "ocurrido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "ocurrido_en"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "recibido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "eventos_pasarela",
+            "name": "recibido_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "6bd309eac9a39bce34f1ae0f482b053d1c87c7f4dea1f16c630304b94a2a71c2"
+}

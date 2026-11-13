@@ -8,14 +8,19 @@
 //! - [`ReglaContable`]: convierte los importes de un documento origen en un asiento.
 //! - [`PlantillaContable`]: lo que el contador elige y reutiliza por tipo de empresa (P1).
 //! - [`estados`]: estados financieros y cierre anual a partir de saldos.
+//! - [`tesoreria`]: tesorería, cuentas por pagar y por cobrar, retenciones y conciliación
+//!   (plan 13).
+//! - [`extracto`]: lectura de extractos bancarios (planillas y Asobancaria 2001).
 
 mod asiento;
 mod cuenta;
 pub mod estados;
+pub mod extracto;
 mod monto;
 mod periodo;
 mod plantilla;
 mod regla;
+pub mod tesoreria;
 
 pub use asiento::{AsientoBalanceado, LineaAsiento, ReglasCuenta};
 pub use cuenta::{CodigoCuenta, Naturaleza, NivelCuenta};

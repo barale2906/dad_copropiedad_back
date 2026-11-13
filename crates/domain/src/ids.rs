@@ -475,6 +475,61 @@ id_entidad!(
     ConfiguracionContableId,
     Uuid::now_v7
 );
+id_entidad!(
+    /// Cuenta de tesorería (banco, caja o fondo).
+    CuentaTesoreriaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Recibo de caja (dinero que entra).
+    ReciboCajaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Comprobante de egreso (dinero que sale).
+    EgresoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Factura de un proveedor (cuenta por pagar).
+    FacturaProveedorId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Factura de venta (cuenta por cobrar).
+    FacturaVentaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Aplicación de un recibo a un documento por cobrar.
+    AplicacionPagoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Extracto bancario importado.
+    ExtractoBancarioId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Movimiento de un extracto bancario.
+    MovimientoExtractoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Conciliación (o su deshacer) entre el extracto y los libros.
+    ConciliacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Evento recibido de la pasarela de pagos.
+    EventoPasarelaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de un concepto de retención del catálogo de la plataforma.
+    ConceptoRetencionId,
+    Uuid::now_v7
+);
 
 #[cfg(test)]
 mod tests {

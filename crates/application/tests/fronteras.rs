@@ -33,6 +33,8 @@ fn fuentes() -> Vec<std::path::PathBuf> {
         .map(|e| e.expect("entrada").path())
         .collect();
     v.push(raiz.join("puertos/contabilidad.rs"));
+    v.push(raiz.join("puertos/tesoreria.rs"));
+    v.push(raiz.join("puertos/planillas.rs"));
     v
 }
 
@@ -55,7 +57,11 @@ fn segmentos(fuente: &str) -> Vec<String> {
 #[test]
 fn el_nucleo_contable_no_importa_la_vertical_ph() {
     let fuentes = fuentes();
-    assert!(fuentes.len() >= 6, "se revisaron {} fuentes", fuentes.len());
+    assert!(
+        fuentes.len() >= 12,
+        "se revisaron {} fuentes",
+        fuentes.len()
+    );
     for ruta in fuentes {
         let texto = fs::read_to_string(&ruta).expect("fuente legible");
         for s in segmentos(&texto) {
