@@ -368,6 +368,12 @@ pub struct FacturacionConfig {
     pub url_habilitacion: String,
     /// Servicio web de producción (`FACTURACION_DIAN_URL_PRODUCCION`).
     pub url_produccion: String,
+    /// Fabricante del software (`FACTURACION_FABRICANTE_NOMBRE`), para la representación gráfica.
+    pub fabricante_nombre: Option<String>,
+    /// NIT del fabricante con DV (`FACTURACION_FABRICANTE_NIT`).
+    pub fabricante_nit: Option<String>,
+    /// Nombre comercial del software (`FACTURACION_SOFTWARE_NOMBRE`).
+    pub software_nombre: Option<String>,
 }
 
 impl std::fmt::Debug for FacturacionConfig {
@@ -376,6 +382,8 @@ impl std::fmt::Debug for FacturacionConfig {
             .field("clave_maestra", &self.clave_maestra.map(|_| "<oculta>"))
             .field("url_habilitacion", &self.url_habilitacion)
             .field("url_produccion", &self.url_produccion)
+            .field("fabricante_nombre", &self.fabricante_nombre)
+            .field("software_nombre", &self.software_nombre)
             .finish()
     }
 }
@@ -401,7 +409,28 @@ impl FacturacionConfig {
                 .unwrap_or_else(|| DIAN_URL_HABILITACION.into()),
             url_produccion: optional("FACTURACION_DIAN_URL_PRODUCCION")
                 .unwrap_or_else(|| DIAN_URL_PRODUCCION.into()),
+            fabricante_nombre: optional("FACTURACION_FABRICANTE_NOMBRE"),
+            fabricante_nit: optional("FACTURACION_FABRICANTE_NIT"),
+            software_nombre: optional("FACTURACION_SOFTWARE_NOMBRE"),
         })
+    }
+
+    /// Línea al pie de la representación gráfica con el software y su fabricante (la exige la
+    /// DIAN); `None` si no se configuraron.
+    pub fn pie(&self) -> Option<String> {
+        let software = self
+            .software_nombre
+            .as_deref()
+            .map(|s| format!("Software: {s}"));
+        let fabricante = self
+            .fabricante_nombre
+            .as_deref()
+            .map(|n| match &self.fabricante_nit {
+                Some(nit) => format!("Fabricante: {n} · NIT {nit}"),
+                None => format!("Fabricante: {n}"),
+            });
+        let partes: Vec<String> = software.into_iter().chain(fabricante).collect();
+        (!partes.is_empty()).then(|| partes.join(" · "))
     }
 }
 

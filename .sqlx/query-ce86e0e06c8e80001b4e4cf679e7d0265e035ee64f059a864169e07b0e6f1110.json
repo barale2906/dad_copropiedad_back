@@ -1,0 +1,184 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT nombre, razon_social, nit, direccion, municipio_dane, departamento, barrio,\n                    latitud, longitud, telefono, correo, sitio_web, zona_horaria, estado\n             FROM entidades WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "razon_social",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "razon_social"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nit",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "nit"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "direccion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "direccion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "municipio_dane",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "municipio_dane"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "departamento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "departamento"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "barrio",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "barrio"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "latitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "latitud"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "longitud",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "longitud"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "telefono",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "telefono"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "correo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "correo"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "sitio_web",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "sitio_web"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "zona_horaria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "zona_horaria"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "estado"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "ce86e0e06c8e80001b4e4cf679e7d0265e035ee64f059a864169e07b0e6f1110"
+}

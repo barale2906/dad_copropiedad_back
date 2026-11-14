@@ -21,6 +21,10 @@ pub const CONTRASENA: &str = "una frase bien larga";
 pub struct Api {
     pub router: Router,
     pub duenio: PgPool,
+    /// Pool con el rol `dad_app`, para llamar casos de uso sin pasar por HTTP.
+    pub app: PgPool,
+    /// Almacén sobre el mismo directorio que usa el router.
+    pub almacen: AlmacenLocal,
     _dir: DirTemporal,
 }
 
@@ -52,6 +56,7 @@ pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api
     let dir = std::env::temp_dir().join(format!("dad-api-id-{}", uuid::Uuid::new_v4()));
     let enlaces = FirmanteEnlaces::new(&[9; 32], URL_PUBLICA).expect("firmante");
     let almacen = AlmacenLocal::abrir(&dir, enlaces).expect("almacén");
+    let almacen_pruebas = almacen.clone();
     let config = shared::AppConfig {
         host: "127.0.0.1".into(),
         port: 0,
@@ -68,7 +73,7 @@ pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api
         router: routes::router(
             {
                 let mut state = AppState::new(
-                    app,
+                    app.clone(),
                     almacen,
                     true,
                     FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
@@ -79,6 +84,8 @@ pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api
             &config,
         ),
         duenio: pool,
+        app,
+        almacen: almacen_pruebas,
         _dir: DirTemporal(dir),
     }
 }

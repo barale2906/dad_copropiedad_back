@@ -4,8 +4,9 @@
 use application::{
     AppError, AppResult,
     puertos::{
-        RepositorioCopropiedad,
+        RepositorioCopropiedad, RepositorioEntidad,
         copropiedades::{CargoVigente, FichaCopropiedad, PuntoAtencion},
+        entidades::FichaEntidad,
     },
 };
 use chrono::{NaiveDate, NaiveTime, Weekday};
@@ -165,6 +166,67 @@ impl TransaccionPg {
                 Ok((p, Horario::new(fr, ex)?))
             })
             .collect()
+    }
+}
+
+impl RepositorioEntidad for TransaccionPg {
+    async fn ficha_entidad(&mut self) -> AppResult<Option<FichaEntidad>> {
+        let Some(f) = sqlx::query!(
+            "SELECT nombre, razon_social, nit, direccion, municipio_dane, departamento, barrio,
+                    latitud, longitud, telefono, correo, sitio_web, zona_horaria, estado
+             FROM entidades WHERE id = $1",
+            self.ctx.tenant_id.as_uuid(),
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        else {
+            return Ok(None);
+        };
+        Ok(Some(FichaEntidad {
+            nombre: f.nombre,
+            razon_social: f.razon_social,
+            nit: opcional(f.nit, Nit::new)?,
+            direccion: f.direccion,
+            municipio_dane: opcional(f.municipio_dane, CodigoDane::new)?,
+            departamento: f.departamento,
+            barrio: f.barrio,
+            latitud: f.latitud,
+            longitud: f.longitud,
+            telefono: opcional(f.telefono, Telefono::new)?,
+            correo: opcional(f.correo, DireccionCorreo::new)?,
+            sitio_web: f.sitio_web,
+            zona_horaria: f.zona_horaria,
+            estado: EstadoCopropiedad::try_from(f.estado.as_str())?,
+        }))
+    }
+
+    async fn guardar_ficha_entidad(&mut self, f: &FichaEntidad) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE entidades SET
+                 nombre = $2, razon_social = $3, nit = $4, direccion = $5, municipio_dane = $6,
+                 departamento = $7, barrio = $8, latitud = $9, longitud = $10, telefono = $11,
+                 correo = $12, sitio_web = $13, zona_horaria = $14, actualizado_en = now()
+             WHERE id = $1",
+            self.ctx.tenant_id.as_uuid(),
+            f.nombre,
+            f.razon_social,
+            f.nit.as_ref().map(ToString::to_string),
+            f.direccion,
+            f.municipio_dane.as_ref().map(CodigoDane::as_str),
+            f.departamento,
+            f.barrio,
+            f.latitud,
+            f.longitud,
+            f.telefono.as_ref().map(Telefono::as_str),
+            f.correo.as_ref().map(DireccionCorreo::as_str),
+            f.sitio_web,
+            f.zona_horaria,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_escritura(e, "otra entidad ya tiene ese NIT", "archivo"))?;
+        Ok(())
     }
 }
 

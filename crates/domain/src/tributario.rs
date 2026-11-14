@@ -541,11 +541,22 @@ pub fn consolidar_exogena(valores: &[ValorExogena], cuantia_menor: Decimal) -> E
     Exogena { filas, errores }
 }
 
+/// Consulta pública de un documento electrónico en el catálogo de la DIAN por su CUFE o CUDE: es
+/// el texto del QR de la representación gráfica (anexo técnico 1.9).
+pub fn url_consulta_dian(codigo: &str) -> String {
+    format!("https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey={codigo}")
+}
+
 #[cfg(test)]
 mod tests {
     use rust_decimal::dec;
 
     use super::*;
+
+    #[test]
+    fn el_qr_consulta_el_cufe_en_la_dian() {
+        assert!(url_consulta_dian("abc").ends_with("documentkey=abc"));
+    }
 
     fn perfil() -> ParametrosPerfil {
         ParametrosPerfil {

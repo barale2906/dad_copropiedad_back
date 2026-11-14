@@ -59,6 +59,45 @@ pub struct FichaCopropiedad {
     pub plantilla_codigo: PlantillaNomenclatura,
 }
 
+impl FichaCopropiedad {
+    /// La parte genérica de la ficha (la que tiene cualquier entidad).
+    pub fn entidad(&self) -> super::entidades::FichaEntidad {
+        super::entidades::FichaEntidad {
+            nombre: self.nombre.clone(),
+            razon_social: self.razon_social.clone(),
+            nit: self.nit.clone(),
+            direccion: self.direccion.clone(),
+            municipio_dane: self.municipio_dane.clone(),
+            departamento: self.departamento.clone(),
+            barrio: self.barrio.clone(),
+            latitud: self.latitud,
+            longitud: self.longitud,
+            telefono: self.telefono.clone(),
+            correo: self.correo.clone(),
+            sitio_web: self.sitio_web.clone(),
+            zona_horaria: self.zona_horaria.clone(),
+            estado: self.estado,
+        }
+    }
+
+    /// Reemplaza la parte genérica con `e` (el estado no cambia).
+    pub fn fijar_entidad(&mut self, e: super::entidades::FichaEntidad) {
+        self.nombre = e.nombre;
+        self.razon_social = e.razon_social;
+        self.nit = e.nit;
+        self.direccion = e.direccion;
+        self.municipio_dane = e.municipio_dane;
+        self.departamento = e.departamento;
+        self.barrio = e.barrio;
+        self.latitud = e.latitud;
+        self.longitud = e.longitud;
+        self.telefono = e.telefono;
+        self.correo = e.correo;
+        self.sitio_web = e.sitio_web;
+        self.zona_horaria = e.zona_horaria;
+    }
+}
+
 /// Datos con que la plataforma da de alta una copropiedad.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AltaCopropiedad {

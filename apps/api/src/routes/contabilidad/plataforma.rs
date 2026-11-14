@@ -407,6 +407,7 @@ pub async fn crear_plantilla(
     responses(
         (status = OK, description = "Plantilla", body = PlantillaRespuesta),
         (status = NOT_FOUND, description = "No existe o no la puede gestionar", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.plantillas_contables.publicar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_plantilla(
@@ -437,6 +438,7 @@ pub async fn ver_plantilla(
         (status = NO_CONTENT, description = "Contenido guardado"),
         (status = CONFLICT, description = "Ya está publicada: cree una versión nueva (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Contenido incoherente", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.plantillas_contables.publicar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn actualizar_plantilla(
@@ -466,6 +468,7 @@ pub async fn actualizar_plantilla(
     responses(
         (status = NO_CONTENT, description = "Estado cambiado"),
         (status = CONFLICT, description = "Transición no permitida (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.plantillas_contables.publicar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn estado_plantilla(

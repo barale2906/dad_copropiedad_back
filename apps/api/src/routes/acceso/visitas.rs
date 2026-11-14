@@ -97,7 +97,7 @@ pub struct FiltroVisitasQuery {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroVisitasQuery, ParametrosPagina),
     responses(
         (status = OK, description = "Visitas", body = PaginaRespuesta<VisitaRespuesta>),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` ni `acceso.bitacora.ver`; con `acceso.visitantes.autorizar`, solo las de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar(
@@ -174,7 +174,7 @@ pub struct VisitaConQrRespuesta {
     request_body = PreautorizarPeticion,
     responses(
         (status = CREATED, description = "Visita pre-autorizada", body = VisitaConQrRespuesta),
-        (status = FORBIDDEN, description = "La cuenta no puede decidir por ese bien (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.visitantes.autorizar` o la persona no puede decidir por el bien: residente adulto o titular (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Ventana o usos fuera de rango (`validacion`)", body = ErrorRespuesta),
     )
 )]
@@ -234,6 +234,7 @@ pub struct IngresoQrPeticion {
         (status = OK, description = "Ingreso registrado", body = VisitaRespuesta),
         (status = CONFLICT, description = "Fuera de la ventana o sin usos (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "QR inválido o de otra copropiedad (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ingreso_qr(
@@ -269,7 +270,7 @@ pub struct DetalleVisitaRespuesta {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("visita_id" = Uuid, Path, description = "Visita")),
     responses(
         (status = OK, description = "Visita", body = DetalleVisitaRespuesta),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` ni `acceso.bitacora.ver`; con `acceso.visitantes.autorizar`, solo las de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
     )
 )]
@@ -301,6 +302,7 @@ pub struct QrRespuesta {
     responses(
         (status = OK, description = "QR", body = QrRespuesta),
         (status = CONFLICT, description = "No es una pre-autorización vigente (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` ni `acceso.bitacora.ver`; con `acceso.visitantes.autorizar`, solo las de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn qr(
@@ -346,7 +348,7 @@ pub struct DecisionRespuesta {
     request_body = ResponderPeticion,
     responses(
         (status = OK, description = "Decisión", body = DecisionRespuesta),
-        (status = FORBIDDEN, description = "La cuenta no puede decidir por ese bien (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.visitantes.autorizar` o la persona no puede decidir por el bien: residente adulto o titular (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
     )
 )]
@@ -444,6 +446,7 @@ pub struct LlamadaPeticion {
         (status = OK, description = "Visita", body = VisitaRespuesta),
         (status = CONFLICT, description = "La visita ya fue atendida (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "La persona no puede decidir por ese bien (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn llamada(
@@ -475,6 +478,7 @@ pub async fn llamada(
     responses(
         (status = OK, description = "Ingreso registrado", body = VisitaRespuesta),
         (status = CONFLICT, description = "No autorizada, fuera de la ventana o sin usos (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ingreso(
@@ -505,6 +509,7 @@ pub async fn ingreso(
     responses(
         (status = OK, description = "Salida registrada", body = VisitaRespuesta),
         (status = CONFLICT, description = "No estaba dentro (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn salida(
@@ -533,7 +538,7 @@ pub async fn salida(
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("visita_id" = Uuid, Path, description = "Visita")),
     responses(
         (status = OK, description = "Visita cancelada", body = VisitaRespuesta),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya ingresó o terminó (`conflicto_estado`)", body = ErrorRespuesta),
     )
 )]

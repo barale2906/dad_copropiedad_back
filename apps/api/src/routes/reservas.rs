@@ -263,6 +263,10 @@ impl From<Recurso> for RecursoRespuesta {
 pub struct FiltroRecursos {
     #[param(value_type = Option<crate::esquemas::TipoRecurso>)]
     pub tipo: Option<TipoRecurso>,
+    /// Solo los bienes comunes de esta categoría (la zona de la maqueta 3D: `piscina`,
+    /// `cancha`, `gimnasio`, `salon_social`…).
+    #[param(value_type = Option<crate::esquemas::CategoriaBienComun>)]
+    pub categoria: Option<CategoriaBienComun>,
 }
 
 /// Recursos reservables (bienes comunes, parqueaderos, agenda, herramientas).
@@ -282,7 +286,8 @@ pub async fn listar_recursos(
     en: EnCopropiedad,
     Query(f): Query<FiltroRecursos>,
 ) -> ApiResult<Json<Vec<RecursoRespuesta>>> {
-    let lista = uc::listar_recursos(&state.unidad, &RelojSistema, &en.ctx, f.tipo).await?;
+    let lista =
+        uc::listar_recursos(&state.unidad, &RelojSistema, &en.ctx, f.tipo, f.categoria).await?;
     Ok(Json(lista.into_iter().map(Into::into).collect()))
 }
 
@@ -353,6 +358,7 @@ pub async fn crear_recurso(
     responses(
         (status = OK, description = "Recurso", body = RecursoRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_comunes.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_recurso(
@@ -395,6 +401,7 @@ pub struct CambiosRecursoPeticion {
     responses(
         (status = OK, description = "Recurso actualizado", body = RecursoRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_comunes.editar` (o `parqueaderos.asignar` si es un parqueadero) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_recurso(
@@ -450,6 +457,7 @@ pub struct EstadoRecursoRespuesta {
     responses(
         (status = OK, description = "Estado cambiado", body = EstadoRecursoRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_comunes.editar` (o `parqueaderos.asignar` si es un parqueadero) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn cambiar_estado(
@@ -510,6 +518,7 @@ impl From<Franja> for FranjaReservaDto {
     responses(
         (status = OK, description = "Franjas libres", body = Vec<FranjaReservaDto>),
         (status = UNPROCESSABLE_ENTITY, description = "Rango inválido (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_comunes.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn disponibilidad(
@@ -685,6 +694,7 @@ const fn canal_web() -> CanalReserva {
         (status = CREATED, description = "Reserva creada (o la original si se reintenta)", body = ReservaRespuesta),
         (status = CONFLICT, description = "Franja ocupada (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Incumple la política, el horario, los límites, el cupo o hay restricción (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `reservas.crear` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn solicitar(
@@ -762,6 +772,7 @@ fn id_reserva(ruta: (Uuid, Uuid)) -> ReservaId {
     responses(
         (status = OK, description = "Reserva", body = DetalleReservaRespuesta),
         (status = NOT_FOUND, description = "No existe o no es visible", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es su reserva y no tiene `reservas.ver_todas` ni `reservas.entregas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_reserva(
@@ -796,6 +807,7 @@ pub struct MotivoPeticion {
     responses(
         (status = OK, description = "Aprobada", body = ReservaRespuesta),
         (status = CONFLICT, description = "No está solicitada (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `reservas.aprobar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn aprobar(
@@ -829,6 +841,7 @@ pub async fn aprobar(
     responses(
         (status = OK, description = "Rechazada", body = ReservaRespuesta),
         (status = CONFLICT, description = "No está solicitada (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `reservas.aprobar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn rechazar(
@@ -863,7 +876,7 @@ pub async fn rechazar(
     request_body = MotivoPeticion,
     responses(
         (status = OK, description = "Cancelada (con la penalidad aplicada)", body = ReservaRespuesta),
-        (status = FORBIDDEN, description = "No es suya (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es su reserva y no tiene `reservas.cancelar_cualquiera` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya empezó o terminó (`conflicto_estado`)", body = ErrorRespuesta),
     )
 )]
@@ -986,6 +999,7 @@ pub async fn entrega(
     responses(
         (status = OK, description = "Recibido", body = ReservaRespuesta),
         (status = CONFLICT, description = "No está en curso (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `reservas.entregas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn recibo(
@@ -1019,6 +1033,7 @@ pub async fn recibo(
     responses(
         (status = OK, description = "Marcada", body = ReservaRespuesta),
         (status = CONFLICT, description = "No está aprobada (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `reservas.entregas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn no_asistio(
@@ -1052,6 +1067,7 @@ pub struct PagoPeticion {
     responses(
         (status = OK, description = "Pago registrado", body = ReservaRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "No tiene valor que pagar (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `reservas.aprobar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn pago(
@@ -1189,6 +1205,7 @@ pub async fn restringir(
     responses(
         (status = NO_CONTENT, description = "Levantada"),
         (status = NOT_FOUND, description = "No existe o ya terminó", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `reservas.restringir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn levantar(

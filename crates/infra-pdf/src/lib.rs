@@ -70,11 +70,12 @@ impl GeneradorActas for GeneradorTypst {
     }
 
     async fn tabla(&self, tabla: &TablaPdf) -> AppResult<Vec<u8>> {
-        compilar(
-            PLANTILLA_TABLA,
-            serde_json::to_value(tabla).map_err(AppError::infra)?,
-        )
-        .await
+        let mut datos = serde_json::to_value(tabla).map_err(AppError::infra)?;
+        if let Some(texto) = &tabla.qr {
+            datos["qr_matriz"] =
+                serde_json::to_value(qr::matriz(texto)?).map_err(AppError::infra)?;
+        }
+        compilar(PLANTILLA_TABLA, datos).await
     }
 }
 
@@ -220,11 +221,44 @@ mod tests {
                 "100".into(),
             ]],
             generada: "2026-11-10 10:00".into(),
+            qr: None,
+            pie: None,
         };
         let pdf = GeneradorTypst.tabla(&t).await.expect("compila");
         assert!(pdf.starts_with(b"%PDF-"));
         t.filas.clear();
         let vacio = GeneradorTypst.tabla(&t).await.expect("compila vacío");
         assert!(vacio.starts_with(b"%PDF-"));
+    }
+
+    #[tokio::test]
+    async fn la_representacion_grafica_lleva_qr_y_pie_en_cada_pagina() {
+        let t = TablaPdf {
+            titulo: "Factura electrónica FE1".into(),
+            copropiedad: "GISLA SAS · NIT 901713998-3".into(),
+            subtitulo: "Cliente · CUFE abc".into(),
+            columnas: vec!["Descripción".into(), "Total".into()],
+            filas: (0..80)
+                .map(|i| vec![format!("Línea {i}"), "1000".into()])
+                .collect(),
+            generada: "2026-11-14 10:00".into(),
+            qr: Some(format!(
+                "https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey={}",
+                "a".repeat(96)
+            )),
+            pie: Some("Software DAD · Fabricante GISLA SAS NIT 901713998-3".into()),
+        };
+
+        let pdf = GeneradorTypst.tabla(&t).await.expect("compila");
+
+        assert!(pdf.starts_with(b"%PDF-"));
+        let sin_qr = GeneradorTypst
+            .tabla(&TablaPdf { qr: None, ..t })
+            .await
+            .expect("compila");
+        assert!(
+            pdf.len() > sin_qr.len(),
+            "el QR agrega contenido a cada página"
+        );
     }
 }

@@ -694,6 +694,7 @@ mod habilitacion {
                 id_externo: Some(format!("zip-{}", d.numero)),
                 cufe: Some("c".repeat(96)),
                 xml: None,
+                adjunto: None,
                 mensaje: None,
             })
         }
@@ -708,6 +709,7 @@ mod habilitacion {
                 id_externo: None,
                 cufe: None,
                 xml: None,
+                adjunto: None,
                 mensaje: Some("Procesado Correctamente".into()),
             })
         }

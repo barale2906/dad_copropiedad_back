@@ -515,6 +515,7 @@ async fn enviar<T: TxComunicados>(
                     c.titulo, c.cuerpo
                 ),
                 html: None,
+                adjuntos: Vec::new(),
             };
             encolar(tx, prioridad, MensajeOutbox::Correo(correo)).await?;
         }

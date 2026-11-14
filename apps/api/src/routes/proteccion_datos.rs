@@ -93,7 +93,10 @@ impl From<PoliticaTratamiento> for PoliticaRespuesta {
     tag = ETIQUETA_PROTECCION_DATOS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    responses((status = OK, description = "Política vigente", body = Option<PoliticaRespuesta>))
+    responses(
+        (status = OK, description = "Política vigente", body = Option<PoliticaRespuesta>),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad", body = ErrorRespuesta),
+    )
 )]
 pub async fn politica_vigente(
     State(state): State<AppState>,
@@ -270,6 +273,7 @@ fn datos(d: uc::DatosDelTitular) -> DatosTitularRespuesta {
     responses(
         (status = OK, description = "Datos del titular", body = DatosTitularRespuesta),
         (status = NOT_FOUND, description = "La cuenta no tiene persona en la PH", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "De otra persona, sin `proteccion_datos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn mis_datos(
@@ -312,7 +316,7 @@ pub async fn datos_de_persona(
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("persona_id" = Uuid, Path, description = "Persona")),
     responses(
         (status = OK, description = "Autorizaciones", body = Vec<AutorizacionTratamientoRespuesta>),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es el titular y no tiene `proteccion_datos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn autorizaciones(
@@ -352,7 +356,7 @@ pub struct FinalidadesRespuesta {
     request_body = OtorgarPeticion,
     responses(
         (status = CREATED, description = "Autorizadas", body = FinalidadesRespuesta),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es el titular y no tiene `proteccion_datos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin finalidades o sin política vigente (`validacion`)", body = ErrorRespuesta),
     )
 )]
@@ -405,7 +409,7 @@ pub struct RevocadasRespuesta {
     request_body = RevocarPeticion,
     responses(
         (status = OK, description = "Revocadas", body = RevocadasRespuesta),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es el titular y no tiene `proteccion_datos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn revocar(
@@ -445,7 +449,7 @@ pub struct FiltroSolicitudesQuery {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroSolicitudesQuery, ParametrosPagina),
     responses(
         (status = OK, description = "Solicitudes", body = PaginaRespuesta<SolicitudTitularRespuesta>),
-        (status = FORBIDDEN, description = "Pide las de otra persona sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Las de otra persona, sin `proteccion_datos.gestionar` (el titular ve las suyas) (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_solicitudes(
@@ -514,6 +518,7 @@ pub async fn radicar(
     responses(
         (status = OK, description = "En trámite", body = SolicitudTitularRespuesta),
         (status = CONFLICT, description = "Ya se respondió (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `proteccion_datos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn tramitar(
@@ -546,6 +551,7 @@ pub struct ProrrogaPeticion {
     responses(
         (status = OK, description = "Prorrogada", body = SolicitudTitularRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Ya se prorrogó, ya venció o ya se respondió (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `proteccion_datos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn prorrogar(
@@ -585,6 +591,7 @@ pub struct RespuestaSolicitudPeticion {
         (status = OK, description = "Respondida", body = SolicitudTitularRespuesta),
         (status = CONFLICT, description = "Ya se respondió (`conflicto_estado`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin texto ni archivo (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `proteccion_datos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn responder(

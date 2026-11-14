@@ -26,6 +26,7 @@ fn correo(para: &str) -> EventoSaliente {
             asunto: "Reserva aprobada".into(),
             texto: "Su reserva del salón social fue aprobada.".into(),
             html: None,
+            adjuntos: Vec::new(),
         }),
     }
 }

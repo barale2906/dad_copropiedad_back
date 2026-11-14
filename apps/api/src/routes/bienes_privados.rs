@@ -547,6 +547,7 @@ pub async fn editar(
     responses(
         (status = OK, description = "Bien privado inactivo", body = BienPrivadoRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_privados.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn inactivar(
@@ -582,6 +583,7 @@ pub struct VinculoPeticion {
         (status = OK, description = "Vínculo actualizado", body = BienPrivadoRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "No es parqueadero/depósito/bodega o el principal no sirve (`validacion`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_privados.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn vincular(
@@ -628,6 +630,7 @@ pub struct NuevoUsoPeticion {
         (status = CREATED, description = "Asignado", body = UsoExclusivoRespuesta),
         (status = CONFLICT, description = "Ese bien común ya está asignado (`conflicto`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe o está inactivo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_privados.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn asignar_uso_exclusivo(
@@ -666,6 +669,7 @@ pub async fn asignar_uso_exclusivo(
     responses(
         (status = NO_CONTENT, description = "Terminada"),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_privados.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn terminar_uso_exclusivo(
@@ -898,6 +902,7 @@ pub async fn registrar_titulares(
         (status = CREATED, description = "Titulares nuevos", body = Vec<TitularidadRespuesta>),
         (status = CONFLICT, description = "No tiene titulares vigentes (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Conjunto inválido (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `titulares.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn transferir(
@@ -942,6 +947,7 @@ pub struct RepresentantePeticion {
     responses(
         (status = NO_CONTENT, description = "Designado"),
         (status = NOT_FOUND, description = "La persona no es titular vigente", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `titulares.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn designar_representante(
@@ -970,6 +976,7 @@ pub async fn designar_representante(
     responses(
         (status = OK, description = "Mis bienes privados", body = Vec<BienPrivadoRespuesta>),
         (status = NOT_FOUND, description = "La cuenta no tiene roles en la copropiedad", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad", body = ErrorRespuesta),
     )
 )]
 pub async fn mis_bienes(

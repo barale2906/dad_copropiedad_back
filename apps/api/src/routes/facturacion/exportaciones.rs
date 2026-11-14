@@ -123,7 +123,12 @@ pub async fn paquete(
     responder(
         uc::paquete_documentos(
             &state.unidad,
-            (state.archivos.as_ref(), &state.actas, &state.empaquetador),
+            (
+                state.archivos.as_ref(),
+                &state.actas,
+                &state.empaquetador,
+                state.pie_facturacion.as_deref(),
+            ),
             &RelojSistema,
             &en.ctx,
             q.desde,

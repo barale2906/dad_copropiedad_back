@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,\n                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, respuesta,\n                    intentos, total, creado_en, enviado_en, validado_en\n             FROM documentos_electronicos\n             WHERE tipo = $1 AND origen_tipo = $2 AND origen_id = $3 FOR UPDATE",
+  "query": "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,\n                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, adjunto_archivo_id, respuesta,\n                    intentos, total, creado_en, enviado_en, validado_en\n             FROM documentos_electronicos\n             WHERE tipo = $1 AND origen_tipo = $2 AND origen_id = $3 FOR UPDATE",
   "describe": {
     "columns": [
       {
@@ -148,6 +148,17 @@
       },
       {
         "ordinal": 13,
+        "name": "adjunto_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "adjunto_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
         "name": "respuesta",
         "type_info": "Text",
         "origin": {
@@ -158,7 +169,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "intentos",
         "type_info": "Int4",
         "origin": {
@@ -169,7 +180,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "total",
         "type_info": "Numeric",
         "origin": {
@@ -180,7 +191,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -191,7 +202,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "enviado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -202,7 +213,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "validado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -235,6 +246,7 @@
       true,
       true,
       true,
+      true,
       false,
       false,
       false,
@@ -242,5 +254,5 @@
       true
     ]
   },
-  "hash": "46587adb4709b9f4aa1aa5fe05d45c5cea7fe3520f8f660e12a7eeefa186682d"
+  "hash": "86479083483f534f826086a6223330f151e86b101e7a0fce6b56f26e9948b6cc"
 }

@@ -2,6 +2,8 @@
 
 use std::sync::Arc;
 
+use application::casos_uso::facturacion::documentos::Expedicion;
+
 use infra_archivos::AlmacenLocal;
 use infra_facturacion::{
     EmpaquetadorZip, LectorPkcs12, LectorUbl, MotorPropio, ProveedorDian, ProveedorSimulado,
@@ -53,6 +55,8 @@ pub struct AppState {
     pub cofre: Arc<CofreAesGcm>,
     /// Lector de los certificados `.p12` que cargan las entidades.
     pub lector_certificados: LectorPkcs12,
+    /// Pie de la representación gráfica (software y fabricante, `FACTURACION_*`).
+    pub pie_facturacion: Option<String>,
     /// Lector de las facturas electrónicas recibidas (XML UBL).
     pub lector_facturas: LectorUbl,
     /// ZIP del paquete de documentos del periodo para el contador.
@@ -60,6 +64,19 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// Lo que usa la expedición de documentos electrónicos.
+    pub fn expedicion(
+        &self,
+    ) -> Expedicion<'_, ProveedorDian, CofreAesGcm, GeneradorTypst, EmpaquetadorZip> {
+        Expedicion {
+            proveedor: &self.facturacion,
+            cofre: self.cofre.as_ref(),
+            generador: &self.actas,
+            empaquetador: &self.empaquetador,
+            pie: self.pie_facturacion.as_deref(),
+        }
+    }
+
     /// Estado con los adaptadores reales sobre `db`.
     pub fn new(
         db: PgPool,
@@ -91,6 +108,7 @@ impl AppState {
             ),
             cofre: Arc::new(CofreAesGcm::new(None)),
             lector_certificados: LectorPkcs12,
+            pie_facturacion: None,
             lector_facturas: LectorUbl,
             empaquetador: EmpaquetadorZip,
         }

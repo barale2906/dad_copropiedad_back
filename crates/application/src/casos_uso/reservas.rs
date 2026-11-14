@@ -18,7 +18,10 @@ use domain::{
     EstadoReserva, Franja, Horario, ModalidadCita, Modulo, Permiso, PersonaId, Placa,
     PoliticaReserva, RecursoId, ReservaId, ResidenciaId, RestriccionId, TipoEntrega, TipoRecurso,
     copropiedad::{texto_obligatorio, texto_opcional},
-    reserva::{Tz, disponibilidad as calcular_disponibilidad, franjas_llenas, zona_horaria},
+    reserva::{
+        CategoriaBienComun, Tz, disponibilidad as calcular_disponibilidad, franjas_llenas,
+        zona_horaria,
+    },
 };
 use rust_decimal::Decimal;
 
@@ -99,6 +102,7 @@ where
             asunto,
             texto,
             html: None,
+            adjuntos: Vec::new(),
         }),
     })
     .await
@@ -199,7 +203,9 @@ where
     Ok(recurso)
 }
 
-/// Recursos de la copropiedad (de un tipo o todos).
+/// Recursos de la copropiedad (de un tipo o todos). Con `categoria`, solo los bienes comunes de
+/// esa categoría: así el menú 3D abre, desde la piscina de la maqueta, las piscinas que la PH
+/// registró con el nombre que quiso.
 ///
 /// # Errors
 ///
@@ -209,6 +215,7 @@ pub async fn listar_recursos<U>(
     reloj: &impl Reloj,
     ctx: &Contexto,
     tipo: Option<TipoRecurso>,
+    categoria: Option<CategoriaBienComun>,
 ) -> AppResult<Vec<Recurso>>
 where
     U: UnidadDeTrabajo,
@@ -217,7 +224,14 @@ where
     ctx.exigir(Permiso::BienesComunesVer)?;
     let mut tx = unidad.iniciar(ctx).await?;
     exigir_modulo_en(&mut tx, reloj, Modulo::BienesComunes).await?;
-    tx.recursos(tipo).await
+    let recursos = tx.recursos(tipo).await?;
+    Ok(match categoria {
+        None => recursos,
+        Some(c) => recursos
+            .into_iter()
+            .filter(|r| r.bien_comun.as_ref().is_some_and(|b| b.categoria == c))
+            .collect(),
+    })
 }
 
 /// Un recurso.
@@ -1504,9 +1518,40 @@ pub(crate) mod tests {
         let unidad = UnidadEnMemoria::default();
         let ctx = Contexto::new(TenantId::nuevo());
         assert!(matches!(
-            listar_recursos(&unidad, &reloj(), &ctx, None).await,
+            listar_recursos(&unidad, &reloj(), &ctx, None, None).await,
             Err(AppError::ModuloNoHabilitado(Modulo::BienesComunes))
         ));
+    }
+
+    #[tokio::test]
+    async fn los_recursos_se_filtran_por_categoria_para_la_zona_de_la_maqueta() {
+        let e = entorno().await;
+        let salon = salon(&e, PoliticaReserva::default(), false).await;
+
+        let salones = listar_recursos(
+            &e.unidad,
+            &reloj(),
+            &e.ctx,
+            None,
+            Some(CategoriaBienComun::SalonSocial),
+        )
+        .await
+        .expect("salones");
+        let piscinas = listar_recursos(
+            &e.unidad,
+            &reloj(),
+            &e.ctx,
+            None,
+            Some(CategoriaBienComun::Piscina),
+        )
+        .await
+        .expect("piscinas");
+
+        assert_eq!(
+            salones.iter().map(|r| r.id).collect::<Vec<_>>(),
+            vec![salon.id]
+        );
+        assert!(piscinas.is_empty(), "la PH no registró piscinas");
     }
 
     #[tokio::test]

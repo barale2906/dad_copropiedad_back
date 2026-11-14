@@ -17,6 +17,8 @@ use application::{
         RespuestaProveedor,
     },
 };
+use std::time::Duration;
+
 use chrono::{FixedOffset, TimeZone, Utc};
 use domain::{
     facturacion::AmbienteDian,
@@ -30,7 +32,7 @@ use super::ubl::{
     Clase, Correccion, Direccion, DocumentoUbl, FormaPago, Linea, Parte, Referencia, RegimenIva,
     Resolucion, Software, TIPO_DOCUMENTO_NIT, TipoPersona,
 };
-use super::{DocumentoFirmado, ErrorMotor, preparar};
+use super::{DocumentoFirmado, ErrorMotor, adjunto, preparar};
 use crate::ProveedorSimulado;
 
 /// Medio de pago «instrumento no definido» (tabla 13.3.4.2 del anexo).
@@ -194,9 +196,16 @@ fn a_ubl(
     })
 }
 
-fn firmar(
-    d: &DocumentoAEmitir,
-) -> Result<(DocumentoFirmado, CredencialFirma, &CredencialesFacturador), ErrorMotor> {
+/// Documento listo: firmado, con la credencial, las credenciales de la entidad y su UBL.
+type Preparado<'a> = (
+    DocumentoFirmado,
+    CredencialFirma,
+    &'a CredencialesFacturador,
+    DocumentoUbl,
+);
+
+/// Genera y firma el documento; con `contingencia`, la versión tipo 04 de la factura.
+fn firmar(d: &DocumentoAEmitir, contingencia: bool) -> Result<Preparado<'_>, ErrorMotor> {
     let credenciales = d.credenciales.as_ref().ok_or_else(|| {
         ErrorMotor::Datos("el motor propio necesita las credenciales de la entidad".into())
     })?;
@@ -212,7 +221,13 @@ fn firmar(
         id: credenciales.software_id.clone(),
         pin: credenciales.pin.clone(),
     };
-    let ubl = a_ubl(d, credenciales)?;
+    let mut ubl = a_ubl(d, credenciales)?;
+    if let Clase::Factura {
+        contingencia_dian, ..
+    } = &mut ubl.clase
+    {
+        *contingencia_dian = contingencia;
+    }
     let firmado = preparar(
         &ubl,
         &software,
@@ -220,7 +235,26 @@ fn firmar(
         credenciales.consecutivo_archivo,
         &d.id.to_string(),
     )?;
-    Ok((firmado, firma, credenciales))
+    Ok((firmado, firma, credenciales, ubl))
+}
+
+/// `AttachedDocument` firmado del documento, con la respuesta de la DIAN si la hay.
+fn contenedor(
+    preparado: &Preparado<'_>,
+    respuesta: Option<&[u8]>,
+    id: &str,
+) -> Result<Vec<u8>, ErrorMotor> {
+    let (firmado, firma, credenciales, ubl) = preparado;
+    let ahora = Utc::now().with_timezone(&colombia());
+    Ok(adjunto::generar(
+        ubl,
+        firmado,
+        respuesta.map(|r| (r, ahora)),
+        firma,
+        credenciales.consecutivo_archivo,
+        &format!("{id}-ad"),
+    )?
+    .xml)
 }
 
 fn mensaje(r: &RespuestaDian) -> Option<String> {
@@ -237,7 +271,12 @@ fn mensaje(r: &RespuestaDian) -> Option<String> {
 pub struct MotorPropio {
     habilitacion: ServicioDian,
     produccion: ServicioDian,
+    /// Espera entre los intentos de transmisión (5 s, anexo técnico).
+    espera: Duration,
 }
+
+/// Intentos de transmisión antes de declarar la contingencia (anexo técnico).
+const INTENTOS: u32 = 3;
 
 impl MotorPropio {
     /// Motor con las URL de habilitación y de producción.
@@ -249,7 +288,14 @@ impl MotorPropio {
         Ok(Self {
             habilitacion: ServicioDian::new(url_habilitacion)?,
             produccion: ServicioDian::new(url_produccion)?,
+            espera: Duration::from_secs(5),
         })
+    }
+
+    /// Cambia la espera entre intentos (las pruebas no esperan 5 s).
+    pub fn con_espera(mut self, espera: Duration) -> Self {
+        self.espera = espera;
+        self
     }
 
     fn servicio(&self, ambiente: AmbienteDian) -> &ServicioDian {
@@ -259,29 +305,78 @@ impl MotorPropio {
         }
     }
 
-    /// Genera, firma y transmite el documento (`SendBillSync`).
+    /// Genera, firma y transmite el documento (`SendBillSync`) con hasta 3 intentos separados
+    /// 5 s. Validado, devuelve también el `AttachedDocument` para el adquirente. Si la DIAN no
+    /// responde, una factura sale en **contingencia tipo 04** (mismo prefijo y número, nueva firma)
+    /// con su `AttachedDocument` sin validación, para entregarla y transmitirla después.
     ///
     /// # Errors
     ///
     /// [`AppError::Validacion`] si el documento o el certificado no sirven;
-    /// [`AppError::Infraestructura`] si la DIAN no responde (contingencia).
+    /// [`AppError::Infraestructura`] si la DIAN no responde y el documento no admite contingencia
+    /// (notas) o ya estaba en ella.
     pub async fn emitir(&self, d: &DocumentoAEmitir) -> AppResult<RespuestaProveedor> {
-        let (firmado, firma, credenciales) = firmar(d).map_err(a_app)?;
-        let r = self
-            .servicio(credenciales.ambiente)
-            .enviar(&firma, Utc::now(), &firmado.nombre_zip, &firmado.zip())
-            .await
-            .map_err(a_app)?;
+        let preparado = firmar(d, d.contingencia).map_err(a_app)?;
+        let (firmado, firma, credenciales, _) = &preparado;
+        let mut caida = None;
+        for intento in 0..INTENTOS {
+            match self
+                .servicio(credenciales.ambiente)
+                .enviar(firma, Utc::now(), &firmado.nombre_zip, &firmado.zip())
+                .await
+            {
+                Ok(r) => {
+                    let adjunto = if r.valido {
+                        Some(
+                            contenedor(
+                                &preparado,
+                                r.application_response.as_deref(),
+                                &d.id.to_string(),
+                            )
+                            .map_err(a_app)?,
+                        )
+                    } else {
+                        None
+                    };
+                    return Ok(RespuestaProveedor {
+                        estado: if r.valido {
+                            EstadoDocumentoElectronico::Validado
+                        } else {
+                            EstadoDocumentoElectronico::Rechazado
+                        },
+                        id_externo: Some(firmado.codigo.clone()),
+                        mensaje: mensaje(&r),
+                        cufe: Some(firmado.codigo.clone()),
+                        xml: Some(firmado.xml.clone()),
+                        adjunto,
+                    });
+                }
+                Err(ErrorMotor::Transporte(e)) => {
+                    caida = Some(e);
+                    if intento + 1 < INTENTOS {
+                        tokio::time::sleep(self.espera).await;
+                    }
+                }
+                Err(otro) => return Err(a_app(otro)),
+            }
+        }
+        let caida = ErrorMotor::Transporte(caida.unwrap_or_default());
+        if d.tipo != TipoDocumentoElectronico::Factura || d.contingencia {
+            return Err(a_app(caida));
+        }
+        let tipo_04 = firmar(d, true).map_err(a_app)?;
+        let adjunto = contenedor(&tipo_04, None, &d.id.to_string()).map_err(a_app)?;
+        let (f04, ..) = tipo_04;
         Ok(RespuestaProveedor {
-            estado: if r.valido {
-                EstadoDocumentoElectronico::Validado
-            } else {
-                EstadoDocumentoElectronico::Rechazado
-            },
-            id_externo: Some(firmado.codigo.clone()),
-            mensaje: mensaje(&r),
-            cufe: Some(firmado.codigo),
-            xml: Some(firmado.xml),
+            estado: EstadoDocumentoElectronico::Contingencia,
+            id_externo: Some(f04.codigo.clone()),
+            cufe: Some(f04.codigo),
+            xml: Some(f04.xml),
+            adjunto: Some(adjunto),
+            mensaje: Some(format!(
+                "la DIAN no respondió ({caida}): factura de contingencia tipo 04 entregada; se \
+                 transmite dentro de las 48 horas"
+            )),
         })
     }
 
@@ -313,6 +408,7 @@ impl MotorPropio {
             id_externo: Some(id_externo.to_owned()),
             cufe: None,
             xml: None,
+            adjunto: None,
             mensaje: mensaje(&r),
         })
     }
@@ -320,7 +416,7 @@ impl MotorPropio {
 
 impl HabilitacionDian for MotorPropio {
     async fn enviar_set_pruebas(&self, d: &DocumentoAEmitir) -> AppResult<RespuestaProveedor> {
-        let (firmado, firma, credenciales) = firmar(d).map_err(a_app)?;
+        let (firmado, firma, credenciales, _) = firmar(d, false).map_err(a_app)?;
         let test_set = credenciales
             .test_set_id
             .as_deref()
@@ -341,6 +437,7 @@ impl HabilitacionDian for MotorPropio {
             id_externo: Some(clave),
             cufe: Some(firmado.codigo),
             xml: Some(firmado.xml),
+            adjunto: None,
             mensaje: None,
         })
     }
@@ -367,6 +464,7 @@ impl HabilitacionDian for MotorPropio {
             id_externo: Some(clave.to_owned()),
             cufe: None,
             xml: None,
+            adjunto: None,
             mensaje: respuestas.first().and_then(mensaje),
         })
     }

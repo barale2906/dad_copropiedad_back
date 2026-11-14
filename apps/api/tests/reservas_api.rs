@@ -285,3 +285,30 @@ async fn sorteo_de_parqueaderos_verificable(pool: PgPool) {
         .count();
     assert_eq!(asignados, 1);
 }
+
+/// La zona de la maqueta 3D abre los recursos de su categoría, con el nombre que les dio la PH.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn los_recursos_se_filtran_por_la_categoria_de_la_zona(pool: PgPool) {
+    let ph = ph(pool).await;
+    ph.habilitar("bienes_comunes").await;
+    let salon = salon(&ph).await;
+
+    let (s, salones) = ph
+        .pedir(Method::GET, "/recursos?categoria=salon_social", None)
+        .await;
+    let (_, piscinas) = ph
+        .pedir(Method::GET, "/recursos?categoria=piscina", None)
+        .await;
+    let (s_malo, v) = ph
+        .pedir(Method::GET, "/recursos?categoria=volcan", None)
+        .await;
+
+    assert_eq!(s, StatusCode::OK, "{salones}");
+    assert_eq!(salones.as_array().map(Vec::len), Some(1));
+    assert_eq!(salones[0]["id"], json!(salon));
+    assert_eq!(piscinas, json!([]), "la PH no registró piscinas");
+    assert_eq!(
+        (s_malo, &v["error"]["codigo"]),
+        (StatusCode::BAD_REQUEST, &json!("peticion_invalida"))
+    );
+}

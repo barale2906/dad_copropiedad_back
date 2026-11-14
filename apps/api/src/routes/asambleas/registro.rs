@@ -92,7 +92,10 @@ pub async fn buscar(
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Asistentes", body = Vec<AsistenteRespuesta>))
+    responses(
+        (status = OK, description = "Asistentes", body = Vec<AsistenteRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` ni `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn listar_asistentes(
     State(state): State<AppState>,
@@ -166,6 +169,7 @@ pub struct RegistroAsistentePeticion {
         (status = CREATED, description = "Asistente registrado", body = RegistroRespuesta),
         (status = CONFLICT, description = "Bien en otro asistente, cargo prohibido o máximo de poderes (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin bienes, teléfono inválido o falta el soporte (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn registrar(
@@ -221,6 +225,7 @@ pub async fn registrar(
     responses(
         (status = CREATED, description = "Poder registrado", body = AsistenteRespuesta),
         (status = CONFLICT, description = "Bien ocupado, cargo prohibido o máximo (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn agregar_poder(
@@ -255,6 +260,7 @@ pub struct SalidaPeticion {
     responses(
         (status = OK, description = "Salida registrada", body = AsistenteRespuesta),
         (status = CONFLICT, description = "No estaba presente (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn salida(
@@ -287,6 +293,7 @@ pub async fn salida(
     responses(
         (status = OK, description = "Reingreso registrado", body = AsistenteRespuesta),
         (status = CONFLICT, description = "Ya estaba presente (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn reingreso(
@@ -320,6 +327,7 @@ pub struct RotuloPeticion {
     responses(
         (status = OK, description = "Rótulo ligado", body = AsistenteRespuesta),
         (status = CONFLICT, description = "El rótulo ya está en uso (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn rotulo(
@@ -355,6 +363,7 @@ pub struct ConfirmacionPeticion {
     responses(
         (status = OK, description = "Confirmación encolada", body = AsistenteRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin teléfono o sin líneas activas (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn confirmacion(
@@ -383,7 +392,10 @@ pub async fn confirmacion(
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Poderes", body = Vec<PoderRespuesta>))
+    responses(
+        (status = OK, description = "Poderes", body = Vec<PoderRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn listar_poderes(
     State(state): State<AppState>,
@@ -422,6 +434,7 @@ pub struct RevisionPoderPeticion {
     responses(
         (status = OK, description = "Poder actualizado", body = PoderRespuesta),
         (status = CONFLICT, description = "Transición inválida (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn revisar_poder(
@@ -481,6 +494,7 @@ impl From<ResultadoMorosos> for MorososRespuesta {
     responses(
         (status = OK, description = "Morosos fijados", body = MorososRespuesta),
         (status = CONFLICT, description = "La reunión ya se instaló (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn fijar_morosos(
@@ -512,6 +526,7 @@ pub async fn fijar_morosos(
     responses(
         (status = OK, description = "Morosos fijados", body = MorososRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "No es una planilla legible (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn importar_morosos(

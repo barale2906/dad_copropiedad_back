@@ -351,6 +351,7 @@ mod tests {
                 asunto: id.to_string(),
                 texto: "Texto".into(),
                 html: None,
+                adjuntos: Vec::new(),
             })),
         }
     }

@@ -943,6 +943,8 @@ where
             columnas: libro.columnas,
             filas: libro.filas,
             generada: hora(reloj.ahora()),
+            qr: None,
+            pie: None,
         })
         .await
 }

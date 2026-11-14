@@ -19,6 +19,7 @@
 //! - Publicidad de la plataforma ([`worker_publicidad`]): finaliza campañas vencidas y encola
 //!   los masivos (solo a quien autorizó, prioridad 9).
 //! - Cartera de la PH ([`worker_cartera`]): recordatorios de pago y avisos de mora.
+//! - Facturación electrónica ([`worker_facturacion`]): retransmite los documentos en contingencia.
 
 mod mensajeria;
 mod routes;
@@ -26,6 +27,7 @@ mod state;
 mod worker_acceso;
 mod worker_asambleas;
 mod worker_cartera;
+mod worker_facturacion;
 mod worker_gestion;
 mod worker_publicidad;
 mod worker_recordatorios;
@@ -152,6 +154,31 @@ async fn main() -> anyhow::Result<()> {
         esperar_apagado(apagado.clone()),
     ));
 
+    let facturacion = shared::config::FacturacionConfig::from_env()
+        .context("configuración de facturación inválida")?;
+    let contingencias = tokio::spawn(worker_facturacion::ejecutar(
+        infra_postgres::UnidadDeTrabajoPlataformaPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        worker_facturacion::Medios {
+            proveedor: infra_facturacion::ProveedorDian::new(
+                infra_facturacion::ProveedorSimulado::new(),
+                infra_facturacion::MotorPropio::new(
+                    &facturacion.url_habilitacion,
+                    &facturacion.url_produccion,
+                )
+                .map_err(|e| anyhow::anyhow!("{e}"))
+                .context("cliente del servicio web de la DIAN")?,
+            ),
+            cofre: Arc::new(infra_seguridad::CofreAesGcm::new(facturacion.clave_maestra)),
+            generador: infra_pdf::GeneradorTypst,
+            empaquetador: infra_facturacion::EmpaquetadorZip,
+            pie: facturacion.pie(),
+        },
+        Arc::clone(&archivos),
+        Arc::clone(&hay_salida),
+        esperar_apagado(apagado.clone()),
+    ));
+
     let recordatorios = tokio::spawn(worker_recordatorios::ejecutar(
         DirectorioRecordatoriosPg::new(db.clone()),
         UnidadDeTrabajoPg::new(db.clone()),
@@ -213,6 +240,10 @@ async fn main() -> anyhow::Result<()> {
 
     if let Err(e) = cartera.await {
         tracing::error!(error = %e, "el worker de avisos de cartera terminó con error");
+    }
+
+    if let Err(e) = contingencias.await {
+        tracing::error!(error = %e, "el worker de contingencias de facturación terminó con error");
     }
 
     if let Err(e) = recordatorios.await {

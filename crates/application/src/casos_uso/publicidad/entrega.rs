@@ -671,6 +671,7 @@ fn mensaje(
                 asunto: c.titulo.clone(),
                 texto,
                 html: None,
+                adjuntos: Vec::new(),
             }))
         }
         CanalPublicidad::App | CanalPublicidad::Pantalla => None,

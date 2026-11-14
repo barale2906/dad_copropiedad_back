@@ -175,7 +175,7 @@ pub struct SincronizacionRespuesta {
     responses(
         (status = OK, description = "Cambios", body = SincronizacionRespuesta),
         (status = UNAUTHORIZED, description = "Token de máquina inválido o puente retirado (`no_autenticado`)", body = ErrorRespuesta),
-        (status = FORBIDDEN, description = "La PH no tiene el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Token de máquina inválido o puente retirado", body = ErrorRespuesta),
         (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]

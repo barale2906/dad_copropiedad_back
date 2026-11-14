@@ -935,6 +935,8 @@ where
                 .to_vec(),
             filas: filas_texto(&c),
             generada: reloj.ahora().format("%Y-%m-%d %H:%M UTC").to_string(),
+            qr: None,
+            pie: None,
         })
         .await
 }
@@ -981,6 +983,7 @@ where
             asunto: format!("Certificado de retenciones · {}", c.entidad),
             texto: cuerpo,
             html: None,
+            adjuntos: Vec::new(),
         }),
     })
     .await?;

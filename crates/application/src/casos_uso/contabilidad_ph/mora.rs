@@ -1059,6 +1059,8 @@ pub(crate) async fn emitir_certificado_en<T: TxCartera, G: GeneradorActas>(
             columnas: ["Concepto", "Vence", "Saldo"].map(str::to_owned).to_vec(),
             filas,
             generada: ahora.format("%Y-%m-%d %H:%M UTC").to_string(),
+            qr: None,
+            pie: None,
         })
         .await?;
     let certificado = CertificadoCartera {

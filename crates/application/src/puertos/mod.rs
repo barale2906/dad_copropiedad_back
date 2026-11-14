@@ -18,6 +18,7 @@ pub mod contabilidad;
 pub mod copropiedades;
 pub mod correo;
 pub mod directorio;
+pub mod entidades;
 pub mod facturacion;
 pub mod idempotencia;
 pub mod identidad;
@@ -58,6 +59,7 @@ pub use directorio::{
     PurgaDirectorio, RepositorioDirectorio, RepositorioDirectorioPlataforma,
     RepositorioSolicitudesProveedor,
 };
+pub use entidades::RepositorioEntidad;
 pub use idempotencia::RegistroIdempotencia;
 pub use identidad::{
     HashContrasenas, RepositorioContratos, RepositorioCuentas, RepositorioOrganizaciones,

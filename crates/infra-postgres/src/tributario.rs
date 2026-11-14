@@ -419,6 +419,7 @@ struct FilaDocumento {
     proveedor: String,
     id_externo: Option<String>,
     xml_archivo_id: Option<Uuid>,
+    adjunto_archivo_id: Option<Uuid>,
     respuesta: Option<String>,
     intentos: i32,
     total: Decimal,
@@ -445,6 +446,7 @@ impl FilaDocumento {
             proveedor: self.proveedor,
             id_externo: self.id_externo,
             xml_archivo_id: self.xml_archivo_id.map(ArchivoId::from_uuid),
+            adjunto_archivo_id: self.adjunto_archivo_id.map(ArchivoId::from_uuid),
             respuesta: self.respuesta,
             intentos: u32_de(self.intentos, "intentos")?,
             total: monto(self.total)?,
@@ -752,7 +754,7 @@ impl RepositorioTributario for TransaccionPg {
         sqlx::query_as!(
             FilaDocumento,
             "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,
-                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, respuesta,
+                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, adjunto_archivo_id, respuesta,
                     intentos, total, creado_en, enviado_en, validado_en
              FROM documentos_electronicos WHERE id = $1 FOR UPDATE",
             id.as_uuid(),
@@ -772,7 +774,7 @@ impl RepositorioTributario for TransaccionPg {
         sqlx::query_as!(
             FilaDocumento,
             "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,
-                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, respuesta,
+                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, adjunto_archivo_id, respuesta,
                     intentos, total, creado_en, enviado_en, validado_en
              FROM documentos_electronicos
              WHERE tipo = $1 AND origen_tipo = $2 AND origen_id = $3 FOR UPDATE",
@@ -795,7 +797,7 @@ impl RepositorioTributario for TransaccionPg {
         sqlx::query_as!(
             FilaDocumento,
             "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,
-                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, respuesta,
+                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, adjunto_archivo_id, respuesta,
                     intentos, total, creado_en, enviado_en, validado_en
              FROM documentos_electronicos
              WHERE ($1::text IS NULL OR tipo = $1) AND ($2::text IS NULL OR estado = $2)
@@ -821,7 +823,7 @@ impl RepositorioTributario for TransaccionPg {
         sqlx::query!(
             "UPDATE documentos_electronicos SET estado = $2, cufe = $3, proveedor = $4,
                  id_externo = $5, xml_archivo_id = $6, respuesta = $7, intentos = $8,
-                 enviado_en = $9, validado_en = $10
+                 enviado_en = $9, validado_en = $10, adjunto_archivo_id = $11
              WHERE id = $1",
             d.id.as_uuid(),
             d.estado.as_str(),
@@ -833,6 +835,7 @@ impl RepositorioTributario for TransaccionPg {
             i32_de(d.intentos, "intentos")?,
             d.enviado_en,
             d.validado_en,
+            d.adjunto_archivo_id.map(ArchivoId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await

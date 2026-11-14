@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,\n                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, respuesta,\n                    intentos, total, creado_en, enviado_en, validado_en\n             FROM documentos_electronicos\n             WHERE ($1::text IS NULL OR tipo = $1) AND ($2::text IS NULL OR estado = $2)\n               AND ($3::date IS NULL OR creado_en >= $3::date::timestamptz)\n               AND ($4::date IS NULL OR creado_en < ($4::date + 1)::timestamptz)\n             ORDER BY creado_en DESC, id DESC\n             LIMIT $5",
+  "query": "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,\n                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, adjunto_archivo_id, respuesta,\n                    intentos, total, creado_en, enviado_en, validado_en\n             FROM documentos_electronicos WHERE id = $1 FOR UPDATE",
   "describe": {
     "columns": [
       {
@@ -148,6 +148,17 @@
       },
       {
         "ordinal": 13,
+        "name": "adjunto_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "adjunto_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
         "name": "respuesta",
         "type_info": "Text",
         "origin": {
@@ -158,7 +169,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "intentos",
         "type_info": "Int4",
         "origin": {
@@ -169,7 +180,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "total",
         "type_info": "Numeric",
         "origin": {
@@ -180,7 +191,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -191,7 +202,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "enviado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -202,7 +213,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "validado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -215,11 +226,7 @@
     ],
     "parameters": {
       "Left": [
-        "Text",
-        "Text",
-        "Date",
-        "Date",
-        "Int8"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -237,6 +244,7 @@
       true,
       true,
       true,
+      true,
       false,
       false,
       false,
@@ -244,5 +252,5 @@
       true
     ]
   },
-  "hash": "c340284a335ea330d6c7900767c286416635a302595e268bba4284a237efd105"
+  "hash": "77d6faa480f46a79db79dfd63b5513c89f5b7f6d3a8dd8567e8e6059e1570f87"
 }

@@ -67,6 +67,7 @@ async fn main() -> anyhow::Result<()> {
         );
     }
     state.cofre = std::sync::Arc::new(infra_seguridad::CofreAesGcm::new(facturacion.clave_maestra));
+    state.pie_facturacion = facturacion.pie();
     state.facturacion = infra_facturacion::ProveedorDian::new(
         infra_facturacion::ProveedorSimulado::new(),
         infra_facturacion::MotorPropio::new(

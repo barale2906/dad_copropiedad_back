@@ -168,6 +168,7 @@ mod tests {
             asunto: "Asunto".into(),
             texto: "Texto".into(),
             html: None,
+            adjuntos: Vec::new(),
         });
 
         assert_eq!(
@@ -187,6 +188,7 @@ mod tests {
             asunto: "Asunto".into(),
             texto: "Texto".into(),
             html: Some("<p>Texto</p>".into()),
+            adjuntos: Vec::new(),
         });
 
         let json = serde_json::to_value(&correo).expect("serializa");

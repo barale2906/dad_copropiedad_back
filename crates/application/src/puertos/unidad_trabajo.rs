@@ -766,6 +766,7 @@ mod tests {
                 asunto: "Asunto".into(),
                 texto: "Texto".into(),
                 html: None,
+                adjuntos: Vec::new(),
             }),
         };
 

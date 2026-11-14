@@ -69,7 +69,7 @@ pub struct CopropiedadRespuesta {
     security(("bearer" = [])),
     responses(
         (status = OK, description = "Copropiedades", body = Vec<CopropiedadRespuesta>),
-        (status = FORBIDDEN, description = "Sin permiso o sin segundo factor", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.copropiedades.ver` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_copropiedades(
@@ -302,7 +302,10 @@ pub async fn terminar_modulo(
     path = "/roles",
     tag = ETIQUETA_PLATAFORMA,
     security(("bearer" = [])),
-    responses((status = OK, description = "Roles de plataforma", body = Vec<RolRespuesta>))
+    responses(
+        (status = OK, description = "Roles de plataforma", body = Vec<RolRespuesta>),
+        (status = FORBIDDEN, description = "Sin `plataforma.roles.asignar` ni `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn listar_roles(
     State(state): State<AppState>,
@@ -322,6 +325,7 @@ pub async fn listar_roles(
     responses(
         (status = CREATED, description = "Rol creado", body = RolRespuesta),
         (status = CONFLICT, description = "Código repetido", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_rol(
@@ -341,7 +345,10 @@ pub async fn crear_rol(
     security(("bearer" = [])),
     params(("rol_id" = Uuid, Path, description = "Rol")),
     request_body = PermisosPeticion,
-    responses((status = OK, description = "Rol actualizado", body = RolRespuesta))
+    responses(
+        (status = OK, description = "Rol actualizado", body = RolRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn editar_permisos_rol(
     State(state): State<AppState>,
@@ -379,7 +386,10 @@ pub struct AsignacionPlataformaRespuesta {
     tag = ETIQUETA_PLATAFORMA,
     security(("bearer" = [])),
     request_body = AsignacionPlataformaPeticion,
-    responses((status = CREATED, description = "Asignado", body = AsignacionPlataformaRespuesta))
+    responses(
+        (status = CREATED, description = "Asignado", body = AsignacionPlataformaRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.roles.asignar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn asignar(
     State(state): State<AppState>,
@@ -410,6 +420,7 @@ pub async fn asignar(
     responses(
         (status = NO_CONTENT, description = "Terminada"),
         (status = CONFLICT, description = "Último superusuario", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.roles.asignar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn revocar(
@@ -434,7 +445,10 @@ pub async fn revocar(
     tag = ETIQUETA_PLATAFORMA,
     security(("bearer" = [])),
     params(("cuenta_id" = Uuid, Path, description = "Cuenta")),
-    responses((status = NO_CONTENT, description = "Bloqueada"))
+    responses(
+        (status = NO_CONTENT, description = "Bloqueada"),
+        (status = FORBIDDEN, description = "Sin `plataforma.cuentas.bloquear` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn bloquear_cuenta(
     State(state): State<AppState>,
@@ -457,7 +471,10 @@ pub async fn bloquear_cuenta(
     path = "/reclamaciones",
     tag = ETIQUETA_PLATAFORMA,
     security(("bearer" = [])),
-    responses((status = OK, description = "Pendientes", body = Vec<ReclamacionRespuesta>))
+    responses(
+        (status = OK, description = "Pendientes", body = Vec<ReclamacionRespuesta>),
+        (status = FORBIDDEN, description = "Sin `plataforma.organizaciones.revisar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn reclamaciones_pendientes(
     State(state): State<AppState>,
@@ -485,6 +502,7 @@ pub struct ResolucionPeticion {
     responses(
         (status = NO_CONTENT, description = "Resuelta"),
         (status = CONFLICT, description = "Ya estaba resuelta", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.organizaciones.revisar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn resolver_reclamacion(

@@ -108,6 +108,13 @@ pub struct TablaPdf {
     pub columnas: Vec<String>,
     pub filas: Vec<Vec<String>>,
     pub generada: String,
+    /// Texto del código QR que va en todas las páginas (representación gráfica de un documento
+    /// electrónico: la consulta del CUFE en la DIAN).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub qr: Option<String>,
+    /// Línea al pie de todas las páginas (p. ej. fabricante y software de facturación).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pie: Option<String>,
 }
 
 /// Generación de documentos PDF (actas, rótulos, libros del censo).

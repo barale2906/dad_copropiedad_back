@@ -17,7 +17,7 @@ SHELL := /bin/bash
 .PHONY: help herramientas env setup \
 	    up down reiniciar-bd ps logs psql \
 	    api gateway dev superusuario \
-	    check fmt fmt-check lint test test-rapido cov verificar doc doc-items doc-abrir openapi \
+	    check fmt fmt-check lint test test-rapido cov verificar doc doc-items doc-abrir openapi guia-endpoints \
 	    migrar migracion revertir migraciones sqlx-prepare \
 	    deny audit build release limpiar
 
@@ -126,6 +126,9 @@ doc-abrir: ## Genera y abre la documentación en el navegador
 
 openapi: ## Regenera el contrato apps/api/openapi.json tras cambiar rutas o DTOs (revisar el diff)
 	ACTUALIZAR_OPENAPI=1 $(CARGO) nextest run -p api --test contrato_openapi
+
+guia-endpoints: ## Regenera docs/guia-frontend-endpoints.md (índice del contrato para el frontend)
+	python3 scripts/indice_endpoints.py
 
 ##@ Base de datos (migraciones con DATABASE_URL = dueño del esquema)
 migrar: ## Aplica las migraciones pendientes

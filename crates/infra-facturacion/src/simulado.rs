@@ -100,6 +100,7 @@ fn rechazo(mensaje: &str) -> RespuestaProveedor {
         id_externo: None,
         cufe: None,
         xml: None,
+        adjunto: None,
         mensaje: Some(mensaje.into()),
     }
 }
@@ -130,6 +131,7 @@ impl ProveedorFacturacion for ProveedorSimulado {
             id_externo: Some(format!("sim-{}", d.id)),
             xml: Some(xml(d, &cufe)),
             cufe: Some(cufe),
+            adjunto: None,
             mensaje: Some("validado por el proveedor simulado".into()),
         })
     }
@@ -145,6 +147,7 @@ impl ProveedorFacturacion for ProveedorSimulado {
             id_externo: Some(id_externo.into()),
             cufe: Some(sha384_hex(id_externo)),
             xml: None,
+            adjunto: None,
             mensaje: Some("validado por el proveedor simulado".into()),
         })
     }
@@ -162,6 +165,7 @@ impl ProveedorFacturacion for ProveedorSimulado {
             id_externo: Some(format!("sim-radian-{}", &id[..32])),
             cufe: None,
             xml: None,
+            adjunto: None,
             mensaje: Some(format!("evento {} registrado (simulado)", evento.as_str())),
         })
     }
@@ -213,6 +217,7 @@ mod tests {
             referencia_numero: None,
             referencia_fecha: None,
             credenciales: None,
+            contingencia: false,
         }
     }
 

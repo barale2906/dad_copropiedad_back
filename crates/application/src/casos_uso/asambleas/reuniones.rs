@@ -771,6 +771,7 @@ pub(crate) async fn convocar_en<T: TxAsambleas>(
                     asunto: format!("Convocatoria: {} — {}", r.titulo, ficha.nombre),
                     texto: texto_convocatoria(&ficha.nombre, &r, &fecha, &donde),
                     html: None,
+                    adjuntos: Vec::new(),
                 }),
             };
             let outbox = tx.encolar_de_reunion(id, &evento).await?;

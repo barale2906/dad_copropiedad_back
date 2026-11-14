@@ -342,6 +342,7 @@ impl From<Capacidades> for CapacidadesRespuesta {
     responses(
         (status = OK, description = "Permisos y módulos", body = CapacidadesRespuesta),
         (status = NOT_FOUND, description = "La cuenta no tiene roles en la copropiedad (`no_encontrado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_capacidades(
@@ -554,6 +555,7 @@ pub async fn crear_punto(
         (status = NO_CONTENT, description = "Horario reemplazado"),
         (status = NOT_FOUND, description = "No existe el punto", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Franjas solapadas o invertidas (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `copropiedad.datos.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn definir_horario(

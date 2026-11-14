@@ -97,7 +97,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso o sin segundo factor",
+            "description": "Sin `plataforma.copropiedades.ver` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -473,7 +473,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.roles.asignar` ni `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -527,7 +527,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -605,7 +605,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -661,7 +661,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.roles.asignar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -712,7 +712,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.roles.asignar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -773,7 +773,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.cuentas.bloquear` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -822,7 +822,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.organizaciones.revisar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -883,7 +883,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.organizaciones.revisar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -942,7 +942,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso o sin segundo factor",
+            "description": "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -996,7 +996,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1067,7 +1067,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1126,7 +1126,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1180,7 +1180,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1548,7 +1548,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.directorio.gestionar` ni `plataforma.publicidad.moderar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1624,7 +1624,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.directorio.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3541,7 +3541,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.plantillas_contables.publicar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3612,7 +3612,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.plantillas_contables.publicar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3693,7 +3693,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "description": "Sin `plataforma.plantillas_contables.publicar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -4706,7 +4706,7 @@
             }
           },
           "403": {
-            "description": "La PH no tiene el módulo (`modulo_no_habilitado`)",
+            "description": "Token de máquina inválido o puente retirado",
             "content": {
               "application/json": {
                 "schema": {
@@ -4925,7 +4925,7 @@
             }
           },
           "403": {
-            "description": "Firma inválida o enlace vencido (`enlace_invalido`)",
+            "description": "Enlace con firma inválida o vencido (`enlace_invalido`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5320,7 +5320,7 @@
             }
           },
           "403": {
-            "description": "No puede editarla (`sin_permiso`)",
+            "description": "Solo soporte (`plataforma.organizaciones.revisar`), quien la creó mientras está sin reclamar, o sus dueños y gestores (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5381,7 +5381,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "Solo los dueños de la organización (los gestores agregan gestores y operarios) o soporte (`plataforma.organizaciones.revisar`) (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6984,7 +6984,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: basta un rol en la copropiedad",
             "content": {
               "application/json": {
                 "schema": {
@@ -7222,7 +7222,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `copropiedad.datos.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7871,7 +7871,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_privados.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7959,7 +7959,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_privados.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8057,7 +8057,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_privados.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8148,7 +8148,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_privados.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8429,7 +8429,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `titulares.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8530,7 +8530,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `titulares.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8601,7 +8601,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: basta un rol en la copropiedad",
             "content": {
               "application/json": {
                 "schema": {
@@ -8826,7 +8826,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_privados.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8914,7 +8914,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_privados.coeficientes.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -9012,7 +9012,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_privados.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13687,7 +13687,7 @@
             }
           },
           "403": {
-            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "description": "No exige permisos (solo bienes de los que la cuenta es titular o pagador); módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13775,7 +13775,7 @@
             }
           },
           "403": {
-            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "description": "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13856,7 +13856,7 @@
             }
           },
           "403": {
-            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "description": "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13939,7 +13939,7 @@
             }
           },
           "403": {
-            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "description": "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14017,7 +14017,7 @@
             }
           },
           "403": {
-            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "description": "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14837,7 +14837,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `censo.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15010,7 +15010,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `censo.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15101,7 +15101,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `censo.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15354,7 +15354,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `censo.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15528,7 +15528,7 @@
             }
           },
           "403": {
-            "description": "No es titular ni residente del bien (`sin_permiso`)",
+            "description": "La cuenta no está vinculada al bien y no tiene `censo.editar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15606,7 +15606,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `censo.aprobar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15704,7 +15704,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `censo.aprobar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16140,7 +16140,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `personas.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16607,6 +16607,15 @@
             "schema": {
               "$ref": "#/components/schemas/TipoRecurso"
             }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "description": "Solo los bienes comunes de esta categoría (la zona de la maqueta 3D: `piscina`,\n`cancha`, `gimnasio`, `salon_social`…).",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CategoriaBienComun"
+            }
           }
         ],
         "responses": {
@@ -16798,7 +16807,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_comunes.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16884,7 +16893,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_comunes.editar` (o `parqueaderos.asignar` si es un parqueadero) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16972,7 +16981,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_comunes.editar` (o `parqueaderos.asignar` si es un parqueadero) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17071,7 +17080,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_comunes.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17281,7 +17290,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `reservas.crear` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17379,7 +17388,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No es su reserva y no tiene `reservas.ver_todas` ni `reservas.entregas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17457,7 +17466,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `reservas.aprobar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17555,7 +17564,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `reservas.aprobar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17653,7 +17662,7 @@
             }
           },
           "403": {
-            "description": "No es suya (`sin_permiso`)",
+            "description": "No es su reserva y no tiene `reservas.cancelar_cualquiera` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17849,7 +17858,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `reservas.entregas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17937,7 +17946,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `reservas.entregas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18035,7 +18044,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `reservas.aprobar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18272,7 +18281,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `reservas.restringir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18500,7 +18509,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `parqueaderos.asignar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18608,7 +18617,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `parqueaderos.asignar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18689,7 +18698,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `parqueaderos.asignar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18760,7 +18769,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `bienes_comunes.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19015,7 +19024,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `sorteos.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19424,7 +19433,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `tickets.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19566,7 +19575,7 @@
             }
           },
           "403": {
-            "description": "Sin permisos de tickets (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "description": "Sin `tickets.crear`, `tickets.ver_todos`, `tickets.atender` ni `tickets.convivencia.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19798,7 +19807,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No es el solicitante, no lo atiende y no tiene `tickets.ver_todos` (en convivencia, `tickets.convivencia.ver`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20090,7 +20099,7 @@
             }
           },
           "403": {
-            "description": "Su papel no permite ese cambio (`sin_permiso`)",
+            "description": "La transición no corresponde a su papel: gestiona (`tickets.asignar`), atiende (`tickets.atender`) o es el solicitante (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20198,7 +20207,7 @@
             }
           },
           "403": {
-            "description": "No es el solicitante ni atiende el ticket (`sin_permiso`)",
+            "description": "No es el solicitante ni lo atiende (`tickets.atender`) ni gestiona (`tickets.asignar`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20296,7 +20305,7 @@
             }
           },
           "403": {
-            "description": "No es el solicitante (`sin_permiso`)",
+            "description": "No es el solicitante: solo él califica (`sin_permiso`, como si faltara `tickets.crear`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20377,7 +20386,7 @@
             }
           },
           "403": {
-            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "description": "Sin `copropiedad.datos.ver` (las inactivas, con `preguntas_frecuentes.editar`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20551,7 +20560,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `preguntas_frecuentes.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20728,7 +20737,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `conversaciones.atender` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20904,7 +20913,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `conversaciones.atender` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21194,7 +21203,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `inventario.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21280,7 +21289,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `inventario.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21371,7 +21380,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `inventario.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21469,7 +21478,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `inventario.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21743,7 +21752,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21869,7 +21878,7 @@
             }
           },
           "403": {
-            "description": "Sin permisos de mantenimiento (`sin_permiso`)",
+            "description": "Sin `mantenimiento.planificar`, `mantenimiento.ejecutar`, `mantenimiento.verificar` ni `inventario.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22033,7 +22042,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `mantenimiento.planificar`, `mantenimiento.verificar` ni `inventario.ver`; con `mantenimiento.ejecutar`, solo sus órdenes asignadas (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22121,7 +22130,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso de esa acción (`sin_permiso`)",
+            "description": "Iniciar y ejecutar: `mantenimiento.planificar` o la orden asignada con `mantenimiento.ejecutar`; verificar: `mantenimiento.verificar` (nunca quien la ejecutó) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22222,7 +22231,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `mantenimiento.planificar` ni la orden asignada con `mantenimiento.ejecutar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22303,7 +22312,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: basta un rol en la copropiedad; módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22459,7 +22468,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22567,7 +22576,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22648,7 +22657,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `mantenimiento.planificar` ni `inventario.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22734,7 +22743,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23616,7 +23625,7 @@
             }
           },
           "403": {
-            "description": "Sin el módulo (`modulo_no_habilitado`)",
+            "description": "No exige permisos: basta un rol en la copropiedad; módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23694,7 +23703,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos (si no se le envió a la persona de la cuenta, 404); módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23772,7 +23781,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos (si no se le envió a la persona de la cuenta, 404); módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24122,7 +24131,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24223,7 +24232,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24419,7 +24428,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24971,7 +24980,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: basta un rol en la copropiedad (sin persona en la copropiedad, 422)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25050,7 +25059,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: solo el titular autoriza (sin persona en la copropiedad, 422)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25119,7 +25128,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: solo el titular retira su autorización",
             "content": {
               "application/json": {
                 "schema": {
@@ -25278,7 +25287,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25366,7 +25375,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25454,7 +25463,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `directorio.ver` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25789,7 +25798,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25875,7 +25884,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25983,7 +25992,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26091,7 +26100,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26170,7 +26179,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26268,7 +26277,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26366,7 +26375,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26457,7 +26466,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26545,7 +26554,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26646,7 +26655,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26734,7 +26743,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26832,7 +26841,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Abrir registro, instalar, suspender, reanudar y cerrar: `asambleas.conducir`; cancelar: `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26920,7 +26929,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26996,7 +27005,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27074,7 +27083,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27317,7 +27326,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` ni `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27403,7 +27412,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27521,7 +27530,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27629,7 +27638,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27727,7 +27736,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27835,7 +27844,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27943,7 +27952,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28034,7 +28043,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28132,7 +28141,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28230,7 +28239,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28334,7 +28343,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28425,7 +28434,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28511,7 +28520,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` ni `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28619,7 +28628,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` ni `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28708,7 +28717,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` ni `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28816,7 +28825,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28933,7 +28942,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`) o el asistente no está presente (`no_inscrito`)",
+            "description": "Sin `asambleas.votos.registrar` (`sin_permiso`) o el asistente no está presente (`no_inscrito`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29031,7 +29040,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29223,7 +29232,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29311,7 +29320,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29387,7 +29396,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29485,7 +29494,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29566,7 +29575,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29649,7 +29658,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29750,7 +29759,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29851,7 +29860,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (en reservadas, la opción exige `asambleas.votos.ver_detalle`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29932,7 +29941,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30020,7 +30029,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30292,7 +30301,7 @@
             }
           },
           "403": {
-            "description": "No está presente (`no_inscrito`)",
+            "description": "Papeleta inválida o el asistente no está presente (`no_inscrito`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30424,7 +30433,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.registrar` ni `acceso.bitacora.ver`; con `acceso.visitantes.autorizar`, solo las de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30588,7 +30597,7 @@
             }
           },
           "403": {
-            "description": "La cuenta no puede decidir por ese bien (`sin_permiso`)",
+            "description": "Sin `acceso.visitantes.autorizar` o la persona no puede decidir por el bien: residente adulto o titular (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30676,7 +30685,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30774,7 +30783,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "Sin `acceso.registrar` ni `acceso.bitacora.ver`; con `acceso.visitantes.autorizar`, solo las de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30852,7 +30861,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.registrar` ni `acceso.bitacora.ver`; con `acceso.visitantes.autorizar`, solo las de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30950,7 +30959,7 @@
             }
           },
           "403": {
-            "description": "La cuenta no puede decidir por ese bien (`sin_permiso`)",
+            "description": "Sin `acceso.visitantes.autorizar` o la persona no puede decidir por el bien: residente adulto o titular (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31129,7 +31138,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31237,7 +31246,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31335,7 +31344,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31423,7 +31432,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "Sin `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31542,7 +31551,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "Sin `acceso.registrar`, `acceso.bitacora.ver` ni `acceso.correspondencia.entregar`; un residente, solo la de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31786,7 +31795,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.registrar`, `acceso.bitacora.ver` ni `acceso.correspondencia.entregar`; un residente, solo la de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31992,7 +32001,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.correspondencia.entregar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -32070,7 +32079,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.configurar` ni `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -32982,7 +32991,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33207,7 +33216,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33295,7 +33304,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33451,7 +33460,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33549,7 +33558,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33910,7 +33919,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33998,7 +34007,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34173,7 +34182,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34254,7 +34263,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34511,7 +34520,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No es la persona misma y no tiene `acceso.biometria.enrolar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34586,7 +34595,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: basta un rol en la copropiedad",
             "content": {
               "application/json": {
                 "schema": {
@@ -34811,7 +34820,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "De otra persona, sin `proteccion_datos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34970,7 +34979,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "No es el titular y no tiene `proteccion_datos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35056,7 +35065,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "No es el titular y no tiene `proteccion_datos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35154,7 +35163,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "No es el titular y no tiene `proteccion_datos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35272,7 +35281,7 @@
             }
           },
           "403": {
-            "description": "Pide las de otra persona sin permiso (`sin_permiso`)",
+            "description": "Las de otra persona, sin `proteccion_datos.gestionar` (el titular ve las suyas) (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35426,7 +35435,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `proteccion_datos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35524,7 +35533,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `proteccion_datos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35622,7 +35631,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `proteccion_datos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35813,7 +35822,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "No exige permisos: basta un rol en la copropiedad",
             "content": {
               "application/json": {
                 "schema": {
@@ -35891,7 +35900,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `importaciones.ejecutar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -35969,7 +35978,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `importaciones.ejecutar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36057,7 +36066,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `organizaciones.vincular` ni `organizaciones.crear` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36133,7 +36142,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `organizaciones.crear` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36214,7 +36223,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `contratos.gestionar` ni `organizaciones.vincular` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36290,7 +36299,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `organizaciones.vincular` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36368,7 +36377,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `contratos.gestionar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36456,7 +36465,7 @@
             }
           },
           "403": {
-            "description": "Sin el permiso (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)",
+            "description": "Sin `roles.asignar` (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -36477,6 +36486,170 @@
           },
           "409": {
             "description": "Contrato no vigente (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Ficha de la entidad: nombre, NIT, ubicación, contacto y zona horaria (cualquier entidad).",
+        "operationId": "ver_ficha",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ficha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaEntidadRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `copropiedad.datos.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no tiene roles en la entidad (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Actualiza los datos generales de la entidad (en una PH, lo mismo que su ficha completa).",
+        "operationId": "actualizar_ficha",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosEntidadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Datos actualizados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaEntidadRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `copropiedad.datos.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no tiene roles en la entidad (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Otra entidad tiene ese NIT (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dato inválido (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -37195,7 +37368,7 @@
             }
           },
           "403": {
-            "description": "Sin permiso (`sin_permiso`)",
+            "description": "Sin `archivos.ver` (los personales exigen `archivos.personales.ver`) (`sin_permiso`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -46691,6 +46864,89 @@
         ]
       }
     },
+    "/api/v1/entidades/{entidad_id}/facturacion/documentos/{documento_id}/paquete": {
+      "get": {
+        "tags": [
+          "facturacion"
+        ],
+        "summary": "ZIP del documento tal como lo recibe el adquirente: el `AttachedDocument` (el documento y la\nrespuesta de la DIAN) y la representación gráfica en PDF.",
+        "operationId": "paquete_adquirente",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documento_id",
+            "in": "path",
+            "description": "Documento",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ZIP",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/entidades/{entidad_id}/facturacion/recibidas": {
       "get": {
         "tags": [
@@ -50852,6 +51108,98 @@
             ],
             "description": "Debe contener `{numero}`; admite `{agrupacion}` y `{ruta}`. Ej.: `{agrupacion}{numero}`\nda `3506`.",
             "example": "{agrupacion}{numero}"
+          }
+        }
+      },
+      "CambiosEntidadPeticion": {
+        "type": "object",
+        "description": "Cambios a la ficha de la entidad. Los campos omitidos no cambian; un texto vacío (`\"\"`) lo\nborra.",
+        "properties": {
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "razon_social": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Con o sin dígito de verificación; se valida con el algoritmo de la DIAN.",
+            "example": "900123456-8"
+          },
+          "direccion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "11001"
+          },
+          "departamento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "barrio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "4.711"
+          },
+          "longitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "-74.0721"
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "576015551234"
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "contacto@empresa.co"
+          },
+          "sitio_web": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "zona_horaria": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "America/Bogota"
           }
         }
       },
@@ -58570,6 +58918,101 @@
             "format": "int32",
             "description": "Reseñas publicadas en todas las copropiedades.",
             "minimum": 0
+          }
+        }
+      },
+      "FichaEntidadRespuesta": {
+        "type": "object",
+        "description": "Datos generales de la entidad.",
+        "required": [
+          "nombre",
+          "zona_horaria",
+          "estado"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Tienda La Esquina SAS"
+          },
+          "razon_social": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "900123456-8"
+          },
+          "direccion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código DANE del municipio.",
+            "example": "11001"
+          },
+          "departamento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "barrio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "4.711"
+          },
+          "longitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "-74.0721"
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sitio_web": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "zona_horaria": {
+            "type": "string",
+            "description": "Zona IANA en que se muestran fechas y se evalúan horarios.",
+            "example": "America/Bogota"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoCopropiedad",
+            "description": "Lo cambia solo la plataforma."
           }
         }
       },

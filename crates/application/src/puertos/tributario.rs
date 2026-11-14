@@ -180,6 +180,8 @@ pub struct DocumentoElectronico {
     pub proveedor: String,
     pub id_externo: Option<String>,
     pub xml_archivo_id: Option<ArchivoId>,
+    /// `AttachedDocument` que se entregó (o se entregará) al adquirente.
+    pub adjunto_archivo_id: Option<ArchivoId>,
     pub respuesta: Option<String>,
     pub intentos: u32,
     pub total: Monto,
@@ -644,6 +646,9 @@ pub struct DocumentoAEmitir {
     pub referencia_fecha: Option<NaiveDate>,
     /// Con el motor propio: las credenciales de la entidad. `None` = otro proveedor.
     pub credenciales: Option<CredencialesFacturador>,
+    /// El documento quedó en contingencia de la DIAN: se transmite su versión tipo 04 (la que ya
+    /// recibió el adquirente).
+    pub contingencia: bool,
 }
 
 /// Respuesta del proveedor a una transmisión o consulta.
@@ -654,6 +659,9 @@ pub struct RespuestaProveedor {
     pub cufe: Option<String>,
     /// XML firmado del documento, si lo entrega.
     pub xml: Option<Vec<u8>>,
+    /// Contenedor para el adquirente (`AttachedDocument`: el documento y la respuesta de la
+    /// DIAN), si el proveedor lo arma.
+    pub adjunto: Option<Vec<u8>>,
     pub mensaje: Option<String>,
 }
 

@@ -18,6 +18,7 @@
 //! software ni la clave técnica.
 
 mod adaptador;
+pub mod adjunto;
 pub mod control;
 pub mod firma;
 pub mod pkcs12;
@@ -60,7 +61,7 @@ impl DocumentoFirmado {
 /// Nombre del archivo según el estándar de la DIAN: clase, NIT a diez dígitos, `000` (software
 /// propio), año a dos dígitos y consecutivo de archivos enviados en el año, en hexadecimal a
 /// ocho dígitos (anexo §6.5.7: `fv08001972680001900000011.xml`).
-fn nombre_archivo(clase: &str, nit: &str, anio: i32, consecutivo: u32) -> String {
+pub(crate) fn nombre_archivo(clase: &str, nit: &str, anio: i32, consecutivo: u32) -> String {
     format!(
         "{clase}{nit:0>10}000{:02}{consecutivo:08x}",
         anio.rem_euclid(100)

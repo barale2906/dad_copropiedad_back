@@ -694,6 +694,30 @@ impl RepositorioPlataforma for TransaccionPlataformaPg {
         Ok((permisos, fila.superusuario))
     }
 
+    async fn documentos_en_contingencia(
+        &mut self,
+        limite: u32,
+    ) -> AppResult<Vec<(TenantId, domain::DocumentoElectronicoId, DateTime<Utc>)>> {
+        Ok(sqlx::query!(
+            r#"SELECT tenant_id AS "tenant_id!", documento_id AS "documento_id!",
+                      creado_en AS "creado_en!"
+               FROM documentos_en_contingencia($1)"#,
+            i32::try_from(limite).unwrap_or(i32::MAX),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            (
+                TenantId::from_uuid(f.tenant_id),
+                domain::DocumentoElectronicoId::from_uuid(f.documento_id),
+                f.creado_en,
+            )
+        })
+        .collect())
+    }
+
     async fn consumo_documentos(
         &mut self,
         desde: NaiveDate,

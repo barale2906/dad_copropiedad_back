@@ -439,6 +439,7 @@ pub async fn crear_categoria(
     responses(
         (status = OK, description = "Categoría", body = CategoriaRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `tickets.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_categoria(
@@ -493,7 +494,7 @@ pub struct FiltroTicketsQuery {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroTicketsQuery, ParametrosPagina),
     responses(
         (status = OK, description = "Tickets", body = PaginaRespuesta<TicketRespuesta>),
-        (status = FORBIDDEN, description = "Sin permisos de tickets (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `tickets.crear`, `tickets.ver_todos`, `tickets.atender` ni `tickets.convivencia.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar(
@@ -772,6 +773,7 @@ impl From<DetalleTicket> for DetalleRespuesta {
     responses(
         (status = OK, description = "Ticket", body = DetalleRespuesta),
         (status = NOT_FOUND, description = "No existe o no es visible para la cuenta", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es el solicitante, no lo atiende y no tiene `tickets.ver_todos` (en convivencia, `tickets.convivencia.ver`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver(
@@ -891,7 +893,7 @@ pub struct TransicionTicketPeticion {
     request_body = TransicionTicketPeticion,
     responses(
         (status = OK, description = "Ticket", body = TicketRespuesta),
-        (status = FORBIDDEN, description = "Su papel no permite ese cambio (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "La transición no corresponde a su papel: gestiona (`tickets.asignar`), atiende (`tickets.atender`) o es el solicitante (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Transición no permitida (`conflicto_estado`) o venció la reapertura (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Falta el motivo o el original (`validacion`)", body = ErrorRespuesta),
     )
@@ -942,7 +944,7 @@ pub struct MensajePeticion {
     request_body = MensajePeticion,
     responses(
         (status = CREATED, description = "Mensaje", body = MensajeRespuesta),
-        (status = FORBIDDEN, description = "No es el solicitante ni atiende el ticket (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es el solicitante ni lo atiende (`tickets.atender`) ni gestiona (`tickets.asignar`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "El ticket terminó (`conflicto`)", body = ErrorRespuesta),
     )
 )]
@@ -990,7 +992,7 @@ pub struct EncuestaPeticion {
     request_body = EncuestaPeticion,
     responses(
         (status = OK, description = "Ticket calificado", body = TicketRespuesta),
-        (status = FORBIDDEN, description = "No es el solicitante (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es el solicitante: solo él califica (`sin_permiso`, como si faltara `tickets.crear`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Aún no está resuelto o ya calificó (`conflicto`)", body = ErrorRespuesta),
     )
 )]

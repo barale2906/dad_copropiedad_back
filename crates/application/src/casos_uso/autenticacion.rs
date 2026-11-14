@@ -246,6 +246,7 @@ where
             asunto: asunto.into(),
             texto,
             html: None,
+            adjuntos: Vec::new(),
         }),
     })
     .await
