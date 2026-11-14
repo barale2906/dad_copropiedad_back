@@ -263,6 +263,10 @@ impl From<Recurso> for RecursoRespuesta {
 pub struct FiltroRecursos {
     #[param(value_type = Option<crate::esquemas::TipoRecurso>)]
     pub tipo: Option<TipoRecurso>,
+    /// Solo los bienes comunes de esta categoría (la zona de la maqueta 3D: `piscina`,
+    /// `cancha`, `gimnasio`, `salon_social`…).
+    #[param(value_type = Option<crate::esquemas::CategoriaBienComun>)]
+    pub categoria: Option<CategoriaBienComun>,
 }
 
 /// Recursos reservables (bienes comunes, parqueaderos, agenda, herramientas).
@@ -282,7 +286,8 @@ pub async fn listar_recursos(
     en: EnCopropiedad,
     Query(f): Query<FiltroRecursos>,
 ) -> ApiResult<Json<Vec<RecursoRespuesta>>> {
-    let lista = uc::listar_recursos(&state.unidad, &RelojSistema, &en.ctx, f.tipo).await?;
+    let lista =
+        uc::listar_recursos(&state.unidad, &RelojSistema, &en.ctx, f.tipo, f.categoria).await?;
     Ok(Json(lista.into_iter().map(Into::into).collect()))
 }
 

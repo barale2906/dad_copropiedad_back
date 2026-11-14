@@ -19,6 +19,7 @@ pub mod conversaciones;
 pub mod copropiedades;
 pub mod despachar_salida;
 pub mod directorio;
+pub mod entidades;
 pub mod facturacion;
 pub mod importaciones;
 pub mod mantenimiento;

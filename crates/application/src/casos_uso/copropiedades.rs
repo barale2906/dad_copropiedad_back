@@ -15,6 +15,7 @@ use rust_decimal::Decimal;
 use crate::{
     AppError, AppResult, Contexto,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
+    casos_uso::entidades::{CambiosEntidad, texto},
     puertos::{
         RegistroAuditoria, RepositorioCoeficientes, RepositorioCopropiedad, Transaccion,
         UnidadDeTrabajo,
@@ -112,27 +113,6 @@ pub struct CambiosCopropiedad {
     pub plantilla_codigo: Option<PlantillaNomenclatura>,
 }
 
-fn coordenada(campo: &'static str, v: Decimal, limite: Decimal) -> AppResult<Decimal> {
-    if v.abs() > limite || v.normalize().scale() > 6 {
-        return Err(AppError::Validacion(format!(
-            "`{campo}` debe estar entre -{limite} y {limite} con máximo 6 decimales"
-        )));
-    }
-    Ok(v)
-}
-
-fn texto(
-    actual: &mut Option<String>,
-    campo: &'static str,
-    nuevo: Option<String>,
-    maximo: usize,
-) -> AppResult<()> {
-    if let Some(v) = nuevo {
-        *actual = texto_opcional(campo, Some(&v), maximo)?;
-    }
-    Ok(())
-}
-
 impl CambiosCopropiedad {
     /// Aplica los cambios sobre la ficha validando cada campo.
     ///
@@ -140,13 +120,25 @@ impl CambiosCopropiedad {
     ///
     /// [`AppError::Validacion`] o [`AppError::Dominio`] con el primer campo inválido.
     pub fn aplicar(self, f: &mut FichaCopropiedad) -> AppResult<()> {
-        if let Some(n) = self.nombre {
-            f.nombre = texto_obligatorio("nombre", &n, 200)?;
+        // Lo genérico se valida igual que en cualquier entidad.
+        let mut entidad = f.entidad();
+        CambiosEntidad {
+            nombre: self.nombre,
+            razon_social: self.razon_social,
+            nit: self.nit,
+            direccion: self.direccion,
+            municipio_dane: self.municipio_dane,
+            departamento: self.departamento,
+            barrio: self.barrio,
+            latitud: self.latitud,
+            longitud: self.longitud,
+            telefono: self.telefono,
+            correo: self.correo,
+            sitio_web: self.sitio_web,
+            zona_horaria: self.zona_horaria,
         }
-        texto(&mut f.razon_social, "razon_social", self.razon_social, 200)?;
-        texto(&mut f.direccion, "direccion", self.direccion, 200)?;
-        texto(&mut f.departamento, "departamento", self.departamento, 80)?;
-        texto(&mut f.barrio, "barrio", self.barrio, 120)?;
+        .aplicar(&mut entidad)?;
+        f.fijar_entidad(entidad);
         texto(
             &mut f.escritura_numero,
             "escritura_numero",
@@ -160,57 +152,17 @@ impl CambiosCopropiedad {
             self.matricula_matriz,
             40,
         )?;
-        texto(&mut f.sitio_web, "sitio_web", self.sitio_web, 200)?;
-        if f.sitio_web
-            .as_deref()
-            .is_some_and(|s| !(s.starts_with("https://") || s.starts_with("http://")))
-        {
-            return Err(AppError::Validacion(
-                "`sitio_web` debe empezar por https://".into(),
-            ));
-        }
-        if let Some(z) = self.zona_horaria {
-            let z = z.trim();
-            let valida = z.split('/').count() >= 2
-                && z.split('/').all(|p| {
-                    !p.is_empty() && p.chars().all(|c| c.is_ascii_alphabetic() || c == '_')
-                });
-            if !valida {
-                return Err(AppError::Validacion(
-                    "`zona_horaria` debe ser una zona IANA, p. ej. America/Bogota".into(),
-                ));
-            }
-            z.clone_into(&mut f.zona_horaria);
-        }
         if let Some(e) = self.estrato {
             if !(1..=6).contains(&e) {
                 return Err(AppError::Validacion("`estrato` va de 1 a 6".into()));
             }
             f.estrato = Some(e);
         }
-        if let Some(v) = self.latitud {
-            f.latitud = Some(coordenada("latitud", v, Decimal::from(90))?);
-        }
-        if let Some(v) = self.longitud {
-            f.longitud = Some(coordenada("longitud", v, Decimal::from(180))?);
-        }
-        if let Some(v) = self.nit {
-            f.nit = Some(v);
-        }
         if let Some(v) = self.tipo {
             f.tipo = v;
         }
         if let Some(v) = self.forma {
             f.forma = v;
-        }
-        if let Some(v) = self.municipio_dane {
-            f.municipio_dane = Some(v);
-        }
-        if let Some(v) = self.telefono {
-            f.telefono = Some(v);
-        }
-        if let Some(v) = self.correo {
-            f.correo = Some(v);
         }
         if let Some(v) = self.escritura_fecha {
             f.escritura_fecha = Some(v);

@@ -22,6 +22,21 @@ use crate::{
     },
 };
 
+impl crate::puertos::RepositorioEntidad for TransaccionEnMemoria {
+    async fn ficha_entidad(
+        &mut self,
+    ) -> AppResult<Option<crate::puertos::entidades::FichaEntidad>> {
+        Ok(self.ficha().await?.map(|f| f.entidad()))
+    }
+
+    async fn guardar_ficha_entidad(
+        &mut self,
+        _ficha: &crate::puertos::entidades::FichaEntidad,
+    ) -> AppResult<()> {
+        Ok(())
+    }
+}
+
 impl RepositorioCopropiedad for TransaccionEnMemoria {
     async fn ficha(&mut self) -> AppResult<Option<FichaCopropiedad>> {
         Ok(Some(FichaCopropiedad {

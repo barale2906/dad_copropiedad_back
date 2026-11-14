@@ -1895,7 +1895,7 @@ where
     Q: GeneradorImagenQr,
 {
     let ctx_cuenta = contexto_cuenta(s, v).await?;
-    let recursos = listar_recursos(s.unidad, s.reloj, &ctx_cuenta, Some(tipo))
+    let recursos = listar_recursos(s.unidad, s.reloj, &ctx_cuenta, Some(tipo), None)
         .await?
         .into_iter()
         .filter(|r| r.estado == domain::EstadoRecurso::Disponible)

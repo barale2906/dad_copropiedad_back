@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-587 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+589 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -35,7 +35,7 @@ sesión de persona.
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
 - [publicidad](#publicidad) (35): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
 - [plataforma](#plataforma) (36): Operación de la plataforma (exige segundo factor)
-- [contabilidad](#contabilidad) (48): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
+- [contabilidad](#contabilidad) (50): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
 - [tesoreria](#tesoreria) (37): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
 - [tributario](#tributario) (15): Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario
@@ -597,6 +597,8 @@ Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), tercer
 |---|---|---|---|---|---|---|
 | GET | `/organizaciones/{organizacion_id}/plantillas-contables` | Plantillas de la firma contable (la cuenta debe ser dueña o gestora). |  |  | 200 `[PlantillaResumenRespuesta]` |  |
 | PUT | `/organizaciones/{organizacion_id}/plantillas-contables/{plantilla_id}/estado` | Publica o retira una plantilla de la firma contable. |  | `EstadoPlantillaPeticion` | 204  | 409 |
+| GET | `/entidades/{entidad_id}` | Ficha de la entidad: nombre, NIT, ubicación, contacto y zona horaria (cualquier entidad). | `copropiedad.datos.ver` |  | 200 `FichaEntidadRespuesta` | 403 |
+| PATCH | `/entidades/{entidad_id}` | Actualiza los datos generales de la entidad (en una PH, lo mismo que su ficha completa). | `copropiedad.datos.editar` | `CambiosEntidadPeticion` | 200 `FichaEntidadRespuesta` | 403, 409, 422 |
 | GET | `/entidades/{entidad_id}/capacidades` | Permisos de la cuenta en la entidad y módulos habilitados (para cualquier entidad). |  |  | 200 `CapacidadesRespuesta` |  |
 | GET | `/entidades/{entidad_id}/terceros` | Terceros de la entidad (sus personas) con datos fiscales. | `contabilidad.ver` `facturacion.ver` `terceros.gestionar` |  | 200 `PaginaRespuesta_TerceroRespuesta` | 403 |
 | POST | `/entidades/{entidad_id}/terceros` | Crea un tercero (reutiliza la persona si el documento ya existe). | `terceros.gestionar` | `NuevoTerceroPeticion` | 201 `TerceroRespuesta` | 403, 422 |

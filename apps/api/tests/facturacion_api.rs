@@ -76,7 +76,7 @@ async fn tienda(pool: PgPool) -> Tienda {
         )
         .await;
     assert_eq!(s, StatusCode::CREATED, "{v}");
-    sqlx::query("UPDATE entidades SET nit = '900123456-1' WHERE id = $1::uuid")
+    sqlx::query("UPDATE entidades SET nit = '900123456-8' WHERE id = $1::uuid")
         .bind(&entidad)
         .execute(&api.duenio)
         .await
@@ -407,4 +407,49 @@ async fn una_factura_en_contingencia_se_valida_al_reintentar(pool: PgPool) {
         )
         .await;
     assert_eq!(fe["documento"]["estado"], json!("validado"), "{fe}");
+}
+
+/// Una empresa que no es PH ve y edita su ficha en `/entidades/{id}` (nombre, NIT, contacto).
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_empresa_ve_y_edita_su_ficha(pool: PgPool) {
+    let t = tienda(pool).await;
+
+    let (s, ficha) = t.pedir(Method::GET, "", None).await;
+    assert_eq!(s, StatusCode::OK, "{ficha}");
+    assert_eq!(ficha["nombre"], json!("Tienda La Esquina"));
+    assert_eq!(ficha["nit"], json!("900123456-8"));
+    assert_eq!(ficha["zona_horaria"], json!("America/Bogota"));
+
+    let (s, editada) = t
+        .pedir(
+            Method::PATCH,
+            "",
+            Some(
+                json!({ "razon_social": "Tienda La Esquina SAS", "telefono": "573001234567",
+                         "correo": "contacto@laesquina.co", "direccion": "Calle 1 # 2-3" }),
+            ),
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{editada}");
+    assert_eq!(editada["razon_social"], json!("Tienda La Esquina SAS"));
+    assert_eq!(editada["correo"], json!("contacto@laesquina.co"));
+    assert_eq!(
+        editada["nombre"],
+        json!("Tienda La Esquina"),
+        "lo omitido no cambia"
+    );
+
+    let (s, v) = t
+        .pedir(Method::PATCH, "", Some(json!({ "zona_horaria": "Bogota" })))
+        .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::UNPROCESSABLE_ENTITY, &json!("validacion"))
+    );
+    let (_, otra) = t.pedir(Method::GET, "", None).await;
+    assert_eq!(
+        otra["razon_social"],
+        json!("Tienda La Esquina SAS"),
+        "se guardó"
+    );
 }

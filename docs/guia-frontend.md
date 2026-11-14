@@ -254,11 +254,21 @@ los dos). El backend vuelve a exigir todo: si una acción visible responde 403
 | Portería | Portería | `control_acceso` | Visitas (`acceso.registrar`, `acceso.visitantes.autorizar`) · Correspondencia (`acceso.correspondencia.entregar`, `acceso.registrar`) · Bitácora (`acceso.bitacora.ver`) · Minuta (`acceso.minuta.ver`, `acceso.minuta.registrar`) · Credenciales y autorizaciones (`acceso.credenciales.gestionar`) · Biometría (`acceso.biometria.enrolar`) · Puntos, puentes y configuración (`acceso.configurar`) | `…/{visitas,correspondencia,eventos-acceso,minuta,credenciales,autorizaciones-acceso,puntos-acceso,puentes,acceso}` |
 | Pantalla del lobby | Directorio | ninguno (destacados con `publicidad`) | Directorio (`directorio.ver`) · Reseñar (`directorio.resenar`) · Enlace para los grupos de WhatsApp (`directorio.compartir`) | `…/directorio/…`, `…/publicidad/{piezas,autorizacion}` |
 
-**Zonas comunes concretas.** La maqueta trae piscina, cancha y gimnasio genéricos, pero cada PH
-crea sus propios recursos con el nombre que quiere. Hoy no hay un dato que ate un recurso a una
-zona de la maqueta: al tocar la piscina, abra Zonas comunes con la lista de recursos (si hay uno
-solo, ese), y muestre la zona apagada si la PH no tiene recursos. Si se quiere el vínculo exacto,
-el backend puede agregar a cada recurso un campo opcional con la zona de la maqueta.
+**Zonas comunes concretas.** La maqueta trae salón, piscina, cancha y gimnasio genéricos; cada
+PH crea sus recursos con el nombre que quiere, pero al crearlos elige su **categoría**
+(`CategoriaBienComun`). Esa categoría es el vínculo con la zona:
+
+| Zona de la maqueta | Consulta |
+|---|---|
+| Salón social | `GET …/recursos?categoria=salon_social` (y `salon_comunal`) |
+| Piscina | `GET …/recursos?categoria=piscina` |
+| Cancha | `GET …/recursos?categoria=cancha` |
+| Gimnasio | `GET …/recursos?categoria=gimnasio` |
+| Parqueaderos | `GET …/parqueaderos` (o `…/recursos?tipo=parqueadero`) |
+
+Con un solo recurso, abra ese directamente; con varios, la lista; con ninguno, muestre la zona
+tenue con «Esta copropiedad no tiene …». Las demás categorías (BBQ, sauna, coworking, terraza…)
+no tienen pieza en la maqueta: muéstrelas en la lista de Zonas comunes.
 
 **La pantalla del lobby** no se configura desde la PH: su token lo genera la plataforma
 (`POST /plataforma/publicidad/pantallas/{copropiedad_id}`) y la pantalla consulta
@@ -268,7 +278,7 @@ el backend puede agregar a cada recurso un campo opcional con la zona de la maqu
 
 | Zona | Sección | Módulos | Acciones (permiso que la muestra) | Rutas principales |
 |---|---|---|---|---|
-| Recepción | Datos y usuarios | ninguno | Usuarios y roles (`roles.ver`) · Auditoría (`auditoria.ver`) | `/entidades/{id}/{roles,asignaciones,cuentas,auditoria}` |
+| Recepción | Datos y usuarios | ninguno | Ficha (`copropiedad.datos.ver`; editar con `copropiedad.datos.editar`) · Usuarios y roles (`roles.ver`) · Auditoría (`auditoria.ver`) | `/entidades/{id}`, `/entidades/{id}/{roles,asignaciones,cuentas,auditoria}` |
 | Contabilidad | Contabilidad | `contabilidad` | Comprobantes (`contabilidad.ver`; crear con `contabilidad.comprobantes.crear`) · Plan de cuentas y centros de costo (`contabilidad.ver`) · Periodos y cierre (`contabilidad.ver`; cerrar con `contabilidad.periodos.cerrar`) · Reportes y estados financieros (`contabilidad.ver`) · Configuración y plantillas (`contabilidad.configurar`) | `/entidades/{id}/contabilidad/…` |
 | Tesorería | Tesorería | `contabilidad` | Recibos de caja (`tesoreria.recibos.registrar`) · Egresos (`tesoreria.egresos.registrar`, `tesoreria.egresos.autorizar`) · Cuentas por pagar (`tesoreria.facturas_proveedor.gestionar`) · Conciliación (`tesoreria.conciliar`) · Cartera de clientes (`contabilidad.ver`) | `…/contabilidad/{tesoreria,cuentas-por-pagar,cuentas-por-cobrar}` |
 | Facturación | Facturación | alguno de `facturacion_electronica`, `contabilidad` | Facturas de venta (`facturacion.ver`; crear con `facturacion.facturas.gestionar`) · Catálogo de productos (`facturacion.items.gestionar`) · Compras y documento soporte (`facturacion.facturas.gestionar`) · Libros y paquete para el contador (`facturacion.exportar`) · **Solo con `facturacion_electronica`:** emitir ante la DIAN (`facturacion.emitir`), recibidas y RADIAN (`facturacion.recibir`), habilitación DIAN (`facturacion.configurar`) | `/entidades/{id}/facturacion/…` |
@@ -278,8 +288,10 @@ el backend puede agregar a cada recurso un campo opcional con la zona de la maqu
 | Nómina | Nómina electrónica | próximamente | — | (plan 16) |
 
 En una PH, estas mismas secciones se abren desde la zona Administración, con las rutas de
-`/entidades/{id}` (mismo id que la copropiedad). La empresa no tiene hoy rutas para editar su
-ficha: el nombre y el NIT salen de `GET /yo/entidades`.
+`/entidades/{id}` (mismo id que la copropiedad). La **ficha de la empresa** (nombre, razón
+social, NIT, dirección, contacto, zona horaria) es `GET/PATCH /entidades/{id}` con
+`copropiedad.datos.ver` / `copropiedad.datos.editar`; en la PH esos mismos datos se editan en su
+ficha completa (`/copropiedades/{id}`).
 
 ### La plataforma (`tipo: plataforma`)
 
@@ -339,8 +351,9 @@ del frontend (los permisos que usa existen todos en el catálogo):
    quedaría apagada en casi todas las PH). La acción «Pantallas» con `copropiedad.datos.ver` no
    tiene ruta en la PH: las pantallas las gestiona la plataforma. Cambie la acción por «Enlace
    para los grupos» (`directorio.compartir`).
-3. **Solo PH**: en la sección «Datos y usuarios», la ficha y la protección de datos existen solo
-   para copropiedades (`soloPH` por acción).
+3. **Ficha y protección de datos**: la ficha sirve a toda entidad con `GET/PATCH /entidades/{id}`
+   (en la PH, la completa está en `/copropiedades/{id}`); la protección de datos existe solo para
+   copropiedades (`soloPH` en esa acción).
 4. **Tipo `plataforma`**: `plantillaDe` lo trata como empresa. Agregue la zona del centro de
    operación descrita arriba.
 5. **Acciones personales**: agregue las de la tabla anterior, condicionadas por los roles

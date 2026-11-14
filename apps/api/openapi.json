@@ -16607,6 +16607,15 @@
             "schema": {
               "$ref": "#/components/schemas/TipoRecurso"
             }
+          },
+          {
+            "name": "categoria",
+            "in": "query",
+            "description": "Solo los bienes comunes de esta categoría (la zona de la maqueta 3D: `piscina`,\n`cancha`, `gimnasio`, `salon_social`…).",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CategoriaBienComun"
+            }
           }
         ],
         "responses": {
@@ -36493,6 +36502,170 @@
         ]
       }
     },
+    "/api/v1/entidades/{entidad_id}": {
+      "get": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Ficha de la entidad: nombre, NIT, ubicación, contacto y zona horaria (cualquier entidad).",
+        "operationId": "ver_ficha",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ficha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaEntidadRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `copropiedad.datos.ver` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no tiene roles en la entidad (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "contabilidad"
+        ],
+        "summary": "Actualiza los datos generales de la entidad (en una PH, lo mismo que su ficha completa).",
+        "operationId": "actualizar_ficha",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiosEntidadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Datos actualizados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FichaEntidadRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `copropiedad.datos.editar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no tiene roles en la entidad (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Otra entidad tiene ese NIT (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dato inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/entidades/{entidad_id}/capacidades": {
       "get": {
         "tags": [
@@ -50938,6 +51111,98 @@
           }
         }
       },
+      "CambiosEntidadPeticion": {
+        "type": "object",
+        "description": "Cambios a la ficha de la entidad. Los campos omitidos no cambian; un texto vacío (`\"\"`) lo\nborra.",
+        "properties": {
+          "nombre": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "razon_social": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Con o sin dígito de verificación; se valida con el algoritmo de la DIAN.",
+            "example": "900123456-8"
+          },
+          "direccion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "11001"
+          },
+          "departamento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "barrio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "4.711"
+          },
+          "longitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "-74.0721"
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "576015551234"
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "contacto@empresa.co"
+          },
+          "sitio_web": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "zona_horaria": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "America/Bogota"
+          }
+        }
+      },
       "CambiosFichaPeticion": {
         "type": "object",
         "description": "Cambios a la ficha global (lo que no venga no cambia).",
@@ -58653,6 +58918,101 @@
             "format": "int32",
             "description": "Reseñas publicadas en todas las copropiedades.",
             "minimum": 0
+          }
+        }
+      },
+      "FichaEntidadRespuesta": {
+        "type": "object",
+        "description": "Datos generales de la entidad.",
+        "required": [
+          "nombre",
+          "zona_horaria",
+          "estado"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "example": "Tienda La Esquina SAS"
+          },
+          "razon_social": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "900123456-8"
+          },
+          "direccion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "municipio_dane": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código DANE del municipio.",
+            "example": "11001"
+          },
+          "departamento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "barrio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "4.711"
+          },
+          "longitud": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "-74.0721"
+          },
+          "telefono": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sitio_web": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "zona_horaria": {
+            "type": "string",
+            "description": "Zona IANA en que se muestran fechas y se evalúan horarios.",
+            "example": "America/Bogota"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoCopropiedad",
+            "description": "Lo cambia solo la plataforma."
           }
         }
       },
