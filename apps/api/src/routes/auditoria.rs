@@ -1,4 +1,4 @@
-//! `/auditoria` dentro de `/api/v1/copropiedades/{copropiedad_id}`: consulta de la auditoría
+//! `/auditoria` dentro de `/api/v1/entidades/{entidad_id}`: consulta de la auditoría
 //! (`auditoria.ver`, p. ej. el revisor fiscal). Solo lectura.
 
 use application::{
@@ -18,7 +18,7 @@ use crate::{
     extractores::{Json, Query},
     openapi::ETIQUETA_AUDITORIA,
     paginacion::{PaginaRespuesta, ParametrosPagina},
-    sesion::EnCopropiedad,
+    sesion::EnEntidad,
     state::AppState,
 };
 
@@ -84,7 +84,7 @@ pub struct FiltroAuditoriaQuery {
     path = "/auditoria",
     tag = ETIQUETA_AUDITORIA,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroAuditoriaQuery, ParametrosPagina),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"), FiltroAuditoriaQuery, ParametrosPagina),
     responses(
         (status = OK, description = "Eventos", body = PaginaRespuesta<EventoAuditadoRespuesta>),
         (status = FORBIDDEN, description = "Sin `auditoria.ver` (`sin_permiso`)", body = ErrorRespuesta),
@@ -93,7 +93,7 @@ pub struct FiltroAuditoriaQuery {
 )]
 pub async fn consultar(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Query(f): Query<FiltroAuditoriaQuery>,
     Query(p): Query<ParametrosPagina>,
 ) -> ApiResult<Json<PaginaRespuesta<EventoAuditadoRespuesta>>> {

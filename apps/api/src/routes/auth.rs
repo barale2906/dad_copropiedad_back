@@ -25,6 +25,7 @@ use crate::{
     extractores::Json,
     limite::LimiteAuth,
     openapi::ETIQUETA_AUTH,
+    routes::yo::EntidadDeLaCuenta,
     sesion::CuentaAutenticada,
     state::AppState,
 };
@@ -141,6 +142,14 @@ impl From<TokensSesion> for TokensRespuesta {
     }
 }
 
+/// Sesión iniciada tras el segundo factor: los tokens y las entidades donde la cuenta puede
+/// trabajar (lo primero es pedir en cuál entrar).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SesionRespuesta {
+    pub tokens: TokensRespuesta,
+    pub entidades: Vec<EntidadDeLaCuenta>,
+}
+
 /// Resultado del inicio de sesión: los tokens, o un desafío si la cuenta tiene segundo factor.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct InicioRespuesta {
@@ -148,6 +157,9 @@ pub struct InicioRespuesta {
     #[schema(example = "sesion")]
     pub resultado: &'static str,
     pub tokens: Option<TokensRespuesta>,
+    /// Con `sesion`: las entidades donde la cuenta puede trabajar. Lo primero es pedir en cuál
+    /// entrar (o entrar directo si es una sola); vacío si la cuenta aún no tiene roles.
+    pub entidades: Option<Vec<EntidadDeLaCuenta>>,
     /// Con `segundo_factor`: enviarlo con el código TOTP a `POST /auth/sesion/segundo-factor`.
     pub desafio: Option<String>,
     pub desafio_expira_en: Option<DateTime<Utc>>,
@@ -193,15 +205,17 @@ pub async fn iniciar_sesion(
     )
     .await?;
     Ok(Json(match resultado {
-        ResultadoInicio::Sesion(t) => InicioRespuesta {
+        ResultadoInicio::Sesion(s) => InicioRespuesta {
             resultado: "sesion",
-            tokens: Some(t.into()),
+            tokens: Some(s.tokens.into()),
+            entidades: Some(s.entidades.into_iter().map(Into::into).collect()),
             desafio: None,
             desafio_expira_en: None,
         },
         ResultadoInicio::SegundoFactor { desafio, expira_en } => InicioRespuesta {
             resultado: "segundo_factor",
             tokens: None,
+            entidades: None,
             desafio: Some(desafio),
             desafio_expira_en: Some(expira_en),
         },
@@ -223,7 +237,7 @@ pub struct SegundoFactorPeticion {
     tag = ETIQUETA_AUTH,
     request_body = SegundoFactorPeticion,
     responses(
-        (status = OK, description = "Sesión iniciada", body = TokensRespuesta),
+        (status = OK, description = "Sesión iniciada", body = SesionRespuesta),
         (status = UNAUTHORIZED, description = "Desafío vencido o código incorrecto", body = ErrorRespuesta),
         (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
@@ -233,8 +247,8 @@ pub async fn completar_segundo_factor(
     State(state): State<AppState>,
     headers: HeaderMap,
     Json(p): Json<SegundoFactorPeticion>,
-) -> ApiResult<Json<TokensRespuesta>> {
-    let tokens = uc::completar_segundo_factor(
+) -> ApiResult<Json<SesionRespuesta>> {
+    let s = uc::completar_segundo_factor(
         &state.plataforma,
         state.totp.as_ref(),
         &RelojSistema,
@@ -243,7 +257,10 @@ pub async fn completar_segundo_factor(
         &p.codigo,
     )
     .await?;
-    Ok(Json(tokens.into()))
+    Ok(Json(SesionRespuesta {
+        tokens: s.tokens.into(),
+        entidades: s.entidades.into_iter().map(Into::into).collect(),
+    }))
 }
 
 /// Token de renovación.

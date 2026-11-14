@@ -44,15 +44,40 @@ contrato cambia y el compilador del frontend lo señala.
 ## 3. Rutas
 
 - `/api/v1/auth/…`: registro, sesión, recuperación de contraseña (sin sesión).
-- `/api/v1/yo/…`: la cuenta autenticada (sus copropiedades y permisos, sesiones, dispositivos push).
+- `/api/v1/yo/…`: la cuenta autenticada (sus entidades, perfil y permisos de plataforma, sesiones,
+  dispositivos push).
 - `/api/v1/copropiedades/{copropiedad_id}/…`: todo lo de una copropiedad. Responde **404** si la
   cuenta no tiene roles en ella (no se revela si existe).
 - `/api/v1/organizaciones/{organizacion_id}/…`, `/api/v1/anunciantes/…`: portales de empresas y
   anunciantes.
 - `/api/v1/plataforma/…`: operación de la plataforma; exige **segundo factor** activo.
 
-Las copropiedades de la cuenta: `GET /api/v1/yo/copropiedades`. Al entrar a una, pida
-`GET /api/v1/copropiedades/{id}/capacidades`: devuelve sus **permisos** efectivos allí
+### Al entrar: elegir la entidad
+
+Una persona entra a **gestionar una PH**, **gestionar una empresa cliente** o **gestionar la
+plataforma**, y puede tener varias (la PH donde es propietaria, la empresa donde es contadora…). Lo
+primero después de iniciar sesión es **elegir en cuál entrar**:
+
+1. `POST /auth/sesion` (o `POST /auth/sesion/segundo-factor`) devuelve los tokens **y**
+   `entidades`: `entidad_id`, `nombre`, `nit`, `tipo`, `estado` y `roles`; primero la plataforma
+   y luego por nombre.
+   La misma lista sale de `GET /yo/entidades` (para el selector «cambiar de entidad»).
+2. Con una sola entidad, entre directo; con varias, muestre el selector; sin ninguna, muestre que
+   la cuenta aún no tiene roles. Las entidades **retiradas** no llegan; una `suspendida` o
+   `en_configuracion` sí, para avisarlo.
+3. El `tipo` decide los menús: **`propiedad_horizontal`** muestra los de la PH (bienes privados,
+   censo, asambleas, reservas, cartera… en `/copropiedades/{id}/…`) además de lo común;
+   **`empresa`** solo lo común a toda entidad (`/entidades/{id}/…`: contabilidad, facturación…);
+   **`plataforma`** la consola de operación (`/plataforma/…`, según `permisos_plataforma` de
+   `GET /yo`; exige segundo factor) y lo común de la propia empresa de la plataforma. La
+   plataforma aparece a quien tiene roles de plataforma aunque no tenga roles en su empresa (sus
+   `roles` traen entonces los de plataforma: `superusuario`, `soporte`…). En una PH los prefijos
+   `/copropiedades/{id}` y `/entidades/{id}` usan el **mismo id**.
+4. Guarde la entidad elegida en el cliente: la sesión no queda atada a ella y se cambia sin
+   volver a iniciar sesión.
+
+Al entrar a una, pida `GET /api/v1/entidades/{id}/capacidades` (en una PH también
+`/copropiedades/{id}/capacidades`): devuelve el **tipo**, sus **permisos** efectivos allí
 (`Permiso`) y los **módulos** contratados (`Modulo`). Úselos para mostrar u ocultar menús y
 botones; no deduzca permisos de los nombres de los roles, porque cada copropiedad los configura.
 El backend vuelve a exigirlos: 403 `sin_permiso` o `modulo_no_habilitado`. Vuelva a pedir las
@@ -64,8 +89,8 @@ Toda empresa que usa la plataforma es una **entidad**; una copropiedad es una en
 vertical PH y **el mismo id**. Lo de cualquier entidad va en `/api/v1/entidades/{id}/…`:
 `/capacidades` y la contabilidad (`/contabilidad/…`: configuración, PUC, cuentas, terceros,
 periodos, comprobantes, reglas, plantillas, reportes). Una entidad que no es copropiedad
-responde 404 en `/copropiedades/{id}/…`. `GET /yo/copropiedades` lista todas las entidades de la
-cuenta (el nombre de la ruta es histórico).
+responde 404 en `/copropiedades/{id}/…`. `GET /yo/entidades` lista todas las entidades de la
+cuenta con su tipo.
 
 - Los **montos** viajan como texto decimal (`"150000.00"`), nunca como número de punto flotante.
 - Un comprobante se guarda en **borrador**, se puede **previsualizar** y se **contabiliza**; ya
@@ -76,7 +101,8 @@ cuenta (el nombre de la ruta es histórico).
   cabecera `X-Contenido-Sha256` y queda en la auditoría.
 - **Tesorería** (ADR 0018, etiqueta `tesoreria`): `/contabilidad/tesoreria/…` (cuentas,
   recibos, egresos, extractos y conciliación), `/contabilidad/cuentas-por-pagar/…` y
-  `/contabilidad/ventas/…`. Los documentos no se editan ni se borran: se **anulan** con
+  `/contabilidad/cuentas-por-cobrar/edades` (cartera de clientes). Las facturas de venta están en
+  la facturación (abajo). Los documentos no se editan ni se borran: se **anulan** con
   `POST …/anulacion` y un motivo (se revierte su comprobante). Un egreso pasa por
   `…/autorizacion` (otra cuenta: si es la misma responde 409 `conflicto`) y `…/pago`. El extracto
   bancario viaja en Base64 dentro del JSON (`archivo_base64`) con el mapeo de columnas del banco;
@@ -104,25 +130,55 @@ cuenta (el nombre de la ruta es histórico).
   `POST …/cartera/presupuestos/proyecto`. Morosos de una asamblea desde la cartera:
   `POST …/cartera/asambleas/{reunion_id}/morosos`; restricción de reservas por mora:
   `POST …/cartera/reservas/restricciones-mora` con el umbral.
-- **Tributario y documentos electrónicos** (ADR 0020, etiqueta `tributario`):
-  `/contabilidad/tributario/…` y `/contabilidad/facturacion/…`. Primero el perfil tributario:
-  `POST …/tributario/perfiles` (queda en `borrador`) y `POST …/perfiles/{id}/confirmacion` (lo
-  confirma el contador; confirmado no se edita: se crea otra versión). **Sin perfil confirmado**
-  una línea de venta con IVA responde 422 y no se practican retenciones. Cada línea de venta lleva
-  `clasificacion` (solo `alquiler_servicio` y `venta` admiten IVA). Factura electrónica (módulo
-  `facturacion_electronica`): registrar la resolución (`…/tributario/resoluciones`; la clave
-  técnica nunca vuelve, solo `tiene_clave_tecnica`) y luego
-  `POST …/ventas/facturas/{id}/factura-electronica` (repetirla devuelve el mismo documento y CUFE;
-  si quedó en `contingencia`, la reintenta). Con FE validada, anular es
-  `POST …/ventas/facturas/{id}/nota-credito` (la `…/anulacion` responde 409). Documento soporte:
-  `POST …/cuentas-por-pagar/facturas/{id}/documento-soporte`. PDF:
-  `GET …/facturacion/documentos/{id}/pdf`. Hoy el proveedor es el **simulado** (`proveedor:
-  "simulado"`, sin validez ante la DIAN). Facturas recibidas: el XML va en Base64
-  (`archivo_base64`) a `POST …/facturacion/recibidas` (409 si ya se cargó); luego `…/vinculo`,
-  `…/rechazo` o `…/eventos` (RADIAN en orden: `acuse` → `recibo_bien` → `aceptacion` o
-  `reclamo` con motivo; si faltan los previos, 422). Preparación (no presenta):
-  `GET …/tributario/retencion|iva|ica?desde=&hasta=`, `POST …/tributario/exogena` (devuelve el
-  CSV y su `sha256`) y beneficiarios finales en `…/tributario/beneficiarios`.
+- **Lo común de la entidad**: `/entidades/{id}/terceros` (clientes y proveedores con sus datos
+  fiscales), `/entidades/{id}/tributario/{catalogo,perfiles,resoluciones}`,
+  `/entidades/{id}/roles`, `…/asignaciones`, `…/cuentas` (buscar a quién asignar),
+  `…/archivos` y `…/auditoria`. Sirven a la PH, a la empresa y a la plataforma; terceros y
+  tributario, con la contabilidad **o** la facturación.
+- **Perfil tributario** (ADR 0020, etiqueta `tributario`): `POST /entidades/{id}/tributario/perfiles`
+  (queda en `borrador`) y `POST …/perfiles/{id}/confirmacion` (lo confirma el contador;
+  confirmado no se edita: se crea otra versión). **Sin perfil confirmado** una línea de venta con
+  IVA responde 422, no se practican retenciones ni se emiten documentos electrónicos. Resolución
+  de numeración: `…/tributario/resoluciones` (la clave técnica nunca vuelve, solo
+  `tiene_clave_tecnica`). Preparación de declaraciones (solo con contabilidad, no presenta):
+  `GET /entidades/{id}/contabilidad/tributario/retencion|iva|ica?desde=&hasta=`,
+  `POST …/contabilidad/tributario/exogena` (devuelve el CSV y su `sha256`) y beneficiarios
+  finales en `…/contabilidad/tributario/beneficiarios`.
+- **Facturación** (ADR 0022, etiqueta `facturacion`): `/entidades/{id}/facturacion/…`. Sirve con
+  el módulo `facturacion_electronica` **sin contabilidad** o con `contabilidad`. Mire los
+  `modulos` de `capacidades`: sin `contabilidad` no muestre cuentas ni centros de costo (422 si
+  se envían), el pago se marca con `POST …/facturas/{id}/pago` (409 si la entidad lleva
+  contabilidad: ahí se paga con un recibo de caja).
+  - Catálogo: `…/items` (código único, unidad DIAN, precio sugerido, IVA, clasificación). Una
+    línea de factura con `item_id` toma del ítem lo que no traiga (descripción, precio, IVA,
+    clasificación y, con contabilidad, la cuenta).
+  - Facturas: `POST …/facturas` (borrador) → `…/emision` (número interno del año; con
+    contabilidad se contabiliza) → `…/factura-electronica` (repetirla devuelve el mismo documento
+    y CUFE; si quedó en `contingencia`, la reintenta). Sin FE, anular es `…/anulacion`; con FE
+    validada, `…/nota-credito` (la anulación responde 409). Cada línea lleva `clasificacion`
+    (solo `alquiler_servicio` y `venta` admiten IVA).
+  - Documento soporte: registrar la compra en `POST …/compras` (sin contabilidad, sin cuentas ni
+    retenciones) y luego `POST …/compras/{id}/documento-soporte`.
+  - Documentos: `…/documentos`, `…/documentos/{id}`, `…/reintento` y `…/pdf`. Hoy el proveedor es
+    el **simulado** (`proveedor: "simulado"`, sin validez ante la DIAN).
+  - Facturas recibidas: el XML va en Base64 (`archivo_base64`) a `POST …/recibidas` (409 si ya se
+    cargó); luego `…/vinculo`, `…/rechazo` o `…/eventos` (RADIAN en orden: `acuse` →
+    `recibo_bien` → `aceptacion` o `reclamo` con motivo; si faltan los previos, 422).
+  - Para el contador externo (`facturacion.exportar`): `GET …/libro-ventas`, `…/libro-compras`
+    (CSV) y `…/paquete` (ZIP con XML y PDF), todos con `?desde=&hasta=` y la cabecera
+    `X-Contenido-Sha256`.
+  - Si la entidad habilita la contabilidad después: `POST …/contabilizacion` con el periodo
+    contabiliza lo facturado (informe con `contabilizadas`, `pagadas_a_mano` y `fallidas`).
+  - **Habilitación con el motor propio** (`facturacion.configurar`; el certificado exige
+    `facturacion.certificado.gestionar`): `GET …/habilitacion` (estado, certificado con
+    `por_vencer` y envíos del set) → `PUT …/habilitacion/software` (SoftwareID, PIN y TestSetId
+    del catálogo de participantes de la DIAN) → `POST …/habilitacion/certificado`
+    (`archivo_base64` del `.p12` y `contrasena`) → `POST …/habilitacion/set-pruebas` con la
+    `cantidad` que pide la DIAN → `POST …/habilitacion/set-pruebas/consulta` hasta que el estado
+    sea `habilitado` → `POST …/habilitacion/produccion` → `POST …/habilitacion/rangos`. El PIN, el
+    `.p12` y su contraseña **nunca vuelven** en una respuesta. Sin `FACTURACION_CLAVE_MAESTRA` en el
+    servidor, registrar el software responde 422. Para que las facturas salgan por el motor propio,
+    el perfil tributario confirmado debe tener `canal_facturacion: "propio"`.
 
 ## 4. Sesión
 
@@ -185,7 +241,7 @@ antes de reintentar y muestre un aviso; no reintente en bucle.
 
 ## 9. Archivos
 
-- **Subir**: `POST /api/v1/copropiedades/{id}/archivos?nombre=…&clasificacion=…` con el contenido
+- **Subir**: `POST /api/v1/entidades/{id}/archivos?nombre=…&clasificacion=…` con el contenido
   crudo en el cuerpo (`Content-Type: application/octet-stream`, no `multipart`). El tipo real se
   valida por contenido; un tipo no admitido o muy grande da 422 `validacion`. La respuesta trae
   el `id` del archivo, que luego se adjunta en otras peticiones (tickets, reservas, actas…).

@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE facturas_venta SET estado = $2, numero = $3, pagado = $4, comprobante_id = $5,\n                 motivo_anulacion = $6, emitida_en = $7, pago_manual_fecha = $8,\n                 pago_manual_medio = $9, pago_manual_referencia = $10, pago_manual_por = $11\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int4",
+        "Numeric",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Date",
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b0f3476de08457d2b3f92697f7e0534559af20db59103503dedb7191483a00da"
+}

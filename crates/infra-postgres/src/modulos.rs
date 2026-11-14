@@ -5,12 +5,23 @@ use application::{
     puertos::{RepositorioModulos, modulos::PeriodoModulo},
 };
 use chrono::{DateTime, Utc};
-use domain::Modulo;
+use domain::{Modulo, TipoEntidad};
 use uuid::Uuid;
 
 use crate::TransaccionPg;
 
 impl RepositorioModulos for TransaccionPg {
+    async fn tipo_entidad(&mut self) -> AppResult<TipoEntidad> {
+        let tipo = sqlx::query_scalar!(
+            r#"SELECT tipo_entidad($1) AS "tipo!""#,
+            self.ctx.tenant_id.as_uuid()
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(TipoEntidad::try_from(tipo.as_str())?)
+    }
+
     async fn modulo_habilitado(&mut self, modulo: Modulo, ahora: DateTime<Utc>) -> AppResult<bool> {
         sqlx::query_scalar!(
             r#"SELECT EXISTS (

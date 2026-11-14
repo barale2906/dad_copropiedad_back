@@ -31,7 +31,7 @@ use crate::{
     extractores::{Json, Path, Query},
     limite::LimitePublico,
     openapi::ETIQUETA_ARCHIVOS,
-    sesion::EnCopropiedad,
+    sesion::EnEntidad,
     state::AppState,
 };
 
@@ -40,9 +40,9 @@ pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new().routes(routes!(descargar))
 }
 
-/// Rutas de archivos dentro de una copropiedad (subir y pedir el enlace de descarga). La subida
-/// admite hasta el tamaño máximo de un archivo; el resto de la API, mucho menos.
-pub fn rutas_copropiedad() -> OpenApiRouter<AppState> {
+/// Rutas de archivos de una entidad (subir y pedir el enlace de descarga). La subida admite
+/// hasta el tamaño máximo de un archivo; el resto de la API, mucho menos.
+pub fn rutas_entidad() -> OpenApiRouter<AppState> {
     let limite = usize::try_from(TipoArchivo::TAMANO_MAXIMO_GLOBAL).unwrap_or(usize::MAX);
     OpenApiRouter::new()
         .routes(routes!(subir))
@@ -97,7 +97,7 @@ impl From<Archivo> for ArchivoRespuesta {
     path = "/archivos",
     tag = ETIQUETA_ARCHIVOS,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), DatosSubida),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"), DatosSubida),
     request_body(content = Vec<u8>, content_type = "application/octet-stream",
                  description = "Contenido del archivo"),
     responses(
@@ -108,7 +108,7 @@ impl From<Archivo> for ArchivoRespuesta {
 )]
 pub async fn subir(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Query(d): Query<DatosSubida>,
     cuerpo: Bytes,
 ) -> ApiResult<(StatusCode, Json<ArchivoRespuesta>)> {
@@ -142,7 +142,7 @@ pub struct EnlaceRespuesta {
     tag = ETIQUETA_ARCHIVOS,
     security(("bearer" = [])),
     params(
-        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"),
         ("archivo_id" = Uuid, Path, description = "Archivo"),
     ),
     responses(
@@ -153,7 +153,7 @@ pub struct EnlaceRespuesta {
 )]
 pub async fn enlace(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Path(ruta): Path<(Uuid, Uuid)>,
 ) -> ApiResult<Json<EnlaceRespuesta>> {
     let url = casos_archivos::enlace_descarga(

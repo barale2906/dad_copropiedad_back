@@ -10,13 +10,11 @@ use domain::{
     ArchivoId, BeneficiarioFinalId, CuentaId, DocumentoElectronicoId, FacturaProveedorId,
     FacturaRecibidaId, FormatoExogenaId, GeneracionExogenaId, PerfilTributarioId, PersonaId,
     ResolucionNumeracionId, TarifaIcaId, TarifaIvaId,
-    contabilidad::{
-        Monto,
-        tributario::{
-            CriterioBeneficiario, EstadoDocumentoElectronico, EstadoFacturaRecibida,
-            EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,
-            TipoDocumentoElectronico, TipoNumeracion, TratamientoIva,
-        },
+    contabilidad::Monto,
+    tributario::{
+        CriterioBeneficiario, EstadoDocumentoElectronico, EstadoFacturaRecibida,
+        EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,
+        TipoDocumentoElectronico, TipoNumeracion, TratamientoIva,
     },
 };
 use rust_decimal::Decimal;
@@ -203,6 +201,20 @@ pub struct EventoDocumento {
 pub struct FiltroDocumentos {
     pub tipo: Option<TipoDocumentoElectronico>,
     pub estado: Option<EstadoDocumentoElectronico>,
+    /// Creados desde este día (incluido).
+    pub desde: Option<NaiveDate>,
+    /// Creados hasta este día (incluido).
+    pub hasta: Option<NaiveDate>,
+}
+
+/// Filtro de facturas recibidas.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FiltroRecibidas {
+    pub estado: Option<EstadoFacturaRecibida>,
+    /// Fecha de la factura desde (incluida).
+    pub desde: Option<NaiveDate>,
+    /// Fecha de la factura hasta (incluida).
+    pub hasta: Option<NaiveDate>,
 }
 
 /// Factura electrónica recibida de un proveedor.
@@ -413,10 +425,10 @@ pub trait RepositorioTributario: Send {
         id: FacturaRecibidaId,
     ) -> impl Future<Output = AppResult<Option<FacturaRecibida>>> + Send;
 
-    /// Facturas recibidas (del estado, si se da), las más recientes primero.
+    /// Facturas recibidas del filtro, las más recientes primero.
     fn facturas_recibidas(
         &mut self,
-        estado: Option<EstadoFacturaRecibida>,
+        filtro: &FiltroRecibidas,
         limite: u32,
     ) -> impl Future<Output = AppResult<Vec<FacturaRecibida>>> + Send;
 
@@ -516,19 +528,86 @@ pub trait RepositorioTributario: Send {
 // ---------------------------------------------------------------------------------------------
 
 /// Parte de un documento electrónico (emisor o adquirente).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ParteDocumento {
     /// NIT (sin DV) o documento de identidad.
     pub documento: String,
     pub dv: Option<String>,
     pub nombre: String,
     pub correo: Option<String>,
+    /// Persona natural (si no, jurídica).
+    pub persona_natural: bool,
+    /// Responsable de IVA (régimen del RUT).
+    pub responsable_iva: bool,
+    /// Responsabilidades fiscales del RUT (`O-13`, `R-99-PN`…).
+    pub responsabilidades: Vec<String>,
+    /// Dirección fiscal.
+    pub direccion: Option<DireccionDocumento>,
+}
+
+/// Dirección fiscal de una parte (códigos DANE).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DireccionDocumento {
+    pub linea: String,
+    /// Código DANE del municipio (5 dígitos).
+    pub municipio_dane: String,
+    /// Nombre del departamento, si se conoce.
+    pub departamento: Option<String>,
+}
+
+/// Datos de la resolución de numeración que van en la factura.
+#[derive(Clone, PartialEq, Eq)]
+pub struct ResolucionDocumento {
+    pub numero: String,
+    pub vigente_desde: NaiveDate,
+    pub vigente_hasta: NaiveDate,
+    pub desde: u64,
+    pub hasta: u64,
+}
+
+impl std::fmt::Debug for ResolucionDocumento {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ResolucionDocumento")
+            .field("numero", &self.numero)
+            .field("desde", &self.desde)
+            .field("hasta", &self.hasta)
+            .finish()
+    }
+}
+
+/// Credenciales de la entidad para facturar con el motor propio, ya descifradas para esta
+/// transmisión. Nunca se guardan así ni salen en `Debug`.
+#[derive(Clone, PartialEq, Eq)]
+pub struct CredencialesFacturador {
+    pub ambiente: domain::facturacion::AmbienteDian,
+    pub software_id: String,
+    pub pin: String,
+    /// El certificado `.p12` y su contraseña.
+    pub p12: Vec<u8>,
+    pub contrasena: String,
+    pub test_set_id: Option<String>,
+    /// Número de archivos enviados a la DIAN en el año (nombre del XML y del ZIP).
+    pub consecutivo_archivo: u32,
+}
+
+impl std::fmt::Debug for CredencialesFacturador {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CredencialesFacturador")
+            .field("ambiente", &self.ambiente)
+            .field("software_id", &self.software_id)
+            .field("pin", &"<oculto>")
+            .field("p12", &"<oculto>")
+            .field("contrasena", &"<oculta>")
+            .finish()
+    }
 }
 
 /// Línea de un documento electrónico.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LineaDocumento {
     pub descripcion: String,
+    /// Código de unidad de la DIAN (`94` = unidad).
+    pub unidad: String,
     pub cantidad: Decimal,
     pub valor_unitario: Decimal,
     pub subtotal: Decimal,
@@ -553,8 +632,18 @@ pub struct DocumentoAEmitir {
     pub total: Decimal,
     /// Clave técnica de la resolución (factura).
     pub clave_tecnica: Option<String>,
+    /// Resolución de numeración (factura).
+    pub resolucion: Option<ResolucionDocumento>,
+    /// Vencimiento (pago a crédito); `None` = de contado.
+    pub vencimiento: Option<NaiveDate>,
     /// CUFE del documento al que se refiere una nota.
     pub referencia_cufe: Option<String>,
+    /// Prefijo y número del documento al que se refiere una nota.
+    pub referencia_numero: Option<String>,
+    /// Fecha del documento al que se refiere una nota.
+    pub referencia_fecha: Option<NaiveDate>,
+    /// Con el motor propio: las credenciales de la entidad. `None` = otro proveedor.
+    pub credenciales: Option<CredencialesFacturador>,
 }
 
 /// Respuesta del proveedor a una transmisión o consulta.
@@ -584,7 +673,8 @@ pub trait ProveedorFacturacion: Send + Sync {
         documento: &DocumentoAEmitir,
     ) -> impl Future<Output = AppResult<RespuestaProveedor>> + Send;
 
-    /// Consulta el estado de un documento enviado.
+    /// Consulta el estado de un documento enviado (con las credenciales de la entidad si se
+    /// transmitió con el motor propio).
     ///
     /// # Errors
     ///
@@ -592,6 +682,7 @@ pub trait ProveedorFacturacion: Send + Sync {
     fn consultar(
         &self,
         id_externo: &str,
+        credenciales: Option<&CredencialesFacturador>,
     ) -> impl Future<Output = AppResult<RespuestaProveedor>> + Send;
 
     /// Registra un evento RADIAN sobre una factura recibida (por su CUFE).
@@ -605,6 +696,89 @@ pub trait ProveedorFacturacion: Send + Sync {
         evento: EventoRadian,
         motivo: Option<&str>,
     ) -> impl Future<Output = AppResult<RespuestaProveedor>> + Send;
+}
+
+/// Datos públicos de un certificado de firma leído de su `.p12`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CertificadoLeido {
+    pub sujeto: String,
+    pub emisor: String,
+    /// Número de serie en decimal.
+    pub serial: String,
+    pub vigente_desde: DateTime<Utc>,
+    pub vigente_hasta: DateTime<Utc>,
+}
+
+/// Lee y valida el certificado de firma de una entidad.
+pub trait LectorCertificados: Send + Sync {
+    /// # Errors
+    ///
+    /// [`crate::AppError::Validacion`] si el archivo no es un `.p12` legible, la contraseña no
+    /// es correcta o el certificado no permite firmar con no repudio.
+    fn leer(&self, p12: &[u8], contrasena: &str) -> AppResult<CertificadoLeido>;
+}
+
+/// Rango de numeración autorizado que devuelve la DIAN.
+#[derive(Clone, PartialEq, Eq)]
+pub struct RangoAutorizado {
+    pub resolucion: String,
+    pub fecha_resolucion: Option<NaiveDate>,
+    pub prefijo: String,
+    pub desde: u64,
+    pub hasta: u64,
+    pub vigente_desde: NaiveDate,
+    pub vigente_hasta: NaiveDate,
+    /// Secreto: clave técnica del rango.
+    pub clave_tecnica: String,
+}
+
+impl std::fmt::Debug for RangoAutorizado {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RangoAutorizado")
+            .field("resolucion", &self.resolucion)
+            .field("prefijo", &self.prefijo)
+            .field("desde", &self.desde)
+            .field("hasta", &self.hasta)
+            .field("clave_tecnica", &"<oculta>")
+            .finish()
+    }
+}
+
+/// Servicios de habilitación de la DIAN con el motor propio (set de pruebas y rangos).
+pub trait HabilitacionDian: Send + Sync {
+    /// Envía un documento del set de pruebas (`SendTestSetAsync`); `id_externo` es la clave del
+    /// envío para consultarlo después.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Validacion`] si el documento o el certificado no sirven;
+    /// [`crate::AppError::Infraestructura`] si la DIAN no responde.
+    fn enviar_set_pruebas(
+        &self,
+        documento: &DocumentoAEmitir,
+    ) -> impl Future<Output = AppResult<RespuestaProveedor>> + Send;
+
+    /// Resultado de un envío del set de pruebas (`GetStatusZip`).
+    ///
+    /// # Errors
+    ///
+    /// Los de [`HabilitacionDian::enviar_set_pruebas`].
+    fn consultar_set(
+        &self,
+        credenciales: &CredencialesFacturador,
+        clave: &str,
+    ) -> impl Future<Output = AppResult<RespuestaProveedor>> + Send;
+
+    /// Rangos de numeración autorizados al NIT para el software (`GetNumberingRange`).
+    ///
+    /// # Errors
+    ///
+    /// Los de [`HabilitacionDian::enviar_set_pruebas`].
+    fn rangos_numeracion(
+        &self,
+        credenciales: &CredencialesFacturador,
+        nit: &str,
+    ) -> impl Future<Output = AppResult<Vec<RangoAutorizado>>> + Send;
 }
 
 /// Datos de una factura electrónica leídos de su XML (UBL).

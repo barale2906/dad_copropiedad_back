@@ -462,3 +462,201 @@ async fn sin_servicio_es_error_de_transporte() {
         .expect_err("sin servicio");
     assert!(matches!(error, ErrorMotor::Transporte(_)));
 }
+
+// ---------------------------------------------------------------------------------------------
+// Adaptador del motor propio a los puertos (plan 18, parte B)
+// ---------------------------------------------------------------------------------------------
+
+mod adaptador {
+    use application::puertos::tributario::{
+        CredencialesFacturador, DireccionDocumento, DocumentoAEmitir, HabilitacionDian,
+        LectorCertificados, LineaDocumento, ParteDocumento, ProveedorFacturacion,
+        ResolucionDocumento,
+    };
+    use domain::{
+        DocumentoElectronicoId,
+        facturacion::AmbienteDian,
+        tributario::{EstadoDocumentoElectronico, TipoDocumentoElectronico},
+    };
+    use infra_facturacion::{LectorPkcs12, MotorPropio, ProveedorDian, ProveedorSimulado};
+
+    use super::*;
+
+    const P12: &[u8] = include_bytes!("fixtures/firma/firmante_legado.p12");
+
+    fn credenciales(ambiente: AmbienteDian) -> CredencialesFacturador {
+        CredencialesFacturador {
+            ambiente,
+            software_id: "56f2ae4e-9812-4fad-9255-08fcfcd5ccb0".into(),
+            pin: "12345".into(),
+            p12: P12.to_vec(),
+            contrasena: "prueba-123".into(),
+            test_set_id: Some("ab8a5fa2-1c4b-4f3c-93df-d1c2f9f7a1e2".into()),
+            consecutivo_archivo: 1,
+        }
+    }
+
+    fn documento(credenciales: Option<CredencialesFacturador>) -> DocumentoAEmitir {
+        let valor = Decimal::from(100_000);
+        DocumentoAEmitir {
+            id: DocumentoElectronicoId::nuevo(),
+            tipo: TipoDocumentoElectronico::Factura,
+            prefijo: "SETP".into(),
+            numero: 990_000_001,
+            fecha: Utc::now().date_naive(),
+            emisor: ParteDocumento {
+                documento: "901713998".into(),
+                dv: Some("3".into()),
+                nombre: "GISLA SAS".into(),
+                responsable_iva: true,
+                responsabilidades: vec!["O-13".into()],
+                direccion: Some(DireccionDocumento {
+                    linea: "Calle 1 # 2-3".into(),
+                    municipio_dane: "11001".into(),
+                    departamento: Some("Bogotá".into()),
+                }),
+                ..ParteDocumento::default()
+            },
+            adquirente: ParteDocumento {
+                documento: "222222222222".into(),
+                nombre: "Consumidor final".into(),
+                persona_natural: true,
+                ..ParteDocumento::default()
+            },
+            lineas: vec![LineaDocumento {
+                descripcion: "Servicio".into(),
+                unidad: "94".into(),
+                cantidad: Decimal::ONE,
+                valor_unitario: valor,
+                subtotal: valor,
+                tarifa_iva: Decimal::ZERO,
+                iva: Decimal::ZERO,
+            }],
+            subtotal: valor,
+            iva: Decimal::ZERO,
+            total: valor,
+            clave_tecnica: Some("fc8eac422eba16e22ffd8c6f94b3f40a6e38162c".into()),
+            resolucion: Some(ResolucionDocumento {
+                numero: "18760000001".into(),
+                vigente_desde: NaiveDate::from_ymd_opt(2026, 1, 1).expect("fecha"),
+                vigente_hasta: NaiveDate::from_ymd_opt(2030, 12, 31).expect("fecha"),
+                desde: 990_000_000,
+                hasta: 995_000_000,
+            }),
+            vencimiento: None,
+            referencia_cufe: None,
+            referencia_numero: None,
+            referencia_fecha: None,
+            credenciales,
+        }
+    }
+
+    #[test]
+    fn el_lector_valida_el_p12_y_devuelve_el_firmante() {
+        let c = LectorPkcs12.leer(P12, "prueba-123").expect("certificado");
+        assert!(c.sujeto.contains("CN="));
+        assert!(LectorPkcs12.leer(P12, "otra").is_err(), "contraseña errada");
+    }
+
+    #[tokio::test]
+    async fn con_credenciales_transmite_el_motor_propio_firmado_con_el_p12() {
+        let (url, peticiones) = simulador(|_| {
+            (
+                StatusCode::OK,
+                respuesta_validacion(true, "00", &[], "clave"),
+            )
+        })
+        .await;
+        let proveedor = ProveedorDian::new(
+            ProveedorSimulado::new(),
+            MotorPropio::new(&url, &url).expect("motor"),
+        );
+
+        let r = proveedor
+            .emitir(&documento(Some(credenciales(AmbienteDian::Produccion))))
+            .await
+            .expect("emitida");
+
+        assert_eq!(r.estado, EstadoDocumentoElectronico::Validado);
+        let cufe = r.cufe.expect("cufe");
+        assert_eq!(cufe.len(), 96, "CUFE SHA-384");
+        let xml = String::from_utf8(r.xml.expect("xml")).expect("utf-8");
+        assert!(xml.contains("ds:Signature") && xml.contains(&cufe));
+        let enviadas = peticiones.lock().expect("candado");
+        assert_eq!(enviadas.len(), 1);
+        assert!(
+            enviadas[0].accion.ends_with("SendBillSync"),
+            "{}",
+            enviadas[0].accion
+        );
+    }
+
+    #[tokio::test]
+    async fn sin_credenciales_responde_el_simulado_sin_salir_a_la_red() {
+        let proveedor = ProveedorDian::new(
+            ProveedorSimulado::new(),
+            MotorPropio::new("http://127.0.0.1:9/no", "http://127.0.0.1:9/no").expect("motor"),
+        );
+
+        let r = proveedor.emitir(&documento(None)).await.expect("simulado");
+
+        assert_eq!(r.estado, EstadoDocumentoElectronico::Validado);
+        assert!(r.id_externo.expect("id").starts_with("sim-"));
+    }
+
+    #[tokio::test]
+    async fn el_set_de_pruebas_viaja_con_el_test_set_id_y_se_consulta() {
+        let (url, peticiones) = simulador(|p| {
+            if p.accion.ends_with("SendTestSetAsync") {
+                (
+                    StatusCode::OK,
+                    sobre("<SendTestSetAsyncResponse><SendTestSetAsyncResult><ErrorMessageList/>\
+                           <ZipKey>clave-del-zip</ZipKey>\
+                           </SendTestSetAsyncResult></SendTestSetAsyncResponse>"),
+                )
+            } else {
+                (
+                    StatusCode::OK,
+                    sobre("<GetStatusZipResponse><GetStatusZipResult>\
+                           <DianResponse><IsValid>true</IsValid><StatusCode>00</StatusCode></DianResponse>\
+                           </GetStatusZipResult></GetStatusZipResponse>"),
+                )
+            }
+        })
+        .await;
+        let motor = MotorPropio::new(&url, &url).expect("motor");
+        let cred = credenciales(AmbienteDian::Habilitacion);
+
+        let enviado = motor
+            .enviar_set_pruebas(&documento(Some(cred.clone())))
+            .await
+            .expect("enviado");
+        let consulta = motor
+            .consultar_set(&cred, "clave-del-zip")
+            .await
+            .expect("consulta");
+
+        assert_eq!(enviado.id_externo.as_deref(), Some("clave-del-zip"));
+        assert_eq!(consulta.estado, EstadoDocumentoElectronico::Validado);
+        let p = peticiones.lock().expect("candado");
+        assert!(
+            p[0].cuerpo.contains("ab8a5fa2-1c4b-4f3c-93df-d1c2f9f7a1e2"),
+            "TestSetId"
+        );
+    }
+
+    #[tokio::test]
+    async fn un_documento_soporte_aun_no_sale_por_el_motor_propio() {
+        let motor =
+            MotorPropio::new("http://127.0.0.1:9/no", "http://127.0.0.1:9/no").expect("motor");
+        let mut d = documento(Some(credenciales(AmbienteDian::Produccion)));
+        d.tipo = TipoDocumentoElectronico::DocumentoSoporte;
+
+        let r = motor.emitir(&d).await;
+
+        assert!(
+            matches!(r, Err(application::AppError::Validacion(_))),
+            "{r:?}"
+        );
+    }
+}

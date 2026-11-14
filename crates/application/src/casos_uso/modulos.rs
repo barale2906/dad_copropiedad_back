@@ -7,7 +7,7 @@
 //! habilitan en una copropiedad y actúa en la entidad sin permisos de copropiedad.
 
 use chrono::{DateTime, Utc};
-use domain::{ConjuntoPermisos, Modulo, Permiso, TenantId};
+use domain::{ConjuntoPermisos, Modulo, Permiso, TenantId, TipoEntidad};
 
 use crate::{
     AppError, AppResult, Contexto, ContextoPlataforma,
@@ -39,6 +39,51 @@ pub(crate) async fn exigir_modulo_en<T: RepositorioModulos>(
     } else {
         Err(AppError::ModuloNoHabilitado(modulo))
     }
+}
+
+/// Exige que la entidad de la transacción tenga habilitado **alguno** de los módulos (lo que
+/// comparten varios, como el perfil tributario de la contabilidad y la facturación).
+///
+/// # Errors
+///
+/// [`AppError::ModuloNoHabilitado`] con el primero de la lista si no tiene ninguno.
+pub(crate) async fn exigir_algun_modulo_en<T: RepositorioModulos>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    modulos: &[Modulo],
+) -> AppResult<()> {
+    for m in modulos {
+        if tx.modulo_habilitado(*m, reloj.ahora()).await? {
+            return Ok(());
+        }
+    }
+    Err(AppError::ModuloNoHabilitado(*modulos.first().ok_or_else(
+        || AppError::Validacion("sin módulos que exigir".into()),
+    )?))
+}
+
+/// Abre la transacción de la entidad exigiendo los permisos (alguno de `permisos`) y alguno de
+/// los `modulos`: lo que comparten varios módulos vendibles (las ventas y lo tributario de la
+/// contabilidad y la facturación).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] o [`AppError::ModuloNoHabilitado`].
+pub(crate) async fn abrir_con_modulos<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    permisos: &[Permiso],
+    modulos: &[Modulo],
+) -> AppResult<U::Transaccion>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioModulos,
+{
+    ctx.exigir_alguno(permisos)?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    exigir_algun_modulo_en(&mut tx, reloj, modulos).await?;
+    Ok(tx)
 }
 
 /// Exige que la copropiedad del contexto tenga el módulo habilitado ahora.
@@ -173,17 +218,19 @@ where
     Ok(terminados)
 }
 
-/// Lo que la cuenta puede hacer en la copropiedad: con esto el frontend muestra u oculta
-/// opciones. El backend vuelve a exigir permisos y módulos en cada operación.
+/// Lo que la cuenta puede hacer en la entidad: con esto el frontend muestra u oculta opciones.
+/// El backend vuelve a exigir permisos y módulos en cada operación.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Capacidades {
+    /// Propiedad horizontal, empresa o la plataforma: decide qué menús existen.
+    pub tipo: TipoEntidad,
     /// Permisos efectivos de la cuenta (unión de sus roles vigentes).
     pub permisos: ConjuntoPermisos,
     /// Módulos habilitados ahora, en el orden de [`Modulo::TODOS`].
     pub modulos: Vec<Modulo>,
 }
 
-/// Permisos de la cuenta del contexto y módulos habilitados de la copropiedad.
+/// Tipo de la entidad, permisos de la cuenta del contexto y módulos habilitados.
 ///
 /// No exige un permiso: no lee datos de negocio, solo devuelve los permisos que el contexto ya
 /// trae (los de quien pregunta) y qué módulos tiene contratados su copropiedad.
@@ -202,7 +249,9 @@ where
 {
     let mut tx = unidad.iniciar(ctx).await?;
     let habilitados = tx.modulos_habilitados(reloj.ahora()).await?;
+    let tipo = tx.tipo_entidad().await?;
     Ok(Capacidades {
+        tipo,
         permisos: ctx.permisos.clone(),
         modulos: Modulo::TODOS
             .iter()
@@ -389,6 +438,7 @@ mod tests {
             .expect("capacidades");
 
         assert!(c.modulos.is_empty());
+        assert_eq!(c.tipo, TipoEntidad::Empresa, "sin vertical es una empresa");
     }
 
     #[tokio::test]

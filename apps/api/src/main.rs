@@ -59,6 +59,23 @@ async fn main() -> anyhow::Result<()> {
         confiar_proxy: limites.confiar_proxy,
     }));
     tracing::info!(?limites, "límite de peticiones por IP");
+    let facturacion = shared::config::FacturacionConfig::from_env()
+        .context("configuración de facturación inválida")?;
+    if facturacion.clave_maestra.is_none() {
+        tracing::warn!(
+            "sin FACTURACION_CLAVE_MAESTRA: la habilitación con el motor propio no está disponible"
+        );
+    }
+    state.cofre = std::sync::Arc::new(infra_seguridad::CofreAesGcm::new(facturacion.clave_maestra));
+    state.facturacion = infra_facturacion::ProveedorDian::new(
+        infra_facturacion::ProveedorSimulado::new(),
+        infra_facturacion::MotorPropio::new(
+            &facturacion.url_habilitacion,
+            &facturacion.url_produccion,
+        )
+        .map_err(|e| anyhow::anyhow!("{e}"))
+        .context("cliente del servicio web de la DIAN")?,
+    );
     // Tablero en vivo: oyente de `pg_notify` y emisor cada ~500 ms, hasta el apagado.
     let (avisar_apagado, apagado) = tokio::sync::watch::channel(false);
     let esperar = |mut rx: tokio::sync::watch::Receiver<bool>| async move {

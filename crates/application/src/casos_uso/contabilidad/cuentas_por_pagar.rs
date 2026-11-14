@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 
 use chrono::{Datelike, NaiveDate};
 use domain::{
-    ConceptoRetencionId, DireccionCorreo, FacturaProveedorId, Permiso, PersonaId,
+    ConceptoRetencionId, DireccionCorreo, FacturaProveedorId, Modulo, Permiso, PersonaId,
     contabilidad::{
         CodigoCuenta, ImporteDocumento, Monto, RegimenIva,
         tesoreria::{
@@ -25,6 +25,8 @@ use super::tesoreria::{
     LIMITE_LISTADO, abrir, centro_por_codigo, conceptos, cuenta_de_movimiento, eventos, origen,
 };
 use super::{TxTesoreria, texto, texto_opcional};
+use crate::casos_uso::modulos::abrir_con_modulos;
+use crate::puertos::RepositorioModulos as _;
 use crate::{
     AppError, AppResult, Contexto, ContextoPlataforma,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
@@ -247,9 +249,10 @@ where
 #[derive(Debug, Clone)]
 pub struct NuevaLineaFacturaProveedor {
     pub descripcion: String,
-    /// Cuenta de gasto, costo o activo.
-    pub cuenta: CodigoCuenta,
-    /// Código del centro de costo.
+    /// Cuenta de gasto, costo o activo: obligatoria con contabilidad y ausente sin ella (una
+    /// entidad de solo facturación registra la compra para su documento soporte).
+    pub cuenta: Option<CodigoCuenta>,
+    /// Código del centro de costo (solo con contabilidad).
     pub centro_costo: Option<String>,
     pub base: Monto,
     pub iva: Monto,
@@ -400,13 +403,36 @@ where
     {
         return Err(validacion("el CUFE tiene 96 caracteres hexadecimales"));
     }
-    let mut tx = abrir(
+    // Sin contabilidad, la compra se registra para su documento soporte: sin cuentas ni
+    // retenciones (ADR 0022).
+    let mut tx = abrir_con_modulos(
         unidad,
         reloj,
         ctx,
-        Permiso::TesoreriaFacturasProveedorGestionar,
+        &[
+            Permiso::TesoreriaFacturasProveedorGestionar,
+            Permiso::FacturacionFacturasGestionar,
+        ],
+        &[Modulo::Contabilidad, Modulo::FacturacionElectronica],
     )
     .await?;
+    let contable = tx
+        .modulo_habilitado(Modulo::Contabilidad, reloj.ahora())
+        .await?;
+    if !contable {
+        ctx.exigir(Permiso::FacturacionFacturasGestionar)?;
+        if nueva
+            .lineas
+            .iter()
+            .any(|l| l.cuenta.is_some() || l.centro_costo.is_some() || !l.retenciones.is_empty())
+        {
+            return Err(validacion(
+                "sin el módulo de contabilidad la compra no lleva cuentas, centros de costo ni                  retenciones",
+            ));
+        }
+    } else {
+        ctx.exigir(Permiso::TesoreriaFacturasProveedorGestionar)?;
+    }
     let fiscal = tx
         .datos_fiscales(nueva.persona)
         .await?
@@ -419,7 +445,7 @@ where
     // Sin perfil tributario confirmado no hay automatismos (plan 15): solo un agente de
     // retención confirmado practica retenciones.
     if nueva.lineas.iter().any(|l| !l.retenciones.is_empty()) {
-        let agente = super::tributario::perfil_confirmado_en(&mut tx, nueva.fecha)
+        let agente = crate::casos_uso::tributario::perfil_confirmado_en(&mut tx, nueva.fecha)
             .await?
             .is_some_and(|p| p.parametros.agente_retenedor);
         if !agente {
@@ -436,7 +462,15 @@ where
         }
         lineas.push(LineaFacturaProveedor {
             descripcion: texto("descripcion", &l.descripcion, 300)?,
-            cuenta_id: cuenta_de_movimiento(&mut tx, &l.cuenta).await?,
+            cuenta_id: match &l.cuenta {
+                Some(c) => Some(cuenta_de_movimiento(&mut tx, c).await?),
+                None if contable => {
+                    return Err(validacion(
+                        "cada línea lleva su cuenta de gasto, costo o activo",
+                    ));
+                }
+                None => None,
+            },
             centro_costo_id: centro_por_codigo(&mut tx, l.centro_costo.as_deref()).await?,
             base: l.base,
             iva: l.iva,
@@ -562,7 +596,7 @@ where
             ImporteDocumento::new(conceptos::GASTO, gasto)
                 .con_persona(proveedor)
                 .con_centro(l.centro_costo_id)
-                .con_cuenta(Some(l.cuenta_id))
+                .con_cuenta(l.cuenta_id)
                 .con_descripcion(Some(l.descripcion.clone())),
         );
         if l.iva_descontable && !l.iva.es_cero() {

@@ -11,9 +11,9 @@ use application::{
         tributario::{
             BeneficiarioFinal, CampoExogena, CatalogoTributario, CatalogoTributarioPlataforma,
             DocumentoElectronico, EventoDocumento, FacturaRecibida, FiltroDocumentos,
-            FormatoExogena, GeneracionExogena, MovimientoTercero, PerfilTributario, RegistroRadian,
-            RepositorioTributario, ResolucionNumeracion, ResumenIva, ResumenRetencion, TarifaIca,
-            TarifaIva,
+            FiltroRecibidas, FormatoExogena, GeneracionExogena, MovimientoTercero,
+            PerfilTributario, RegistroRadian, RepositorioTributario, ResolucionNumeracion,
+            ResumenIva, ResumenRetencion, TarifaIca, TarifaIva,
         },
     },
 };
@@ -22,13 +22,11 @@ use domain::{
     ArchivoId, BeneficiarioFinalId, CuentaId, DocumentoElectronicoId, FacturaProveedorId,
     FacturaRecibidaId, FormatoExogenaId, GeneracionExogenaId, PerfilTributarioId, PersonaId,
     ResolucionNumeracionId, TarifaIcaId, TarifaIvaId,
-    contabilidad::{
-        Monto, ResponsabilidadFiscal,
-        tributario::{
-            CanalFacturacion, CriterioBeneficiario, EstadoDocumentoElectronico,
-            EstadoFacturaRecibida, EstadoPerfilTributario, EventoRadian, LadoExogena,
-            ParametrosPerfil, TipoDocumentoElectronico, TipoNumeracion, TratamientoIva,
-        },
+    contabilidad::{Monto, ResponsabilidadFiscal},
+    tributario::{
+        CanalFacturacion, CriterioBeneficiario, EstadoDocumentoElectronico, EstadoFacturaRecibida,
+        EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,
+        TipoDocumentoElectronico, TipoNumeracion, TratamientoIva,
     },
 };
 use rust_decimal::Decimal;
@@ -801,10 +799,14 @@ impl RepositorioTributario for TransaccionPg {
                     intentos, total, creado_en, enviado_en, validado_en
              FROM documentos_electronicos
              WHERE ($1::text IS NULL OR tipo = $1) AND ($2::text IS NULL OR estado = $2)
+               AND ($3::date IS NULL OR creado_en >= $3::date::timestamptz)
+               AND ($4::date IS NULL OR creado_en < ($4::date + 1)::timestamptz)
              ORDER BY creado_en DESC, id DESC
-             LIMIT $3",
+             LIMIT $5",
             filtro.tipo.map(|t| t.as_str()),
             filtro.estado.map(|e| e.as_str()),
+            filtro.desde,
+            filtro.hasta,
             i64::from(limite),
         )
         .fetch_all(&mut *self.tx)
@@ -937,7 +939,7 @@ impl RepositorioTributario for TransaccionPg {
 
     async fn facturas_recibidas(
         &mut self,
-        estado: Option<EstadoFacturaRecibida>,
+        filtro: &FiltroRecibidas,
         limite: u32,
     ) -> AppResult<Vec<FacturaRecibida>> {
         sqlx::query_as!(
@@ -946,10 +948,13 @@ impl RepositorioTributario for TransaccionPg {
                     vencimiento, cufe, subtotal, iva, total, estado, persona_id,
                     factura_proveedor_id, motivo_rechazo, recibida_por, recibida_en
              FROM facturas_recibidas
-             WHERE $1::text IS NULL OR estado = $1
+             WHERE ($1::text IS NULL OR estado = $1)
+               AND ($2::date IS NULL OR fecha >= $2) AND ($3::date IS NULL OR fecha <= $3)
              ORDER BY recibida_en DESC, id DESC
-             LIMIT $2",
-            estado.map(|e| e.as_str()),
+             LIMIT $4",
+            filtro.estado.map(|e| e.as_str()),
+            filtro.desde,
+            filtro.hasta,
             i64::from(limite),
         )
         .fetch_all(&mut *self.tx)

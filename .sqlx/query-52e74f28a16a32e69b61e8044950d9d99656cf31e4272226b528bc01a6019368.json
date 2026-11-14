@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT designar_entidad_plataforma($1) AS \"designada!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "designada!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "52e74f28a16a32e69b61e8044950d9d99656cf31e4272226b528bc01a6019368"
+}

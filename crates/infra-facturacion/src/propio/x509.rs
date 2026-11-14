@@ -18,6 +18,10 @@ pub(crate) struct Certificado {
     pub(crate) serial: String,
     /// Emisor en formato RFC 2253 (`C=CO,O=…,CN=…`).
     pub(crate) emisor: String,
+    /// Sujeto (titular) en formato RFC 2253.
+    pub(crate) sujeto: String,
+    /// Clave pública del sujeto (contenido del `subjectPublicKey`: el `RSAPublicKey` en DER).
+    pub(crate) clave_publica: Vec<u8>,
     pub(crate) vigente_desde: DateTime<Utc>,
     pub(crate) vigente_hasta: DateTime<Utc>,
     /// Bits de `keyUsage` (bit 0 = firma digital, bit 1 = no repudio), si el certificado los
@@ -47,26 +51,26 @@ impl Certificado {
     }
 }
 
-/// Lector de TLV (etiqueta, longitud, valor) de DER.
-struct Lector<'a> {
+/// Lector de TLV (etiqueta, longitud, valor) de DER (lo usa también el PKCS#12).
+pub(super) struct Lector<'a> {
     datos: &'a [u8],
 }
 
 impl<'a> Lector<'a> {
-    fn new(datos: &'a [u8]) -> Self {
+    pub(super) fn new(datos: &'a [u8]) -> Self {
         Self { datos }
     }
 
-    fn vacio(&self) -> bool {
+    pub(super) fn vacio(&self) -> bool {
         self.datos.is_empty()
     }
 
-    fn mirar(&self) -> Option<u8> {
+    pub(super) fn mirar(&self) -> Option<u8> {
         self.datos.first().copied()
     }
 
     /// Lee el siguiente TLV: devuelve la etiqueta, el valor y el TLV completo.
-    fn siguiente(&mut self) -> Option<(u8, &'a [u8], &'a [u8])> {
+    pub(super) fn siguiente(&mut self) -> Option<(u8, &'a [u8], &'a [u8])> {
         let etiqueta = *self.datos.first()?;
         let primero = *self.datos.get(1)?;
         let (largo, cabecera) = if primero < 0x80 {
@@ -89,7 +93,7 @@ impl<'a> Lector<'a> {
         Some((etiqueta, valor, completo))
     }
 
-    fn esperar(&mut self, etiqueta: u8) -> Option<&'a [u8]> {
+    pub(super) fn esperar(&mut self, etiqueta: u8) -> Option<&'a [u8]> {
         match self.siguiente()? {
             (e, valor, _) if e == etiqueta => Some(valor),
             _ => None,
@@ -97,10 +101,10 @@ impl<'a> Lector<'a> {
     }
 }
 
-const SECUENCIA: u8 = 0x30;
+pub(super) const SECUENCIA: u8 = 0x30;
 const CONJUNTO: u8 = 0x31;
-const ENTERO: u8 = 0x02;
-const OID: u8 = 0x06;
+pub(super) const ENTERO: u8 = 0x02;
+pub(super) const OID: u8 = 0x06;
 
 fn leer(der: &[u8]) -> Option<Certificado> {
     let mut certificado = Lector::new(Lector::new(der).esperar(SECUENCIA)?);
@@ -114,8 +118,11 @@ fn leer(der: &[u8]) -> Option<Certificado> {
     let mut vigencia = Lector::new(tbs.esperar(SECUENCIA)?);
     let vigente_desde = tiempo(vigencia.siguiente()?)?;
     let vigente_hasta = tiempo(vigencia.siguiente()?)?;
-    tbs.esperar(SECUENCIA)?; // sujeto
-    tbs.esperar(SECUENCIA)?; // clave pública
+    let sujeto = nombre_rfc2253(tbs.esperar(SECUENCIA)?)?;
+    let mut spki = Lector::new(tbs.esperar(SECUENCIA)?);
+    spki.esperar(SECUENCIA)?; // algoritmo de la clave
+    let bits = spki.esperar(0x03)?;
+    let clave_publica = bits.get(1..)?.to_vec(); // sin el byte de bits sobrantes
     let mut uso_clave = None;
     while !tbs.vacio() {
         let (etiqueta, valor, _) = tbs.siguiente()?;
@@ -127,6 +134,8 @@ fn leer(der: &[u8]) -> Option<Certificado> {
         der: der.to_vec(),
         serial,
         emisor,
+        sujeto,
+        clave_publica,
         vigente_desde,
         vigente_hasta,
         uso_clave,
@@ -134,7 +143,7 @@ fn leer(der: &[u8]) -> Option<Certificado> {
 }
 
 /// Entero sin signo big-endian a decimal.
-fn decimal(bytes: &[u8]) -> String {
+pub(super) fn decimal(bytes: &[u8]) -> String {
     let mut numero: Vec<u8> = bytes.iter().copied().skip_while(|b| *b == 0).collect();
     if numero.is_empty() {
         return "0".into();
@@ -157,7 +166,7 @@ fn decimal(bytes: &[u8]) -> String {
     digitos.iter().rev().collect()
 }
 
-fn oid(bytes: &[u8]) -> Option<String> {
+pub(super) fn oid(bytes: &[u8]) -> Option<String> {
     let (primero, resto) = bytes.split_first()?;
     let mut partes = vec![u64::from(primero / 40), u64::from(primero % 40)];
     let mut actual = 0u64;

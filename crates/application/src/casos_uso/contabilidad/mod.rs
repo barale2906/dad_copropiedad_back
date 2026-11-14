@@ -12,28 +12,27 @@
 //!   (plan 13).
 //! - [`cuentas_por_pagar`]: catálogo de retenciones, facturas de proveedores, causación y
 //!   certificados de retención.
-//! - [`ventas`]: facturas de venta, recaudo con los recibos y cartera por edades.
+//! - [`cuentas_por_cobrar`]: recaudo de las facturas de venta con los recibos y cartera de
+//!   clientes por edades.
 //! - [`conciliacion`]: extractos bancarios y conciliación automática y manual.
 //! - [`declaraciones`]: preparación de retención, IVA e ICA, exógena y RUB (plan 15).
-//! - [`facturacion`]: factura electrónica, notas, documento soporte y facturas recibidas con
-//!   RADIAN, por el proveedor de facturación (plan 15).
-//! - [`tributario`]: catálogos de IVA, ICA y exógena, perfil tributario y resoluciones de
-//!   numeración (plan 15).
+//!
+//! Las facturas de venta y los documentos electrónicos están en [`crate::casos_uso::facturacion`]
+//! y el perfil tributario en [`crate::casos_uso::tributario`]; la contabilidad no importa la
+//! facturación (ADR 0022, prueba de fronteras).
 //!
 //! Toda operación exige el módulo [`Modulo::Contabilidad`] dentro de su transacción.
 
 pub mod comprobantes;
 pub mod conciliacion;
 pub mod configuracion;
+pub mod cuentas_por_cobrar;
 pub mod cuentas_por_pagar;
 pub mod declaraciones;
-pub mod facturacion;
 pub mod periodos;
 pub mod plantillas;
 pub mod reportes;
 pub mod tesoreria;
-pub mod tributario;
-pub mod ventas;
 
 use domain::Modulo;
 

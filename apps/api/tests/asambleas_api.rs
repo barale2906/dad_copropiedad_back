@@ -433,20 +433,20 @@ async fn solo_el_operador_registra_votos_y_el_residente_no(pool: PgPool) {
         let ph = &ph;
         async move {
             let cuenta = ph.api.registrar(usuario).await;
-            let (_, roles) = ph.pedir(Method::GET, "/roles", None).await;
+            let (_, roles) = ph.pedir_entidad(Method::GET, "/roles", None).await;
             let rol = roles
                 .as_array()
                 .and_then(|v| v.iter().find(|x| x["codigo"] == rol))
                 .map(id)
                 .expect("rol");
-            ok(
-                ph,
-                Method::POST,
-                "/asignaciones",
-                Some(json!({ "cuenta_id": cuenta, "rol_id": rol })),
-                StatusCode::CREATED,
-            )
-            .await;
+            let (s, v) = ph
+                .pedir_entidad(
+                    Method::POST,
+                    "/asignaciones",
+                    Some(json!({ "cuenta_id": cuenta, "rol_id": rol })),
+                )
+                .await;
+            assert_eq!(s, StatusCode::CREATED, "/asignaciones: {v}");
             ph.api.token(usuario).await
         }
     };

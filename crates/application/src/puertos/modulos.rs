@@ -3,7 +3,7 @@
 use std::future::Future;
 
 use chrono::{DateTime, Utc};
-use domain::Modulo;
+use domain::{Modulo, TipoEntidad};
 
 use crate::AppResult;
 
@@ -23,8 +23,11 @@ impl PeriodoModulo {
     }
 }
 
-/// Módulos de la copropiedad de la transacción.
+/// Módulos de la entidad de la transacción.
 pub trait RepositorioModulos: Send {
+    /// Qué es la entidad de la transacción: propiedad horizontal, empresa o la plataforma.
+    fn tipo_entidad(&mut self) -> impl Future<Output = AppResult<TipoEntidad>> + Send;
+
     /// ¿Algún periodo del módulo cubre `ahora`?
     fn modulo_habilitado(
         &mut self,

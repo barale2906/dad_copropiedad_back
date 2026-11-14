@@ -124,6 +124,8 @@ pub(crate) mod memoria {
         pub autorizaciones: Vec<(Autorizacion, Option<DateTime<Utc>>)>,
         pub solicitudes: Vec<SolicitudTitular>,
         pub modulos: Vec<PeriodoModulo>,
+        /// Tipo de la entidad en memoria (`None` = empresa).
+        pub tipo_entidad: Option<domain::TipoEntidad>,
         /// Roles propios de copropiedades (las plantillas salen de `ROLES_PLANTILLA`).
         pub roles: Vec<Rol>,
         pub asignaciones: Vec<(TenantId, Asignacion)>,
@@ -663,6 +665,13 @@ pub(crate) mod memoria {
     }
 
     impl RepositorioModulos for TransaccionEnMemoria {
+        async fn tipo_entidad(&mut self) -> AppResult<domain::TipoEntidad> {
+            Ok(self
+                .datos
+                .tipo_entidad
+                .unwrap_or(domain::TipoEntidad::Empresa))
+        }
+
         async fn modulo_habilitado(
             &mut self,
             modulo: Modulo,

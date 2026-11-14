@@ -3,8 +3,8 @@
 
 use application::{
     casos_uso::contabilidad::{
-        conciliacion::InformeConciliacion, cuentas_por_pagar::CertificadoRetenciones,
-        ventas::FilaCartera,
+        conciliacion::InformeConciliacion, cuentas_por_cobrar::FilaCartera,
+        cuentas_por_pagar::CertificadoRetenciones,
     },
     puertos::tesoreria::{
         AccionConciliacion, AplicacionPago, ConceptoRetencion, Conciliacion, CuentaTesoreria,
@@ -22,8 +22,8 @@ use domain::contabilidad::{
         EstadoRecibo, FormatoExtracto, ImpuestoRetencion, MedioEgreso, MedioRecibo,
         ModoConciliacion, TipoCuentaBancaria, TipoCuentaTesoreria, TramoEdad,
     },
-    tributario::ClasificacionTributaria,
 };
+use domain::tributario::ClasificacionTributaria;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
@@ -457,9 +457,10 @@ pub struct UvtPeticion {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct LineaFacturaProveedorPeticion {
     pub descripcion: String,
-    /// Código de la cuenta de gasto, costo o activo.
+    /// Código de la cuenta de gasto, costo o activo: obligatoria con contabilidad; sin ella (solo
+    /// facturación, para el documento soporte) no se envía.
     #[schema(example = "513525")]
-    pub cuenta: String,
+    pub cuenta: Option<String>,
     pub centro_costo: Option<String>,
     #[schema(value_type = String, example = "1000000")]
     pub base: Monto,
@@ -537,7 +538,8 @@ impl From<RetencionLinea> for RetencionRespuesta {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct LineaFacturaProveedorRespuesta {
     pub descripcion: String,
-    pub cuenta_id: Uuid,
+    /// Cuenta de gasto o costo; `null` si la entidad no lleva contabilidad.
+    pub cuenta_id: Option<Uuid>,
     pub centro_costo_id: Option<Uuid>,
     #[schema(value_type = String)]
     pub base: Decimal,
@@ -551,7 +553,7 @@ impl From<LineaFacturaProveedor> for LineaFacturaProveedorRespuesta {
     fn from(l: LineaFacturaProveedor) -> Self {
         Self {
             descripcion: l.descripcion,
-            cuenta_id: l.cuenta_id.as_uuid(),
+            cuenta_id: l.cuenta_id.map(|c| c.as_uuid()),
             centro_costo_id: l.centro_costo_id.map(|c| c.as_uuid()),
             base: l.base.valor(),
             iva: l.iva.valor(),
@@ -697,22 +699,27 @@ pub struct EnvioCertificadoRespuesta {
 /// Línea de una factura de venta nueva.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct LineaVentaPeticion {
-    pub descripcion: String,
-    /// Código de la cuenta de ingreso.
+    /// Producto o servicio del catálogo: lo que la línea no traiga sale de él.
+    pub item_id: Option<Uuid>,
+    /// Obligatoria sin ítem.
+    pub descripcion: Option<String>,
+    /// Código de la cuenta de ingreso, solo si la entidad lleva contabilidad (si falta, la del
+    /// ítem o la de la regla del evento).
     #[schema(example = "415505")]
-    pub cuenta: String,
+    pub cuenta: Option<String>,
+    /// Código del centro de costo, solo con contabilidad.
     pub centro_costo: Option<String>,
     #[schema(value_type = String, example = "1")]
     pub cantidad: Decimal,
-    #[schema(value_type = String, example = "350000")]
-    pub valor_unitario: Monto,
-    /// Porcentaje de IVA (0 si no aplica). Solo una línea `alquiler_servicio` o `venta` de una
-    /// entidad responsable de IVA con perfil confirmado lleva IVA, y con una tarifa gravada
-    /// vigente del catálogo.
-    #[serde(default)]
-    #[schema(value_type = String, example = "0")]
-    pub tarifa_iva: Decimal,
-    /// Clasificación tributaria de la línea (`otra` si no se indica).
+    /// Obligatorio sin ítem o si el ítem no tiene precio.
+    #[schema(value_type = Option<String>, example = "350000")]
+    pub valor_unitario: Option<Monto>,
+    /// Porcentaje de IVA (0 si no aplica; si falta, el del ítem). Solo una línea
+    /// `alquiler_servicio` o `venta` de una entidad responsable de IVA con perfil confirmado
+    /// lleva IVA, y con una tarifa gravada vigente del catálogo.
+    #[schema(value_type = Option<String>, example = "0")]
+    pub tarifa_iva: Option<Decimal>,
+    /// Clasificación tributaria (si falta, la del ítem u `otra`).
     #[serde(default)]
     #[schema(value_type = Option<crate::esquemas::ClasificacionTributaria>)]
     pub clasificacion: Option<ClasificacionTributaria>,
@@ -733,7 +740,10 @@ pub struct NuevaFacturaVentaPeticion {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct LineaVentaRespuesta {
     pub descripcion: String,
-    pub cuenta_id: Uuid,
+    /// Cuenta de ingreso; `null` si la entidad no lleva contabilidad o si se usa la de la regla.
+    pub cuenta_id: Option<Uuid>,
+    /// Producto o servicio del catálogo del que salió la línea.
+    pub item_id: Option<Uuid>,
     pub centro_costo_id: Option<Uuid>,
     #[schema(value_type = String)]
     pub cantidad: Decimal,
@@ -753,7 +763,8 @@ impl From<LineaFacturaVenta> for LineaVentaRespuesta {
     fn from(l: LineaFacturaVenta) -> Self {
         Self {
             descripcion: l.descripcion,
-            cuenta_id: l.cuenta_id.as_uuid(),
+            cuenta_id: l.cuenta_id.map(|c| c.as_uuid()),
+            item_id: l.item_id.map(|i| i.as_uuid()),
             centro_costo_id: l.centro_costo_id.map(|c| c.as_uuid()),
             cantidad: l.cantidad,
             valor_unitario: l.valor_unitario.valor(),

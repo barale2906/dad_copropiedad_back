@@ -40,6 +40,7 @@ mod contabilidad;
 mod copropiedades;
 mod directorio;
 mod error;
+mod facturacion;
 mod facturas;
 mod idempotencia;
 mod mantenimiento;

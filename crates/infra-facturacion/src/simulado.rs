@@ -2,9 +2,11 @@
 
 use application::{
     AppError, AppResult,
-    puertos::tributario::{DocumentoAEmitir, ProveedorFacturacion, RespuestaProveedor},
+    puertos::tributario::{
+        CredencialesFacturador, DocumentoAEmitir, ProveedorFacturacion, RespuestaProveedor,
+    },
 };
-use domain::contabilidad::tributario::{EstadoDocumentoElectronico, EventoRadian};
+use domain::tributario::{EstadoDocumentoElectronico, EventoRadian};
 use sha2::{Digest, Sha384};
 
 /// Proveedor simulado. Determinista: el mismo documento produce siempre el mismo CUFE, así que
@@ -132,7 +134,11 @@ impl ProveedorFacturacion for ProveedorSimulado {
         })
     }
 
-    async fn consultar(&self, id_externo: &str) -> AppResult<RespuestaProveedor> {
+    async fn consultar(
+        &self,
+        id_externo: &str,
+        _credenciales: Option<&CredencialesFacturador>,
+    ) -> AppResult<RespuestaProveedor> {
         self.disponible()?;
         Ok(RespuestaProveedor {
             estado: EstadoDocumentoElectronico::Validado,
@@ -165,7 +171,7 @@ impl ProveedorFacturacion for ProveedorSimulado {
 mod tests {
     use application::puertos::tributario::{LineaDocumento, ParteDocumento};
     use chrono::NaiveDate;
-    use domain::{DocumentoElectronicoId, contabilidad::tributario::TipoDocumentoElectronico};
+    use domain::{DocumentoElectronicoId, tributario::TipoDocumentoElectronico};
     use rust_decimal::Decimal;
 
     use super::*;
@@ -175,7 +181,7 @@ mod tests {
             documento: documento.into(),
             dv: None,
             nombre: "Parte <S.A.S.>".into(),
-            correo: None,
+            ..ParteDocumento::default()
         }
     }
 
@@ -190,6 +196,7 @@ mod tests {
             adquirente: parte(adquirente),
             lineas: vec![LineaDocumento {
                 descripcion: "Alquiler".into(),
+                unidad: "94".into(),
                 cantidad: Decimal::ONE,
                 valor_unitario: Decimal::from(100_000),
                 subtotal: Decimal::from(100_000),
@@ -200,7 +207,12 @@ mod tests {
             iva: Decimal::from(19_000),
             total: Decimal::from(119_000),
             clave_tecnica: Some("clave".into()),
+            resolucion: None,
+            vencimiento: None,
             referencia_cufe: None,
+            referencia_numero: None,
+            referencia_fecha: None,
+            credenciales: None,
         }
     }
 

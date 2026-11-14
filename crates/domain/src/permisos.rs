@@ -68,6 +68,8 @@ catalogo_permisos! {
     PlataformaModulosGestionar => "plataforma.modulos.gestionar", Plataforma;
     /// Dar de alta una entidad sin vertical (cualquier empresa de la contabilidad base).
     PlataformaEntidadesCrear => "plataforma.entidades.crear", Plataforma;
+    /// Designar la entidad que opera la plataforma (la empresa de GISLA): solo el superusuario.
+    PlataformaEntidadPropiaDesignar => "plataforma.entidad_propia.designar", Plataforma;
     /// Crear, publicar y retirar las plantillas contables estándar de la plataforma.
     PlataformaPlantillasContablesPublicar => "plataforma.plantillas_contables.publicar", Plataforma;
     /// Cargar catálogos normativos (PUC; más adelante UVT, retenciones, tasas).
@@ -197,8 +199,6 @@ catalogo_permisos! {
     /// Configuración contable, plan de cuentas, centros de costo, tipos de comprobante, reglas,
     /// rubros y aplicar o guardar plantillas.
     ContabilidadConfigurar => "contabilidad.configurar", Copropiedad;
-    /// Datos fiscales de los terceros (personas de la entidad).
-    ContabilidadTercerosGestionar => "contabilidad.terceros.gestionar", Copropiedad;
     /// Crear y editar comprobantes en borrador.
     ContabilidadComprobantesCrear => "contabilidad.comprobantes.crear", Copropiedad;
     /// Contabilizar comprobantes, saldos iniciales y cierre anual.
@@ -223,8 +223,6 @@ catalogo_permisos! {
     TesoreriaEgresosAutorizar => "tesoreria.egresos.autorizar", Copropiedad;
     /// Registrar, causar y anular facturas de proveedores; certificados de retención.
     TesoreriaFacturasProveedorGestionar => "tesoreria.facturas_proveedor.gestionar", Copropiedad;
-    /// Crear, emitir y anular facturas de venta.
-    TesoreriaFacturasVentaGestionar => "tesoreria.facturas_venta.gestionar", Copropiedad;
     /// Importar extractos y conciliar.
     TesoreriaConciliar => "tesoreria.conciliar", Copropiedad;
     /// Consultar la cartera de la PH: obligaciones, estados de cuenta, cuentas de cobro y
@@ -247,6 +245,24 @@ catalogo_permisos! {
     TributarioPerfilConfirmar => "tributario.perfil.confirmar", Copropiedad;
     /// Preparar declaraciones, generar la información exógena y llevar el RUB.
     TributarioPreparar => "tributario.preparar", Copropiedad;
+    /// Datos fiscales de los terceros (clientes y proveedores: personas de la entidad). Lo usan la
+    /// contabilidad y la facturación.
+    TercerosGestionar => "terceros.gestionar", Copropiedad;
+    /// Consultar facturas de venta, documentos electrónicos, facturas recibidas y el catálogo de
+    /// productos y servicios.
+    FacturacionVer => "facturacion.ver", Copropiedad;
+    /// Crear, emitir, marcar como pagadas y anular facturas de venta.
+    FacturacionFacturasGestionar => "facturacion.facturas.gestionar", Copropiedad;
+    /// Catálogo de productos y servicios que se facturan.
+    FacturacionItemsGestionar => "facturacion.items.gestionar", Copropiedad;
+    /// Exportar los libros de ventas y compras y el paquete de documentos (auditado con su
+    /// huella SHA-256).
+    FacturacionExportar => "facturacion.exportar", Copropiedad;
+    /// Configurar la habilitación ante la DIAN (SoftwareID, PIN, TestSetId, set de pruebas,
+    /// rangos y paso a producción).
+    FacturacionConfigurar => "facturacion.configurar", Copropiedad;
+    /// Cargar el certificado de firma (.p12) de la entidad.
+    FacturacionCertificadoGestionar => "facturacion.certificado.gestionar", Copropiedad;
     /// Emitir documentos electrónicos (factura, notas, documento soporte).
     FacturacionEmitir => "facturacion.emitir", Copropiedad;
     /// Cargar facturas recibidas y registrar sus eventos RADIAN.
@@ -473,7 +489,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::BienesPrivadosVer,
             P::ContabilidadVer,
             P::ContabilidadConfigurar,
-            P::ContabilidadTercerosGestionar,
+            P::TercerosGestionar,
             P::ContabilidadComprobantesCrear,
             P::ContabilidadComprobantesContabilizar,
             P::ContabilidadComprobantesRevertir,
@@ -484,7 +500,6 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TesoreriaRecibosRegistrar,
             P::TesoreriaEgresosRegistrar,
             P::TesoreriaFacturasProveedorGestionar,
-            P::TesoreriaFacturasVentaGestionar,
             P::TesoreriaConciliar,
             P::CarteraVer,
             P::CarteraConfigurar,
@@ -495,6 +510,29 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TributarioConfigurar,
             P::TributarioPerfilConfirmar,
             P::TributarioPreparar,
+            P::FacturacionConfigurar,
+            P::FacturacionVer,
+            P::FacturacionFacturasGestionar,
+            P::FacturacionItemsGestionar,
+            P::FacturacionExportar,
+            P::FacturacionEmitir,
+            P::FacturacionRecibir,
+        ]),
+    },
+    RolPlantilla {
+        codigo: "facturador",
+        nombre: "Facturador",
+        ambito: Ambito::Copropiedad,
+        permisos: Some(&[
+            P::ArchivosVer,
+            P::ArchivosSubir,
+            P::PersonasVer,
+            P::PersonasEditar,
+            P::TercerosGestionar,
+            P::FacturacionVer,
+            P::FacturacionFacturasGestionar,
+            P::FacturacionItemsGestionar,
+            P::FacturacionExportar,
             P::FacturacionEmitir,
             P::FacturacionRecibir,
         ]),
@@ -511,6 +549,8 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::TitularesVer,
             P::ContabilidadVer,
             P::ContabilidadExportar,
+            P::FacturacionVer,
+            P::FacturacionExportar,
             P::CarteraVer,
             P::AsambleasVer,
             P::InventarioVer,

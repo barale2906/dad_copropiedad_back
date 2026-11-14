@@ -159,11 +159,25 @@ pub async fn registrar_factura(
     en: EnEntidad,
     Json(p): Json<NuevaFacturaProveedorPeticion>,
 ) -> ApiResult<(StatusCode, Json<FacturaProveedorRespuesta>)> {
+    let f = uc::registrar_factura_proveedor(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        nueva_factura_proveedor(p)?,
+    )
+    .await?;
+    Ok((StatusCode::CREATED, Json(f.into())))
+}
+
+/// Traduce la petición de una factura de proveedor (o de una compra para el documento soporte).
+pub(crate) fn nueva_factura_proveedor(
+    p: NuevaFacturaProveedorPeticion,
+) -> ApiResult<NuevaFacturaProveedor> {
     let mut lineas = Vec::with_capacity(p.lineas.len());
     for l in p.lineas {
         lineas.push(NuevaLineaFacturaProveedor {
             descripcion: l.descripcion,
-            cuenta: codigo(&l.cuenta)?,
+            cuenta: l.cuenta.as_deref().map(codigo).transpose()?,
             centro_costo: l.centro_costo,
             base: l.base,
             iva: l.iva,
@@ -171,29 +185,22 @@ pub async fn registrar_factura(
             retenciones: l.retenciones,
         });
     }
-    let f = uc::registrar_factura_proveedor(
-        &state.unidad,
-        &RelojSistema,
-        &en.ctx,
-        NuevaFacturaProveedor {
-            persona: PersonaId::from_uuid(p.persona_id),
-            prefijo: p.prefijo,
-            numero: p.numero,
-            fecha: p.fecha,
-            vencimiento: p.vencimiento,
-            descripcion: p.descripcion,
-            origen: p.origen.map(|o| Origen {
-                tipo: o.tipo,
-                id: o.id,
-            }),
-            cufe: p.cufe,
-            archivo_id: p.archivo_id.map(ArchivoId::from_uuid),
-            lineas,
-            excepcion_duplicado: p.excepcion_duplicado,
-        },
-    )
-    .await?;
-    Ok((StatusCode::CREATED, Json(f.into())))
+    Ok(NuevaFacturaProveedor {
+        persona: PersonaId::from_uuid(p.persona_id),
+        prefijo: p.prefijo,
+        numero: p.numero,
+        fecha: p.fecha,
+        vencimiento: p.vencimiento,
+        descripcion: p.descripcion,
+        origen: p.origen.map(|o| Origen {
+            tipo: o.tipo,
+            id: o.id,
+        }),
+        cufe: p.cufe,
+        archivo_id: p.archivo_id.map(ArchivoId::from_uuid),
+        lineas,
+        excepcion_duplicado: p.excepcion_duplicado,
+    })
 }
 
 /// Factura de proveedor con sus líneas y retenciones.

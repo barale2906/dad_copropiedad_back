@@ -501,6 +501,21 @@ id_entidad!(
     Uuid::now_v7
 );
 id_entidad!(
+    /// Producto o servicio del catálogo de facturación.
+    ItemFacturacionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Certificado de firma (.p12) cargado por una entidad.
+    CertificadoFirmaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Documento del set de pruebas enviado a la DIAN.
+    EnvioSetPruebasId,
+    Uuid::now_v7
+);
+id_entidad!(
     /// Aplicación de un recibo a un documento por cobrar.
     AplicacionPagoId,
     Uuid::now_v7

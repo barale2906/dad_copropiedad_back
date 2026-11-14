@@ -8,8 +8,8 @@ use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     AplicacionPagoId, ArchivoId, CentroCostoId, ComprobanteId, ConceptoRetencionId, ConciliacionId,
     CuentaContableId, CuentaId, CuentaTesoreriaId, EgresoId, EventoPasarelaId, ExtractoBancarioId,
-    FacturaProveedorId, FacturaVentaId, MovimientoExtractoId, ObligacionCobroId, PersonaId,
-    ReciboCajaId,
+    FacturaProveedorId, FacturaVentaId, ItemFacturacionId, MovimientoExtractoId, ObligacionCobroId,
+    PersonaId, ReciboCajaId,
     contabilidad::{
         CodigoCuenta, Monto,
         tesoreria::{
@@ -17,8 +17,9 @@ use domain::{
             EstadoMovimientoExtracto, EstadoRecibo, FormatoExtracto, ImpuestoRetencion,
             MedioEgreso, MedioRecibo, ModoConciliacion, TipoCuentaBancaria, TipoCuentaTesoreria,
         },
-        tributario::ClasificacionTributaria,
     },
+    facturacion::MedioPagoManual,
+    tributario::ClasificacionTributaria,
 };
 use rust_decimal::Decimal;
 
@@ -290,7 +291,9 @@ pub struct RetencionLinea {
 pub struct LineaFacturaProveedor {
     pub descripcion: String,
     /// Cuenta de gasto, costo o activo.
-    pub cuenta_id: CuentaContableId,
+    /// Cuenta de gasto o costo; `None` si la entidad no lleva contabilidad (la pone la regla
+    /// del evento al contabilizar).
+    pub cuenta_id: Option<CuentaContableId>,
     pub centro_costo_id: Option<CentroCostoId>,
     pub base: Monto,
     pub iva: Monto,
@@ -346,8 +349,11 @@ pub struct FiltroFacturas {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LineaFacturaVenta {
     pub descripcion: String,
-    /// Cuenta de ingreso.
-    pub cuenta_id: CuentaContableId,
+    /// Cuenta de ingreso; `None` si la entidad no lleva contabilidad o si se usa la de la regla
+    /// del evento al contabilizar.
+    pub cuenta_id: Option<CuentaContableId>,
+    /// Producto o servicio del catálogo del que salió la línea.
+    pub item_id: Option<ItemFacturacionId>,
     pub centro_costo_id: Option<CentroCostoId>,
     pub cantidad: Decimal,
     pub valor_unitario: Monto,
@@ -364,7 +370,8 @@ pub struct LineaFacturaVenta {
 pub struct FacturaVenta {
     pub id: FacturaVentaId,
     pub persona_id: PersonaId,
-    /// Número del comprobante `FV` (al emitir).
+    /// Número interno de la factura en su año (al emitir). El número legal es el del documento
+    /// electrónico de la DIAN.
     pub numero: Option<u32>,
     pub fecha: NaiveDate,
     pub vencimiento: NaiveDate,
@@ -380,8 +387,22 @@ pub struct FacturaVenta {
     pub creada_por: Option<CuentaId>,
     pub creada_en: DateTime<Utc>,
     pub emitida_en: Option<DateTime<Utc>>,
+    /// Pago marcado a mano por quien factura sin tesorería (con contabilidad el pago es un
+    /// recibo de caja).
+    pub pago_manual: Option<PagoManual>,
     /// Vacío en los listados.
     pub lineas: Vec<LineaFacturaVenta>,
+}
+
+/// Pago de una factura marcado a mano.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PagoManual {
+    pub fecha: NaiveDate,
+    pub medio: MedioPagoManual,
+    /// Dato personal: referencia del pago del cliente.
+    pub referencia: Option<String>,
+    /// Quién lo marcó.
+    pub por: CuentaId,
 }
 
 /// Retenciones practicadas a un tercero, agrupadas por concepto (certificado).
@@ -399,6 +420,13 @@ pub struct FilaCertificado {
 pub struct DatosEntidad {
     pub nombre: String,
     pub nit: Option<String>,
+    /// Razón social (si difiere del nombre).
+    pub razon_social: Option<String>,
+    pub direccion: Option<String>,
+    /// Código DANE del municipio.
+    pub municipio_dane: Option<String>,
+    pub departamento: Option<String>,
+    pub correo: Option<String>,
 }
 
 /// Facturas de proveedores y de venta.

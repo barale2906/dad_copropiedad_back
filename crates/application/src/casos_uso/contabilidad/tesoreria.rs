@@ -25,7 +25,9 @@ use uuid::Uuid;
 
 use super::comprobantes::{self, DocumentoOrigen, revertir_en};
 use super::prelude::*;
-use super::{TxTesoreria, cuentas_por_pagar, exigir_contabilidad, texto, texto_opcional, ventas};
+use super::{
+    TxTesoreria, cuentas_por_cobrar, cuentas_por_pagar, exigir_contabilidad, texto, texto_opcional,
+};
 use crate::{
     AppError, AppResult, Contexto,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
@@ -449,7 +451,7 @@ pub(crate) async fn registrar_recibo_con<T: TxTesoreria>(
     ];
     let mut aplicaciones = Vec::with_capacity(nuevo.aplicaciones.len());
     for (factura, valor) in &nuevo.aplicaciones {
-        ventas::aplicar_a_factura(tx, *factura, *valor, nuevo.persona).await?;
+        cuentas_por_cobrar::aplicar_a_factura(tx, *factura, *valor, nuevo.persona).await?;
         importes
             .push(ImporteDocumento::new(conceptos::APLICADO, *valor).con_persona(nuevo.persona));
         aplicaciones.push(AplicacionPago {
@@ -567,7 +569,7 @@ where
     if recibo.persona_id.is_some_and(|p| p != cliente) {
         return Err(validacion("la factura es de otro cliente"));
     }
-    ventas::aplicar_a_factura(&mut tx, factura, valor, Some(cliente)).await?;
+    cuentas_por_cobrar::aplicar_a_factura(&mut tx, factura, valor, Some(cliente)).await?;
     let mut aplicacion = AplicacionPago {
         id: domain::AplicacionPagoId::nuevo(),
         recibo_id,
@@ -672,7 +674,7 @@ pub(crate) async fn anular_recibo_en<T: TxTesoreria>(
             revertir_en(tx, reloj, ctx, c, motivo, None).await?;
         }
         if let Some(factura) = a.factura_venta_id {
-            ventas::desaplicar_de_factura(tx, factura, a.valor).await?;
+            cuentas_por_cobrar::desaplicar_de_factura(tx, factura, a.valor).await?;
         }
         a.anulada_en = Some(ahora);
     }

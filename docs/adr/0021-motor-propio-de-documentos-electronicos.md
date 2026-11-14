@@ -60,3 +60,25 @@ software, sin que este sea proveedor tecnológico.
   representación gráfica con QR, contingencia tipo 04 y eventos RADIAN propios.
 - `GetAcquirer`, `GetExchangeEmails`, `GetStatusEvent` y `GetReferenceNotes` se agregan cuando
   una fase los use.
+
+## Adenda (2026-11-14): habilitación por entidad (plan 18 parte B, plan 17 fase 5)
+- **Lector PKCS#12 propio** (`propio::pkcs12`): estructura y derivación de claves de RFC 7292 sobre
+  el lector DER propio; cifrados de RustCrypto (`aes`, `cbc`, `des`, `rc2`) y PBKDF2 de `ring`.
+  Lee el formato moderno (PBES2, AES-256-CBC, MAC SHA-256) y el heredado (3DES, RC2-40, MAC SHA-1);
+  el firmante es el certificado cuya clave pública corresponde a la llave. Se descartó
+  `p12-keystore` (unas 105 dependencias) y `pkcs12` de RustCrypto (no descifra).
+- **Secretos por entidad cifrados** (`CofreAesGcm`, AES-256-GCM con `FACTURACION_CLAVE_MAESTRA`;
+  el contexto `facturacion.<uso>:<tenant>` va como AAD): PIN, `.p12` y su contraseña en la BD,
+  nunca en claro. El `.p12` cifrado va en `certificados_firma.p12_cifrado` (no en el almacén de
+  archivos: su tipo no es verificable por contenido y conviene tenerlo junto a su contraseña).
+- **Habilitación**: `configuraciones_facturacion` con `EstadoHabilitacion` (registrado → en pruebas
+  → habilitado → producción). El set de pruebas se arma con facturas al consumidor final en el
+  rango `SETP` 990000000–995000000 con la clave técnica pública de habilitación y se envía con
+  `SendTestSetAsync`; se consulta con `GetStatusZip` y, si todo fue aceptado, la entidad queda
+  habilitada. En producción se sincronizan los rangos con `GetNumberingRange`.
+- **Transmisión**: `ProveedorDian` envía por el motor propio el documento que trae credenciales
+  (canal `propio` del perfil confirmado y entidad en producción) y por el simulado los demás. En
+  software propio el NIT del proveedor del software es el del facturador.
+- **Pendiente**: notas del set de pruebas (hoy solo facturas), documento soporte y eventos RADIAN
+  propios (fase 7), contingencia tipo 04 y AttachedDocument (fase 6), Schematron con Saxon, y la
+  validación real contra el ambiente de habilitación con el `.p12` de GISLA.

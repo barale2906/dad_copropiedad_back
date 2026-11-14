@@ -1,6 +1,7 @@
-//! Prueba de arquitectura (ADR 0017): el núcleo contable (`domain::contabilidad`) sirve a
-//! cualquier entidad y **no conoce a la PH**. Solo puede usar del resto del crate lo que está
-//! en la lista; cualquier otra ruta `crate::…` hace fallar la prueba.
+//! Prueba de arquitectura (ADR 0017 y 0022): el núcleo contable (`domain::contabilidad`) y lo
+//! tributario (`domain::tributario`, que comparten la contabilidad y la facturación electrónica)
+//! sirven a cualquier entidad y **no conocen a la PH**. Solo pueden usar del resto del crate lo
+//! que está en la lista; cualquier otra ruta `crate::…` hace fallar la prueba.
 
 use std::{fs, path::Path};
 
@@ -39,20 +40,32 @@ fn rutas_de_crate(fuente: &str) -> Vec<String> {
     rutas
 }
 
+/// Falla si el fuente usa una ruta `crate::…` fuera de `permitidos`.
+fn revisar(ruta: &Path, permitidos: &[&str]) {
+    let fuente = fs::read_to_string(ruta).expect("fuente legible");
+    for r in rutas_de_crate(&fuente) {
+        assert!(
+            permitidos.contains(&r.as_str()),
+            "{} usa `crate::{r}`: solo puede usar {permitidos:?}",
+            ruta.display()
+        );
+    }
+}
+
+#[test]
+fn lo_tributario_no_conoce_a_la_ph() {
+    let ruta = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/tributario.rs");
+    let mut permitidos = PERMITIDOS.to_vec();
+    permitidos.push("contabilidad");
+    revisar(&ruta, &permitidos);
+}
+
 #[test]
 fn el_nucleo_contable_no_conoce_a_la_ph() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/contabilidad");
     let mut revisados = 0;
     for entrada in fs::read_dir(&dir).expect("src/contabilidad existe") {
-        let ruta = entrada.expect("entrada").path();
-        let fuente = fs::read_to_string(&ruta).expect("fuente legible");
-        for r in rutas_de_crate(&fuente) {
-            assert!(
-                PERMITIDOS.contains(&r.as_str()),
-                "{} usa `crate::{r}`: el núcleo contable solo puede usar {PERMITIDOS:?}",
-                ruta.display()
-            );
-        }
+        revisar(&entrada.expect("entrada").path(), PERMITIDOS);
         revisados += 1;
     }
     assert!(revisados >= 5, "se revisaron {revisados} fuentes");

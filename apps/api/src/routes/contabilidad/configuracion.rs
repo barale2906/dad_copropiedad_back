@@ -42,11 +42,17 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(listar_reglas, crear_regla))
         .routes(routes!(ver_rubros, reemplazar_rubros))
         .routes(routes!(listar_notas, guardar_nota))
-        .routes(routes!(listar_terceros, crear_tercero))
-        .routes(routes!(guardar_datos_fiscales))
         .routes(routes!(plantillas_disponibles))
         .routes(routes!(aplicar_plantilla))
         .routes(routes!(guardar_como_plantilla))
+}
+
+/// Terceros de la entidad (se montan en `/entidades/{entidad_id}`): los comparten la contabilidad
+/// y la facturación (ADR 0022).
+pub fn rutas_terceros() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
+        .routes(routes!(listar_terceros, crear_tercero))
+        .routes(routes!(guardar_datos_fiscales))
 }
 
 /// Configuración contable vigente (`null` si aún no la tiene).
@@ -586,7 +592,7 @@ pub struct FiltroTerceros {
     params(("entidad_id" = Uuid, Path, description = "Entidad"), FiltroTerceros, ParametrosPagina),
     responses(
         (status = OK, description = "Terceros", body = PaginaRespuesta<TerceroRespuesta>),
-        (status = FORBIDDEN, description = "Sin `contabilidad.ver` o sin el módulo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver`, `facturacion.ver` ni `terceros.gestionar`, o sin contabilidad ni facturación", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_terceros(
@@ -616,7 +622,7 @@ pub async fn listar_terceros(
     request_body = NuevoTerceroPeticion,
     responses(
         (status = CREATED, description = "Tercero creado o completado", body = TerceroRespuesta),
-        (status = FORBIDDEN, description = "Sin `contabilidad.terceros.gestionar` o sin el módulo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `terceros.gestionar` o sin el módulo", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Dato inválido (`validacion`)", body = ErrorRespuesta),
     )
 )]

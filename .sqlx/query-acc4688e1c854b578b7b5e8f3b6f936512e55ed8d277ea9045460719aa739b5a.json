@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT software_id, pin_cifrado, test_set_id, estado, certificado_id,\n                    actualizado_por, actualizado_en\n             FROM configuraciones_facturacion WHERE tenant_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "software_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_facturacion",
+            "name": "software_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "pin_cifrado",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_facturacion",
+            "name": "pin_cifrado"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "test_set_id",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_facturacion",
+            "name": "test_set_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_facturacion",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "certificado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_facturacion",
+            "name": "certificado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "actualizado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_facturacion",
+            "name": "actualizado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "actualizado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_facturacion",
+            "name": "actualizado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "acc4688e1c854b578b7b5e8f3b6f936512e55ed8d277ea9045460719aa739b5a"
+}

@@ -32,6 +32,7 @@ mod conversaciones;
 mod copropiedades;
 mod directorio;
 mod entidades;
+mod facturacion;
 mod ficha;
 mod health;
 mod importaciones;
@@ -271,7 +272,7 @@ mod tests {
     fn preflight(origen: &str) -> Request<Body> {
         Request::builder()
             .method(Method::OPTIONS)
-            .uri("/api/v1/yo/copropiedades")
+            .uri("/api/v1/yo/entidades")
             .header(header::ORIGIN, origen)
             .header(header::ACCESS_CONTROL_REQUEST_METHOD, "GET")
             .header(header::ACCESS_CONTROL_REQUEST_HEADERS, "authorization")

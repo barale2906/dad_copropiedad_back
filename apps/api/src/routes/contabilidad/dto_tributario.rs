@@ -1,8 +1,8 @@
 //! DTO de lo tributario y los documentos electrónicos (plan 15).
 
 use application::{
-    casos_uso::contabilidad::{
-        declaraciones::{
+    casos_uso::{
+        contabilidad::declaraciones::{
             ExogenaGenerada, LineaIca, PreparacionIca, PreparacionIva, PreparacionRetencion,
         },
         tributario::CatalogoCompleto,
@@ -14,8 +14,8 @@ use application::{
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
-use domain::contabilidad::{
-    ResponsabilidadFiscal,
+use domain::{
+    contabilidad::ResponsabilidadFiscal,
     tributario::{
         CanalFacturacion, CriterioBeneficiario, EstadoDocumentoElectronico, EstadoFacturaRecibida,
         EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,

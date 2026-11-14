@@ -36,6 +36,19 @@ const HASH_POLITICA: &str = "dMoMvtcG5aIzgYo0tIsSQeVJBDnUnfSOfBpxXrmor0Y=";
 const DESCRIPCION_POLITICA: &str =
     "Política de firma para facturas electrónicas de la República de Colombia.";
 
+/// Datos públicos del certificado del firmante.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResumenCertificado {
+    /// Titular en formato RFC 2253.
+    pub sujeto: String,
+    /// Entidad de certificación que lo expidió (RFC 2253).
+    pub emisor: String,
+    /// Número de serie en decimal.
+    pub serial: String,
+    pub vigente_desde: DateTime<Utc>,
+    pub vigente_hasta: DateTime<Utc>,
+}
+
 /// Certificado digital del facturador: su clave privada RSA y la cadena (el del firmante
 /// primero). Lo expide una entidad de certificación acreditada por la ONAC.
 ///
@@ -78,6 +91,43 @@ impl CredencialFirma {
             ));
         }
         Ok(Self { clave, cadena })
+    }
+
+    /// Credencial desde un `.p12` con su contraseña. El certificado del firmante es el que
+    /// corresponde a la llave privada, esté donde esté en el archivo.
+    ///
+    /// # Errors
+    ///
+    /// Los de [`super::pkcs12::leer`] y [`CredencialFirma::desde_der`], o
+    /// [`ErrorMotor::Certificado`] si ningún certificado corresponde a la llave.
+    pub fn desde_pkcs12(p12: &[u8], contrasena: &str) -> Result<Self, ErrorMotor> {
+        let contenido = super::pkcs12::leer(p12, contrasena)?;
+        let clave = RsaKeyPair::from_pkcs8(&contenido.llave_pkcs8)
+            .map_err(|_| ErrorMotor::Certificado("la clave privada no es RSA PKCS#8".into()))?;
+        let publica = clave.public().as_ref().to_vec();
+        let mut cadena = contenido.certificados;
+        let posicion = cadena
+            .iter()
+            .position(|der| Certificado::leer(der).is_ok_and(|c| c.clave_publica == publica))
+            .ok_or_else(|| {
+                ErrorMotor::Certificado(
+                    "ningún certificado del .p12 corresponde a la llave privada".into(),
+                )
+            })?;
+        let firmante = cadena.remove(posicion);
+        cadena.insert(0, firmante);
+        Self::desde_der(&contenido.llave_pkcs8, &cadena)
+    }
+
+    /// Datos del certificado del firmante para mostrarlos y guardarlos (sin la llave).
+    pub fn resumen(&self) -> Option<ResumenCertificado> {
+        self.cadena.first().map(|c| ResumenCertificado {
+            sujeto: c.sujeto.clone(),
+            emisor: c.emisor.clone(),
+            serial: c.serial.clone(),
+            vigente_desde: c.vigente_desde,
+            vigente_hasta: c.vigente_hasta,
+        })
     }
 
     /// Credencial desde PEM: la clave privada (`PRIVATE KEY`, PKCS#8) y los certificados

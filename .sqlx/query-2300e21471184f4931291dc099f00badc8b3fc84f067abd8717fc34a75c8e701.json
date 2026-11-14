@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE envios_set_pruebas SET estado = $2, respuesta = $3, consultado_en = $4\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2300e21471184f4931291dc099f00badc8b3fc84f067abd8717fc34a75c8e701"
+}

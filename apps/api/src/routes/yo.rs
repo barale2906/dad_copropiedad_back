@@ -1,12 +1,15 @@
 //! Rutas de la cuenta autenticada: `/api/v1/yo/…`.
 //!
-//! Datos propios de quien inició sesión, sin depender de una copropiedad: perfil, copropiedades
-//! donde tiene roles (para elegir en cuál trabajar), correo, contraseña, sesiones, segundo
-//! factor y sus solicitudes en todas sus copropiedades.
+//! Datos propios de quien inició sesión, sin depender de una entidad: perfil, entidades
+//! (propiedades horizontales y empresas) donde tiene roles para elegir en cuál trabajar, correo,
+//! contraseña, sesiones, segundo factor y sus solicitudes en todas sus copropiedades.
 
-use application::{casos_uso::autenticacion as uc, puertos::RelojSistema};
+use application::{
+    casos_uso::autenticacion as uc,
+    puertos::{RelojSistema, identidad::Membresia},
+};
 use axum::{extract::State, http::StatusCode};
-use domain::{ContrasenaNueva, Permiso};
+use domain::{ContrasenaNueva, EstadoCopropiedad, Permiso, TipoEntidad};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -24,7 +27,7 @@ use crate::{
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(perfil))
-        .routes(routes!(mis_copropiedades))
+        .routes(routes!(mis_entidades))
         .routes(routes!(mis_tickets))
         .routes(routes!(verificar_correo))
         .routes(routes!(reenviar_verificacion))
@@ -78,43 +81,60 @@ pub async fn perfil(
     }))
 }
 
-/// Copropiedad donde la cuenta tiene roles vigentes.
+/// Entidad donde la cuenta puede trabajar: una propiedad horizontal, una empresa cliente o la
+/// plataforma.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct MembresiaRespuesta {
-    /// Va en las rutas `/api/v1/copropiedades/{copropiedad_id}/…`.
-    pub copropiedad_id: Uuid,
+pub struct EntidadDeLaCuenta {
+    /// Va en `/api/v1/entidades/{entidad_id}/…` y, si es una propiedad horizontal, también en
+    /// `/api/v1/copropiedades/{copropiedad_id}/…` (es el mismo id).
+    pub entidad_id: Uuid,
     #[schema(example = "Conjunto Residencial Alameda")]
     pub nombre: String,
-    /// Códigos de los roles vigentes (p. ej. `administrador`, `propietario`).
+    #[schema(example = "900123456-7")]
+    pub nit: Option<String>,
+    /// `propiedad_horizontal` muestra los menús de la PH y lo común; `empresa`, solo lo común;
+    /// `plataforma`, la consola de operación (`/plataforma/…`) y lo común de su propia empresa.
+    #[schema(value_type = crate::esquemas::TipoEntidad)]
+    pub tipo: TipoEntidad,
+    /// `en_configuracion`, `activa` o `suspendida` (las retiradas no se listan).
+    #[schema(value_type = crate::esquemas::EstadoCopropiedad)]
+    pub estado: EstadoCopropiedad,
+    /// Códigos de los roles vigentes (p. ej. `administrador`, `propietario`, `contador`); en la
+    /// plataforma se suman los de plataforma (`superusuario`, `soporte`…).
     pub roles: Vec<String>,
 }
 
-/// Copropiedades donde la cuenta tiene roles: el cliente elige en cuál entrar.
+impl From<Membresia> for EntidadDeLaCuenta {
+    fn from(m: Membresia) -> Self {
+        Self {
+            entidad_id: m.tenant_id.as_uuid(),
+            nombre: m.nombre,
+            nit: m.nit,
+            tipo: m.tipo,
+            estado: m.estado,
+            roles: m.roles,
+        }
+    }
+}
+
+/// Entidades donde la cuenta puede trabajar: el cliente pide en cuál entrar (también llegan al
+/// iniciar sesión). Ordenadas por nombre.
 #[utoipa::path(
     get,
-    path = "/copropiedades",
+    path = "/entidades",
     tag = ETIQUETA_CUENTA,
     security(("bearer" = [])),
     responses(
-        (status = OK, description = "Copropiedades con roles vigentes", body = Vec<MembresiaRespuesta>),
+        (status = OK, description = "Entidades con roles vigentes", body = Vec<EntidadDeLaCuenta>),
         (status = UNAUTHORIZED, description = "Sin sesión (`no_autenticado`)", body = ErrorRespuesta),
     )
 )]
-pub async fn mis_copropiedades(
+pub async fn mis_entidades(
     State(state): State<AppState>,
     cuenta: CuentaAutenticada,
-) -> ApiResult<Json<Vec<MembresiaRespuesta>>> {
-    let lista = uc::mis_copropiedades(&state.plataforma, &cuenta.ctx).await?;
-    Ok(Json(
-        lista
-            .into_iter()
-            .map(|m| MembresiaRespuesta {
-                copropiedad_id: m.tenant_id.as_uuid(),
-                nombre: m.nombre,
-                roles: m.roles,
-            })
-            .collect(),
-    ))
+) -> ApiResult<Json<Vec<EntidadDeLaCuenta>>> {
+    let lista = uc::mis_entidades(&state.plataforma, &cuenta.ctx).await?;
+    Ok(Json(lista.into_iter().map(Into::into).collect()))
 }
 
 /// Código de 6 dígitos.

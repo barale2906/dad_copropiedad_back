@@ -31,7 +31,7 @@ impl Empresa {
         self.api
             .pedir(
                 metodo,
-                &format!("/api/v1/entidades/{}/contabilidad{sufijo}", self.id),
+                &format!("/api/v1/entidades/{}{sufijo}", self.id),
                 Some(token),
                 cuerpo,
             )
@@ -150,7 +150,7 @@ async fn empresa(pool: PgPool) -> Empresa {
         ("5195", true, false),
     ] {
         e.crear(
-            "/cuentas",
+            "/contabilidad/cuentas",
             json!({ "codigo": codigo, "nombre": format!("Cuenta {codigo}"),
                     "acepta_movimiento": movimiento, "exige_tercero": tercero }),
         )
@@ -158,7 +158,7 @@ async fn empresa(pool: PgPool) -> Empresa {
     }
     for codigo in ["RC", "CE", "FC", "FV"] {
         e.crear(
-            "/tipos-comprobante",
+            "/contabilidad/tipos-comprobante",
             json!({ "codigo": codigo, "nombre": format!("Tipo {codigo}"), "manual": false }),
         )
         .await;
@@ -166,7 +166,7 @@ async fn empresa(pool: PgPool) -> Empresa {
     let (s, v) = e
         .pedir(
             Method::PUT,
-            "/configuracion",
+            "/contabilidad/configuracion",
             Some(json!({ "marco_tecnico": "grupo_3", "vigente_desde": "2026-01-01" })),
         )
         .await;
@@ -213,7 +213,7 @@ async fn empresa(pool: PgPool) -> Empresa {
         ),
     ] {
         e.crear(
-            "/reglas",
+            "/contabilidad/reglas",
             json!({ "evento": evento, "tipo_comprobante": tipo, "vigente_desde": "2026-01-01",
                     "lineas": lineas }),
         )
@@ -221,7 +221,7 @@ async fn empresa(pool: PgPool) -> Empresa {
     }
     let banco = e
         .crear(
-            "/tesoreria/cuentas",
+            "/contabilidad/tesoreria/cuentas",
             json!({ "tipo": "banco", "nombre": "Corriente", "banco": "Banco de prueba",
                     "numero_cuenta": "123-456789-01", "tipo_cuenta": "corriente",
                     "cuenta_contable": "1110" }),
@@ -273,7 +273,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     // Venta: borrador → emitir → recibo aplicado.
     let factura = e
         .crear(
-            "/ventas/facturas",
+            "/facturacion/facturas",
             json!({ "persona_id": e.cliente, "fecha": "2026-03-01", "vencimiento": "2026-03-31",
                     "descripcion": "Alquiler del salón",
                     "lineas": [{ "descripcion": "Salón", "cuenta": "4170", "cantidad": "1",
@@ -285,7 +285,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     let (s, emitida) = e
         .pedir(
             Method::POST,
-            &format!("/ventas/facturas/{factura_id}/emision"),
+            &format!("/facturacion/facturas/{factura_id}/emision"),
             None,
         )
         .await;
@@ -296,7 +296,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     );
     let recibo = e
         .crear(
-            "/tesoreria/recibos",
+            "/contabilidad/tesoreria/recibos",
             json!({ "cuenta_tesoreria_id": e.banco, "persona_id": e.cliente, "fecha": "2026-03-10",
                     "valor": "350000", "medio": "transferencia", "descripcion": "Pago salón",
                     "aplicaciones": [{ "factura_venta_id": factura_id, "valor": "350000" }] }),
@@ -304,11 +304,19 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         .await;
     assert_eq!(recibo["sin_aplicar"], json!("0.00"));
     let (_, f) = e
-        .pedir(Method::GET, &format!("/ventas/facturas/{factura_id}"), None)
+        .pedir(
+            Method::GET,
+            &format!("/facturacion/facturas/{factura_id}"),
+            None,
+        )
         .await;
     assert_eq!(f["estado"], json!("pagada"));
     let (_, cartera) = e
-        .pedir(Method::GET, "/ventas/cartera?corte=2026-04-30", None)
+        .pedir(
+            Method::GET,
+            "/contabilidad/cuentas-por-cobrar/edades?corte=2026-04-30",
+            None,
+        )
         .await;
     assert_eq!(cartera, json!([]));
 
@@ -319,11 +327,17 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
                         "lineas": [{ "descripcion": "Servicio", "cuenta": "5135",
                                      "base": "1000000", "iva": "0",
                                      "retenciones": ["servicios"] }] });
-    let compra = e.crear("/cuentas-por-pagar/facturas", nueva.clone()).await;
+    let compra = e
+        .crear("/contabilidad/cuentas-por-pagar/facturas", nueva.clone())
+        .await;
     assert_eq!(compra["retenciones"], json!("40000.00"));
     assert_eq!(compra["neto_pagar"], json!("960000.00"));
     let (s, v) = e
-        .pedir(Method::POST, "/cuentas-por-pagar/facturas", Some(nueva))
+        .pedir(
+            Method::POST,
+            "/contabilidad/cuentas-por-pagar/facturas",
+            Some(nueva),
+        )
         .await;
     assert_eq!(
         (s, &v["error"]["codigo"]),
@@ -333,7 +347,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     let (s, v) = e
         .pedir(
             Method::POST,
-            &format!("/cuentas-por-pagar/facturas/{compra_id}/causacion"),
+            &format!("/contabilidad/cuentas-por-pagar/facturas/{compra_id}/causacion"),
             None,
         )
         .await;
@@ -346,7 +360,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     // Egreso: lo registra el gerente, no puede autorizarlo él mismo; lo autoriza el contador.
     let egreso = e
         .crear(
-            "/tesoreria/egresos",
+            "/contabilidad/tesoreria/egresos",
             json!({ "cuenta_tesoreria_id": e.banco, "persona_id": e.proveedor,
                     "fecha": "2026-03-20", "medio": "transferencia", "descripcion": "Pago FE-77",
                     "facturas": [{ "factura_proveedor_id": compra_id, "valor": "960000" }] }),
@@ -356,7 +370,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     let (s, v) = e
         .pedir(
             Method::POST,
-            &format!("/tesoreria/egresos/{egreso_id}/autorizacion"),
+            &format!("/contabilidad/tesoreria/egresos/{egreso_id}/autorizacion"),
             None,
         )
         .await;
@@ -368,7 +382,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         .pedir_como(
             &e.contador,
             Method::POST,
-            &format!("/tesoreria/egresos/{egreso_id}/autorizacion"),
+            &format!("/contabilidad/tesoreria/egresos/{egreso_id}/autorizacion"),
             None,
         )
         .await;
@@ -380,7 +394,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     let (s, v) = e
         .pedir(
             Method::POST,
-            &format!("/tesoreria/egresos/{egreso_id}/pago"),
+            &format!("/contabilidad/tesoreria/egresos/{egreso_id}/pago"),
             Some(json!({})),
         )
         .await;
@@ -388,7 +402,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
     let (_, compra) = e
         .pedir(
             Method::GET,
-            &format!("/cuentas-por-pagar/facturas/{compra_id}"),
+            &format!("/contabilidad/cuentas-por-pagar/facturas/{compra_id}"),
             None,
         )
         .await;
@@ -399,7 +413,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         .pedir(
             Method::GET,
             &format!(
-                "/cuentas-por-pagar/certificados/{}?desde=2026-01-01&hasta=2026-12-31",
+                "/contabilidad/cuentas-por-pagar/certificados/{}?desde=2026-01-01&hasta=2026-12-31",
                 e.proveedor
             ),
             None,
@@ -414,7 +428,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         .pedir(
             Method::POST,
             &format!(
-                "/cuentas-por-pagar/certificados/{}/envio?desde=2026-01-01&hasta=2026-12-31",
+                "/contabilidad/cuentas-por-pagar/certificados/{}/envio?desde=2026-01-01&hasta=2026-12-31",
                 e.proveedor
             ),
             None,
@@ -430,7 +444,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
 async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
     let e = empresa(pool).await;
     e.crear(
-        "/tesoreria/recibos",
+        "/contabilidad/tesoreria/recibos",
         json!({ "cuenta_tesoreria_id": e.banco, "persona_id": e.cliente, "fecha": "2026-03-10",
                 "valor": "200000", "medio": "consignacion", "descripcion": "Anticipo" }),
     )
@@ -444,7 +458,7 @@ async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
                    "valor": "Valor", "separador_decimal": "coma" },
         "saldo_final": "250000",
     });
-    let ruta = format!("/tesoreria/cuentas/{}/extractos", e.banco);
+    let ruta = format!("/contabilidad/tesoreria/cuentas/{}/extractos", e.banco);
 
     let (s, previa) = e
         .pedir(
@@ -467,7 +481,10 @@ async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
     let (s, hechas) = e
         .pedir(
             Method::POST,
-            &format!("/tesoreria/cuentas/{}/conciliacion-automatica", e.banco),
+            &format!(
+                "/contabilidad/tesoreria/cuentas/{}/conciliacion-automatica",
+                e.banco
+            ),
             Some(json!({ "desde": "2026-03-01", "hasta": "2026-03-31" })),
         )
         .await;
@@ -476,7 +493,7 @@ async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
     let (_, pendientes) = e
         .pedir(
             Method::GET,
-            &format!("/tesoreria/cuentas/{}/movimientos?desde=2026-03-01&hasta=2026-03-31&estado=pendiente", e.banco),
+            &format!("/contabilidad/tesoreria/cuentas/{}/movimientos?desde=2026-03-01&hasta=2026-03-31&estado=pendiente", e.banco),
             None,
         )
         .await;
@@ -484,7 +501,7 @@ async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
     let (s, recibo) = e
         .pedir(
             Method::POST,
-            &format!("/tesoreria/movimientos/{movimiento}/recibo"),
+            &format!("/contabilidad/tesoreria/movimientos/{movimiento}/recibo"),
             Some(json!({ "descripcion": "Abono por identificar" })),
         )
         .await;
@@ -497,7 +514,7 @@ async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
         .pedir(
             Method::GET,
             &format!(
-                "/tesoreria/cuentas/{}/informe-conciliacion?corte=2026-03-31",
+                "/contabilidad/tesoreria/cuentas/{}/informe-conciliacion?corte=2026-03-31",
                 e.banco
             ),
             None,
@@ -527,7 +544,7 @@ async fn sin_permiso_de_tesoreria_no_registra_recibos(pool: PgPool) {
         .pedir_como(
             &lector,
             Method::POST,
-            "/tesoreria/recibos",
+            "/contabilidad/tesoreria/recibos",
             Some(
                 json!({ "cuenta_tesoreria_id": e.banco, "fecha": "2026-03-10", "valor": "1",
                          "medio": "efectivo", "descripcion": "x" }),
@@ -535,7 +552,12 @@ async fn sin_permiso_de_tesoreria_no_registra_recibos(pool: PgPool) {
         )
         .await;
     let (s_ver, _) = e
-        .pedir_como(&lector, Method::GET, "/tesoreria/recibos", None)
+        .pedir_como(
+            &lector,
+            Method::GET,
+            "/contabilidad/tesoreria/recibos",
+            None,
+        )
         .await;
 
     assert_eq!(

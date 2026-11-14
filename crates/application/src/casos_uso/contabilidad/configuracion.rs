@@ -43,6 +43,31 @@ const ACCION_NOTA: AccionAuditoria = AccionAuditoria::new("contabilidad.nota.gua
 const ACCION_TERCERO: AccionAuditoria = AccionAuditoria::new("contabilidad.tercero.guardar");
 const ACCION_PLANTILLA: AccionAuditoria = AccionAuditoria::new("contabilidad.plantilla.aplicar");
 
+/// Los terceros (clientes y proveedores con sus datos fiscales) los comparten la contabilidad y la
+/// facturación (ADR 0022): sirven con cualquiera de los dos módulos.
+async fn abrir_terceros<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    permisos: &[Permiso],
+) -> AppResult<U::Transaccion>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxContable,
+{
+    crate::casos_uso::modulos::abrir_con_modulos(
+        unidad,
+        reloj,
+        ctx,
+        permisos,
+        &[
+            domain::Modulo::Contabilidad,
+            domain::Modulo::FacturacionElectronica,
+        ],
+    )
+    .await
+}
+
 async fn abrir<U>(
     unidad: &U,
     reloj: &impl Reloj,
@@ -878,7 +903,7 @@ pub struct Tercero {
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`] sin `contabilidad.ver`.
+/// [`AppError::SinPermiso`] sin `contabilidad.ver`, `facturacion.ver` ni `terceros.gestionar`.
 pub async fn terceros<U>(
     unidad: &U,
     reloj: &impl Reloj,
@@ -890,7 +915,17 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxContable,
 {
-    let mut tx = abrir(unidad, reloj, ctx, Permiso::ContabilidadVer).await?;
+    let mut tx = abrir_terceros(
+        unidad,
+        reloj,
+        ctx,
+        &[
+            Permiso::ContabilidadVer,
+            Permiso::FacturacionVer,
+            Permiso::TercerosGestionar,
+        ],
+    )
+    .await?;
     let personas = tx.listar_personas(texto_busqueda, pagina).await?;
     let mut datos = Vec::with_capacity(personas.datos.len());
     for persona in personas.datos {
@@ -947,7 +982,7 @@ pub struct NuevoTercero {
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`] sin `contabilidad.terceros.gestionar`; [`AppError::Validacion`] si un
+/// [`AppError::SinPermiso`] sin `terceros.gestionar`; [`AppError::Validacion`] si un
 /// dato fiscal es inválido.
 pub async fn crear_tercero<U>(
     unidad: &U,
@@ -961,7 +996,7 @@ where
 {
     let nombre = texto("nombre", &nuevo.nombre, 200)?;
     validar_fiscales(&nuevo.fiscal)?;
-    let mut tx = abrir(unidad, reloj, ctx, Permiso::ContabilidadTercerosGestionar).await?;
+    let mut tx = abrir_terceros(unidad, reloj, ctx, &[Permiso::TercerosGestionar]).await?;
     let persona = match tx.persona_por_documento(&nuevo.documento).await? {
         Some(p) => p,
         None => {
@@ -990,7 +1025,7 @@ where
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`] sin `contabilidad.terceros.gestionar`; [`AppError::NoEncontrado`] si
+/// [`AppError::SinPermiso`] sin `terceros.gestionar`; [`AppError::NoEncontrado`] si
 /// la persona no existe; [`AppError::Validacion`] si un dato es inválido.
 pub async fn guardar_datos_fiscales<U>(
     unidad: &U,
@@ -1004,7 +1039,7 @@ where
     U::Transaccion: TxContable,
 {
     validar_fiscales(&datos)?;
-    let mut tx = abrir(unidad, reloj, ctx, Permiso::ContabilidadTercerosGestionar).await?;
+    let mut tx = abrir_terceros(unidad, reloj, ctx, &[Permiso::TercerosGestionar]).await?;
     tx.persona(persona)
         .await?
         .ok_or(AppError::NoEncontrado("persona"))?;

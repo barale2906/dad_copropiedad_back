@@ -17,16 +17,19 @@
 //! (AGENTS.md §4). Nada de esto escribe logs con el contenido de los documentos, el PIN del
 //! software ni la clave técnica.
 
+mod adaptador;
 pub mod control;
 pub mod firma;
+pub mod pkcs12;
 pub mod servicio;
 pub mod ubl;
 mod x509;
 mod xml;
-mod zip;
+pub(crate) mod zip;
 
 use chrono::Datelike;
 
+pub use adaptador::{LectorPkcs12, MotorPropio, ProveedorDian};
 use firma::CredencialFirma;
 use ubl::{Clase, DocumentoUbl, Software};
 

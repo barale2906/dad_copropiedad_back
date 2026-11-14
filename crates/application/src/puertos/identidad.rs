@@ -10,12 +10,13 @@
 
 use std::future::Future;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     Ambito, AsignacionRolId, ConjuntoPermisos, ContrasenaNueva, ContratoServicioId, CuentaId,
-    DireccionCorreo, EstadoContrato, EstadoCuenta, EstadoOrganizacion, EstadoReclamacion,
-    Identificador, NaturalezaOrganizacion, Nit, NombreUsuario, OrganizacionId, OrigenAsignacion,
-    ReclamacionId, RolId, RolOrganizacion, SesionId, TenantId, TipoOrganizacion,
+    DireccionCorreo, EstadoContrato, EstadoCopropiedad, EstadoCuenta, EstadoOrganizacion,
+    EstadoReclamacion, Identificador, NaturalezaOrganizacion, Nit, NombreUsuario, OrganizacionId,
+    OrigenAsignacion, ReclamacionId, RolId, RolOrganizacion, SesionId, TenantId, TipoEntidad,
+    TipoOrganizacion,
 };
 use uuid::Uuid;
 
@@ -398,11 +399,25 @@ pub trait RepositorioRoles: Send {
     ) -> impl Future<Output = AppResult<()>> + Send;
 }
 
-/// Copropiedad donde la cuenta tiene roles vigentes.
+/// Documentos electrónicos de una entidad y un tipo en un rango (cobro del módulo).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConsumoDocumentos {
+    pub tenant_id: TenantId,
+    pub nombre: String,
+    pub tipo: domain::tributario::TipoDocumentoElectronico,
+    pub cantidad: u64,
+}
+
+/// Entidad (empresa) donde la cuenta tiene roles vigentes: la que se elige al entrar.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Membresia {
     pub tenant_id: TenantId,
     pub nombre: String,
+    pub nit: Option<String>,
+    /// Propiedad horizontal o empresa: decide qué muestra el cliente.
+    pub tipo: TipoEntidad,
+    /// Nunca `retirada` (esas no se listan).
+    pub estado: EstadoCopropiedad,
     pub roles: Vec<String>,
 }
 
@@ -433,7 +448,27 @@ pub trait RepositorioPlataforma: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<(ConjuntoPermisos, bool)>> + Send;
 
-    /// Copropiedades donde la cuenta tiene roles vigentes.
+    /// Marca la entidad como la de la plataforma (y desmarca la anterior). `false` si no existe
+    /// o está retirada.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si la entidad es una copropiedad.
+    fn designar_entidad_plataforma(
+        &mut self,
+        entidad: TenantId,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y
+    /// tipo, creados entre `desde` y `hasta` (incluidos): solo conteos, para cobrar el módulo.
+    fn consumo_documentos(
+        &mut self,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> impl Future<Output = AppResult<Vec<ConsumoDocumentos>>> + Send;
+
+    /// Entidades donde la cuenta tiene roles vigentes; la de la plataforma, también si tiene roles
+    /// de plataforma. Sin las retiradas.
     fn membresias(
         &mut self,
         cuenta: CuentaId,

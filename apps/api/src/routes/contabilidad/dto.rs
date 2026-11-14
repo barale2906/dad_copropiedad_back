@@ -30,7 +30,7 @@ use uuid::Uuid;
 
 use crate::error::{ApiError, ApiResult};
 
-pub(super) fn codigo(texto: &str) -> ApiResult<CodigoCuenta> {
+pub(crate) fn codigo(texto: &str) -> ApiResult<CodigoCuenta> {
     CodigoCuenta::new(texto).map_err(|e| ApiError::App(e.into()))
 }
 
