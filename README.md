@@ -130,7 +130,7 @@ sqlx migrate revert            # revertir la última
 | `crates/infra-archivos` | Adaptador | Almacén de archivos en disco y enlaces de descarga firmados (S3 previsto, ADR 0003) |
 | `crates/infra-planillas` | Adaptador | Lectura de planillas CSV/XLSX para importaciones masivas (ADR 0006) |
 | `crates/infra-push` | Adaptador | Notificaciones push de las apps Flutter con Firebase Cloud Messaging (ADR 0011) |
-| `crates/infra-facturacion` | Adaptador | Facturación electrónica: proveedor simulado y lector UBL de facturas recibidas (ADR 0020) |
+| `crates/infra-facturacion` | Adaptador | Facturación electrónica: proveedor simulado, motor propio DIAN (ADR 0021) y lector UBL de facturas recibidas (ADR 0020) |
 | `crates/shared` | Transversal | Configuración, telemetría, apagado |
 | `apps/api` | Entrada | `dad_copropiedad_api`: REST y WebSocket |
 | `apps/gateway` | Entrada | `dad_copropiedad_gateway`: webhook y chat de WhatsApp, outbox (correo, WhatsApp y push), workers de recordatorios, gestión, asambleas y control de acceso |
