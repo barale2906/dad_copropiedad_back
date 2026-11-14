@@ -1,6 +1,6 @@
 [package]
 name = "infra-facturacion"
-description = "Facturación electrónica: proveedor simulado (puerto ProveedorFacturacion) y lector de facturas UBL (puerto LectorFacturas)"
+description = "Facturación electrónica: proveedor simulado y motor propio DIAN (puerto ProveedorFacturacion) y lector de facturas UBL (puerto LectorFacturas)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,13 +12,20 @@ publish.workspace = true
 application.workspace = true
 domain.workspace = true
 
+base64.workspace = true
 chrono.workspace = true
 hex.workspace = true
+reqwest.workspace = true
+ring.workspace = true
 roxmltree.workspace = true
 rust_decimal.workspace = true
+rustls.workspace = true
 sha2.workspace = true
+thiserror.workspace = true
+webpki-roots.workspace = true
 
 [dev-dependencies]
+axum.workspace = true
 tokio.workspace = true
 uuid.workspace = true
 

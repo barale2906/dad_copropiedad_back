@@ -2000,14 +2000,21 @@ name = "infra-facturacion"
 version = "0.1.0"
 dependencies = [
  "application",
+ "axum",
+ "base64 0.22.1",
  "chrono",
  "domain",
  "hex",
+ "reqwest",
+ "ring",
  "roxmltree 0.21.2",
  "rust_decimal",
+ "rustls",
  "sha2 0.11.1",
+ "thiserror",
  "tokio",
  "uuid",
+ "webpki-roots",
 ]
 
 [[package]]
