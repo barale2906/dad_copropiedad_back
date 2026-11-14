@@ -241,6 +241,16 @@ catalogo_permisos! {
     CarteraCertificadosEmitir => "cartera.certificados.emitir", Copropiedad;
     /// Elaborar y aprobar el presupuesto de la PH.
     PresupuestoGestionar => "presupuesto.gestionar", Copropiedad;
+    /// Perfil tributario (borrador) y resoluciones de numeración de la entidad.
+    TributarioConfigurar => "tributario.configurar", Copropiedad;
+    /// Confirmar el perfil tributario (sin confirmar no hay automatismos tributarios).
+    TributarioPerfilConfirmar => "tributario.perfil.confirmar", Copropiedad;
+    /// Preparar declaraciones, generar la información exógena y llevar el RUB.
+    TributarioPreparar => "tributario.preparar", Copropiedad;
+    /// Emitir documentos electrónicos (factura, notas, documento soporte).
+    FacturacionEmitir => "facturacion.emitir", Copropiedad;
+    /// Cargar facturas recibidas y registrar sus eventos RADIAN.
+    FacturacionRecibir => "facturacion.recibir", Copropiedad;
     /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
     DirectorioVer => "directorio.ver", Copropiedad;
     /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
@@ -482,6 +492,11 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::CarteraAjustar,
             P::CarteraCertificadosEmitir,
             P::PresupuestoGestionar,
+            P::TributarioConfigurar,
+            P::TributarioPerfilConfirmar,
+            P::TributarioPreparar,
+            P::FacturacionEmitir,
+            P::FacturacionRecibir,
         ]),
     },
     RolPlantilla {

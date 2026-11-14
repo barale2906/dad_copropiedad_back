@@ -18,6 +18,7 @@ use domain::{
     contabilidad::{
         Monto,
         tesoreria::{EstadoFacturaProveedor, EstadoFacturaVenta, ImpuestoRetencion},
+        tributario::ClasificacionTributaria,
     },
 };
 use rust_decimal::Decimal;
@@ -188,7 +189,7 @@ impl TransaccionPg {
     async fn lineas_venta(&mut self, factura: Uuid) -> AppResult<Vec<LineaFacturaVenta>> {
         sqlx::query!(
             "SELECT descripcion, cuenta_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva,
-                    subtotal, iva
+                    subtotal, iva, clasificacion
              FROM lineas_factura_venta WHERE factura_id = $1 ORDER BY orden",
             factura
         )
@@ -206,6 +207,7 @@ impl TransaccionPg {
                 tarifa_iva: l.tarifa_iva,
                 subtotal: monto(l.subtotal)?,
                 iva: monto(l.iva)?,
+                clasificacion: ClasificacionTributaria::try_from(l.clasificacion.as_str())?,
             })
         })
         .collect()
@@ -444,8 +446,9 @@ impl RepositorioFacturas for TransaccionPg {
         for (i, l) in f.lineas.iter().enumerate() {
             sqlx::query!(
                 "INSERT INTO lineas_factura_venta (tenant_id, factura_id, orden, descripcion,
-                     cuenta_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva, subtotal, iva)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+                     cuenta_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva, subtotal, iva,
+                     clasificacion)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
                 self.ctx.tenant_id.as_uuid(),
                 f.id.as_uuid(),
                 i16_de(i + 1, "orden")?,
@@ -457,6 +460,7 @@ impl RepositorioFacturas for TransaccionPg {
                 l.tarifa_iva,
                 l.subtotal.valor(),
                 l.iva.valor(),
+                l.clasificacion.as_str(),
             )
             .execute(&mut *self.tx)
             .await

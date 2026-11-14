@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO perfiles_tributarios (id, tenant_id, version, vigente_desde, estado,\n                 responsabilidades, agente_retenedor, responsable_iva, gran_contribuyente,\n                 autorretenedor, contribuyente_renta, facturador_electronico, obligado_rub,\n                 municipios_ica, actividades_ica, canal_facturacion, soporte_archivo_id,\n                 observaciones, creado_por, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19, $20)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Int4",
+        "Date",
+        "Text",
+        "TextArray",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool",
+        "TextArray",
+        "TextArray",
+        "Text",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b4636051cffd01e6721b711639cba0050732ffe8c9f6d6b8d0ce90d17f0284c0"
+}

@@ -1,0 +1,26 @@
+[package]
+name = "infra-facturacion"
+description = "Facturación electrónica: proveedor simulado (puerto ProveedorFacturacion) y lector de facturas UBL (puerto LectorFacturas)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+application.workspace = true
+domain.workspace = true
+
+chrono.workspace = true
+hex.workspace = true
+roxmltree.workspace = true
+rust_decimal.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

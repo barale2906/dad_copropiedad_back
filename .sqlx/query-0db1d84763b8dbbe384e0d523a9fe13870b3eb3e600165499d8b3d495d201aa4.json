@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE documentos_electronicos SET estado = $2, cufe = $3, proveedor = $4,\n                 id_externo = $5, xml_archivo_id = $6, respuesta = $7, intentos = $8,\n                 enviado_en = $9, validado_en = $10\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0db1d84763b8dbbe384e0d523a9fe13870b3eb3e600165499d8b3d495d201aa4"
+}

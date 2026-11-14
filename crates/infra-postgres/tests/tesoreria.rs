@@ -18,6 +18,7 @@ use application::{
             self as tes, EventoPasarelaVerificado, NuevaCuentaTesoreria, NuevoEgreso, NuevoGasto,
             NuevoRecibo, conceptos, eventos,
         },
+        tributario,
         ventas::{self, NuevaFacturaVenta, NuevaLineaVenta},
     },
     puertos::{
@@ -40,6 +41,7 @@ use domain::{
             EstadoMovimientoExtracto, EstadoRecibo, ImpuestoRetencion, MedioEgreso, MedioRecibo,
             TipoCuentaBancaria, TipoCuentaTesoreria,
         },
+        tributario::{CanalFacturacion, ClasificacionTributaria, ParametrosPerfil},
     },
 };
 use infra_postgres::{UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg};
@@ -157,6 +159,37 @@ fn regla(evento: &str, tipo: &str, lineas: &[(&str, Cara, &str, bool)]) -> Nueva
             })
             .collect(),
     }
+}
+
+/// Perfil tributario confirmado de agente de retención y responsable de IVA (plan 15: sin él no
+/// se practican retenciones ni se factura con IVA).
+async fn perfil_agente_retenedor(unidad: &UnidadDeTrabajoPg, contador: &Contexto) {
+    let p = tributario::crear_perfil_tributario(
+        unidad,
+        &RelojFijo,
+        contador,
+        fecha(2026, 1, 1),
+        ParametrosPerfil {
+            responsabilidades: vec![],
+            agente_retenedor: true,
+            responsable_iva: true,
+            gran_contribuyente: false,
+            autorretenedor: false,
+            contribuyente_renta: true,
+            facturador_electronico: false,
+            obligado_rub: false,
+            municipios_ica: vec![],
+            actividades_ica: vec![],
+            canal_facturacion: CanalFacturacion::Ninguno,
+        },
+        None,
+        None,
+    )
+    .await
+    .expect("perfil");
+    tributario::confirmar_perfil_tributario(unidad, &RelojFijo, contador, p.id)
+        .await
+        .expect("confirmar perfil");
 }
 
 /// Entidad con contabilidad, plan de cuentas, tipos, reglas de los eventos del plan 13 y una
@@ -325,6 +358,7 @@ async fn entorno(pool: PgPool) -> Entorno {
     )
     .await
     .expect("banco");
+    perfil_agente_retenedor(&unidad, &contador).await;
     Entorno {
         pool,
         unidad,
@@ -395,6 +429,7 @@ impl Entorno {
                     cantidad: d(1),
                     valor_unitario: m(valor),
                     tarifa_iva: d(0),
+                    clasificacion: ClasificacionTributaria::AlquilerServicio,
                 }],
             },
         )

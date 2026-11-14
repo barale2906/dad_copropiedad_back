@@ -1,0 +1,246 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, tipo, origen_tipo, origen_id, resolucion_id, prefijo, numero,\n                    referencia_id, cufe, estado, proveedor, id_externo, xml_archivo_id, respuesta,\n                    intentos, total, creado_en, enviado_en, validado_en\n             FROM documentos_electronicos\n             WHERE ($1::text IS NULL OR tipo = $1) AND ($2::text IS NULL OR estado = $2)\n             ORDER BY creado_en DESC, id DESC\n             LIMIT $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "origen_tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "origen_tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "origen_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "origen_id"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "resolucion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "resolucion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "prefijo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "prefijo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "numero",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "referencia_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "referencia_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "cufe",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "cufe"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "proveedor",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "proveedor"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "id_externo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "id_externo"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "xml_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "xml_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "respuesta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "respuesta"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "intentos",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "intentos"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "total"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "enviado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "enviado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "validado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "documentos_electronicos",
+            "name": "validado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "5674e9f416b9ce7ece48c8df6325ee8587c7bd63a37b79c1bcd327fb7384232d"
+}

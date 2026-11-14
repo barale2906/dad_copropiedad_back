@@ -26,6 +26,8 @@ pub enum TipoArchivo {
     Csv,
     /// Libro de Excel (solo importaciones).
     Xlsx,
+    /// XML de una factura o documento electrónico (solo por ese camino).
+    Xml,
 }
 
 enum_texto!(TipoArchivo {
@@ -36,6 +38,7 @@ enum_texto!(TipoArchivo {
     Heic => "image/heic",
     Csv => "text/csv",
     Xlsx => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    Xml => "application/xml",
 });
 
 const MB: u64 = 1024 * 1024;
@@ -75,7 +78,13 @@ impl TipoArchivo {
     pub const fn tamano_maximo(self) -> u64 {
         match self {
             Self::Pdf => Self::TAMANO_MAXIMO_GLOBAL,
-            Self::Jpeg | Self::Png | Self::Webp | Self::Heic | Self::Csv | Self::Xlsx => 10 * MB,
+            Self::Jpeg
+            | Self::Png
+            | Self::Webp
+            | Self::Heic
+            | Self::Csv
+            | Self::Xlsx
+            | Self::Xml => 10 * MB,
         }
     }
 
@@ -89,6 +98,7 @@ impl TipoArchivo {
             Self::Heic => "heic",
             Self::Csv => "csv",
             Self::Xlsx => "xlsx",
+            Self::Xml => "xml",
         }
     }
 
@@ -147,6 +157,34 @@ impl TipoArchivo {
             });
         }
         Ok(tipo)
+    }
+}
+
+impl TipoArchivo {
+    /// Valida un XML de documento electrónico: no vacío, texto UTF-8 que empieza por una
+    /// declaración o un elemento XML y dentro del tamaño máximo. Solo se acepta por el camino
+    /// de la facturación electrónica, nunca como adjunto general.
+    ///
+    /// # Errors
+    ///
+    /// [`DominioError::ArchivoVacio`], [`DominioError::TipoArchivoNoAdmitido`] o
+    /// [`DominioError::ArchivoDemasiadoGrande`].
+    pub fn validar_xml(contenido: &[u8]) -> Result<Self, DominioError> {
+        if contenido.is_empty() {
+            return Err(DominioError::ArchivoVacio);
+        }
+        let sin_bom = contenido.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(contenido);
+        let texto =
+            std::str::from_utf8(sin_bom).map_err(|_| DominioError::TipoArchivoNoAdmitido)?;
+        if !texto.trim_start().starts_with('<') {
+            return Err(DominioError::TipoArchivoNoAdmitido);
+        }
+        if contenido.len() as u64 > Self::Xml.tamano_maximo() {
+            return Err(DominioError::ArchivoDemasiadoGrande {
+                maximo_bytes: Self::Xml.tamano_maximo(),
+            });
+        }
+        Ok(Self::Xml)
     }
 }
 

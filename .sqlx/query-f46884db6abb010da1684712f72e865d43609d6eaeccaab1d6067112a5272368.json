@@ -1,0 +1,67 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT r.impuesto, c.codigo AS concepto, r.tarifa,\n                      SUM(r.base) AS \"base!\", SUM(r.valor) AS \"valor!\"\n               FROM retenciones_factura_proveedor r\n               JOIN facturas_proveedor f ON f.tenant_id = r.tenant_id AND f.id = r.factura_id\n               JOIN conceptos_retencion c ON c.id = r.concepto_retencion_id\n               WHERE f.estado IN ('causada', 'pagada_parcial', 'pagada')\n                 AND f.fecha BETWEEN $1 AND $2\n               GROUP BY r.impuesto, c.codigo, r.tarifa\n               ORDER BY r.impuesto, c.codigo, r.tarifa",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "impuesto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "impuesto"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "concepto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "conceptos_retencion",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tarifa",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "retenciones_factura_proveedor",
+            "name": "tarifa"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "base!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "valor!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "f46884db6abb010da1684712f72e865d43609d6eaeccaab1d6067112a5272368"
+}

@@ -1,0 +1,158 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, tipo_documento, prefijo, desde, hasta, numero_resolucion,\n                    fecha_resolucion, vigente_desde, vigente_hasta, clave_tecnica, activa,\n                    creada_en\n             FROM resoluciones_numeracion ORDER BY tipo_documento, vigente_desde DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo_documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "tipo_documento"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "prefijo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "prefijo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "desde",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "hasta",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "numero_resolucion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "numero_resolucion"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "fecha_resolucion",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "fecha_resolucion"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "vigente_hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "vigente_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "clave_tecnica",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "clave_tecnica"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "activa",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "activa"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "resoluciones_numeracion",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "3c07a3e395cfe24f0e024c370f37aee930c477a451c4b0db7c281b2bb873a918"
+}

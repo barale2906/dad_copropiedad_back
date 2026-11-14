@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT descripcion, cuenta_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva,\n                    subtotal, iva\n             FROM lineas_factura_venta WHERE factura_id = $1 ORDER BY orden",
+  "query": "SELECT descripcion, cuenta_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva,\n                    subtotal, iva, clasificacion\n             FROM lineas_factura_venta WHERE factura_id = $1 ORDER BY orden",
   "describe": {
     "columns": [
       {
@@ -90,6 +90,17 @@
             "name": "iva"
           }
         }
+      },
+      {
+        "ordinal": 8,
+        "name": "clasificacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_venta",
+            "name": "clasificacion"
+          }
+        }
       }
     ],
     "parameters": {
@@ -105,8 +116,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "ac9c93c0e8c747c19dd935ace72f6de61d16c00e78b470de0f9f77b610486548"
+  "hash": "c3f776cab0483fa895ae24b5e11834824a3deb52bb49c9409448763dd37b8d49"
 }

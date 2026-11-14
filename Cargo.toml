@@ -23,6 +23,7 @@ infra-archivos = { path = "crates/infra-archivos" }
 infra-seguridad = { path = "crates/infra-seguridad" }
 infra-planillas = { path = "crates/infra-planillas" }
 infra-push = { path = "crates/infra-push" }
+infra-facturacion = { path = "crates/infra-facturacion" }
 # Solo para las pruebas de `apps/carga`, que levantan el router real de la API.
 api = { path = "apps/api" }
 
@@ -90,6 +91,9 @@ typst-assets = { version = "0.15.1", features = ["fonts"] }
 # arrastra Typst).
 qrcode = { version = "0.14.1", default-features = false }
 png = "0.18.1"
+# Lectura de facturas electrónicas recibidas (XML UBL 2.1 de la DIAN): Rust puro, sin DTD ni
+# entidades externas (sin XXE).
+roxmltree = "0.21.2"
 
 # Criptografía (firma de webhooks de Meta, enlaces de descarga firmados, huellas SHA-256)
 hmac = "0.13.0"

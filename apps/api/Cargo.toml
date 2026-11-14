@@ -24,6 +24,7 @@ domain.workspace = true
 infra-archivos.workspace = true
 infra-pdf.workspace = true
 infra-planillas.workspace = true
+infra-facturacion.workspace = true
 infra-postgres.workspace = true
 infra-seguridad.workspace = true
 shared.workspace = true

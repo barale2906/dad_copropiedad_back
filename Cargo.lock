@@ -51,6 +51,7 @@ dependencies = [
  "dotenvy",
  "hex",
  "infra-archivos",
+ "infra-facturacion",
  "infra-pdf",
  "infra-planillas",
  "infra-postgres",
@@ -1992,6 +1993,21 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "infra-facturacion"
+version = "0.1.0"
+dependencies = [
+ "application",
+ "chrono",
+ "domain",
+ "hex",
+ "roxmltree 0.21.2",
+ "rust_decimal",
+ "sha2 0.11.1",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT ROUND(l.iva * 100 / l.base, 0) AS \"tarifa!\",\n                      SUM(l.base) AS \"base!\", SUM(l.iva) AS \"iva!\"\n               FROM lineas_factura_proveedor l\n               JOIN facturas_proveedor f ON f.tenant_id = l.tenant_id AND f.id = l.factura_id\n               WHERE f.estado IN ('causada', 'pagada_parcial', 'pagada')\n                 AND f.fecha BETWEEN $1 AND $2\n                 AND l.iva > 0 AND l.iva_descontable\n               GROUP BY 1 ORDER BY 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tarifa!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "base!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "iva!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "1a7017762b65215f7aae76e4763c6334899995e93151b030e3a0443d046d75c4"
+}

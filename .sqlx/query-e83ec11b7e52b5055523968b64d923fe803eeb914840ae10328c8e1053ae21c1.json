@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE tarifas_iva SET vigente_hasta = $2::date - 1\n             WHERE codigo = $1 AND vigente_desde < $2\n               AND (vigente_hasta IS NULL OR vigente_hasta >= $2)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e83ec11b7e52b5055523968b64d923fe803eeb914840ae10328c8e1053ae21c1"
+}

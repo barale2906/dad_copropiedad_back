@@ -1,0 +1,148 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, formato_id, anio, version, filas, total, errores, sha256, archivo_id,\n                    generada_por, generada_en\n             FROM generaciones_exogena\n             WHERE $1::smallint IS NULL OR anio = $1\n             ORDER BY generada_en DESC, id DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "formato_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "formato_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "anio",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "anio"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "filas",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "filas"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "total"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "errores",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "errores"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "sha256",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "sha256"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "generada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "generada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "generada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "generaciones_exogena",
+            "name": "generada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int2"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "10fe8f6d700a1c4220f606598ce206a47ea0ef8735e64b14f6c793cc37facca9"
+}

@@ -14,6 +14,11 @@
 //!   certificados de retención.
 //! - [`ventas`]: facturas de venta, recaudo con los recibos y cartera por edades.
 //! - [`conciliacion`]: extractos bancarios y conciliación automática y manual.
+//! - [`declaraciones`]: preparación de retención, IVA e ICA, exógena y RUB (plan 15).
+//! - [`facturacion`]: factura electrónica, notas, documento soporte y facturas recibidas con
+//!   RADIAN, por el proveedor de facturación (plan 15).
+//! - [`tributario`]: catálogos de IVA, ICA y exógena, perfil tributario y resoluciones de
+//!   numeración (plan 15).
 //!
 //! Toda operación exige el módulo [`Modulo::Contabilidad`] dentro de su transacción.
 
@@ -21,10 +26,13 @@ pub mod comprobantes;
 pub mod conciliacion;
 pub mod configuracion;
 pub mod cuentas_por_pagar;
+pub mod declaraciones;
+pub mod facturacion;
 pub mod periodos;
 pub mod plantillas;
 pub mod reportes;
 pub mod tesoreria;
+pub mod tributario;
 pub mod ventas;
 
 use domain::Modulo;
@@ -40,6 +48,7 @@ use crate::{
         tesoreria::{
             CatalogoRetenciones, RepositorioConciliacion, RepositorioFacturas, RepositorioTesoreria,
         },
+        tributario::{CatalogoTributario, RepositorioTributario},
     },
 };
 
@@ -55,6 +64,7 @@ pub(crate) mod prelude {
             CatalogoRetenciones as _, RepositorioConciliacion as _, RepositorioFacturas as _,
             RepositorioTesoreria as _,
         },
+        tributario::{CatalogoTributario as _, RepositorioTributario as _},
     };
 }
 
@@ -90,6 +100,8 @@ pub trait TxTesoreria:
     + RepositorioFacturas
     + RepositorioConciliacion
     + CatalogoRetenciones
+    + RepositorioTributario
+    + CatalogoTributario
 {
 }
 
@@ -99,6 +111,8 @@ impl<T> TxTesoreria for T where
         + RepositorioFacturas
         + RepositorioConciliacion
         + CatalogoRetenciones
+        + RepositorioTributario
+        + CatalogoTributario
 {
 }
 

@@ -603,6 +603,52 @@ id_entidad!(
     Uuid::now_v7
 );
 
+id_entidad!(
+    /// Versión del perfil tributario de una entidad.
+    PerfilTributarioId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de una tarifa de IVA del catálogo de la plataforma.
+    TarifaIvaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de una tarifa de ICA (municipio y actividad) del catálogo de la plataforma.
+    TarifaIcaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión de un formato de información exógena (año y código).
+    FormatoExogenaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Resolución de numeración de la DIAN de una entidad.
+    ResolucionNumeracionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Documento electrónico (factura, nota o documento soporte).
+    DocumentoElectronicoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Factura electrónica recibida de un proveedor (buzón).
+    FacturaRecibidaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Generación de un formato de información exógena.
+    GeneracionExogenaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Beneficiario final de una entidad (RUB).
+    BeneficiarioFinalId,
+    Uuid::now_v7
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;

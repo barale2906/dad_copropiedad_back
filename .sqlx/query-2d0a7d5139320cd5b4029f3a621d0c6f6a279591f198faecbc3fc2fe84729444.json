@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO beneficiarios_finales (id, tenant_id, persona_id, criterio, porcentaje,\n                 soporte_archivo_id, vigente_desde, vigente_hasta, creado_por, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Uuid",
+        "Date",
+        "Date",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2d0a7d5139320cd5b4029f3a621d0c6f6a279591f198faecbc3fc2fe84729444"
+}

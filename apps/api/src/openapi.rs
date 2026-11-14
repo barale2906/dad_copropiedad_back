@@ -65,6 +65,8 @@ pub const ETIQUETA_CONTABILIDAD: &str = "contabilidad";
 pub const ETIQUETA_TESORERIA: &str = "tesoreria";
 /// Etiqueta de la cartera de la PH: presupuesto, liquidación de expensas y recaudo (plan 14).
 pub const ETIQUETA_CARTERA: &str = "cartera";
+/// Etiqueta de lo tributario y los documentos electrónicos (plan 15).
+pub const ETIQUETA_TRIBUTARIO: &str = "tributario";
 
 /// Registra el esquema de seguridad `bearer` (token de acceso opaco).
 struct EsquemaBearer;
@@ -195,6 +197,12 @@ impl utoipa::Modify for EsquemaBearer {
             cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por \
             bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y \
             cuadre contra el mayor"),
+        (name = ETIQUETA_TRIBUTARIO, description = "Tributario de cualquier entidad (plan 15): \
+            catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el \
+            contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, \
+            documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, \
+            preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El \
+            sistema prepara; presentar y firmar lo hace el responsable tributario"),
     ),
     modifiers(&EsquemaBearer),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))

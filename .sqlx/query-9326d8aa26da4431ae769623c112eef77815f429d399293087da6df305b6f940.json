@@ -1,0 +1,244 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, archivo_id, sha256, emisor_nit, emisor_nombre, prefijo, numero, fecha,\n                    vencimiento, cufe, subtotal, iva, total, estado, persona_id,\n                    factura_proveedor_id, motivo_rechazo, recibida_por, recibida_en\n             FROM facturas_recibidas WHERE id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "sha256",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "sha256"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "emisor_nit",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "emisor_nit"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "emisor_nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "emisor_nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "prefijo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "prefijo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "numero",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "fecha",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "fecha"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "vencimiento",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "vencimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "cufe",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "cufe"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "subtotal",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "subtotal"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "iva",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "iva"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "total"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "factura_proveedor_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "factura_proveedor_id"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "motivo_rechazo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "motivo_rechazo"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "recibida_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "recibida_por"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "recibida_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "facturas_recibidas",
+            "name": "recibida_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "9326d8aa26da4431ae769623c112eef77815f429d399293087da6df305b6f940"
+}

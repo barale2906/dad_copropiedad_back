@@ -6,7 +6,10 @@ use application::{
 };
 use axum::{extract::State, http::StatusCode};
 use chrono::NaiveDate;
-use domain::{FacturaVentaId, PersonaId, contabilidad::tesoreria::EstadoFacturaVenta};
+use domain::{
+    FacturaVentaId, PersonaId,
+    contabilidad::{tesoreria::EstadoFacturaVenta, tributario::ClasificacionTributaria},
+};
 use serde::Deserialize;
 use utoipa::IntoParams;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -105,6 +108,7 @@ pub async fn crear_factura(
             cantidad: l.cantidad,
             valor_unitario: l.valor_unitario,
             tarifa_iva: l.tarifa_iva,
+            clasificacion: l.clasificacion.unwrap_or(ClasificacionTributaria::Otra),
         });
     }
     let f = uc::crear_factura_venta(

@@ -1,0 +1,266 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, version, vigente_desde, estado, responsabilidades, agente_retenedor,\n                    responsable_iva, gran_contribuyente, autorretenedor, contribuyente_renta,\n                    facturador_electronico, obligado_rub, municipios_ica, actividades_ica,\n                    canal_facturacion, soporte_archivo_id, observaciones, creado_por, creado_en,\n                    confirmado_por, confirmado_en\n             FROM perfiles_tributarios ORDER BY version DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "version",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "version"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "responsabilidades",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "responsabilidades"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "agente_retenedor",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "agente_retenedor"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "responsable_iva",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "responsable_iva"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "gran_contribuyente",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "gran_contribuyente"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "autorretenedor",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "autorretenedor"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "contribuyente_renta",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "contribuyente_renta"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "facturador_electronico",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "facturador_electronico"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "obligado_rub",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "obligado_rub"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "municipios_ica",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "municipios_ica"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "actividades_ica",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "actividades_ica"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "canal_facturacion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "canal_facturacion"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "soporte_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "soporte_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "observaciones",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "observaciones"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "confirmado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "confirmado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "confirmado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "perfiles_tributarios",
+            "name": "confirmado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "6291aa5b092d9c325c5c00b759b6c99c1915aea6c64db90b2213004022b22d20"
+}
