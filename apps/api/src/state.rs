@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use infra_archivos::AlmacenLocal;
+use infra_facturacion::{LectorUbl, ProveedorSimulado};
 use infra_pdf::GeneradorTypst;
 use infra_planillas::LectorCsvXlsx;
 use infra_postgres::{
@@ -41,6 +42,11 @@ pub struct AppState {
     pub limitador: Arc<crate::limite::Limitador>,
     /// Registro de `Idempotency-Key` (reintentos seguros de los POST).
     pub idempotencia: IdempotenciaPg,
+    /// Proveedor de facturación electrónica. Hoy el simulado (sin validez ante la DIAN) hasta
+    /// elegir el proveedor tecnológico (ADR 0020, decisión D3).
+    pub facturacion: ProveedorSimulado,
+    /// Lector de las facturas electrónicas recibidas (XML UBL).
+    pub lector_facturas: LectorUbl,
 }
 
 impl AppState {
@@ -68,6 +74,8 @@ impl AppState {
             limitador: Arc::new(crate::limite::Limitador::new(
                 crate::limite::Limites::ninguno(),
             )),
+            facturacion: ProveedorSimulado::new(),
+            lector_facturas: LectorUbl,
         }
     }
 }

@@ -361,4 +361,26 @@ esquema_enum! {
         "Unidad de un plazo.";
     UsoBienPrivado = domain::bien_privado::UsoBienPrivado,
         "Destinación del bien privado.";
+    ClasificacionTributaria = domain::contabilidad::tributario::ClasificacionTributaria,
+        "Clasificación tributaria de lo que se cobra o se vende (solo `alquiler_servicio` y `venta` pueden llevar IVA).";
+    TratamientoIva = domain::contabilidad::tributario::TratamientoIva,
+        "Tratamiento de IVA de una tarifa del catálogo.";
+    EstadoPerfilTributario = domain::contabilidad::tributario::EstadoPerfilTributario,
+        "Estado de una versión del perfil tributario (sin confirmar no hay automatismos).";
+    CanalFacturacion = domain::contabilidad::tributario::CanalFacturacion,
+        "Cómo factura electrónicamente la entidad.";
+    TipoDocumentoElectronico = domain::contabilidad::tributario::TipoDocumentoElectronico,
+        "Tipo de documento electrónico.";
+    TipoNumeracion = domain::contabilidad::tributario::TipoNumeracion,
+        "Documento que numera una resolución de la DIAN.";
+    EstadoDocumentoElectronico = domain::contabilidad::tributario::EstadoDocumentoElectronico,
+        "Estado de un documento electrónico (un rechazado nunca se marca validado).";
+    EventoRadian = domain::contabilidad::tributario::EventoRadian,
+        "Evento RADIAN sobre una factura recibida (cada uno exige sus previos).";
+    EstadoFacturaRecibida = domain::contabilidad::tributario::EstadoFacturaRecibida,
+        "Estado de una factura electrónica recibida.";
+    CriterioBeneficiario = domain::contabilidad::tributario::CriterioBeneficiario,
+        "Criterio por el que una persona es beneficiaria final (RUB).";
+    LadoExogena = domain::contabilidad::tributario::LadoExogena,
+        "Lado del movimiento que suma a una columna de la exógena.";
 }

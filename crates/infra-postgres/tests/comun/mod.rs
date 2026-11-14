@@ -8,6 +8,8 @@ pub const MIGRACIONES: sqlx::migrate::Migrator = sqlx::migrate!("../../migration
 
 /// Pool sobre la misma BD de la prueba, pero con el rol restringido de la aplicación
 /// (`SET ROLE dad_app` en cada conexión), igual que en producción.
+// Las pruebas que operan con SQL directo (garantías del plan 15) no la usan.
+#[allow(dead_code)]
 pub async fn pool_como_app(pool: &PgPool) -> PgPool {
     PgPoolOptions::new()
         .max_connections(4)

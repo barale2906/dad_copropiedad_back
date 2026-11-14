@@ -343,7 +343,8 @@ async fn retenciones_de_linea<T: TxTesoreria>(
 }
 
 /// Registra una factura de proveedor y calcula sus retenciones con la tarifa vigente en la fecha
-/// de la factura (sin causarla todavía).
+/// de la factura (sin causarla todavía). Solo practica retenciones una entidad con perfil
+/// tributario confirmado de agente de retención.
 ///
 /// # Errors
 ///
@@ -415,6 +416,19 @@ where
         responsable_iva: fiscal.regimen_iva == Some(RegimenIva::Responsable),
     };
     let uvt = tx.uvt(nueva.fecha.year()).await?;
+    // Sin perfil tributario confirmado no hay automatismos (plan 15): solo un agente de
+    // retención confirmado practica retenciones.
+    if nueva.lineas.iter().any(|l| !l.retenciones.is_empty()) {
+        let agente = super::tributario::perfil_confirmado_en(&mut tx, nueva.fecha)
+            .await?
+            .is_some_and(|p| p.parametros.agente_retenedor);
+        if !agente {
+            return Err(validacion(
+                "la entidad no practica retenciones: su perfil tributario confirmado no la hace \
+                 agente de retención (o el perfil sigue en borrador)",
+            ));
+        }
+    }
     let mut lineas = Vec::with_capacity(nueva.lineas.len());
     for l in &nueva.lineas {
         if l.base.es_cero() {

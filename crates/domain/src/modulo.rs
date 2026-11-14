@@ -17,6 +17,9 @@ pub enum Modulo {
     /// Contabilidad de la propiedad horizontal (plan 14): presupuesto, liquidación de expensas,
     /// cartera por bien privado y recaudo. Exige además [`Modulo::Contabilidad`].
     ContabilidadPh,
+    /// Facturación electrónica y documento soporte (plan 15): para cualquier entidad que
+    /// factura electrónicamente.
+    FacturacionElectronica,
     /// Bienes comunes, reservas y parqueaderos (plan 04).
     BienesComunes,
     /// Control de acceso de residentes, visitantes y vehículos (plan 05).
@@ -32,6 +35,7 @@ pub enum Modulo {
 enum_texto!(Modulo {
     Contabilidad => "contabilidad",
     ContabilidadPh => "contabilidad_ph",
+    FacturacionElectronica => "facturacion_electronica",
     BienesComunes => "bienes_comunes",
     ControlAcceso => "control_acceso",
     Asambleas => "asambleas",
@@ -43,7 +47,7 @@ impl Modulo {
     /// ¿Es un módulo de la vertical PH? Solo se habilita en una entidad que es copropiedad.
     pub fn exige_copropiedad(self) -> bool {
         match self {
-            Modulo::Contabilidad => false,
+            Modulo::Contabilidad | Modulo::FacturacionElectronica => false,
             Modulo::ContabilidadPh
             | Modulo::BienesComunes
             | Modulo::ControlAcceso
@@ -69,7 +73,10 @@ mod tests {
     #[test]
     fn la_contabilidad_sirve_a_cualquier_entidad_y_lo_demas_es_de_la_ph() {
         assert!(!Modulo::Contabilidad.exige_copropiedad());
-        for m in Modulo::TODOS.iter().filter(|m| **m != Modulo::Contabilidad) {
+        for m in Modulo::TODOS
+            .iter()
+            .filter(|m| !matches!(m, Modulo::Contabilidad | Modulo::FacturacionElectronica))
+        {
             assert!(m.exige_copropiedad(), "{m:?}");
         }
     }

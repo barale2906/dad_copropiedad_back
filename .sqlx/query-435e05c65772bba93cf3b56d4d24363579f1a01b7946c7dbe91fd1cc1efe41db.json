@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO documentos_electronicos (id, tenant_id, tipo, origen_tipo, origen_id,\n                 resolucion_id, prefijo, numero, referencia_id, cufe, estado, proveedor,\n                 id_externo, xml_archivo_id, respuesta, intentos, total, creado_en, enviado_en,\n                 validado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19, $20)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Int8",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Int4",
+        "Numeric",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "435e05c65772bba93cf3b56d4d24363579f1a01b7946c7dbe91fd1cc1efe41db"
+}

@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tipo, detalle, ocurrido_en FROM eventos_documento_electronico\n             WHERE documento_id = $1 ORDER BY ocurrido_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_documento_electronico",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "detalle",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_documento_electronico",
+            "name": "detalle"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "ocurrido_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "eventos_documento_electronico",
+            "name": "ocurrido_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "a28740cb207c5e609c19c5757ac2ad46cfdf592fd0f34cd25809f47cca292120"
+}

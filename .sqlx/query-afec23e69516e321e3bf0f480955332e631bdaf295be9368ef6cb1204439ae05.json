@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE beneficiarios_finales SET vigente_hasta = $2\n             WHERE id = $1 AND vigente_hasta IS NULL AND vigente_desde <= $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "afec23e69516e321e3bf0f480955332e631bdaf295be9368ef6cb1204439ae05"
+}

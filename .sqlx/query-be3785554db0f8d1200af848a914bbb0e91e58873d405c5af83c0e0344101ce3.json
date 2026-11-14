@@ -1,0 +1,43 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT l.tarifa_iva AS tarifa, SUM(l.subtotal) AS \"base!\", SUM(l.iva) AS \"iva!\"\n               FROM lineas_factura_venta l\n               JOIN facturas_venta f ON f.tenant_id = l.tenant_id AND f.id = l.factura_id\n               WHERE f.estado IN ('emitida', 'pagada_parcial', 'pagada')\n                 AND f.fecha BETWEEN $1 AND $2\n               GROUP BY l.tarifa_iva ORDER BY l.tarifa_iva",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tarifa",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "lineas_factura_venta",
+            "name": "tarifa_iva"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "base!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "iva!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "be3785554db0f8d1200af848a914bbb0e91e58873d405c5af83c0e0344101ce3"
+}

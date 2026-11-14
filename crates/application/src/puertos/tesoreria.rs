@@ -17,6 +17,7 @@ use domain::{
             EstadoMovimientoExtracto, EstadoRecibo, FormatoExtracto, ImpuestoRetencion,
             MedioEgreso, MedioRecibo, ModoConciliacion, TipoCuentaBancaria, TipoCuentaTesoreria,
         },
+        tributario::ClasificacionTributaria,
     },
 };
 use rust_decimal::Decimal;
@@ -352,6 +353,8 @@ pub struct LineaFacturaVenta {
     pub valor_unitario: Monto,
     /// Porcentaje de IVA elegido por quien factura.
     pub tarifa_iva: Decimal,
+    /// Clasificación tributaria (solo alquiler o servicio y venta llevan IVA).
+    pub clasificacion: ClasificacionTributaria,
     pub subtotal: Monto,
     pub iva: Monto,
 }

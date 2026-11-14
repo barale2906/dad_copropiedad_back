@@ -22,6 +22,7 @@ use domain::contabilidad::{
         EstadoRecibo, FormatoExtracto, ImpuestoRetencion, MedioEgreso, MedioRecibo,
         ModoConciliacion, TipoCuentaBancaria, TipoCuentaTesoreria, TramoEdad,
     },
+    tributario::ClasificacionTributaria,
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -705,10 +706,16 @@ pub struct LineaVentaPeticion {
     pub cantidad: Decimal,
     #[schema(value_type = String, example = "350000")]
     pub valor_unitario: Monto,
-    /// Porcentaje de IVA que elige quien factura (0 si no aplica).
+    /// Porcentaje de IVA (0 si no aplica). Solo una línea `alquiler_servicio` o `venta` de una
+    /// entidad responsable de IVA con perfil confirmado lleva IVA, y con una tarifa gravada
+    /// vigente del catálogo.
     #[serde(default)]
     #[schema(value_type = String, example = "0")]
     pub tarifa_iva: Decimal,
+    /// Clasificación tributaria de la línea (`otra` si no se indica).
+    #[serde(default)]
+    #[schema(value_type = Option<crate::esquemas::ClasificacionTributaria>)]
+    pub clasificacion: Option<ClasificacionTributaria>,
 }
 
 /// Factura de venta nueva (queda en borrador).
@@ -738,6 +745,8 @@ pub struct LineaVentaRespuesta {
     pub subtotal: Decimal,
     #[schema(value_type = String)]
     pub iva: Decimal,
+    #[schema(value_type = crate::esquemas::ClasificacionTributaria)]
+    pub clasificacion: ClasificacionTributaria,
 }
 
 impl From<LineaFacturaVenta> for LineaVentaRespuesta {
@@ -751,6 +760,7 @@ impl From<LineaFacturaVenta> for LineaVentaRespuesta {
             tarifa_iva: l.tarifa_iva,
             subtotal: l.subtotal.valor(),
             iva: l.iva.valor(),
+            clasificacion: l.clasificacion,
         }
     }
 }

@@ -21,6 +21,7 @@ mod periodo;
 mod plantilla;
 mod regla;
 pub mod tesoreria;
+pub mod tributario;
 
 pub use asiento::{AsientoBalanceado, LineaAsiento, ReglasCuenta};
 pub use cuenta::{CodigoCuenta, Naturaleza, NivelCuenta};

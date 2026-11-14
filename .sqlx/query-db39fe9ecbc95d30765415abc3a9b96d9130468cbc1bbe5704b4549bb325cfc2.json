@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE tarifas_ica SET vigente_hasta = $3::date - 1\n             WHERE municipio_dane = $1 AND actividad = $2 AND vigente_desde < $3\n               AND (vigente_hasta IS NULL OR vigente_hasta >= $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "db39fe9ecbc95d30765415abc3a9b96d9130468cbc1bbe5704b4549bb325cfc2"
+}

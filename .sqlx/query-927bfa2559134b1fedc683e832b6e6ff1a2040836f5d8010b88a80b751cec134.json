@@ -1,0 +1,124 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, factura_recibida_id, tipo, estado, id_externo, motivo, respuesta,\n                    creado_por, creado_en\n             FROM eventos_radian WHERE factura_recibida_id = $1 ORDER BY creado_en, id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "factura_recibida_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "factura_recibida_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "id_externo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "id_externo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "respuesta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "respuesta"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "927bfa2559134b1fedc683e832b6e6ff1a2040836f5d8010b88a80b751cec134"
+}

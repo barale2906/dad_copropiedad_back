@@ -35,6 +35,7 @@ fn fuentes() -> Vec<std::path::PathBuf> {
     v.push(raiz.join("puertos/contabilidad.rs"));
     v.push(raiz.join("puertos/tesoreria.rs"));
     v.push(raiz.join("puertos/planillas.rs"));
+    v.push(raiz.join("puertos/tributario.rs"));
     v
 }
 

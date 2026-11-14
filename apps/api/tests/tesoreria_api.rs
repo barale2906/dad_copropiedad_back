@@ -246,6 +246,23 @@ async fn empresa(pool: PgPool) -> Empresa {
                     "fiscal": { "regimen_iva": "responsable", "correo_facturacion": "fe@proveedor.co" } }),
         )
         .await);
+    // Plan 15: sin perfil tributario confirmado de agente de retención no se practican
+    // retenciones.
+    let perfil = e
+        .crear(
+            "/tributario/perfiles",
+            json!({ "vigente_desde": "2026-01-01", "parametros": {
+                "agente_retenedor": true, "responsable_iva": true, "gran_contribuyente": false,
+                "autorretenedor": false, "contribuyente_renta": true,
+                "facturador_electronico": false, "obligado_rub": false,
+                "canal_facturacion": "ninguno" } }),
+        )
+        .await;
+    e.crear(
+        &format!("/tributario/perfiles/{}/confirmacion", id(&perfil)),
+        json!({}),
+    )
+    .await;
     e
 }
 

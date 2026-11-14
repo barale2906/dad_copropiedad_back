@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO facturas_recibidas (id, tenant_id, archivo_id, sha256, emisor_nit,\n                 emisor_nombre, prefijo, numero, fecha, vencimiento, cufe, subtotal, iva, total,\n                 estado, persona_id, factura_proveedor_id, motivo_rechazo, recibida_por,\n                 recibida_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19, $20)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Date",
+        "Date",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "eab1d5dcbba4c89dd66b942131691d034f86cb58d16e9cfb2de6c1294871824a"
+}

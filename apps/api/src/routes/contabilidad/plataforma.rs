@@ -45,6 +45,7 @@ pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
         .routes(routes!(ver_plantilla))
         .routes(routes!(actualizar_plantilla))
         .routes(routes!(estado_plantilla))
+        .merge(super::tributario::rutas_plataforma())
 }
 
 /// Rutas de una firma contable (se montan en `/api/v1/organizaciones`).

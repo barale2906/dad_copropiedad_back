@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT cc.codigo AS \"cuenta_codigo!\", l.persona_id, p.documento,\n                      COALESCE(p.nombre, '') AS \"nombre!\",\n                      SUM(l.debito) AS \"debitos!\", SUM(l.credito) AS \"creditos!\"\n               FROM lineas_comprobante l\n               JOIN comprobantes c ON c.tenant_id = l.tenant_id AND c.id = l.comprobante_id\n               JOIN cuentas_contables cc ON cc.tenant_id = l.tenant_id AND cc.id = l.cuenta_id\n               LEFT JOIN personas p ON p.tenant_id = l.tenant_id AND p.id = l.persona_id\n               WHERE c.estado = 'contabilizado'\n                 AND EXTRACT(YEAR FROM c.fecha)::int = $1\n                 AND c.revierte_a IS NULL\n                 AND NOT EXISTS (SELECT 1 FROM comprobantes r\n                                 WHERE r.tenant_id = c.tenant_id AND r.revierte_a = c.id)\n                 AND EXISTS (SELECT 1 FROM unnest($2::text[]) AS pre\n                             WHERE cc.codigo LIKE pre || '%')\n               GROUP BY cc.codigo, l.persona_id, p.documento, p.nombre\n               ORDER BY cc.codigo, p.documento NULLS LAST, l.persona_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cuenta_codigo!",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cuentas_contables",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_comprobante",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "documento"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nombre!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 4,
+        "name": "debitos!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 5,
+        "name": "creditos!",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "57bd390aaa4cfeda33d4b0299720b0426f8ba4c6dcdb76b20c107a5417381a67"
+}

@@ -104,6 +104,25 @@ cuenta (el nombre de la ruta es histórico).
   `POST …/cartera/presupuestos/proyecto`. Morosos de una asamblea desde la cartera:
   `POST …/cartera/asambleas/{reunion_id}/morosos`; restricción de reservas por mora:
   `POST …/cartera/reservas/restricciones-mora` con el umbral.
+- **Tributario y documentos electrónicos** (ADR 0020, etiqueta `tributario`):
+  `/contabilidad/tributario/…` y `/contabilidad/facturacion/…`. Primero el perfil tributario:
+  `POST …/tributario/perfiles` (queda en `borrador`) y `POST …/perfiles/{id}/confirmacion` (lo
+  confirma el contador; confirmado no se edita: se crea otra versión). **Sin perfil confirmado**
+  una línea de venta con IVA responde 422 y no se practican retenciones. Cada línea de venta lleva
+  `clasificacion` (solo `alquiler_servicio` y `venta` admiten IVA). Factura electrónica (módulo
+  `facturacion_electronica`): registrar la resolución (`…/tributario/resoluciones`; la clave
+  técnica nunca vuelve, solo `tiene_clave_tecnica`) y luego
+  `POST …/ventas/facturas/{id}/factura-electronica` (repetirla devuelve el mismo documento y CUFE;
+  si quedó en `contingencia`, la reintenta). Con FE validada, anular es
+  `POST …/ventas/facturas/{id}/nota-credito` (la `…/anulacion` responde 409). Documento soporte:
+  `POST …/cuentas-por-pagar/facturas/{id}/documento-soporte`. PDF:
+  `GET …/facturacion/documentos/{id}/pdf`. Hoy el proveedor es el **simulado** (`proveedor:
+  "simulado"`, sin validez ante la DIAN). Facturas recibidas: el XML va en Base64
+  (`archivo_base64`) a `POST …/facturacion/recibidas` (409 si ya se cargó); luego `…/vinculo`,
+  `…/rechazo` o `…/eventos` (RADIAN en orden: `acuse` → `recibo_bien` → `aceptacion` o
+  `reclamo` con motivo; si faltan los previos, 422). Preparación (no presenta):
+  `GET …/tributario/retencion|iva|ica?desde=&hasta=`, `POST …/tributario/exogena` (devuelve el
+  CSV y su `sha256`) y beneficiarios finales en `…/tributario/beneficiarios`.
 
 ## 4. Sesión
 

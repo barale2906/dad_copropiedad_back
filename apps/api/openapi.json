@@ -3572,6 +3572,270 @@
         ]
       }
     },
+    "/api/v1/plataforma/tributario/catalogo": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Catálogo tributario completo (todas las versiones).",
+        "operationId": "catalogo_plataforma",
+        "responses": {
+          "200": {
+            "description": "Catálogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoTributarioRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/tributario/tarifas-iva": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Agrega una versión de una tarifa de IVA (la anterior del mismo código queda vigente hasta el\ndía antes).",
+        "operationId": "crear_tarifa_iva",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaTarifaIvaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TarifaIvaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay una versión con esa fecha (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Código, tratamiento o tarifa inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/tributario/tarifas-ica": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Agrega una versión de una tarifa de ICA por municipio y actividad.",
+        "operationId": "crear_tarifa_ica",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaTarifaIcaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TarifaIcaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay una versión con esa fecha (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Municipio, actividad o tarifa inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/tributario/formatos-exogena": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Agrega un formato de exógena (versión siguiente del año y código) con su mapeo de cuentas.",
+        "operationId": "crear_formato_exogena",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoFormatoExogenaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Formato creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormatoExogenaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Código, concepto o cuentas inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/plataforma/tasas-referencia": {
       "get": {
         "tags": [
@@ -44188,6 +44452,2316 @@
           }
         ]
       }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/catalogo": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Catálogo tributario de la plataforma (tarifas de IVA e ICA y formatos de exógena).",
+        "operationId": "catalogo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fecha",
+            "in": "query",
+            "description": "Vigentes en esta fecha (sin ella, todas las versiones).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catálogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoTributarioRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/perfiles": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Versiones del perfil tributario (la más reciente primero).",
+        "operationId": "listar_perfiles",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Versiones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PerfilTributarioRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Crea una versión del perfil en borrador (no aplica nada hasta que el contador la confirme).",
+        "operationId": "crear_perfil",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoPerfilPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión en borrador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilTributarioRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Perfil incoherente con el RUT (`validacion`, `dato_invalido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/perfiles/{perfil_id}/confirmacion": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Confirma una versión del perfil: desde su vigencia aplican IVA, retenciones y facturación.\nUna versión confirmada no se modifica.",
+        "operationId": "confirmar_perfil",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "perfil_id",
+            "in": "path",
+            "description": "Versión del perfil",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Versión confirmada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilTributarioRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.perfil.confirmar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya estaba confirmada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/resoluciones": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Resoluciones de numeración (sin la clave técnica).",
+        "operationId": "listar_resoluciones",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resoluciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResolucionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Registra una resolución de numeración de la DIAN.",
+        "operationId": "crear_resolucion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaResolucionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Resolución",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolucionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe ese rango (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rango, prefijo o vigencia inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/resoluciones/{resolucion_id}/activa": {
+      "put": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Activa o desactiva una resolución (solo una activa y vigente numera).",
+        "operationId": "activar_resolucion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "resolucion_id",
+            "in": "path",
+            "description": "Resolución",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Actualizada"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.configurar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resolución inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/retencion": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Prepara la retención en la fuente del periodo con su conciliación contra el mayor (no se\npresenta desde aquí).",
+        "operationId": "preparar_retencion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preparación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparacionRetencionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Periodo inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/iva": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Prepara el IVA del periodo: generado y descontable por tarifa.",
+        "operationId": "preparar_iva",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preparación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparacionIvaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Periodo inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/ica": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Prepara el ICA de los municipios y actividades del perfil confirmado y la ReteICA.",
+        "operationId": "preparar_ica",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Preparación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreparacionIcaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin perfil confirmado o periodo inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/exogena": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Generaciones de exógena (las más recientes primero).",
+        "operationId": "listar_exogena",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Generaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GeneracionExogenaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Genera un formato de exógena con la versión de reglas del catálogo (cuantías menores en el\nNIT 222222222) y guarda el archivo con su huella.",
+        "operationId": "generar_exogena",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerarExogenaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Generación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExogenaGeneradaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Formato inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/beneficiarios": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Beneficiarios finales (los vigentes primero).",
+        "operationId": "listar_beneficiarios",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Beneficiarios",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BeneficiarioRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Registra un beneficiario final.",
+        "operationId": "crear_beneficiario",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoBeneficiarioPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Beneficiario",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeneficiarioRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Persona inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Participación que no corresponde al criterio (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tributario/beneficiarios/{beneficiario_id}/terminacion": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Termina la vigencia de un beneficiario final.",
+        "operationId": "terminar_beneficiario",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "beneficiario_id",
+            "in": "path",
+            "description": "Beneficiario",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminarPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Vigencia terminada"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `tributario.preparar` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o ya terminó",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/ventas/facturas/{factura_id}/factura-electronica": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Emite la factura electrónica de una factura de venta emitida. Pedirla otra vez devuelve el\nmismo documento (mismo CUFE) y lo reintenta si quedó en contingencia.",
+        "operationId": "emitir_factura_electronica",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura de venta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento (validado, rechazado o en contingencia)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.emitir` o sin el módulo `facturacion_electronica`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Sin perfil de facturador, sin resolución vigente o factura sin emitir (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/ventas/facturas/{factura_id}/nota-credito": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Anula una factura de venta con factura electrónica validada mediante una nota crédito\nelectrónica (revierte su contabilización).",
+        "operationId": "emitir_nota_credito",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura de venta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotaCreditoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Nota crédito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.emitir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La factura no tiene factura electrónica validada o ya tiene pagos (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Motivo inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/facturas/{factura_id}/documento-soporte": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Emite el documento soporte de una compra a quien no está obligado a facturar.",
+        "operationId": "emitir_documento_soporte",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura de proveedor",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento soporte",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.emitir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El proveedor factura electrónicamente, la compra no está causada o no hay resolución (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/documentos": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Documentos electrónicos (los más recientes primero, a lo sumo 500).",
+        "operationId": "listar_documentos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TipoDocumentoElectronico"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoDocumentoElectronico"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/documentos/{documento_id}": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Documento electrónico con sus eventos.",
+        "operationId": "ver_documento",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documento_id",
+            "in": "path",
+            "description": "Documento",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoDetalleRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/documentos/{documento_id}/reintento": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Reintenta un documento por enviar o en contingencia (o consulta uno enviado).",
+        "operationId": "reintentar_documento",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documento_id",
+            "in": "path",
+            "description": "Documento",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Documento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.emitir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya está validado o rechazado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/documentos/{documento_id}/pdf": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Representación gráfica del documento en PDF (con su CUFE).",
+        "operationId": "representacion_grafica",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documento_id",
+            "in": "path",
+            "description": "Documento",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/recibidas": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Facturas electrónicas recibidas (las más recientes primero).",
+        "operationId": "listar_recibidas",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoFacturaRecibida"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facturas recibidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaRecibidaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Carga el XML de una factura electrónica recibida: lee sus datos, la asocia al proveedor con\nese NIT y la deja pendiente de registrar. La misma factura (CUFE o archivo) no entra dos veces.",
+        "operationId": "cargar_recibida",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CargarFacturaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Factura recibida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaRecibidaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.recibir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya se cargó (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No es una factura electrónica legible (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/recibidas/{recibida_id}": {
+      "get": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Factura recibida con sus eventos RADIAN.",
+        "operationId": "ver_recibida",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibida_id",
+            "in": "path",
+            "description": "Factura recibida",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Factura",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaRecibidaDetalleRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/recibidas/{recibida_id}/vinculo": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Vincula la factura recibida con la factura de proveedor registrada (mismo CUFE).",
+        "operationId": "vincular_recibida",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibida_id",
+            "in": "path",
+            "description": "Factura recibida",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VincularPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Factura registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaRecibidaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.recibir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya registrada o rechazada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El CUFE no coincide (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/recibidas/{recibida_id}/rechazo": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Rechaza internamente una factura recibida (no la registra). Para reclamarla ante el emisor\nse registra el evento RADIAN `reclamo`.",
+        "operationId": "rechazar_recibida",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibida_id",
+            "in": "path",
+            "description": "Factura recibida",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RechazoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Factura rechazada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaRecibidaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.recibir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya registrada o rechazada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Motivo inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/facturacion/recibidas/{recibida_id}/eventos": {
+      "post": {
+        "tags": [
+          "tributario"
+        ],
+        "summary": "Registra un evento RADIAN (acuse, recibo del bien, aceptación o reclamo) por medio del\nproveedor. Cada evento exige sus previos y no se repite.",
+        "operationId": "evento_radian",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibida_id",
+            "in": "path",
+            "description": "Factura recibida",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventoRadianPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Evento registrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoRadianRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.recibir` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya registrado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Faltan los eventos previos o reclamo sin motivo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -44254,6 +46828,18 @@
           "cerrar",
           "cancelar"
         ]
+      },
+      "ActivaPeticion": {
+        "type": "object",
+        "description": "Activa o desactiva una resolución.",
+        "required": [
+          "activa"
+        ],
+        "properties": {
+          "activa": {
+            "type": "boolean"
+          }
+        }
       },
       "ActivoPeticion": {
         "type": "object",
@@ -45944,6 +48530,58 @@
           "total"
         ]
       },
+      "BeneficiarioRespuesta": {
+        "type": "object",
+        "description": "Beneficiario final (RUB).",
+        "required": [
+          "id",
+          "persona_id",
+          "criterio",
+          "vigente_desde",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "criterio": {
+            "$ref": "#/components/schemas/CriterioBeneficiario"
+          },
+          "porcentaje": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "BienAsistenteRespuesta": {
         "type": "object",
         "description": "Bien que representa un asistente.",
@@ -47189,12 +49827,48 @@
           }
         }
       },
+      "CampoExogenaDto": {
+        "type": "object",
+        "description": "Cuentas que suman a un concepto y columna de la exógena.",
+        "required": [
+          "concepto",
+          "cuenta_prefijo",
+          "columna",
+          "lado"
+        ],
+        "properties": {
+          "concepto": {
+            "type": "string",
+            "example": "5002"
+          },
+          "cuenta_prefijo": {
+            "type": "string",
+            "example": "5110"
+          },
+          "columna": {
+            "type": "string",
+            "example": "pago_deducible"
+          },
+          "lado": {
+            "$ref": "#/components/schemas/LadoExogena"
+          }
+        }
+      },
       "CanalConvocatoria": {
         "type": "string",
         "description": "Canal de una constancia de convocatoria.",
         "enum": [
           "whatsapp",
           "correo"
+        ]
+      },
+      "CanalFacturacion": {
+        "type": "string",
+        "description": "Cómo factura electrónicamente la entidad.",
+        "enum": [
+          "ninguno",
+          "proveedor",
+          "propio"
         ]
       },
       "CanalPublicidad": {
@@ -47358,6 +50032,23 @@
           }
         }
       },
+      "CargarFacturaPeticion": {
+        "type": "object",
+        "description": "XML de una factura electrónica recibida (la `Invoice` o el `AttachedDocument`), en Base64.",
+        "required": [
+          "nombre_archivo",
+          "archivo_base64"
+        ],
+        "properties": {
+          "nombre_archivo": {
+            "type": "string",
+            "example": "fv-SETP990000123.xml"
+          },
+          "archivo_base64": {
+            "type": "string"
+          }
+        }
+      },
       "CargoEleccion": {
         "type": "string",
         "description": "Cargo o designación que se elige con una pregunta de elección.",
@@ -47499,6 +50190,35 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/UvtRespuesta"
+            }
+          }
+        }
+      },
+      "CatalogoTributarioRespuesta": {
+        "type": "object",
+        "description": "Catálogo tributario: tarifas de IVA, de ICA y formatos de exógena.",
+        "required": [
+          "iva",
+          "ica",
+          "formatos_exogena"
+        ],
+        "properties": {
+          "iva": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TarifaIvaRespuesta"
+            }
+          },
+          "ica": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TarifaIcaRespuesta"
+            }
+          },
+          "formatos_exogena": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormatoExogenaRespuesta"
             }
           }
         }
@@ -47900,6 +50620,18 @@
           "interno",
           "personal",
           "sensible"
+        ]
+      },
+      "ClasificacionTributaria": {
+        "type": "string",
+        "description": "Clasificación tributaria de lo que se cobra o se vende (solo `alquiler_servicio` y `venta` pueden llevar IVA).",
+        "enum": [
+          "expensa",
+          "cuota_extraordinaria",
+          "uso_sin_cobro",
+          "alquiler_servicio",
+          "venta",
+          "otra"
         ]
       },
       "ClasificarPeticion": {
@@ -49851,6 +52583,15 @@
           }
         }
       },
+      "CriterioBeneficiario": {
+        "type": "string",
+        "description": "Criterio por el que una persona es beneficiaria final (RUB).",
+        "enum": [
+          "propiedad",
+          "control",
+          "beneficio"
+        ]
+      },
       "CriterioDistribucion": {
         "type": "string",
         "description": "Cómo se reparte un concepto de cobro entre los bienes privados.",
@@ -51185,6 +53926,25 @@
           }
         }
       },
+      "DocumentoDetalleRespuesta": {
+        "type": "object",
+        "description": "Documento electrónico con su historia.",
+        "required": [
+          "documento",
+          "eventos"
+        ],
+        "properties": {
+          "documento": {
+            "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+          },
+          "eventos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoDocumentoRespuesta"
+            }
+          }
+        }
+      },
       "DocumentoDto": {
         "type": "object",
         "description": "Documento anexo a la convocatoria.",
@@ -51204,6 +53964,110 @@
           },
           "titulo": {
             "type": "string"
+          }
+        }
+      },
+      "DocumentoElectronicoRespuesta": {
+        "type": "object",
+        "description": "Documento electrónico.",
+        "required": [
+          "id",
+          "tipo",
+          "origen_tipo",
+          "origen_id",
+          "prefijo",
+          "estado",
+          "proveedor",
+          "intentos",
+          "total",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDocumentoElectronico"
+          },
+          "origen_tipo": {
+            "type": "string",
+            "description": "Documento de negocio que lo origina (`ventas.factura`, `cxp.factura`)."
+          },
+          "origen_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "prefijo": {
+            "type": "string"
+          },
+          "numero": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "referencia_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Documento al que se refiere una nota."
+          },
+          "cufe": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoDocumentoElectronico"
+          },
+          "proveedor": {
+            "type": "string",
+            "description": "Adaptador que lo transmitió (`simulado` mientras no haya proveedor)."
+          },
+          "xml_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "respuesta": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "intentos": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "total": {
+            "type": "string"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "enviado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "validado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -52205,6 +55069,17 @@
           "anulada"
         ]
       },
+      "EstadoDocumentoElectronico": {
+        "type": "string",
+        "description": "Estado de un documento electrónico (un rechazado nunca se marca validado).",
+        "enum": [
+          "por_enviar",
+          "enviado",
+          "validado",
+          "rechazado",
+          "contingencia"
+        ]
+      },
       "EstadoEgreso": {
         "type": "string",
         "description": "Estado de un egreso (registrar → autorizar → pagar).",
@@ -52252,6 +55127,15 @@
           "pagada_parcial",
           "pagada",
           "anulada"
+        ]
+      },
+      "EstadoFacturaRecibida": {
+        "type": "string",
+        "description": "Estado de una factura electrónica recibida.",
+        "enum": [
+          "pendiente",
+          "registrada",
+          "rechazada"
         ]
       },
       "EstadoFacturaVenta": {
@@ -52433,6 +55317,14 @@
           "pendiente",
           "pagado",
           "exonerado"
+        ]
+      },
+      "EstadoPerfilTributario": {
+        "type": "string",
+        "description": "Estado de una versión del perfil tributario (sin confirmar no hay automatismos).",
+        "enum": [
+          "borrador",
+          "confirmado"
         ]
       },
       "EstadoPeriodo": {
@@ -52928,6 +55820,29 @@
           }
         }
       },
+      "EventoDocumentoRespuesta": {
+        "type": "object",
+        "description": "Evento de un documento electrónico.",
+        "required": [
+          "tipo",
+          "ocurrido_en"
+        ],
+        "properties": {
+          "tipo": {
+            "type": "string"
+          },
+          "detalle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ocurrido_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "EventoDto": {
         "type": "object",
         "description": "Eventos de una pieza.",
@@ -52984,6 +55899,74 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "EventoRadian": {
+        "type": "string",
+        "description": "Evento RADIAN sobre una factura recibida (cada uno exige sus previos).",
+        "enum": [
+          "acuse",
+          "recibo_bien",
+          "aceptacion",
+          "reclamo"
+        ]
+      },
+      "EventoRadianPeticion": {
+        "type": "object",
+        "description": "Evento RADIAN a registrar.",
+        "required": [
+          "tipo"
+        ],
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/EventoRadian"
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Obligatorio en un reclamo."
+          }
+        }
+      },
+      "EventoRadianRespuesta": {
+        "type": "object",
+        "description": "Evento RADIAN registrado.",
+        "required": [
+          "id",
+          "tipo",
+          "estado",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/EventoRadian"
+          },
+          "estado": {
+            "type": "string",
+            "description": "`enviado` o `rechazado`."
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "respuesta": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -53240,6 +56223,30 @@
           }
         }
       },
+      "ExogenaGeneradaRespuesta": {
+        "type": "object",
+        "description": "Exógena generada con su archivo y los terceros con datos por corregir.",
+        "required": [
+          "generacion",
+          "csv",
+          "errores"
+        ],
+        "properties": {
+          "generacion": {
+            "$ref": "#/components/schemas/GeneracionExogenaRespuesta"
+          },
+          "csv": {
+            "type": "string",
+            "description": "Archivo de preparación (CSV separado por `;`)."
+          },
+          "errores": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ExtractoPeticion": {
         "type": "object",
         "description": "Extracto a leer o importar. El archivo va en Base64.",
@@ -53465,6 +56472,117 @@
             "items": {
               "$ref": "#/components/schemas/LineaFacturaProveedorRespuesta"
             }
+          }
+        }
+      },
+      "FacturaRecibidaDetalleRespuesta": {
+        "type": "object",
+        "description": "Factura recibida con sus eventos RADIAN.",
+        "required": [
+          "factura",
+          "eventos"
+        ],
+        "properties": {
+          "factura": {
+            "$ref": "#/components/schemas/FacturaRecibidaRespuesta"
+          },
+          "eventos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventoRadianRespuesta"
+            }
+          }
+        }
+      },
+      "FacturaRecibidaRespuesta": {
+        "type": "object",
+        "description": "Factura electrónica recibida.",
+        "required": [
+          "id",
+          "archivo_id",
+          "emisor_nit",
+          "emisor_nombre",
+          "prefijo",
+          "numero",
+          "fecha",
+          "cufe",
+          "subtotal",
+          "iva",
+          "total",
+          "estado",
+          "recibida_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "emisor_nit": {
+            "type": "string"
+          },
+          "emisor_nombre": {
+            "type": "string"
+          },
+          "prefijo": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "cufe": {
+            "type": "string"
+          },
+          "subtotal": {
+            "type": "string"
+          },
+          "iva": {
+            "type": "string"
+          },
+          "total": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoFacturaRecibida"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Proveedor de la entidad con ese NIT, si existe."
+          },
+          "factura_proveedor_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "motivo_rechazo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recibida_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -54376,6 +57494,60 @@
           "pantalla_lobby"
         ]
       },
+      "FormatoExogenaRespuesta": {
+        "type": "object",
+        "description": "Versión de un formato de exógena.",
+        "required": [
+          "id",
+          "anio",
+          "codigo",
+          "version",
+          "nombre",
+          "resolucion",
+          "cuantia_menor",
+          "campos",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "1001"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "resolucion": {
+            "type": "string"
+          },
+          "cuantia_menor": {
+            "type": "string",
+            "description": "Por debajo se agregan en el NIT 222222222."
+          },
+          "campos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampoExogenaDto"
+            }
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "FormatoExtracto": {
         "type": "string",
         "description": "Formato de un extracto bancario.",
@@ -54510,6 +57682,79 @@
           },
           "descripcion": {
             "type": "string"
+          }
+        }
+      },
+      "GeneracionExogenaRespuesta": {
+        "type": "object",
+        "description": "Generación de un formato de exógena.",
+        "required": [
+          "id",
+          "formato_id",
+          "anio",
+          "version",
+          "filas",
+          "total",
+          "errores",
+          "sha256",
+          "archivo_id",
+          "generada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "formato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "filas": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "total": {
+            "type": "string"
+          },
+          "errores": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "description": "Huella del archivo (los mismos datos y la misma versión dan la misma huella)."
+          },
+          "archivo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "generada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "GenerarExogenaPeticion": {
+        "type": "object",
+        "description": "Formato a generar.",
+        "required": [
+          "formato_id"
+        ],
+        "properties": {
+          "formato_id": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -54939,6 +58184,15 @@
           }
         }
       },
+      "LadoExogena": {
+        "type": "string",
+        "description": "Lado del movimiento que suma a una columna de la exógena.",
+        "enum": [
+          "debito",
+          "credito",
+          "neto"
+        ]
+      },
       "LatidoPeticion": {
         "type": "object",
         "description": "Latido.",
@@ -55071,6 +58325,39 @@
             "items": {
               "$ref": "#/components/schemas/RetencionRespuesta"
             }
+          }
+        }
+      },
+      "LineaIcaRespuesta": {
+        "type": "object",
+        "description": "ICA estimado de un municipio y actividad.",
+        "required": [
+          "municipio_dane",
+          "actividad",
+          "base"
+        ],
+        "properties": {
+          "municipio_dane": {
+            "type": "string"
+          },
+          "actividad": {
+            "type": "string"
+          },
+          "tarifa_por_mil": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`null` si el catálogo no tiene la tarifa vigente."
+          },
+          "base": {
+            "type": "string"
+          },
+          "impuesto": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -55341,8 +58628,19 @@
           },
           "tarifa_iva": {
             "type": "string",
-            "description": "Porcentaje de IVA que elige quien factura (0 si no aplica).",
+            "description": "Porcentaje de IVA (0 si no aplica). Solo una línea `alquiler_servicio` o `venta` de una\nentidad responsable de IVA con perfil confirmado lleva IVA, y con una tarifa gravada\nvigente del catálogo.",
             "example": "0"
+          },
+          "clasificacion": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ClasificacionTributaria",
+                "description": "Clasificación tributaria de la línea (`otra` si no se indica)."
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -55356,7 +58654,8 @@
           "valor_unitario",
           "tarifa_iva",
           "subtotal",
-          "iva"
+          "iva",
+          "clasificacion"
         ],
         "properties": {
           "descripcion": {
@@ -55387,6 +58686,9 @@
           },
           "iva": {
             "type": "string"
+          },
+          "clasificacion": {
+            "$ref": "#/components/schemas/ClasificacionTributaria"
           }
         }
       },
@@ -56246,6 +59548,7 @@
         "enum": [
           "contabilidad",
           "contabilidad_ph",
+          "facturacion_electronica",
           "bienes_comunes",
           "control_acceso",
           "asambleas",
@@ -57415,6 +60718,137 @@
         ],
         "description": "Residencia nueva."
       },
+      "NuevaResolucionPeticion": {
+        "type": "object",
+        "description": "Resolución de numeración nueva.",
+        "required": [
+          "tipo",
+          "prefijo",
+          "desde",
+          "hasta",
+          "numero_resolucion",
+          "fecha_resolucion",
+          "vigente_desde",
+          "vigente_hasta"
+        ],
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoNumeracion"
+          },
+          "prefijo": {
+            "type": "string",
+            "example": "FE"
+          },
+          "desde": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1,
+            "minimum": 0
+          },
+          "hasta": {
+            "type": "integer",
+            "format": "int64",
+            "example": 5000,
+            "minimum": 0
+          },
+          "numero_resolucion": {
+            "type": "string",
+            "example": "18764000000001"
+          },
+          "fecha_resolucion": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "clave_tecnica": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Clave técnica que entrega la DIAN (secreto: no se devuelve)."
+          }
+        }
+      },
+      "NuevaTarifaIcaPeticion": {
+        "type": "object",
+        "description": "Versión nueva de una tarifa de ICA.",
+        "required": [
+          "municipio_dane",
+          "actividad",
+          "nombre",
+          "tarifa_por_mil",
+          "fuente",
+          "vigente_desde"
+        ],
+        "properties": {
+          "municipio_dane": {
+            "type": "string",
+            "example": "11001"
+          },
+          "actividad": {
+            "type": "string",
+            "example": "6810"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tarifa_por_mil": {
+            "type": "string",
+            "example": "9.66"
+          },
+          "fuente": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "NuevaTarifaIvaPeticion": {
+        "type": "object",
+        "description": "Versión nueva de una tarifa de IVA (cierra la anterior del mismo código el día antes).",
+        "required": [
+          "codigo",
+          "nombre",
+          "tratamiento",
+          "tarifa",
+          "fuente",
+          "vigente_desde"
+        ],
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "example": "general"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Tarifa general"
+          },
+          "tratamiento": {
+            "$ref": "#/components/schemas/TratamientoIva"
+          },
+          "tarifa": {
+            "type": "string",
+            "example": "19"
+          },
+          "fuente": {
+            "type": "string",
+            "example": "Estatuto Tributario, art. 468"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "NuevaTasaPeticion": {
         "type": "object",
         "description": "Tasa de referencia nueva (interés bancario corriente certificado).",
@@ -57519,6 +60953,43 @@
           }
         ],
         "description": "Alta de un anunciante."
+      },
+      "NuevoBeneficiarioPeticion": {
+        "type": "object",
+        "description": "Beneficiario final nuevo.",
+        "required": [
+          "persona_id",
+          "criterio",
+          "vigente_desde"
+        ],
+        "properties": {
+          "persona_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "criterio": {
+            "$ref": "#/components/schemas/CriterioBeneficiario"
+          },
+          "porcentaje": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Participación (%) solo con el criterio de propiedad.",
+            "example": "25"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          }
+        }
       },
       "NuevoBienPeticion": {
         "type": "object",
@@ -57837,6 +61308,45 @@
           }
         }
       },
+      "NuevoFormatoExogenaPeticion": {
+        "type": "object",
+        "description": "Formato de exógena nuevo (la versión la asigna el sistema: la siguiente del año y código).",
+        "required": [
+          "anio",
+          "codigo",
+          "nombre",
+          "resolucion",
+          "cuantia_menor",
+          "campos"
+        ],
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "1001"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "resolucion": {
+            "type": "string",
+            "example": "Resolución DIAN 000162 de 2023"
+          },
+          "cuantia_menor": {
+            "type": "string",
+            "example": "100000"
+          },
+          "campos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampoExogenaDto"
+            }
+          }
+        }
+      },
       "NuevoParqueaderoPeticion": {
         "type": "object",
         "description": "Parqueadero nuevo.",
@@ -57885,6 +61395,37 @@
           "horario": {
             "$ref": "#/components/schemas/HorarioDto",
             "description": "Horario de uso (visitantes)."
+          }
+        }
+      },
+      "NuevoPerfilPeticion": {
+        "type": "object",
+        "description": "Versión nueva del perfil (queda en borrador hasta que el contador la confirme).",
+        "required": [
+          "vigente_desde",
+          "parametros"
+        ],
+        "properties": {
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "parametros": {
+            "$ref": "#/components/schemas/ParametrosPerfilDto"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "RUT u otro soporte ya subido."
+          },
+          "observaciones": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -61380,6 +64921,66 @@
           }
         }
       },
+      "ParametrosPerfilDto": {
+        "type": "object",
+        "description": "Parámetros del perfil tributario (lo que dice el RUT y decide el contador).",
+        "required": [
+          "agente_retenedor",
+          "responsable_iva",
+          "gran_contribuyente",
+          "autorretenedor",
+          "contribuyente_renta",
+          "facturador_electronico",
+          "obligado_rub",
+          "canal_facturacion"
+        ],
+        "properties": {
+          "responsabilidades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResponsabilidadFiscal"
+            }
+          },
+          "agente_retenedor": {
+            "type": "boolean"
+          },
+          "responsable_iva": {
+            "type": "boolean"
+          },
+          "gran_contribuyente": {
+            "type": "boolean"
+          },
+          "autorretenedor": {
+            "type": "boolean"
+          },
+          "contribuyente_renta": {
+            "type": "boolean"
+          },
+          "facturador_electronico": {
+            "type": "boolean"
+          },
+          "obligado_rub": {
+            "type": "boolean"
+          },
+          "municipios_ica": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos DANE donde declara ICA."
+          },
+          "actividades_ica": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos CIIU de sus actividades."
+          },
+          "canal_facturacion": {
+            "$ref": "#/components/schemas/CanalFacturacion"
+          }
+        }
+      },
       "ParqueaderoDto": {
         "type": "object",
         "description": "Detalle de un parqueadero.",
@@ -61516,6 +65117,70 @@
               "$ref": "#/components/schemas/Permiso"
             },
             "description": "Permisos de plataforma (vacío para la mayoría de las cuentas)."
+          }
+        }
+      },
+      "PerfilTributarioRespuesta": {
+        "type": "object",
+        "description": "Versión del perfil tributario.",
+        "required": [
+          "id",
+          "version",
+          "vigente_desde",
+          "estado",
+          "parametros",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPerfilTributario"
+          },
+          "parametros": {
+            "$ref": "#/components/schemas/ParametrosPerfilDto"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "observaciones": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "confirmado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "confirmado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
           }
         }
       },
@@ -61705,6 +65370,11 @@
           "cartera.ajustar",
           "cartera.certificados.emitir",
           "presupuesto.gestionar",
+          "tributario.configurar",
+          "tributario.perfil.confirmar",
+          "tributario.preparar",
+          "facturacion.emitir",
+          "facturacion.recibir",
           "directorio.ver",
           "directorio.resenar",
           "directorio.compartir"
@@ -62993,6 +66663,132 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "PreparacionIcaRespuesta": {
+        "type": "object",
+        "description": "Preparación del ICA y la ReteICA.",
+        "required": [
+          "desde",
+          "hasta",
+          "ingresos",
+          "lineas",
+          "reteica_practicada"
+        ],
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "ingresos": {
+            "type": "string"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaIcaRespuesta"
+            }
+          },
+          "reteica_practicada": {
+            "type": "string"
+          }
+        }
+      },
+      "PreparacionIvaRespuesta": {
+        "type": "object",
+        "description": "Preparación del IVA.",
+        "required": [
+          "desde",
+          "hasta",
+          "generado",
+          "descontable",
+          "total_generado",
+          "total_descontable",
+          "saldo",
+          "responsable"
+        ],
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "generado": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumenIvaRespuesta"
+            }
+          },
+          "descontable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumenIvaRespuesta"
+            }
+          },
+          "total_generado": {
+            "type": "string"
+          },
+          "total_descontable": {
+            "type": "string"
+          },
+          "saldo": {
+            "type": "string",
+            "description": "Generado − descontable (positivo = a pagar)."
+          },
+          "responsable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PreparacionRetencionRespuesta": {
+        "type": "object",
+        "description": "Preparación de la retención en la fuente con su conciliación contra el mayor.",
+        "required": [
+          "desde",
+          "hasta",
+          "detalle",
+          "total_practicado",
+          "total_mayor",
+          "diferencia",
+          "obligada"
+        ],
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "detalle": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumenRetencionRespuesta"
+            }
+          },
+          "total_practicado": {
+            "type": "string"
+          },
+          "total_mayor": {
+            "type": "string",
+            "description": "Neto de las cuentas de retenciones en el mayor."
+          },
+          "diferencia": {
+            "type": "string",
+            "description": "Mayor − practicado (cero si cuadra)."
+          },
+          "obligada": {
+            "type": "boolean",
+            "description": "Agente de retención con retenciones en el periodo."
           }
         }
       },
@@ -64868,6 +68664,72 @@
           }
         }
       },
+      "ResolucionRespuesta": {
+        "type": "object",
+        "description": "Resolución de numeración (la clave técnica no sale en la respuesta).",
+        "required": [
+          "id",
+          "tipo",
+          "prefijo",
+          "desde",
+          "hasta",
+          "numero_resolucion",
+          "fecha_resolucion",
+          "vigente_desde",
+          "vigente_hasta",
+          "tiene_clave_tecnica",
+          "activa",
+          "creada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoNumeracion"
+          },
+          "prefijo": {
+            "type": "string"
+          },
+          "desde": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "hasta": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "numero_resolucion": {
+            "type": "string"
+          },
+          "fecha_resolucion": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "tiene_clave_tecnica": {
+            "type": "boolean",
+            "description": "Si tiene clave técnica registrada."
+          },
+          "activa": {
+            "type": "boolean"
+          },
+          "creada_en": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "ResponderPeticion": {
         "type": "object",
         "description": "Decisión de un residente.",
@@ -65246,6 +69108,26 @@
           }
         }
       },
+      "ResumenIvaRespuesta": {
+        "type": "object",
+        "description": "IVA de una tarifa.",
+        "required": [
+          "tarifa",
+          "base",
+          "iva"
+        ],
+        "properties": {
+          "tarifa": {
+            "type": "string"
+          },
+          "base": {
+            "type": "string"
+          },
+          "iva": {
+            "type": "string"
+          }
+        }
+      },
       "ResumenLecturaRespuesta": {
         "type": "object",
         "description": "Entrega y lectura.",
@@ -65341,6 +69223,35 @@
             ],
             "format": "uuid",
             "description": "Borrador con los coeficientes del archivo (actívelo en `/cuadros-coeficientes`)."
+          }
+        }
+      },
+      "ResumenRetencionRespuesta": {
+        "type": "object",
+        "description": "Retenciones de un impuesto, concepto y tarifa.",
+        "required": [
+          "impuesto",
+          "concepto",
+          "tarifa",
+          "base",
+          "valor"
+        ],
+        "properties": {
+          "impuesto": {
+            "type": "string",
+            "description": "`renta`, `iva` o `ica`."
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "tarifa": {
+            "type": "string"
+          },
+          "base": {
+            "type": "string"
+          },
+          "valor": {
+            "type": "string"
           }
         }
       },
@@ -66647,6 +70558,100 @@
           }
         }
       },
+      "TarifaIcaRespuesta": {
+        "type": "object",
+        "description": "Versión de una tarifa de ICA.",
+        "required": [
+          "id",
+          "municipio_dane",
+          "actividad",
+          "nombre",
+          "tarifa_por_mil",
+          "fuente",
+          "vigente_desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "municipio_dane": {
+            "type": "string"
+          },
+          "actividad": {
+            "type": "string",
+            "description": "Código CIIU."
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tarifa_por_mil": {
+            "type": "string",
+            "example": "9.66"
+          },
+          "fuente": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        }
+      },
+      "TarifaIvaRespuesta": {
+        "type": "object",
+        "description": "Versión de una tarifa de IVA.",
+        "required": [
+          "id",
+          "codigo",
+          "nombre",
+          "tratamiento",
+          "tarifa",
+          "fuente",
+          "vigente_desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "tratamiento": {
+            "$ref": "#/components/schemas/TratamientoIva"
+          },
+          "tarifa": {
+            "type": "string",
+            "description": "Porcentaje.",
+            "example": "19"
+          },
+          "fuente": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        }
+      },
       "TarifaPublicidadDto": {
         "type": "object",
         "description": "Tarifa de un modelo de cobro.",
@@ -66753,6 +70758,19 @@
           },
           "fiscal": {
             "$ref": "#/components/schemas/DatosFiscalesDto"
+          }
+        }
+      },
+      "TerminarPeticion": {
+        "type": "object",
+        "description": "Fecha en que termina una vigencia.",
+        "required": [
+          "hasta"
+        ],
+        "properties": {
+          "hasta": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -67014,7 +71032,8 @@
           "image/webp",
           "image/heic",
           "text/csv",
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/xml"
         ]
       },
       "TipoArchivoActivo": {
@@ -67229,6 +71248,17 @@
           "NIT"
         ]
       },
+      "TipoDocumentoElectronico": {
+        "type": "string",
+        "description": "Tipo de documento electrónico.",
+        "enum": [
+          "factura",
+          "nota_credito",
+          "nota_debito",
+          "documento_soporte",
+          "nota_ajuste_ds"
+        ]
+      },
       "TipoDocumentoReunion": {
         "type": "string",
         "description": "Tipo de documento anexo a la convocatoria.",
@@ -67287,6 +71317,14 @@
           "novedad",
           "incidente",
           "otro"
+        ]
+      },
+      "TipoNumeracion": {
+        "type": "string",
+        "description": "Documento que numera una resolución de la DIAN.",
+        "enum": [
+          "factura",
+          "documento_soporte"
         ]
       },
       "TipoOrden": {
@@ -67775,6 +71813,16 @@
           }
         }
       },
+      "TratamientoIva": {
+        "type": "string",
+        "description": "Tratamiento de IVA de una tarifa del catálogo.",
+        "enum": [
+          "gravado",
+          "exento",
+          "excluido",
+          "no_sujeto"
+        ]
+      },
       "UmbralMoraPeticion": {
         "type": "object",
         "description": "Umbral de vencido desde el que se restringen las reservas.",
@@ -68123,6 +72171,19 @@
             ]
           },
           "punto_acceso_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "VincularPeticion": {
+        "type": "object",
+        "description": "Factura de proveedor registrada que corresponde a la recibida (mismo CUFE).",
+        "required": [
+          "factura_proveedor_id"
+        ],
+        "properties": {
+          "factura_proveedor_id": {
             "type": "string",
             "format": "uuid"
           }
@@ -68622,6 +72683,10 @@
     {
       "name": "cartera",
       "description": "Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor"
+    },
+    {
+      "name": "tributario",
+      "description": "Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario"
     }
   ]
 }

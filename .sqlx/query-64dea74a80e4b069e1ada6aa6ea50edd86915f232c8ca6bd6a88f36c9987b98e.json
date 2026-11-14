@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE perfiles_tributarios SET estado = 'confirmado', confirmado_por = $2,\n                 confirmado_en = $3\n             WHERE id = $1 AND estado = 'borrador'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "64dea74a80e4b069e1ada6aa6ea50edd86915f232c8ca6bd6a88f36c9987b98e"
+}

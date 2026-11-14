@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE facturas_recibidas SET estado = $2, persona_id = $3,\n                 factura_proveedor_id = $4, motivo_rechazo = $5\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ee2845d76132a967009d5af8912b45c290005852d8499703e50c75b5ab34a0fc"
+}

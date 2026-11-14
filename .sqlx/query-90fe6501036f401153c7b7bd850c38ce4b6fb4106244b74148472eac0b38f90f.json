@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tarifas_ica (id, municipio_dane, actividad, nombre, tarifa_por_mil,\n                 fuente, vigente_desde, vigente_hasta)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Text",
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "90fe6501036f401153c7b7bd850c38ce4b6fb4106244b74148472eac0b38f90f"
+}

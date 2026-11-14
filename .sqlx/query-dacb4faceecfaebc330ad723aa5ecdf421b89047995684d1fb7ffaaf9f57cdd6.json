@@ -1,0 +1,112 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, codigo, nombre, tratamiento, tarifa, fuente, vigente_desde, vigente_hasta\n         FROM tarifas_iva\n         WHERE $1::date IS NULL\n            OR (vigente_desde <= $1 AND (vigente_hasta IS NULL OR vigente_hasta >= $1))\n         ORDER BY codigo, vigente_desde DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "tratamiento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "tratamiento"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "tarifa",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "tarifa"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "fuente",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "fuente"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "vigente_hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "tarifas_iva",
+            "name": "vigente_hasta"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "dacb4faceecfaebc330ad723aa5ecdf421b89047995684d1fb7ffaaf9f57cdd6"
+}

@@ -14,6 +14,10 @@ use domain::{
     contabilidad::{
         CodigoCuenta, ImporteDocumento, Monto,
         tesoreria::{EstadoFacturaVenta, TramoEdad, liquidar_linea_venta, situacion_pago},
+        tributario::{
+            ClasificacionTributaria, EstadoDocumentoElectronico, TipoDocumentoElectronico,
+            validar_iva_linea,
+        },
     },
 };
 use rust_decimal::Decimal;
@@ -54,8 +58,11 @@ pub struct NuevaLineaVenta {
     pub centro_costo: Option<String>,
     pub cantidad: Decimal,
     pub valor_unitario: Monto,
-    /// Porcentaje de IVA (0 si no aplica).
+    /// Porcentaje de IVA (0 si no aplica). Debe ser una tarifa gravada vigente del catálogo y
+    /// solo en alquiler o servicio y venta, con el perfil tributario confirmado de responsable
+    /// de IVA.
     pub tarifa_iva: Decimal,
+    pub clasificacion: ClasificacionTributaria,
 }
 
 /// Factura de venta nueva (queda en borrador).
@@ -96,8 +103,23 @@ where
     }
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TesoreriaFacturasVentaGestionar).await?;
     exigir_persona(&mut tx, nueva.persona).await?;
+    let con_iva = nueva.lineas.iter().any(|l| !l.tarifa_iva.is_zero());
+    let (perfil, gravadas) = if con_iva {
+        (
+            super::tributario::perfil_confirmado_en(&mut tx, nueva.fecha).await?,
+            super::tributario::tarifas_gravadas(&mut tx, nueva.fecha).await?,
+        )
+    } else {
+        (None, Vec::new())
+    };
     let mut lineas = Vec::with_capacity(nueva.lineas.len());
     for l in nueva.lineas {
+        validar_iva_linea(
+            l.clasificacion,
+            l.tarifa_iva,
+            perfil.as_ref().map(|p| &p.parametros),
+            &gravadas,
+        )?;
         let (subtotal, iva) = liquidar_linea_venta(l.cantidad, l.valor_unitario, l.tarifa_iva)?;
         lineas.push(LineaFacturaVenta {
             descripcion: texto("descripcion", &l.descripcion, 300)?,
@@ -106,6 +128,7 @@ where
             cantidad: l.cantidad,
             valor_unitario: l.valor_unitario,
             tarifa_iva: l.tarifa_iva,
+            clasificacion: l.clasificacion,
             subtotal,
             iva,
         });
@@ -278,10 +301,38 @@ where
     U::Transaccion: TxTesoreria,
 {
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TesoreriaFacturasVentaGestionar).await?;
-    let mut f = factura_existente(&mut tx, id).await?;
+    let electronica = tx
+        .documento_por_origen(
+            TipoDocumentoElectronico::Factura,
+            &super::tesoreria::origen(super::tesoreria::eventos::FACTURA_VENTA, id.as_uuid()),
+        )
+        .await?
+        .is_some_and(|d| d.estado == EstadoDocumentoElectronico::Validado);
+    if electronica {
+        return Err(AppError::Conflicto(
+            "la factura tiene factura electrónica validada: anúlela con una nota crédito \
+             electrónica"
+                .into(),
+        ));
+    }
+    let f = anular_factura_venta_en(&mut tx, reloj, ctx, id, motivo).await?;
+    tx.confirmar().await?;
+    Ok(f)
+}
+
+/// Anula la factura en la transacción (revierte su comprobante); la usa también la nota crédito
+/// electrónica.
+pub(crate) async fn anular_factura_venta_en<T: TxTesoreria>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    id: FacturaVentaId,
+    motivo: &str,
+) -> AppResult<FacturaVenta> {
+    let mut f = factura_existente(tx, id).await?;
     f.estado = f.estado.transicionar(EstadoFacturaVenta::Anulada)?;
     if let Some(c) = f.comprobante_id {
-        revertir_en(&mut tx, reloj, ctx, c, motivo, None).await?;
+        revertir_en(tx, reloj, ctx, c, motivo, None).await?;
     }
     f.motivo_anulacion = Some(texto("motivo", motivo, 500)?);
     tx.actualizar_factura_venta(&f).await?;
@@ -291,7 +342,6 @@ where
         id.as_uuid(),
     ))
     .await?;
-    tx.confirmar().await?;
     Ok(f)
 }
 

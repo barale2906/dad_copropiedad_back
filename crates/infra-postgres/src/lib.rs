@@ -55,6 +55,7 @@ mod tenant;
 mod tesoreria;
 mod tickets;
 mod titulares;
+mod tributario;
 mod unidad_trabajo;
 
 pub use acceso::DirectorioAccesoPg;

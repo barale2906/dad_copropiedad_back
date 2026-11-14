@@ -31,6 +31,7 @@ pub mod reservas;
 pub mod sesiones;
 pub mod tesoreria;
 pub mod tickets;
+pub mod tributario;
 pub mod unidad_trabajo;
 
 pub use acceso::{
