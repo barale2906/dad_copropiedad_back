@@ -83,7 +83,7 @@ impl From<LineaWhatsapp> for LineaRespuesta {
     security(("bearer" = [])),
     responses(
         (status = OK, description = "Líneas", body = Vec<LineaRespuesta>),
-        (status = FORBIDDEN, description = "Sin permiso o sin segundo factor", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar(
@@ -113,6 +113,7 @@ pub struct LineaPeticion {
     responses(
         (status = CREATED, description = "Línea registrada", body = LineaRespuesta),
         (status = CONFLICT, description = "Ya existe (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear(
@@ -154,6 +155,7 @@ pub struct ActualizarLineaPeticion {
     responses(
         (status = NO_CONTENT, description = "Actualizada"),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn actualizar(
@@ -208,7 +210,10 @@ impl From<TarifaWhatsapp> for TarifaDto {
     path = "/whatsapp/tarifas",
     tag = ETIQUETA_PLATAFORMA,
     security(("bearer" = [])),
-    responses((status = OK, description = "Tarifas", body = Vec<TarifaDto>))
+    responses(
+        (status = OK, description = "Tarifas", body = Vec<TarifaDto>),
+        (status = FORBIDDEN, description = "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn listar_tarifas(
     State(state): State<AppState>,
@@ -228,6 +233,7 @@ pub async fn listar_tarifas(
     responses(
         (status = CREATED, description = "Tarifa registrada", body = TarifaDto),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.whatsapp.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn guardar_tarifa(

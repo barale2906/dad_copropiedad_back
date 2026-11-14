@@ -40,6 +40,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(ver_documento))
         .routes(routes!(reintentar_documento))
         .routes(routes!(representacion_grafica))
+        .routes(routes!(paquete_adquirente))
         .routes(routes!(listar_recibidas, cargar_recibida))
         .routes(routes!(ver_recibida))
         .routes(routes!(vincular_recibida))
@@ -73,7 +74,7 @@ pub async fn emitir_factura_electronica(
 ) -> ApiResult<Json<DocumentoElectronicoRespuesta>> {
     let d = uc::emitir_factura_electronica(
         &state.unidad,
-        (&state.facturacion, state.cofre.as_ref()),
+        &state.expedicion(),
         state.archivos.as_ref(),
         &RelojSistema,
         &en.ctx,
@@ -108,7 +109,7 @@ pub async fn emitir_nota_credito(
 ) -> ApiResult<Json<DocumentoElectronicoRespuesta>> {
     let d = uc::emitir_nota_credito(
         &state.unidad,
-        (&state.facturacion, state.cofre.as_ref()),
+        &state.expedicion(),
         state.archivos.as_ref(),
         &RelojSistema,
         &en.ctx,
@@ -140,7 +141,7 @@ pub async fn emitir_documento_soporte(
 ) -> ApiResult<Json<DocumentoElectronicoRespuesta>> {
     let d = uc::emitir_documento_soporte(
         &state.unidad,
-        (&state.facturacion, state.cofre.as_ref()),
+        &state.expedicion(),
         state.archivos.as_ref(),
         &RelojSistema,
         &en.ctx,
@@ -247,7 +248,7 @@ pub async fn reintentar_documento(
 ) -> ApiResult<Json<DocumentoElectronicoRespuesta>> {
     let d = uc::reintentar_documento(
         &state.unidad,
-        (&state.facturacion, state.cofre.as_ref()),
+        &state.expedicion(),
         state.archivos.as_ref(),
         &RelojSistema,
         &en.ctx,
@@ -277,7 +278,7 @@ pub async fn representacion_grafica(
 ) -> ApiResult<Response> {
     let pdf = uc::representacion_grafica(
         &state.unidad,
-        &state.actas,
+        (&state.actas, state.pie_facturacion.as_deref()),
         &RelojSistema,
         &en.ctx,
         DocumentoElectronicoId::from_uuid(ruta.1),
@@ -292,6 +293,47 @@ pub async fn representacion_grafica(
             ),
         ],
         pdf,
+    )
+        .into_response())
+}
+
+/// ZIP del documento tal como lo recibe el adquirente: el `AttachedDocument` (el documento y la
+/// respuesta de la DIAN) y la representación gráfica en PDF.
+#[utoipa::path(
+    get,
+    path = "/documentos/{documento_id}/paquete",
+    tag = ETIQUETA_FACTURACION,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("documento_id" = Uuid, Path, description = "Documento")),
+    responses(
+        (status = OK, description = "ZIP", content_type = "application/zip", body = Vec<u8>),
+        (status = FORBIDDEN, description = "Sin `facturacion.ver` o sin el módulo", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "Documento inexistente", body = ErrorRespuesta),
+    )
+)]
+pub async fn paquete_adquirente(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<Response> {
+    let (nombre, zip) = uc::paquete_documento(
+        &state.unidad,
+        &state.expedicion(),
+        state.archivos.as_ref(),
+        &RelojSistema,
+        &en.ctx,
+        DocumentoElectronicoId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok((
+        [
+            (header::CONTENT_TYPE, "application/zip".to_owned()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{nombre}\""),
+            ),
+        ],
+        zip,
     )
         .into_response())
 }

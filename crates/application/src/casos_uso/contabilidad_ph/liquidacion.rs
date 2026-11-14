@@ -1062,6 +1062,8 @@ pub(crate) async fn pdf_cuenta_cobro_en<T: TxCartera, G: GeneradorActas>(
                 .to_vec(),
             filas: filas_cuenta(&armada),
             generada: reloj.ahora().format("%Y-%m-%d %H:%M UTC").to_string(),
+            qr: None,
+            pie: None,
         })
         .await
 }
@@ -1121,6 +1123,7 @@ where
                 asunto: format!("Cuenta de cobro {}", numero_cuenta_cobro(&a.cuenta)),
                 texto: cuerpo,
                 html: None,
+                adjuntos: Vec::new(),
             }),
         })
         .await?;

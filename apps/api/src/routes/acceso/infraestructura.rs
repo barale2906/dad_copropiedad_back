@@ -139,6 +139,7 @@ pub async fn crear_punto(
     responses(
         (status = OK, description = "Punto guardado", body = PuntoDto),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_punto(
@@ -264,6 +265,7 @@ pub struct TokenPuenteRespuesta {
     responses(
         (status = OK, description = "Token nuevo", body = TokenPuenteRespuesta),
         (status = CONFLICT, description = "El puente está retirado (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn rotar_credencial(
@@ -291,6 +293,7 @@ pub async fn rotar_credencial(
     responses(
         (status = OK, description = "Puente retirado", body = PuenteRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn retirar_puente(
@@ -409,6 +412,7 @@ pub async fn listar_dispositivos(
         (status = CREATED, description = "Dispositivo registrado", body = DispositivoDto),
         (status = NOT_FOUND, description = "El puente o el punto no existen", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "La configuración trae secretos (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_dispositivo(
@@ -431,6 +435,7 @@ pub async fn crear_dispositivo(
     responses(
         (status = OK, description = "Dispositivo guardado", body = DispositivoDto),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_dispositivo(

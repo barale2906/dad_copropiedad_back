@@ -155,7 +155,7 @@ pub struct VotoPapeletaPeticion {
     request_body = VotoPapeletaPeticion,
     responses(
         (status = CREATED, description = "Voto registrado (o el original si se reintenta)", body = VotoRespuesta),
-        (status = FORBIDDEN, description = "No está presente (`no_inscrito`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Papeleta inválida o el asistente no está presente (`no_inscrito`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya votó (`ya_voto`) o la pregunta cerró (`conflicto_estado`)", body = ErrorRespuesta),
         (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )

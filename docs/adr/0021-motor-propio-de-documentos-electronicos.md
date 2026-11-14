@@ -80,5 +80,29 @@ software, sin que este sea proveedor tecnológico.
   (canal `propio` del perfil confirmado y entidad en producción) y por el simulado los demás. En
   software propio el NIT del proveedor del software es el del facturador.
 - **Pendiente**: notas del set de pruebas (hoy solo facturas), documento soporte y eventos RADIAN
-  propios (fase 7), contingencia tipo 04 y AttachedDocument (fase 6), Schematron con Saxon, y la
-  validación real contra el ambiente de habilitación con el `.p12` de GISLA.
+  propios (fase 7), Schematron con Saxon, y la validación real contra el ambiente de habilitación
+  con el `.p12` de GISLA. (La contingencia tipo 04 y el AttachedDocument se resolvieron en la
+  adenda siguiente.)
+
+## Adenda (2026-11-14): expedición completa y contingencia (plan 17 fase 6)
+- **AttachedDocument** (`propio::adjunto`, anexo 1.9 §7.10): contenedor firmado con el mismo
+  certificado que lleva el documento y, si la DIAN respondió, su `ApplicationResponse`
+  (`ValidationResultCode` 02); en contingencia va sin respuesta (04). Los XML internos van
+  escapados en `cbc:Description` (equivale al `CDATA`; la forma canónica no cambia). Se guarda en
+  el almacén (`documentos_electronicos.adjunto_archivo_id`).
+- **Entrega al adquirente** por el outbox: correo con un ZIP (AttachedDocument, o XML + PDF con el
+  simulado) al validarse y, en contingencia, la primera vez. `CorreoSaliente` admite adjuntos
+  (`AdjuntoCorreo`, contenido en hexadecimal dentro del JSON del outbox; `infra-correo` arma
+  `multipart/mixed`). El correo de recepción es el `correo_facturacion` del tercero; leerlo de
+  `GetExchangeEmails` queda para después.
+- **Representación gráfica**: QR (2,4 cm, URL de consulta de la DIAN con el CUFE) en el
+  encabezado de cada página y el pie con el fabricante y el software (`FACTURACION_SOFTWARE_NOMBRE`,
+  `FACTURACION_FABRICANTE_NOMBRE`, `FACTURACION_FABRICANTE_NIT`).
+- **Contingencia DIAN (tipo 04)**: `MotorPropio` reintenta 3 veces con 5 s de espera; si la DIAN
+  sigue sin responder, firma la factura con `InvoiceTypeCode` 04 (mismo prefijo y número) y la
+  devuelve en `contingencia` con su AttachedDocument. Las notas no tienen contingencia (error de
+  infraestructura). El worker `worker_facturacion` del gateway reintenta cada 30 minutos los
+  documentos en contingencia de todas las entidades (`documentos_en_contingencia`, SECURITY
+  DEFINER, solo ids) y avisa en los logs los que pasan de 48 horas.
+- **Pendiente**: contingencia del facturador (tipo 03, transcripción del talonario) y el correo de
+  recepción desde `GetExchangeEmails`.

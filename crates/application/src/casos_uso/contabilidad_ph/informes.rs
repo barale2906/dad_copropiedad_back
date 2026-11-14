@@ -338,6 +338,8 @@ where
             .to_vec(),
             filas,
             generada: reloj.ahora().format("%Y-%m-%d %H:%M UTC").to_string(),
+            qr: None,
+            pie: None,
         })
         .await
 }

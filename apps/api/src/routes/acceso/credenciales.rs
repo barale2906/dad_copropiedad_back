@@ -245,6 +245,7 @@ pub struct EstadoPeticion {
     responses(
         (status = OK, description = "Credencial", body = CredencialRespuesta),
         (status = CONFLICT, description = "Transición no permitida: revocada y perdida son definitivas (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn cambiar_estado(
@@ -274,6 +275,7 @@ pub async fn cambiar_estado(
     responses(
         (status = OK, description = "Credencial nueva", body = EmitidaRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "No es un QR permanente ni de la app (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn rotar(
@@ -375,6 +377,7 @@ pub struct AutorizacionAccesoPeticion {
         (status = CREATED, description = "Autorización creada", body = AutorizacionAccesoRespuesta),
         (status = NOT_FOUND, description = "El titular no existe", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Vigencia invertida o punto inexistente (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_autorizacion(
@@ -409,6 +412,7 @@ pub async fn crear_autorizacion(
     responses(
         (status = NO_CONTENT, description = "Revocada"),
         (status = NOT_FOUND, description = "No existe o ya estaba revocada", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.credenciales.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn revocar_autorizacion(
@@ -536,6 +540,7 @@ pub struct RevocacionRespuesta {
     responses(
         (status = OK, description = "Consentimiento revocado", body = RevocacionRespuesta),
         (status = NOT_FOUND, description = "No tiene consentimiento vigente", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No es la persona misma y no tiene `acceso.biometria.enrolar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn revocar_consentimiento(

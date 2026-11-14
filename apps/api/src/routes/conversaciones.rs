@@ -102,7 +102,7 @@ impl From<PreguntaFrecuentePeticion> for DatosPregunta {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
         (status = OK, description = "Preguntas", body = Vec<PreguntaFrecuenteRespuesta>),
-        (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `copropiedad.datos.ver` (las inactivas, con `preguntas_frecuentes.editar`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_preguntas(
@@ -150,6 +150,7 @@ pub async fn crear_pregunta(
     responses(
         (status = OK, description = "Pregunta", body = PreguntaFrecuenteRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `preguntas_frecuentes.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_pregunta(
@@ -284,6 +285,7 @@ fn id_conversacion(ruta: (Uuid, Uuid)) -> ConversacionId {
     responses(
         (status = OK, description = "Conversación", body = DetalleConversacionRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `conversaciones.atender` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_conversacion(
@@ -352,6 +354,7 @@ pub async fn responder(
     responses(
         (status = OK, description = "Conversación cerrada", body = ConversacionRespuesta),
         (status = CONFLICT, description = "Ya estaba cerrada (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `conversaciones.atender` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn cerrar(

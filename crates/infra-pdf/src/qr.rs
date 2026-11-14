@@ -48,6 +48,22 @@ impl GeneradorImagenQr for GeneradorQrPng {
     }
 }
 
+/// Matriz del QR (filas de módulos; `true` = oscuro) para dibujarla en una plantilla de Typst.
+///
+/// # Errors
+///
+/// [`AppError::Validacion`] si el texto no cabe en un QR.
+pub(crate) fn matriz(texto: &str) -> AppResult<Vec<Vec<bool>>> {
+    let qr = QrCode::with_error_correction_level(texto.as_bytes(), EcLevel::M)
+        .map_err(|_| AppError::Validacion("el texto no cabe en un código QR".into()))?;
+    let n = qr.width();
+    Ok(qr
+        .to_colors()
+        .chunks(n)
+        .map(|fila| fila.iter().map(|c| *c == Color::Dark).collect())
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -64,6 +80,13 @@ mod tests {
         let info = lector.info();
         assert_eq!(info.width, info.height);
         assert_eq!(info.width as usize % PIXELES_POR_MODULO, 0);
+    }
+
+    #[test]
+    fn la_matriz_es_cuadrada() {
+        let m = matriz("https://catalogo-vpfe.dian.gov.co").expect("matriz");
+        assert!(m.iter().all(|f| f.len() == m.len()));
+        assert!(m.iter().flatten().any(|c| *c));
     }
 
     #[test]

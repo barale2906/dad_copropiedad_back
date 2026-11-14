@@ -548,6 +548,7 @@ mod adaptador {
             referencia_numero: None,
             referencia_fecha: None,
             credenciales,
+            contingencia: false,
         }
     }
 
@@ -589,6 +590,76 @@ mod adaptador {
             "{}",
             enviadas[0].accion
         );
+    }
+
+    fn motor(url: &str) -> MotorPropio {
+        MotorPropio::new(url, url)
+            .expect("motor")
+            .con_espera(std::time::Duration::from_millis(1))
+    }
+
+    #[tokio::test]
+    async fn validada_trae_el_attached_document_con_la_respuesta_de_la_dian() {
+        let (url, _) = simulador(|_| {
+            (
+                StatusCode::OK,
+                respuesta_validacion(true, "00", &[], "clave"),
+            )
+        })
+        .await;
+
+        let r = motor(&url)
+            .emitir(&documento(Some(credenciales(AmbienteDian::Produccion))))
+            .await
+            .expect("emitida");
+
+        let adjunto = String::from_utf8(r.adjunto.expect("adjunto")).expect("utf-8");
+        assert!(adjunto.contains("<AttachedDocument"));
+        assert!(
+            adjunto.contains("ApplicationResponse"),
+            "lleva la respuesta de la DIAN"
+        );
+        assert!(adjunto.contains("<cbc:ValidationResultCode>02</cbc:ValidationResultCode>"));
+    }
+
+    #[tokio::test]
+    async fn si_la_dian_no_responde_tras_tres_intentos_sale_la_factura_de_contingencia_04() {
+        let (url, peticiones) =
+            simulador(|_| (StatusCode::SERVICE_UNAVAILABLE, String::new())).await;
+
+        let r = motor(&url)
+            .emitir(&documento(Some(credenciales(AmbienteDian::Produccion))))
+            .await
+            .expect("contingencia");
+
+        assert_eq!(
+            peticiones.lock().expect("candado").len(),
+            3,
+            "tres intentos"
+        );
+        assert_eq!(r.estado, EstadoDocumentoElectronico::Contingencia);
+        let xml = String::from_utf8(r.xml.expect("xml")).expect("utf-8");
+        assert!(xml.contains(">04</cbc:InvoiceTypeCode>"), "tipo 04");
+        let adjunto = String::from_utf8(r.adjunto.expect("adjunto")).expect("utf-8");
+        assert!(adjunto.contains("<cbc:ValidationResultCode>04</cbc:ValidationResultCode>"));
+    }
+
+    #[tokio::test]
+    async fn una_factura_ya_en_contingencia_se_retransmite_como_04_y_si_sigue_caida_espera() {
+        let (url, peticiones) =
+            simulador(|_| (StatusCode::SERVICE_UNAVAILABLE, String::new())).await;
+        let mut d = documento(Some(credenciales(AmbienteDian::Produccion)));
+        d.contingencia = true;
+
+        let r = motor(&url).emitir(&d).await;
+
+        assert!(
+            matches!(r, Err(application::AppError::Infraestructura(_))),
+            "{r:?}"
+        );
+        let p = peticiones.lock().expect("candado");
+        let xml_enviado = p.iter().any(|x| x.accion.ends_with("SendBillSync"));
+        assert!(xml_enviado, "se intentó transmitir la versión 04");
     }
 
     #[tokio::test]

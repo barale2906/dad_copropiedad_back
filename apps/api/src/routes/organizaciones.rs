@@ -102,6 +102,7 @@ pub struct BusquedaNit {
     responses(
         (status = OK, description = "Ficha pública", body = FichaOrganizacionRespuesta),
         (status = NOT_FOUND, description = "No existe: se puede crear", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `organizaciones.vincular` ni `organizaciones.crear` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn buscar_por_nit(
@@ -171,6 +172,7 @@ pub struct OrganizacionCreada {
     responses(
         (status = OK, description = "Creada o reutilizada", body = OrganizacionCreada),
         (status = UNPROCESSABLE_ENTITY, description = "NIT o datos inválidos (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `organizaciones.crear` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear(
@@ -222,7 +224,10 @@ impl From<ContratoServicio> for ContratoRespuesta {
     tag = ETIQUETA_ORGANIZACIONES,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    responses((status = OK, description = "Contratos", body = Vec<ContratoRespuesta>))
+    responses(
+        (status = OK, description = "Contratos", body = Vec<ContratoRespuesta>),
+        (status = FORBIDDEN, description = "Sin `contratos.gestionar` ni `organizaciones.vincular` (`sin_permiso`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn listar_contratos(
     State(state): State<AppState>,
@@ -255,6 +260,7 @@ pub struct ContratoPeticion {
     responses(
         (status = CREATED, description = "Contrato creado", body = ContratoRespuesta),
         (status = NOT_FOUND, description = "La organización no existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `organizaciones.vincular` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn vincular(
@@ -294,7 +300,10 @@ pub struct ContratoTerminado {
         ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
         ("contrato_id" = Uuid, Path, description = "Contrato"),
     ),
-    responses((status = OK, description = "Terminado", body = ContratoTerminado))
+    responses(
+        (status = OK, description = "Terminado", body = ContratoTerminado),
+        (status = FORBIDDEN, description = "Sin `contratos.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn terminar_contrato(
     State(state): State<AppState>,
@@ -332,6 +341,7 @@ pub struct AsignacionContratoPeticion {
     responses(
         (status = CREATED, description = "Asignado", body = AsignacionRespuesta),
         (status = CONFLICT, description = "Contrato no vigente (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `roles.asignar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn asignar_por_contrato(
@@ -372,7 +382,7 @@ pub struct CambiosFichaPeticion {
     request_body = CambiosFichaPeticion,
     responses(
         (status = NO_CONTENT, description = "Ficha actualizada"),
-        (status = FORBIDDEN, description = "No puede editarla (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Solo soporte (`plataforma.organizaciones.revisar`), quien la creó mientras está sin reclamar, o sus dueños y gestores (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_ficha(
@@ -424,7 +434,7 @@ pub struct MiembroPeticion {
     request_body = MiembroPeticion,
     responses(
         (status = NO_CONTENT, description = "Guardado"),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Solo los dueños de la organización (los gestores agregan gestores y operarios) o soporte (`plataforma.organizaciones.revisar`) (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn guardar_miembro(

@@ -65,7 +65,10 @@ fn pdf(nombre: &'static str, bytes: Vec<u8>) -> Response {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Datos del acta", body = Object))
+    responses(
+        (status = OK, description = "Datos del acta", body = Object),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn vista_previa(
     State(state): State<AppState>,
@@ -96,6 +99,7 @@ pub async fn vista_previa(
     responses(
         (status = OK, description = "Acta generada", body = ReunionRespuesta),
         (status = CONFLICT, description = "La reunión no está cerrada o el acta ya se aprobó", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn generar(
@@ -146,6 +150,7 @@ pub struct PasoActaPeticion {
     responses(
         (status = OK, description = "Acta actualizada", body = ReunionRespuesta),
         (status = CONFLICT, description = "Transición inválida o falta el escaneo firmado", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn avanzar(
@@ -181,7 +186,10 @@ pub async fn avanzar(
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    responses((status = OK, description = "Libro de actas", body = Vec<ReunionRespuesta>))
+    responses(
+        (status = OK, description = "Libro de actas", body = Vec<ReunionRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn libro(
     State(state): State<AppState>,
@@ -213,6 +221,7 @@ pub struct RotulosPeticion {
     responses(
         (status = OK, description = "PDF", content_type = "application/pdf", body = Vec<u8>),
         (status = UNPROCESSABLE_ENTITY, description = "Cantidad o prefijo inválidos (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn rotulos(
@@ -281,7 +290,10 @@ fn fecha(t: Option<chrono::DateTime<chrono::Utc>>) -> String {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión"), Formato),
-    responses((status = OK, description = "Asistencia (JSON o `text/csv`)", body = Vec<FilaAsistenciaRespuesta>))
+    responses(
+        (status = OK, description = "Asistencia (JSON o `text/csv`)", body = Vec<FilaAsistenciaRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn asistencia(
     State(state): State<AppState>,
@@ -372,7 +384,10 @@ pub struct FilaVotoRespuesta {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión"), ("pregunta_id" = Uuid, Path, description = "Pregunta"), Formato),
-    responses((status = OK, description = "Votos (JSON o `text/csv`)", body = Vec<FilaVotoRespuesta>))
+    responses(
+        (status = OK, description = "Votos (JSON o `text/csv`)", body = Vec<FilaVotoRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (en reservadas, la opción exige `asambleas.votos.ver_detalle`) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn votos(
     State(state): State<AppState>,
@@ -450,7 +465,10 @@ pub struct CanalesRespuesta {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Participación por canal", body = Vec<CanalesRespuesta>))
+    responses(
+        (status = OK, description = "Participación por canal", body = Vec<CanalesRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn canales(
     State(state): State<AppState>,
@@ -525,7 +543,10 @@ pub struct CostoRespuesta {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión"), Moneda),
-    responses((status = OK, description = "Costo", body = CostoRespuesta))
+    responses(
+        (status = OK, description = "Costo", body = CostoRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn costo(
     State(state): State<AppState>,

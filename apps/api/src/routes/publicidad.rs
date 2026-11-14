@@ -1472,6 +1472,7 @@ pub struct AutorizarPublicidadPeticion {
     responses(
         (status = OK, description = "Estado", body = AutorizacionPublicidadRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "La cuenta no está en el censo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad (sin persona en la copropiedad, 422)", body = ErrorRespuesta),
     )
 )]
 pub async fn estado_autorizacion(
@@ -1496,6 +1497,7 @@ pub async fn estado_autorizacion(
     responses(
         (status = NO_CONTENT, description = "Autorizada"),
         (status = UNPROCESSABLE_ENTITY, description = "Versión de la política no vigente o la cuenta no está en el censo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos: solo el titular autoriza (sin persona en la copropiedad, 422)", body = ErrorRespuesta),
     )
 )]
 pub async fn autorizar(
@@ -1521,6 +1523,7 @@ pub async fn autorizar(
     responses(
         (status = NO_CONTENT, description = "Revocada (o no había)"),
         (status = UNPROCESSABLE_ENTITY, description = "La cuenta no está en el censo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos: solo el titular retira su autorización", body = ErrorRespuesta),
     )
 )]
 pub async fn revocar(State(state): State<AppState>, en: EnCopropiedad) -> ApiResult<StatusCode> {
@@ -1622,6 +1625,7 @@ pub struct EventosRespuesta {
     responses(
         (status = OK, description = "Aceptados", body = EventosRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Demasiados eventos (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn eventos(
@@ -1668,6 +1672,7 @@ pub struct CuponRespuesta {
     responses(
         (status = OK, description = "Cupón", body = CuponRespuesta),
         (status = NOT_FOUND, description = "La oferta no se muestra en la PH o no autorizó la publicidad", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn cupon(
@@ -1719,6 +1724,7 @@ pub struct ReporteAnuncioRespuesta {
         (status = OK, description = "Reportado", body = ReporteAnuncioRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin motivo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn reportar(

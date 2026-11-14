@@ -157,6 +157,7 @@ pub async fn listar_personas(
     responses(
         (status = OK, description = "Persona", body = PersonaRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `personas.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_persona(
@@ -409,6 +410,7 @@ pub async fn registrar_residencia(
     responses(
         (status = NO_CONTENT, description = "Terminada"),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `censo.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn terminar_residencia(
@@ -550,6 +552,7 @@ pub async fn listar_vehiculos(
         (status = CREATED, description = "Vehículo registrado", body = VehiculoRespuesta),
         (status = CONFLICT, description = "Placa ya registrada (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Carro o moto sin placa (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `censo.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn registrar_vehiculo(
@@ -581,6 +584,7 @@ pub async fn registrar_vehiculo(
     responses(
         (status = NO_CONTENT, description = "Retirado"),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `censo.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn retirar_vehiculo(
@@ -784,6 +788,7 @@ pub struct CambiosMascotaPeticion {
         (status = OK, description = "Mascota actualizada", body = MascotaRespuesta),
         (status = CONFLICT, description = "Cambio de estado no permitido (`conflicto_estado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `censo.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn actualizar_mascota(
@@ -934,7 +939,7 @@ pub async fn listar_cambios(
     request_body = PropuestaPeticion,
     responses(
         (status = CREATED, description = "Propuesta registrada", body = CambioRespuesta),
-        (status = FORBIDDEN, description = "No es titular ni residente del bien (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "La cuenta no está vinculada al bien y no tiene `censo.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn proponer_cambio(
@@ -961,6 +966,7 @@ pub async fn proponer_cambio(
     responses(
         (status = OK, description = "Aprobada", body = CambioRespuesta),
         (status = CONFLICT, description = "Ya resuelta (`conflicto_estado`) o choca con el censo (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `censo.aprobar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn aprobar_cambio(
@@ -999,6 +1005,7 @@ pub struct RechazoPeticion {
     responses(
         (status = OK, description = "Rechazada", body = CambioRespuesta),
         (status = CONFLICT, description = "Ya resuelta (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `censo.aprobar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn rechazar_cambio(

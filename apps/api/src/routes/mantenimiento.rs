@@ -312,6 +312,7 @@ fn id_activo(ruta: (Uuid, Uuid)) -> ActivoId {
     responses(
         (status = OK, description = "Hoja de vida", body = HojaDeVidaRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `inventario.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn hoja_de_vida(
@@ -354,6 +355,7 @@ pub struct CambiosActivoPeticion {
     responses(
         (status = OK, description = "Activo", body = ActivoRespuesta),
         (status = CONFLICT, description = "Dado de baja (`conflicto`) o estado no permitido (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `inventario.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_activo(
@@ -398,6 +400,7 @@ pub async fn editar_activo(
         (status = NO_CONTENT, description = "Archivo agregado"),
         (status = NOT_FOUND, description = "Activo o archivo inexistente", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya estaba (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `inventario.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn adjuntar_archivo(
@@ -450,6 +453,7 @@ pub struct MovimientoPeticion {
         (status = CREATED, description = "Movimiento", body = MovimientoRespuesta),
         (status = CONFLICT, description = "Activo dado de baja (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Falta el destino o el soporte (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `inventario.editar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn registrar_movimiento(
@@ -640,6 +644,7 @@ pub async fn crear_plan(
     responses(
         (status = OK, description = "Plan", body = PlanRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_plan(
@@ -767,7 +772,7 @@ pub struct FiltroOrdenesQuery {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroOrdenesQuery, ParametrosPagina),
     responses(
         (status = OK, description = "Órdenes", body = PaginaRespuesta<OrdenRespuesta>),
-        (status = FORBIDDEN, description = "Sin permisos de mantenimiento (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar`, `mantenimiento.ejecutar`, `mantenimiento.verificar` ni `inventario.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_ordenes(
@@ -897,6 +902,7 @@ fn id_orden(ruta: (Uuid, Uuid)) -> OrdenTrabajoId {
     responses(
         (status = OK, description = "Orden", body = DetalleOrdenRespuesta),
         (status = NOT_FOUND, description = "No existe o no es visible", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar`, `mantenimiento.verificar` ni `inventario.ver`; con `mantenimiento.ejecutar`, solo sus órdenes asignadas (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_orden(
@@ -955,7 +961,7 @@ pub enum AvancePeticion {
     request_body = AvancePeticion,
     responses(
         (status = OK, description = "Orden", body = OrdenRespuesta),
-        (status = FORBIDDEN, description = "Sin el permiso de esa acción (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Iniciar y ejecutar: `mantenimiento.planificar` o la orden asignada con `mantenimiento.ejecutar`; verificar: `mantenimiento.verificar` (nunca quien la ejecutó) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Transición no permitida (`conflicto_estado`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Checklist incompleto o costos inválidos (`validacion`)", body = ErrorRespuesta),
     )
@@ -1026,6 +1032,7 @@ pub async fn avanzar_orden(
     responses(
         (status = NO_CONTENT, description = "Evidencia agregada"),
         (status = CONFLICT, description = "La orden terminó (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar` ni la orden asignada con `mantenimiento.ejecutar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn agregar_evidencia(
@@ -1079,7 +1086,10 @@ impl From<&ObligacionSugerida> for SugeridaRespuesta {
     tag = ETIQUETA_MANTENIMIENTO,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    responses((status = OK, description = "Catálogo", body = Vec<SugeridaRespuesta>))
+    responses(
+        (status = OK, description = "Catálogo", body = Vec<SugeridaRespuesta>),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad; módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn obligaciones_sugeridas(_en: EnCopropiedad) -> Json<Vec<SugeridaRespuesta>> {
     Json(
@@ -1197,6 +1207,7 @@ pub async fn listar_obligaciones(
         (status = CREATED, description = "Obligación", body = ObligacionRespuesta),
         (status = CONFLICT, description = "La sugerida ya está activa (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Faltan datos (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_obligacion(
@@ -1226,6 +1237,7 @@ fn id_obligacion(ruta: (Uuid, Uuid)) -> ObligacionId {
     responses(
         (status = OK, description = "Obligación", body = ObligacionRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_obligacion(
@@ -1280,6 +1292,7 @@ impl From<Cumplimiento> for CumplimientoRespuesta {
     responses(
         (status = OK, description = "Cumplimientos", body = Vec<CumplimientoRespuesta>),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar` ni `inventario.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_cumplimientos(
@@ -1316,6 +1329,7 @@ pub struct CumplimientoPeticion {
     responses(
         (status = CREATED, description = "Obligación con la próxima fecha", body = ObligacionRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Fecha futura (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `mantenimiento.planificar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn registrar_cumplimiento(

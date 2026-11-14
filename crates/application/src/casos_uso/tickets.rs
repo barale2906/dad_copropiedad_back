@@ -1019,6 +1019,7 @@ where
                                 t.prioridad.as_str()
                             ),
                             html: None,
+                            adjuntos: Vec::new(),
                         },
                     ),
                 })

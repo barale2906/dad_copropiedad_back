@@ -147,7 +147,7 @@ pub struct EnlaceRespuesta {
     ),
     responses(
         (status = OK, description = "Enlace firmado", body = EnlaceRespuesta),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `archivos.ver` (los personales exigen `archivos.personales.ver`) (`sin_permiso`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe en la copropiedad", body = ErrorRespuesta),
     )
 )]
@@ -196,7 +196,7 @@ pub struct ParametrosEnlace {
         )),
         (status = BAD_REQUEST, description = "Faltan parámetros (`peticion_invalida`)",
          body = ErrorRespuesta),
-        (status = FORBIDDEN, description = "Firma inválida o enlace vencido (`enlace_invalido`)",
+        (status = FORBIDDEN, description = "Enlace con firma inválida o vencido (`enlace_invalido`)",
          body = ErrorRespuesta),
         (status = NOT_FOUND, description = "El archivo ya no está en el almacén (`no_encontrado`)",
          body = ErrorRespuesta),

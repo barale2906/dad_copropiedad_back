@@ -228,7 +228,10 @@ pub async fn importar(
     tag = ETIQUETA_IMPORTACIONES,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    responses((status = OK, description = "Plantilla CSV", content_type = "text/csv", body = String))
+    responses(
+        (status = OK, description = "Plantilla CSV", content_type = "text/csv", body = String),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad", body = ErrorRespuesta),
+    )
 )]
 pub async fn plantilla(_en: EnCopropiedad) -> Response {
     (
@@ -264,6 +267,7 @@ fn id_importacion(ruta: (Uuid, Uuid)) -> ImportacionId {
     responses(
         (status = OK, description = "Importación", body = ImportacionRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `importaciones.ejecutar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver(
@@ -293,6 +297,7 @@ pub async fn ver(
         (status = OK, description = "Aplicada", body = ImportacionRespuesta),
         (status = CONFLICT, description = "Ya aplicada, con errores o los datos cambiaron (`conflicto`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `importaciones.ejecutar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn confirmar(

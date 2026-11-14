@@ -101,18 +101,9 @@ async fn tienda(pool: PgPool) -> Tienda {
     }
 }
 
-#[sqlx::test(migrator = "MIGRACIONES")]
-async fn una_empresa_sin_contabilidad_factura_de_punta_a_punta(pool: PgPool) {
-    let t = tienda(pool).await;
-
-    // Sin contabilidad, la contabilidad no responde; la facturación sí.
-    let (s, v) = t.pedir(Method::GET, "/contabilidad/cuentas", None).await;
-    assert_eq!(
-        (s, &v["error"]["codigo"]),
-        (StatusCode::FORBIDDEN, &json!("modulo_no_habilitado"))
-    );
-
-    // Cliente, perfil tributario y resolución: todo en las rutas comunes de la entidad.
+/// Cliente con correo de facturación, perfil tributario confirmado y resolución de numeración:
+/// lo mínimo para emitir. Devuelve el id del cliente.
+async fn facturador(t: &Tienda) -> String {
     let cliente = id(&t
         .crear(
             "/terceros",
@@ -145,6 +136,22 @@ async fn una_empresa_sin_contabilidad_factura_de_punta_a_punta(pool: PgPool) {
                 "clave_tecnica": "clave-de-prueba" }),
     )
     .await;
+    cliente
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_empresa_sin_contabilidad_factura_de_punta_a_punta(pool: PgPool) {
+    let t = tienda(pool).await;
+
+    // Sin contabilidad, la contabilidad no responde; la facturación sí.
+    let (s, v) = t.pedir(Method::GET, "/contabilidad/cuentas", None).await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::FORBIDDEN, &json!("modulo_no_habilitado"))
+    );
+
+    // Cliente, perfil tributario y resolución: todo en las rutas comunes de la entidad.
+    let cliente = facturador(&t).await;
 
     // Catálogo: una línea solo con el ítem toma descripción, precio e IVA.
     let item = t
@@ -208,6 +215,31 @@ async fn una_empresa_sin_contabilidad_factura_de_punta_a_punta(pool: PgPool) {
         )
         .await;
     assert_eq!((s, tipo.as_str()), (StatusCode::OK, "application/pdf"));
+
+    // Al validarse, el adquirente recibe por correo el ZIP con el XML y el PDF, y la misma
+    // entrega se puede descargar.
+    let (asunto, adjunto): (String, String) = sqlx::query_as(
+        "SELECT payload->>'asunto', payload->'adjuntos'->0->>'tipo' FROM outbox
+          WHERE canal = 'correo' AND destino = 'facturas@cliente.co'",
+    )
+    .fetch_one(&t.api.duenio)
+    .await
+    .expect("correo al adquirente");
+    assert!(asunto.contains("FE1"), "{asunto}");
+    assert_eq!(adjunto, "application/zip");
+    let (s, tipo, zip) = t
+        .api
+        .pedir_texto(
+            &format!(
+                "/api/v1/entidades/{}/facturacion/documentos/{}/paquete",
+                t.id,
+                id(&fe)
+            ),
+            &t.gerente,
+        )
+        .await;
+    assert_eq!((s, tipo.as_str()), (StatusCode::OK, "application/zip"));
+    assert!(zip.starts_with("PK"), "es un ZIP");
 
     // Pago marcado a mano.
     let pagada = t
@@ -285,4 +317,94 @@ async fn sin_ningun_modulo_la_facturacion_no_responde(pool: PgPool) {
         (s, &v["error"]["codigo"]),
         (StatusCode::FORBIDDEN, &json!("modulo_no_habilitado"))
     );
+}
+
+/// Con la DIAN caída la factura queda en contingencia y nadie recibe correo; el worker la
+/// reintenta y, al validarse, el adquirente recibe el ZIP.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_factura_en_contingencia_se_valida_al_reintentar(pool: PgPool) {
+    use application::{
+        Contexto,
+        casos_uso::facturacion::documentos::{
+            Expedicion, emitir_factura_electronica, reintentar_contingencias,
+        },
+        puertos::RelojSistema,
+    };
+    use domain::{FacturaVentaId, TenantId};
+    use infra_facturacion::{EmpaquetadorZip, ProveedorSimulado};
+    use infra_pdf::GeneradorTypst;
+    use infra_postgres::{UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg};
+    use infra_seguridad::CofreAesGcm;
+
+    let t = tienda(pool).await;
+    let cliente = facturador(&t).await;
+    let factura = t
+        .crear(
+            "/facturacion/facturas",
+            json!({ "persona_id": cliente, "fecha": "2026-11-14", "vencimiento": "2026-11-30",
+                    "descripcion": "Asesoría", "lineas": [{ "descripcion": "Asesoría",
+                    "cantidad": "1", "valor_unitario": "100000" }] }),
+        )
+        .await;
+    let f = id(&factura);
+    t.crear(&format!("/facturacion/facturas/{f}/emision"), json!({}))
+        .await;
+    let correos = || async {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM outbox WHERE canal = 'correo' AND destino = 'facturas@cliente.co'",
+        )
+        .fetch_one(&t.api.duenio)
+        .await
+        .expect("conteo")
+    };
+    let unidad = UnidadDeTrabajoPg::new(t.api.app.clone());
+    let cofre = CofreAesGcm::new(None);
+    let medios = |proveedor| Expedicion {
+        proveedor,
+        cofre: &cofre,
+        generador: &GeneradorTypst,
+        empaquetador: &EmpaquetadorZip,
+        pie: None,
+    };
+    let ctx = Contexto::new(TenantId::from(uuid::Uuid::parse_str(&t.id).expect("uuid")));
+    let factura_id = FacturaVentaId::from(uuid::Uuid::parse_str(&f).expect("uuid"));
+
+    let caido = ProveedorSimulado::caido();
+    let d = emitir_factura_electronica(
+        &unidad,
+        &medios(&caido),
+        &t.api.almacen,
+        &RelojSistema,
+        &ctx,
+        factura_id,
+    )
+    .await
+    .expect("contingencia");
+    assert_eq!(d.estado.as_str(), "contingencia");
+    assert_eq!(correos().await, 0, "sin respuesta de la DIAN no se entrega");
+
+    let disponible = ProveedorSimulado::new();
+    let resumen = reintentar_contingencias(
+        (
+            &UnidadDeTrabajoPlataformaPg::new(t.api.app.clone()),
+            &unidad,
+        ),
+        &medios(&disponible),
+        &t.api.almacen,
+        &RelojSistema,
+        100,
+    )
+    .await
+    .expect("reintento");
+    assert_eq!((resumen.reintentados, resumen.validados), (1, 1));
+    assert_eq!(correos().await, 1, "al validarse se entrega el ZIP");
+
+    let (_, fe) = t
+        .pedir(
+            Method::GET,
+            &format!("/facturacion/documentos/{}", d.id),
+            None,
+        )
+        .await;
+    assert_eq!(fe["documento"]["estado"], json!("validado"), "{fe}");
 }

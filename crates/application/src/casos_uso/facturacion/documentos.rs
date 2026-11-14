@@ -21,7 +21,7 @@ use domain::{
     facturacion::{AmbienteDian, EstadoHabilitacion},
     tributario::{
         CanalFacturacion, EstadoDocumentoElectronico, EstadoFacturaRecibida, EventoRadian,
-        TipoDocumentoElectronico, rango_por_agotarse, siguiente_numero,
+        TipoDocumentoElectronico, rango_por_agotarse, siguiente_numero, url_consulta_dian,
     },
 };
 
@@ -42,8 +42,10 @@ use crate::{
         AlmacenArchivos, GeneradorActas, RegistroOutbox, Reloj, RepositorioArchivos,
         UnidadDeTrabajo,
         actas::TablaPdf,
+        archivos::Empaquetador,
         cofre::Cofre,
         contabilidad::Origen,
+        correo::AdjuntoCorreo,
         correo::CorreoSaliente,
         facturacion::{ConfiguracionFacturacion, RepositorioFacturacion},
         tributario::{
@@ -74,6 +76,18 @@ pub trait TxFacturacion:
 impl<T> TxFacturacion for T where
     T: TxTesoreria + RepositorioArchivos + RegistroOutbox + RepositorioFacturacion
 {
+}
+
+/// Lo que usa la expedición de un documento electrónico: el proveedor que lo transmite, el
+/// cofre con los secretos de la entidad (motor propio), el generador del PDF, el empaquetador del
+/// ZIP que se entrega al adquirente y el pie del PDF (fabricante y software).
+pub struct Expedicion<'a, P, C, G, E> {
+    pub proveedor: &'a P,
+    pub cofre: &'a C,
+    pub generador: &'a G,
+    pub empaquetador: &'a E,
+    /// Línea al pie de la representación gráfica (`None` = sin pie).
+    pub pie: Option<&'a str>,
 }
 
 fn validacion(texto: impl Into<String>) -> AppError {
@@ -238,24 +252,21 @@ async fn aplicar_respuesta<T: TxFacturacion, A: AlmacenArchivos>(
             if d.estado == EstadoDocumentoElectronico::Validado {
                 d.validado_en = Some(ahora);
             }
+            let base = format!(
+                "{}-{}{}",
+                d.tipo.as_str(),
+                d.prefijo,
+                d.numero.unwrap_or_default()
+            );
             if let Some(xml) = r.xml.filter(|x| !x.is_empty()) {
-                let subido = ArchivoSubido {
-                    nombre_original: NombreArchivo::new(&format!(
-                        "{}-{}{}.xml",
-                        d.tipo.as_str(),
-                        d.prefijo,
-                        d.numero.unwrap_or_default()
-                    ))?,
-                    clasificacion: ClasificacionArchivo::Interno,
-                    contenido: xml,
-                };
-                let archivo = nuevo_archivo(ctx, almacen, reloj, &subido, TipoArchivo::Xml);
-                almacen.guardar(&archivo.clave, &subido.contenido).await?;
-                if let Err(e) = registrar_en(tx, &archivo).await {
-                    borrar_huerfano(almacen, ctx, &archivo).await;
-                    return Err(e);
-                }
-                d.xml_archivo_id = Some(archivo.id);
+                d.xml_archivo_id =
+                    Some(guardar_xml(tx, almacen, reloj, ctx, &format!("{base}.xml"), xml).await?);
+            }
+            if let Some(adjunto) = r.adjunto.filter(|x| !x.is_empty()) {
+                d.adjunto_archivo_id = Some(
+                    guardar_xml(tx, almacen, reloj, ctx, &format!("ad-{base}.xml"), adjunto)
+                        .await?,
+                );
             }
             let tipo = d.estado.as_str().to_owned();
             evento(tx, reloj, d.id, &tipo, d.respuesta.clone()).await?;
@@ -274,38 +285,126 @@ async fn aplicar_respuesta<T: TxFacturacion, A: AlmacenArchivos>(
     tx.actualizar_documento(d).await
 }
 
-/// Envía al adquirente el aviso del documento validado (correo con el CUFE; el XML y el PDF los
-/// descarga la administración: el correo saliente aún no lleva adjuntos).
-async fn avisar_adquirente<T: TxFacturacion>(
+/// Guarda un XML del documento en el almacén y lo registra en `archivos`.
+async fn guardar_xml<T: TxFacturacion, A: AlmacenArchivos>(
     tx: &mut T,
+    almacen: &A,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    nombre: &str,
+    contenido: Vec<u8>,
+) -> AppResult<domain::ArchivoId> {
+    let subido = ArchivoSubido {
+        nombre_original: NombreArchivo::new(nombre)?,
+        clasificacion: ClasificacionArchivo::Interno,
+        contenido,
+    };
+    let archivo = nuevo_archivo(ctx, almacen, reloj, &subido, TipoArchivo::Xml);
+    almacen.guardar(&archivo.clave, &subido.contenido).await?;
+    if let Err(e) = registrar_en(tx, &archivo).await {
+        borrar_huerfano(almacen, ctx, &archivo).await;
+        return Err(e);
+    }
+    Ok(archivo.id)
+}
+
+/// Bytes de un archivo de la entidad.
+async fn leer_archivo<T: TxFacturacion, A: AlmacenArchivos>(
+    tx: &mut T,
+    almacen: &A,
+    id: domain::ArchivoId,
+) -> AppResult<Vec<u8>> {
+    let archivo = tx
+        .buscar(id)
+        .await?
+        .ok_or(AppError::NoEncontrado("archivo del documento"))?;
+    almacen.obtener(&archivo.clave).await
+}
+
+/// ZIP que se entrega al adquirente: el `AttachedDocument` (o, si el proveedor no lo arma, el XML
+/// del documento) y la representación gráfica en PDF.
+async fn paquete_adquirente<T, P, C, G, E, A>(
+    tx: &mut T,
+    medios: &Expedicion<'_, P, C, G, E>,
+    almacen: &A,
+    reloj: &impl Reloj,
+    d: &DocumentoElectronico,
+) -> AppResult<(String, Vec<u8>)>
+where
+    T: TxFacturacion,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
+    let base = format!(
+        "{}-{}{}",
+        d.tipo.as_str(),
+        d.prefijo,
+        d.numero.unwrap_or_default()
+    );
+    let mut archivos = Vec::new();
+    if let Some(xml) = d.adjunto_archivo_id.or(d.xml_archivo_id) {
+        archivos.push((format!("{base}.xml"), leer_archivo(tx, almacen, xml).await?));
+    }
+    archivos.push((
+        format!("{base}.pdf"),
+        pdf_documento(tx, medios.generador, reloj, d, medios.pie).await?,
+    ));
+    Ok((
+        format!("{base}.zip"),
+        medios.empaquetador.empaquetar(&archivos)?,
+    ))
+}
+
+/// Envía al adquirente el documento (validado o de contingencia) con el ZIP del
+/// `AttachedDocument` y el PDF, al correo de facturación del tercero.
+async fn avisar_adquirente<T, P, C, G, E, A>(
+    tx: &mut T,
+    medios: &Expedicion<'_, P, C, G, E>,
+    almacen: &A,
+    reloj: &impl Reloj,
     d: &DocumentoElectronico,
     adquirente: &ParteDocumento,
-) -> AppResult<()> {
+) -> AppResult<()>
+where
+    T: TxFacturacion,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
     let (Some(correo), Some(cufe)) = (adquirente.correo.as_deref(), d.cufe.as_deref()) else {
         return Ok(());
     };
     let Ok(para) = domain::DireccionCorreo::new(correo) else {
         return Ok(());
     };
+    let (nombre_zip, zip) = paquete_adquirente(tx, medios, almacen, reloj, d).await?;
     let entidad = tx.datos_entidad().await?.nombre;
+    let numero = format!("{}{}", d.prefijo, d.numero.unwrap_or_default());
+    let contingencia = if d.estado == EstadoDocumentoElectronico::Contingencia {
+        "\nDocumento expedido en contingencia (la DIAN no respondió): se transmitirá dentro de \
+         las 48 horas siguientes."
+    } else {
+        ""
+    };
     tx.encolar(EventoSaliente {
         prioridad: PrioridadSalida::Evento,
         mensaje: MensajeOutbox::Correo(CorreoSaliente {
             para,
-            asunto: format!(
-                "{} {}{} · {entidad}",
-                nombre_tipo(d.tipo),
-                d.prefijo,
-                d.numero.unwrap_or_default()
-            ),
+            asunto: format!("{} {numero} · {entidad}", nombre_tipo(d.tipo)),
             texto: format!(
-                "{entidad} le envía {} {}{} por {}.\nCUFE: {cufe}",
+                "{entidad} le envía {} {numero} por {}.\nCUFE: {cufe}\nConsulte el documento en la \
+                 DIAN: {}{contingencia}",
                 nombre_tipo(d.tipo).to_lowercase(),
-                d.prefijo,
-                d.numero.unwrap_or_default(),
-                d.total.valor()
+                d.total.valor(),
+                url_consulta_dian(cufe),
             ),
             html: None,
+            adjuntos: vec![AdjuntoCorreo {
+                nombre: nombre_zip,
+                tipo: "application/zip".into(),
+                contenido: zip,
+            }],
         }),
     })
     .await
@@ -393,6 +492,7 @@ async fn preparar_documento<T: TxFacturacion, P: ProveedorFacturacion>(
         },
         id_externo: None,
         xml_archivo_id: None,
+        adjunto_archivo_id: None,
         respuesta: None,
         intentos: 0,
         total,
@@ -446,6 +546,7 @@ async fn armar_envio<T: TxFacturacion>(
                 .map(|x| format!("{}{}", x.prefijo, x.numero.unwrap_or_default())),
             referencia_fecha: referencia.as_ref().map(|x| x.creado_en.date_naive()),
             credenciales: None,
+            contingencia: d.estado == EstadoDocumentoElectronico::Contingencia,
         };
     match d.origen.tipo.as_str() {
         eventos_origen::FACTURA_VENTA => {
@@ -595,23 +696,37 @@ async fn credenciales<T: TxFacturacion, C: Cofre>(
 }
 
 /// Transmite el documento si está por enviar o en contingencia y aplica la respuesta.
-async fn transmitir<T: TxFacturacion, P: ProveedorFacturacion, C: Cofre, A: AlmacenArchivos>(
+async fn transmitir<T, P, C, G, E, A>(
     tx: &mut T,
-    (proveedor, cofre): (&P, &C),
+    medios: &Expedicion<'_, P, C, G, E>,
     almacen: &A,
     reloj: &impl Reloj,
     ctx: &Contexto,
     d: &mut DocumentoElectronico,
-) -> AppResult<()> {
+) -> AppResult<()>
+where
+    T: TxFacturacion,
+    P: ProveedorFacturacion,
+    C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
     if !d.estado.transmisible() {
         return Ok(());
     }
+    let antes = d.estado;
     let mut envio = armar_envio(tx, d).await?;
-    envio.credenciales = credenciales(tx, cofre, reloj, ctx, envio.fecha).await?;
-    let resultado = proveedor.emitir(&envio).await;
+    envio.credenciales = credenciales(tx, medios.cofre, reloj, ctx, envio.fecha).await?;
+    let resultado = medios.proveedor.emitir(&envio).await;
     aplicar_respuesta(tx, almacen, reloj, ctx, d, resultado).await?;
-    if d.estado == EstadoDocumentoElectronico::Validado {
-        avisar_adquirente(tx, d, &envio.adquirente).await?;
+    // Se entrega al validarse y, en contingencia, la primera vez (la factura tipo 04).
+    let entregar = d.estado == EstadoDocumentoElectronico::Validado
+        || (d.estado == EstadoDocumentoElectronico::Contingencia
+            && antes != EstadoDocumentoElectronico::Contingencia
+            && d.adjunto_archivo_id.is_some());
+    if entregar {
+        avisar_adquirente(tx, medios, almacen, reloj, d, &envio.adquirente).await?;
     }
     Ok(())
 }
@@ -632,9 +747,9 @@ fn auditar(d: &DocumentoElectronico) -> AppResult<DetalleAuditoria> {
 /// `facturacion_electronica`; [`AppError::NoEncontrado`]; [`AppError::Validacion`] sin perfil de
 /// facturador, sin resolución vigente o con la factura en borrador o anulada;
 /// [`AppError::Dominio`] si el rango se agotó.
-pub async fn emitir_factura_electronica<U, P, C, A>(
+pub async fn emitir_factura_electronica<U, P, C, G, E, A>(
     unidad: &U,
-    (proveedor, cofre): (&P, &C),
+    medios: &Expedicion<'_, P, C, G, E>,
     almacen: &A,
     reloj: &impl Reloj,
     ctx: &Contexto,
@@ -645,6 +760,8 @@ where
     U::Transaccion: TxFacturacion,
     P: ProveedorFacturacion,
     C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
     A: AlmacenArchivos,
 {
     let mut tx = abrir_fe(unidad, reloj, ctx, Permiso::FacturacionEmitir).await?;
@@ -663,7 +780,7 @@ where
     exigir_facturador(&mut tx, f.fecha).await?;
     let (mut d, _) = preparar_documento(
         &mut tx,
-        proveedor,
+        medios.proveedor,
         reloj,
         Pedido {
             tipo: TipoDocumentoElectronico::Factura,
@@ -674,7 +791,7 @@ where
         },
     )
     .await?;
-    transmitir(&mut tx, (proveedor, cofre), almacen, reloj, ctx, &mut d).await?;
+    transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_EMITIR, "documento_electronico", d.id.as_uuid())
             .con_detalle(auditar(&d)?),
@@ -691,9 +808,9 @@ where
 ///
 /// Los de [`emitir_factura_electronica`]; [`AppError::Conflicto`] si la factura no tiene factura
 /// electrónica validada o ya está anulada.
-pub async fn emitir_nota_credito<U, P, C, A>(
+pub async fn emitir_nota_credito<U, P, C, G, E, A>(
     unidad: &U,
-    (proveedor, cofre): (&P, &C),
+    medios: &Expedicion<'_, P, C, G, E>,
     almacen: &A,
     reloj: &impl Reloj,
     ctx: &Contexto,
@@ -705,6 +822,8 @@ where
     U::Transaccion: TxFacturacion,
     P: ProveedorFacturacion,
     C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
     A: AlmacenArchivos,
 {
     ctx.exigir(Permiso::FacturacionFacturasGestionar)?;
@@ -723,7 +842,7 @@ where
     let f = super::ventas::anular_factura_venta_en(&mut tx, reloj, ctx, factura, motivo).await?;
     let (mut d, _) = preparar_documento(
         &mut tx,
-        proveedor,
+        medios.proveedor,
         reloj,
         Pedido {
             tipo: TipoDocumentoElectronico::NotaCredito,
@@ -734,7 +853,7 @@ where
         },
     )
     .await?;
-    transmitir(&mut tx, (proveedor, cofre), almacen, reloj, ctx, &mut d).await?;
+    transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_EMITIR, "documento_electronico", d.id.as_uuid())
             .con_detalle(auditar(&d)?),
@@ -751,9 +870,9 @@ where
 ///
 /// Los de [`emitir_factura_electronica`]; [`AppError::Validacion`] si la factura trae CUFE, no
 /// está causada o está anulada.
-pub async fn emitir_documento_soporte<U, P, C, A>(
+pub async fn emitir_documento_soporte<U, P, C, G, E, A>(
     unidad: &U,
-    (proveedor, cofre): (&P, &C),
+    medios: &Expedicion<'_, P, C, G, E>,
     almacen: &A,
     reloj: &impl Reloj,
     ctx: &Contexto,
@@ -764,6 +883,8 @@ where
     U::Transaccion: TxFacturacion,
     P: ProveedorFacturacion,
     C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
     A: AlmacenArchivos,
 {
     let mut tx = abrir_fe(unidad, reloj, ctx, Permiso::FacturacionEmitir).await?;
@@ -794,7 +915,7 @@ where
     exigir_facturador(&mut tx, f.fecha).await?;
     let (mut d, _) = preparar_documento(
         &mut tx,
-        proveedor,
+        medios.proveedor,
         reloj,
         Pedido {
             tipo: TipoDocumentoElectronico::DocumentoSoporte,
@@ -805,7 +926,7 @@ where
         },
     )
     .await?;
-    transmitir(&mut tx, (proveedor, cofre), almacen, reloj, ctx, &mut d).await?;
+    transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_EMITIR, "documento_electronico", d.id.as_uuid())
             .con_detalle(auditar(&d)?),
@@ -822,9 +943,9 @@ where
 /// [`AppError::SinPermiso`] sin `facturacion.emitir`; [`AppError::NoEncontrado`];
 /// [`AppError::Conflicto`] si ya está validado o rechazado (QA-015: se corrige con otro
 /// documento o una nota).
-pub async fn reintentar_documento<U, P, C, A>(
+pub async fn reintentar_documento<U, P, C, G, E, A>(
     unidad: &U,
-    (proveedor, cofre): (&P, &C),
+    medios: &Expedicion<'_, P, C, G, E>,
     almacen: &A,
     reloj: &impl Reloj,
     ctx: &Contexto,
@@ -835,6 +956,8 @@ where
     U::Transaccion: TxFacturacion,
     P: ProveedorFacturacion,
     C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
     A: AlmacenArchivos,
 {
     let mut tx = abrir_fe(unidad, reloj, ctx, Permiso::FacturacionEmitir).await?;
@@ -844,7 +967,7 @@ where
         .ok_or(AppError::NoEncontrado("documento electrónico"))?;
     match d.estado {
         EstadoDocumentoElectronico::PorEnviar | EstadoDocumentoElectronico::Contingencia => {
-            transmitir(&mut tx, (proveedor, cofre), almacen, reloj, ctx, &mut d).await?;
+            transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
         }
         EstadoDocumentoElectronico::Enviado => {
             let externo = d
@@ -852,8 +975,11 @@ where
                 .clone()
                 .ok_or_else(|| validacion("el documento enviado no tiene id del proveedor"))?;
             let fecha = reloj.ahora().date_naive();
-            let credenciales = credenciales(&mut tx, cofre, reloj, ctx, fecha).await?;
-            let resultado = proveedor.consultar(&externo, credenciales.as_ref()).await;
+            let credenciales = credenciales(&mut tx, medios.cofre, reloj, ctx, fecha).await?;
+            let resultado = medios
+                .proveedor
+                .consultar(&externo, credenciales.as_ref())
+                .await;
             aplicar_respuesta(&mut tx, almacen, reloj, ctx, &mut d, resultado).await?;
         }
         EstadoDocumentoElectronico::Validado | EstadoDocumentoElectronico::Rechazado => {
@@ -870,6 +996,98 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(d)
+}
+
+/// ZIP del documento tal como se entrega al adquirente (`AttachedDocument` y PDF), para
+/// descargarlo o reenviarlo.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `facturacion.ver`; [`AppError::NoEncontrado`];
+/// [`AppError::Infraestructura`] si falla el PDF o el almacén.
+pub async fn paquete_documento<U, P, C, G, E, A>(
+    unidad: &U,
+    medios: &Expedicion<'_, P, C, G, E>,
+    almacen: &A,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    id: DocumentoElectronicoId,
+) -> AppResult<(String, Vec<u8>)>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxFacturacion,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
+    let mut tx = super::abrir_ventas(unidad, reloj, ctx, Permiso::FacturacionVer).await?;
+    let d = tx
+        .documento(id)
+        .await?
+        .ok_or(AppError::NoEncontrado("documento electrónico"))?;
+    paquete_adquirente(&mut tx, medios, almacen, reloj, &d).await
+}
+
+/// Resultado de una vuelta del worker de contingencias.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ResumenContingencias {
+    pub reintentados: u32,
+    pub validados: u32,
+    /// Siguen en contingencia (la DIAN aún no responde) o fallaron por otra causa.
+    pub pendientes: u32,
+}
+
+/// Plazo que da la DIAN para transmitir un documento expedido en contingencia.
+const PLAZO_CONTINGENCIA_HORAS: i64 = 48;
+
+/// Vuelve a transmitir los documentos en contingencia de todas las entidades (worker del gateway,
+/// cada 30 minutos): cada uno en su transacción, con el contexto del sistema de su entidad. Avisa
+/// en los logs los que pasaron el plazo de 48 horas (sin datos del documento).
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si no se puede consultar la lista.
+pub async fn reintentar_contingencias<UP, U, P, C, G, E, A>(
+    (plataforma, unidad): (&UP, &U),
+    medios: &Expedicion<'_, P, C, G, E>,
+    almacen: &A,
+    reloj: &impl Reloj,
+    limite: u32,
+) -> AppResult<ResumenContingencias>
+where
+    UP: crate::puertos::UnidadDeTrabajoPlataforma,
+    UP::Transaccion: crate::puertos::RepositorioPlataforma,
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxFacturacion,
+    P: ProveedorFacturacion,
+    C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
+    use crate::puertos::RepositorioPlataforma as _;
+    let pendientes = plataforma
+        .iniciar_plataforma(&crate::ContextoPlataforma::sistema())
+        .await?
+        .documentos_en_contingencia(limite)
+        .await?;
+    let mut resumen = ResumenContingencias::default();
+    for (tenant, documento, creado) in pendientes {
+        if reloj.ahora() - creado > chrono::Duration::hours(PLAZO_CONTINGENCIA_HORAS) {
+            tracing::warn!(tenant_id = %tenant, documento = %documento, "documento en contingencia por más de 48 horas");
+        }
+        let ctx = Contexto::new(tenant);
+        resumen.reintentados += 1;
+        match reintentar_documento(unidad, medios, almacen, reloj, &ctx, documento).await {
+            Ok(d) if d.estado == EstadoDocumentoElectronico::Validado => resumen.validados += 1,
+            Ok(_) => resumen.pendientes += 1,
+            Err(e) => {
+                resumen.pendientes += 1;
+                tracing::warn!(tenant_id = %tenant, documento = %documento, error = %e, "no se pudo reintentar el documento en contingencia");
+            }
+        }
+    }
+    Ok(resumen)
 }
 
 /// Documentos electrónicos por fecha descendente.
@@ -917,14 +1135,15 @@ where
     Ok((d, eventos))
 }
 
-/// Representación gráfica en PDF (con el CUFE).
+/// Representación gráfica en PDF: el CUFE, el QR de consulta en la DIAN en todas las páginas y,
+/// si se da, el pie con el fabricante y el software.
 ///
 /// # Errors
 ///
 /// Los de [`documento`]; [`AppError::Infraestructura`] si falla el PDF.
 pub async fn representacion_grafica<U, G>(
     unidad: &U,
-    generador: &G,
+    (generador, pie): (&G, Option<&str>),
     reloj: &impl Reloj,
     ctx: &Contexto,
     id: DocumentoElectronicoId,
@@ -939,7 +1158,7 @@ where
         .documento(id)
         .await?
         .ok_or(AppError::NoEncontrado("documento electrónico"))?;
-    pdf_documento(&mut tx, generador, reloj, &d).await
+    pdf_documento(&mut tx, generador, reloj, &d, pie).await
 }
 
 /// PDF de un documento dentro de la transacción (lo usa también el paquete del periodo).
@@ -948,6 +1167,7 @@ pub(crate) async fn pdf_documento<T: TxFacturacion, G: GeneradorActas>(
     generador: &G,
     reloj: &impl Reloj,
     d: &DocumentoElectronico,
+    pie: Option<&str>,
 ) -> AppResult<Vec<u8>> {
     let envio = armar_envio(tx, d).await?;
     let mut filas: Vec<Vec<String>> = envio
@@ -994,6 +1214,8 @@ pub(crate) async fn pdf_documento<T: TxFacturacion, G: GeneradorActas>(
                 .to_vec(),
             filas,
             generada: reloj.ahora().format("%Y-%m-%d %H:%M UTC").to_string(),
+            qr: d.cufe.as_deref().map(url_consulta_dian),
+            pie: pie.map(str::to_owned),
         })
         .await
 }

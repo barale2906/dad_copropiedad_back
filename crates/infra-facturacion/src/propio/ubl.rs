@@ -75,7 +75,7 @@ pub enum RegimenIva {
 }
 
 impl RegimenIva {
-    const fn lista(self) -> &'static str {
+    pub(super) const fn lista(self) -> &'static str {
         match self {
             RegimenIva::Responsable => "48",
             RegimenIva::NoResponsable => "49",
@@ -318,7 +318,7 @@ fn identificador_dian(nombre: &str, texto: &str) -> Elemento {
         .attr("schemeAgencyName", NOMBRE_AGENCIA_DIAN)
 }
 
-fn nit_dian(nombre: &str, numero: &str, dv: Option<&str>, tipo: &str) -> Elemento {
+pub(super) fn nit_dian(nombre: &str, numero: &str, dv: Option<&str>, tipo: &str) -> Elemento {
     let e = identificador_dian(nombre, numero).attr("schemeName", tipo);
     match dv {
         Some(dv) => e.attr("schemeID", dv),
@@ -346,7 +346,7 @@ fn direccion(nombre: &str, d: &Direccion) -> Elemento {
         )
 }
 
-fn tributo(regimen: RegimenIva) -> Elemento {
+pub(super) fn tributo(regimen: RegimenIva) -> Elemento {
     let (id, nombre) = regimen.tributo();
     Elemento::new("cac:TaxScheme")
         .hijo(Elemento::hoja("cbc:ID", id))
@@ -459,7 +459,7 @@ fn linea(nombre: &str, cantidad: &str, i: usize, l: &Linea) -> Elemento {
 
 /// Espacios de nombres de la raíz: todos declarados ahí, como en los ejemplos de la DIAN, para
 /// que la firma de los subconjuntos herede siempre los mismos.
-fn raiz(nombre: &str, espacio_documento: &str) -> Elemento {
+pub(super) fn raiz(nombre: &str, espacio_documento: &str) -> Elemento {
     Elemento::new(nombre)
         .ns("", espacio_documento)
         .ns(

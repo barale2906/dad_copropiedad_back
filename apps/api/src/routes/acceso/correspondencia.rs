@@ -112,7 +112,7 @@ pub struct FiltroCorrespondenciaQuery {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroCorrespondenciaQuery, ParametrosPagina),
     responses(
         (status = OK, description = "Correspondencia", body = PaginaRespuesta<CorrespondenciaRespuesta>),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar`, `acceso.bitacora.ver` ni `acceso.correspondencia.entregar`; un residente, solo la de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn listar(
@@ -201,6 +201,7 @@ pub struct DetalleCorrespondenciaRespuesta {
     responses(
         (status = OK, description = "Correspondencia", body = DetalleCorrespondenciaRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.registrar`, `acceso.bitacora.ver` ni `acceso.correspondencia.entregar`; un residente, solo la de su bien (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver(
@@ -299,6 +300,7 @@ pub struct DevolverPeticion {
     responses(
         (status = OK, description = "Devuelta", body = CorrespondenciaRespuesta),
         (status = CONFLICT, description = "Ya se entregó o devolvió (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.correspondencia.entregar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn devolver(

@@ -84,7 +84,7 @@ impl From<ConfiguracionAcceso> for ConfiguracionAccesoDto {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
         (status = OK, description = "Configuración", body = ConfiguracionAccesoDto),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `acceso.configurar` ni `acceso.registrar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_configuracion(

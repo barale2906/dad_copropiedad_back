@@ -226,6 +226,7 @@ fn id_cuadro(ruta: (Uuid, Uuid)) -> CuadroCoeficientesId {
     responses(
         (status = OK, description = "Cuadro", body = DetalleCuadroRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_privados.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver(
@@ -273,6 +274,7 @@ pub struct CoeficientesPeticion {
         (status = CONFLICT, description = "El cuadro no es borrador (`conflicto_estado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "Cuadro o bien privado inexistente", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Coeficiente inválido o repetido (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_privados.coeficientes.editar` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn cargar(
@@ -314,6 +316,7 @@ pub async fn cargar(
     responses(
         (status = OK, description = "Revisión", body = RevisionRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_privados.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn validar(

@@ -271,7 +271,7 @@ where
 /// Los de [`libro_ventas`]; [`AppError::Infraestructura`] si no se lee un XML o falla el PDF.
 pub async fn paquete_documentos<U, A, G, E>(
     unidad: &U,
-    (almacen, generador, empaquetador): (&A, &G, &E),
+    (almacen, generador, empaquetador, pie): (&A, &G, &E, Option<&str>),
     reloj: &impl Reloj,
     ctx: &Contexto,
     desde: NaiveDate,
@@ -325,7 +325,7 @@ where
         }
         archivos.push((
             format!("{base}.pdf"),
-            pdf_documento(&mut tx, generador, reloj, d).await?,
+            pdf_documento(&mut tx, generador, reloj, d, pie).await?,
         ));
         registros += 1;
     }

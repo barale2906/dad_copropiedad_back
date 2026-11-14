@@ -170,6 +170,7 @@ pub async fn crear(
     responses(
         (status = OK, description = "Reunión", body = DetalleReunionRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver(
@@ -211,6 +212,7 @@ pub struct EditarReunionPeticion {
         (status = OK, description = "Reunión actualizada", body = ReunionRespuesta),
         (status = CONFLICT, description = "El estado ya no permite el cambio (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar(
@@ -265,6 +267,7 @@ impl From<PuntoPeticion> for DatosPunto {
     responses(
         (status = CREATED, description = "Punto creado", body = PuntoRespuesta),
         (status = CONFLICT, description = "Ya convocada u orden repetido (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_punto(
@@ -297,6 +300,7 @@ pub async fn crear_punto(
     responses(
         (status = OK, description = "Punto actualizado", body = PuntoRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_punto(
@@ -328,6 +332,7 @@ pub async fn editar_punto(
     responses(
         (status = NO_CONTENT, description = "Eliminado"),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn eliminar_punto(
@@ -366,6 +371,7 @@ pub struct EstadoPuntoPeticion {
     responses(
         (status = OK, description = "Punto actualizado", body = PuntoRespuesta),
         (status = CONFLICT, description = "Transición inválida o reunión no instalada (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn estado_punto(
@@ -408,6 +414,7 @@ pub struct DocumentoPeticion {
     responses(
         (status = CREATED, description = "Anexo agregado", body = DocumentoDto),
         (status = CONFLICT, description = "Ya anexo o reunión en curso (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn agregar_documento(
@@ -440,6 +447,7 @@ pub async fn agregar_documento(
     responses(
         (status = NO_CONTENT, description = "Quitado"),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn quitar_documento(
@@ -514,6 +522,7 @@ impl From<ResultadoConvocatoria> for ConvocatoriaRespuesta {
         (status = OK, description = "Convocada", body = ConvocatoriaRespuesta),
         (status = CONFLICT, description = "No está en borrador (`conflicto_estado`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Antelación, orden del día o coeficientes (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn convocar(
@@ -541,7 +550,10 @@ pub async fn convocar(
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Constancias", body = Vec<ConstanciaRespuesta>))
+    responses(
+        (status = OK, description = "Constancias", body = Vec<ConstanciaRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn constancias(
     State(state): State<AppState>,
@@ -571,6 +583,7 @@ pub async fn constancias(
     responses(
         (status = CREATED, description = "Segunda reunión convocada", body = ConvocatoriaRespuesta),
         (status = CONFLICT, description = "Tiene quórum o no está en registro (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn segunda_convocatoria(
@@ -623,6 +636,7 @@ pub struct TransicionPeticion {
     responses(
         (status = OK, description = "Reunión actualizada", body = ReunionRespuesta),
         (status = CONFLICT, description = "Transición inválida (`conflicto_estado`) o sin quórum (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Abrir registro, instalar, suspender, reanudar y cerrar: `asambleas.conducir`; cancelar: `asambleas.convocar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn transicionar(
@@ -660,7 +674,10 @@ pub async fn transicionar(
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Quórum", body = QuorumRespuesta))
+    responses(
+        (status = OK, description = "Quórum", body = QuorumRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn quorum(
     State(state): State<AppState>,
@@ -687,7 +704,10 @@ pub async fn quorum(
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = CREATED, description = "Foto tomada", body = QuorumRespuesta))
+    responses(
+        (status = CREATED, description = "Foto tomada", body = QuorumRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn foto_quorum(
     State(state): State<AppState>,
@@ -712,7 +732,10 @@ pub async fn foto_quorum(
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Tablero", body = TableroRespuesta))
+    responses(
+        (status = OK, description = "Tablero", body = TableroRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn tablero(
     State(state): State<AppState>,

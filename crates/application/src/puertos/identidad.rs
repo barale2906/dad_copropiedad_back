@@ -448,6 +448,15 @@ pub trait RepositorioPlataforma: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<(ConjuntoPermisos, bool)>> + Send;
 
+    /// Documentos electrónicos en contingencia de todas las entidades, los más antiguos primero
+    /// (a lo sumo `limite`): solo identificadores y fecha, para retransmitirlos.
+    fn documentos_en_contingencia(
+        &mut self,
+        limite: u32,
+    ) -> impl Future<
+        Output = AppResult<Vec<(TenantId, domain::DocumentoElectronicoId, DateTime<Utc>)>>,
+    > + Send;
+
     /// Marca la entidad como la de la plataforma (y desmarca la anterior). `false` si no existe
     /// o está retirada.
     ///

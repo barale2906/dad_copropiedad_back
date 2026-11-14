@@ -406,6 +406,7 @@ where
             referencia_numero: None,
             referencia_fecha: None,
             credenciales: Some(credenciales),
+            contingencia: false,
         };
         let respuesta = dian.enviar_set_pruebas(&documento).await?;
         let envio = EnvioSetPruebas {

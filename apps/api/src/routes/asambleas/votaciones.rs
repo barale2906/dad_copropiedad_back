@@ -128,7 +128,10 @@ impl PreguntaPeticion {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
-    responses((status = OK, description = "Preguntas", body = Vec<PreguntaRespuesta>))
+    responses(
+        (status = OK, description = "Preguntas", body = Vec<PreguntaRespuesta>),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn listar(
     State(state): State<AppState>,
@@ -157,6 +160,7 @@ pub async fn listar(
     responses(
         (status = CREATED, description = "Pregunta creada", body = PreguntaRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Definición incoherente (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` ni `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear(
@@ -188,6 +192,7 @@ pub async fn crear(
     responses(
         (status = OK, description = "Pregunta actualizada", body = PreguntaRespuesta),
         (status = CONFLICT, description = "Ya no está en borrador (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` ni `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar(
@@ -214,6 +219,7 @@ pub async fn editar(
     responses(
         (status = NO_CONTENT, description = "Eliminada"),
         (status = CONFLICT, description = "Ya se abrió: se anula (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.convocar` ni `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn eliminar(
@@ -255,6 +261,7 @@ pub struct EstadoPreguntaPeticion {
     responses(
         (status = OK, description = "Pregunta actualizada", body = PreguntaRespuesta),
         (status = CONFLICT, description = "Reunión no instalada o transición inválida (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn estado(
@@ -314,7 +321,7 @@ pub struct VotoPeticion {
     request_body = VotoPeticion,
     responses(
         (status = CREATED, description = "Voto registrado (o el original si se reintenta)", body = VotoRespuesta),
-        (status = FORBIDDEN, description = "Sin permiso (`sin_permiso`) o el asistente no está presente (`no_inscrito`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.votos.registrar` (`sin_permiso`) o el asistente no está presente (`no_inscrito`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Sus bienes ya votaron (`ya_voto`) o la pregunta cerró (`conflicto_estado`)", body = ErrorRespuesta),
     )
 )]
@@ -380,7 +387,10 @@ pub struct ResultadosRespuesta {
     tag = ETIQUETA_ASAMBLEAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión"), ("pregunta_id" = Uuid, Path, description = "Pregunta")),
-    responses((status = OK, description = "Resultados", body = ResultadosRespuesta))
+    responses(
+        (status = OK, description = "Resultados", body = ResultadosRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn resultados(
     State(state): State<AppState>,
@@ -486,6 +496,7 @@ impl From<Elegido> for ElegidoRespuesta {
     responses(
         (status = OK, description = "Elegidos", body = Vec<ElegidoRespuesta>),
         (status = CONFLICT, description = "No es una elección cerrada de un cargo o ya se aplicó (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `asambleas.conducir` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn aplicar_eleccion(

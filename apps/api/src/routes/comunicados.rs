@@ -553,7 +553,7 @@ pub async fn anular(
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ParametrosPagina),
     responses(
         (status = OK, description = "Cartelera", body = PaginaRespuesta<ComunicadoRecibidoRespuesta>),
-        (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad; módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn mis_comunicados(
@@ -579,6 +579,7 @@ pub async fn mis_comunicados(
     responses(
         (status = OK, description = "Comunicado", body = ComunicadoAbiertoRespuesta),
         (status = NOT_FOUND, description = "No es destinatario (`no_encontrado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos (si no se le envió a la persona de la cuenta, 404); módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn abrir_mio(
@@ -611,6 +612,7 @@ pub async fn abrir_mio(
         (status = OK, description = "Enterado registrado", body = ComunicadoRecibidoRespuesta),
         (status = NOT_FOUND, description = "No es destinatario (`no_encontrado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "El comunicado no pide confirmación (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos (si no se le envió a la persona de la cuenta, 404); módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn enterado(

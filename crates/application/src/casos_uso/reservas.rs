@@ -99,6 +99,7 @@ where
             asunto,
             texto,
             html: None,
+            adjuntos: Vec::new(),
         }),
     })
     .await

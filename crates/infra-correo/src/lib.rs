@@ -16,7 +16,7 @@ use application::{
 };
 use lettre::{
     Address, AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
-    message::{Mailbox, MultiPart, SinglePart, header::ContentType},
+    message::{Attachment, Mailbox, MultiPart, SinglePart, header::ContentType},
     transport::smtp::authentication::Credentials,
 };
 use shared::{SeguridadSmtp, SmtpConfig};
@@ -123,16 +123,33 @@ impl<T: Transporte> CorreoSmtp<T> {
             .to(Mailbox::new(None, para))
             .subject(&correo.asunto);
 
-        let resultado = match &correo.html {
-            Some(html) => constructor.multipart(MultiPart::alternative_plain_html(
-                correo.texto.clone(),
-                html.clone(),
-            )),
-            None => constructor.singlepart(
-                SinglePart::builder()
-                    .header(ContentType::TEXT_PLAIN)
-                    .body(correo.texto.clone()),
-            ),
+        let texto = SinglePart::builder()
+            .header(ContentType::TEXT_PLAIN)
+            .body(correo.texto.clone());
+        let resultado = if correo.adjuntos.is_empty() {
+            match &correo.html {
+                Some(html) => constructor.multipart(MultiPart::alternative_plain_html(
+                    correo.texto.clone(),
+                    html.clone(),
+                )),
+                None => constructor.singlepart(texto),
+            }
+        } else {
+            // Con adjuntos: multipart/mixed con el cuerpo (texto o alternativa) y cada archivo.
+            let mut mixto = match &correo.html {
+                Some(html) => MultiPart::mixed().multipart(MultiPart::alternative_plain_html(
+                    correo.texto.clone(),
+                    html.clone(),
+                )),
+                None => MultiPart::mixed().singlepart(texto),
+            };
+            for a in &correo.adjuntos {
+                let tipo = ContentType::parse(&a.tipo)
+                    .map_err(|e| ErrorCorreo::Mensaje(format!("tipo de adjunto: {e}")))?;
+                mixto = mixto
+                    .singlepart(Attachment::new(a.nombre.clone()).body(a.contenido.clone(), tipo));
+            }
+            constructor.multipart(mixto)
         };
         resultado.map_err(|e| ErrorCorreo::Mensaje(e.to_string()))
     }
@@ -174,6 +191,7 @@ mod tests {
             asunto: "Reserva aprobada".into(),
             texto: "Su reserva fue aprobada.".into(),
             html: html.map(str::to_owned),
+            adjuntos: Vec::new(),
         }
     }
 
@@ -210,6 +228,27 @@ mod tests {
         let enviado = transporte.0.lock().expect("mutex")[0].clone();
         assert!(enviado.contains("multipart/alternative"), "{enviado}");
         assert!(enviado.contains("text/html"), "{enviado}");
+    }
+
+    #[tokio::test]
+    async fn con_adjuntos_envia_un_mensaje_mixto_con_cada_archivo() {
+        let transporte = TransporteEnMemoria::default();
+        let cliente =
+            CorreoSmtp::new(transporte.clone(), "no-responder@dad.co").expect("remitente válido");
+        let mut c = correo(None);
+        c.adjuntos
+            .push(application::puertos::correo::AdjuntoCorreo {
+                nombre: "FE1.zip".into(),
+                tipo: "application/zip".into(),
+                contenido: b"PK\x03\x04".to_vec(),
+            });
+
+        cliente.enviar(&c).await.expect("se envía");
+
+        let enviado = transporte.0.lock().expect("mutex")[0].clone();
+        assert!(enviado.contains("multipart/mixed"), "{enviado}");
+        assert!(enviado.contains("filename=\"FE1.zip\""), "{enviado}");
+        assert!(enviado.contains("application/zip"), "{enviado}");
     }
 
     #[test]

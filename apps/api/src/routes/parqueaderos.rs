@@ -141,6 +141,7 @@ pub struct NuevoParqueaderoPeticion {
         (status = CREATED, description = "Parqueadero creado", body = RecursoRespuesta),
         (status = CONFLICT, description = "Código repetido (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos incoherentes (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `parqueaderos.asignar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear(
@@ -192,6 +193,7 @@ pub struct AsignacionParqueaderoPeticion {
     responses(
         (status = CREATED, description = "Asignado", body = AsignacionParqueaderoRespuesta),
         (status = CONFLICT, description = "Ya asignado en ese periodo (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `parqueaderos.asignar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn asignar(
@@ -230,6 +232,7 @@ pub async fn asignar(
     responses(
         (status = NO_CONTENT, description = "Liberado"),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `parqueaderos.asignar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn liberar(
@@ -328,7 +331,10 @@ impl From<VistaSorteo> for SorteoRespuesta {
     tag = ETIQUETA_RESERVAS,
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
-    responses((status = OK, description = "Sorteos", body = Vec<SorteoRespuesta>))
+    responses(
+        (status = OK, description = "Sorteos", body = Vec<SorteoRespuesta>),
+        (status = FORBIDDEN, description = "Sin `bienes_comunes.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
 )]
 pub async fn listar_sorteos(
     State(state): State<AppState>,
@@ -460,6 +466,7 @@ pub struct ResultadoRespuesta {
     responses(
         (status = OK, description = "Ejecutado", body = ResultadoRespuesta),
         (status = CONFLICT, description = "Ya ejecutado o parqueadero ocupado (`conflicto`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `sorteos.gestionar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ejecutar(

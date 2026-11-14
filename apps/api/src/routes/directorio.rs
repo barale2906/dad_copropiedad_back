@@ -295,6 +295,7 @@ pub async fn categorias(
     responses(
         (status = OK, description = "Ficha", body = FichaDirectorioRespuesta),
         (status = NOT_FOUND, description = "No existe o no alcanza a la copropiedad", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ficha(
@@ -352,6 +353,7 @@ fn resena_respuesta(r: Resena, quien: Option<CuentaId>) -> ResenaRespuesta {
     responses(
         (status = OK, description = "Reseñas", body = PaginaRespuesta<ResenaRespuesta>),
         (status = NOT_FOUND, description = "La ficha no alcanza a la copropiedad", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn resenas(
@@ -450,6 +452,7 @@ pub struct ReporteResenaRespuesta {
         (status = OK, description = "Reporte registrado", body = ReporteResenaRespuesta),
         (status = NOT_FOUND, description = "La reseña no existe o ya está oculta", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin motivo (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
     )
 )]
 pub async fn reportar(
@@ -771,6 +774,7 @@ pub async fn crear_anunciante(
     responses(
         (status = OK, description = "Anunciante", body = AnuncianteRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.directorio.gestionar` ni `plataforma.publicidad.moderar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_anunciante(
@@ -794,6 +798,7 @@ pub async fn ver_anunciante(
         (status = OK, description = "Anunciante actualizado (sin ficha)", body = AnuncianteRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos o la ubicación no sirve para la cobertura de la ficha (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.directorio.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
     )
 )]
 pub async fn editar_anunciante(

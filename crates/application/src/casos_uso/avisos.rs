@@ -85,6 +85,7 @@ where
                 asunto: aviso.asunto.clone(),
                 texto: aviso.texto.clone(),
                 html: None,
+                adjuntos: Vec::new(),
             }),
         })
         .await?;
@@ -124,6 +125,7 @@ where
                     asunto: aviso.asunto.clone(),
                     texto: aviso.texto.clone(),
                     html: None,
+                    adjuntos: Vec::new(),
                 }),
             })
             .await?;

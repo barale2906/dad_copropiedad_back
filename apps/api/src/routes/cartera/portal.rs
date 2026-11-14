@@ -65,7 +65,7 @@ fn pdf(nombre: String, contenido: Vec<u8>) -> Response {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
     responses(
         (status = OK, description = "Mis bienes", body = Vec<BienCarteraRespuesta>),
-        (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos (solo bienes de los que la cuenta es titular o pagador); módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
 pub async fn mis_bienes(
@@ -93,7 +93,7 @@ pub struct CorteParametros {
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("bien_privado_id" = Uuid, Path, description = "Bien privado"), CorteParametros),
     responses(
         (status = OK, description = "Estado de cuenta", body = EstadoCuentaRespuesta),
-        (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "El bien no es de la cuenta", body = ErrorRespuesta),
     )
 )]
@@ -123,7 +123,7 @@ pub async fn mi_estado_cuenta(
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("bien_privado_id" = Uuid, Path, description = "Bien privado")),
     responses(
         (status = OK, description = "Cuentas de cobro", body = Vec<CuentaCobroRespuesta>),
-        (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "El bien no es de la cuenta", body = ErrorRespuesta),
     )
 )]
@@ -151,7 +151,7 @@ pub async fn mis_cuentas_cobro(
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("cuenta_cobro_id" = Uuid, Path, description = "Cuenta de cobro")),
     responses(
         (status = OK, description = "PDF", content_type = "application/pdf", body = Vec<u8>),
-        (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No es de un bien de la cuenta", body = ErrorRespuesta),
     )
 )]
@@ -181,7 +181,7 @@ pub async fn mi_cuenta_cobro_pdf(
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("bien_privado_id" = Uuid, Path, description = "Bien privado")),
     responses(
         (status = CREATED, description = "Paz y salvo", body = CertificadoEmitidoRespuesta),
-        (status = FORBIDDEN, description = "Sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos (si la cuenta no es titular ni pagador del bien, 404); módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "El bien no es de la cuenta", body = ErrorRespuesta),
         (status = CONFLICT, description = "El bien tiene saldo (`conflicto`)", body = ErrorRespuesta),
     )

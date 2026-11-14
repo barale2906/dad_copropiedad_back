@@ -1276,6 +1276,7 @@ dependencies = [
  "hmac",
  "infra-archivos",
  "infra-correo",
+ "infra-facturacion",
  "infra-pdf",
  "infra-postgres",
  "infra-push",

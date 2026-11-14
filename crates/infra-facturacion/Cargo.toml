@@ -28,11 +28,11 @@ rustls.workspace = true
 sha1.workspace = true
 sha2.workspace = true
 thiserror.workspace = true
+tokio.workspace = true
 webpki-roots.workspace = true
 
 [dev-dependencies]
 axum.workspace = true
-tokio.workspace = true
 uuid.workspace = true
 
 [lints]
