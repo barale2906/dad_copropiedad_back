@@ -14,7 +14,7 @@ async fn crear_rol(ph: &Ph, token: &str, codigo: &str, permisos: &[&str]) -> (St
     ph.api
         .pedir(
             Method::POST,
-            &format!("{}/roles", ph.base),
+            &format!("{}/roles", ph.entidad),
             Some(token),
             Some(json!({ "codigo": codigo, "nombre": codigo, "permisos": permisos })),
         )
@@ -30,7 +30,7 @@ async fn editar_permisos(
     ph.api
         .pedir(
             Method::PUT,
-            &format!("{}/roles/{rol}/permisos", ph.base),
+            &format!("{}/roles/{rol}/permisos", ph.entidad),
             Some(token),
             Some(json!({ "permisos": permisos })),
         )
@@ -41,7 +41,7 @@ async fn asignar(ph: &Ph, token: &str, cuenta: &str, rol: &str) -> (StatusCode, 
     ph.api
         .pedir(
             Method::POST,
-            &format!("{}/asignaciones", ph.base),
+            &format!("{}/asignaciones", ph.entidad),
             Some(token),
             Some(json!({ "cuenta_id": cuenta, "rol_id": rol })),
         )
@@ -99,7 +99,7 @@ async fn un_gestor_de_roles_no_se_da_permisos_que_no_tiene(pool: PgPool) {
 async fn un_gestor_no_asigna_ni_revoca_roles_con_mas_permisos_que_los_suyos(pool: PgPool) {
     let ph = ph(pool).await;
     let (_, gestor, _) = cuenta_con_rol(&ph, "gestor", GESTOR).await;
-    let (s, roles) = ph.pedir(Method::GET, "/roles", None).await;
+    let (s, roles) = ph.pedir_entidad(Method::GET, "/roles", None).await;
     assert_eq!(s, StatusCode::OK);
     let administrador = roles
         .as_array()
@@ -115,7 +115,7 @@ async fn un_gestor_no_asigna_ni_revoca_roles_con_mas_permisos_que_los_suyos(pool
         .api
         .pedir(
             Method::GET,
-            &format!("{}/asignaciones", ph.base),
+            &format!("{}/asignaciones", ph.entidad),
             Some(&gestor),
             None,
         )
@@ -130,7 +130,7 @@ async fn un_gestor_no_asigna_ni_revoca_roles_con_mas_permisos_que_los_suyos(pool
         .api
         .pedir(
             Method::DELETE,
-            &format!("{}/asignaciones/{del_admin}", ph.base),
+            &format!("{}/asignaciones/{del_admin}", ph.entidad),
             Some(&gestor),
             None,
         )
@@ -141,7 +141,7 @@ async fn un_gestor_no_asigna_ni_revoca_roles_con_mas_permisos_que_los_suyos(pool
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn las_plantillas_no_se_editan(pool: PgPool) {
     let ph = ph(pool).await;
-    let (_, roles) = ph.pedir(Method::GET, "/roles", None).await;
+    let (_, roles) = ph.pedir_entidad(Method::GET, "/roles", None).await;
     let propietario = roles
         .as_array()
         .and_then(|r| r.iter().find(|r| r["codigo"] == "propietario"))
@@ -170,20 +170,20 @@ async fn editar_y_revocar_un_rol_cambia_de_inmediato_lo_que_puede_su_titular(poo
     let (_, c) = capacidades(&ph, &token).await;
     assert_eq!(c["permisos"].as_array().map(Vec::len), Some(2), "{c}");
 
-    let (_, asignaciones) = ph.pedir(Method::GET, "/asignaciones", None).await;
+    let (_, asignaciones) = ph.pedir_entidad(Method::GET, "/asignaciones", None).await;
     let suya = asignaciones
         .as_array()
         .and_then(|a| a.iter().find(|a| a["cuenta_id"] == json!(cuenta)))
         .map(id)
         .expect("asignación");
     let (s, _) = ph
-        .pedir(Method::DELETE, &format!("/asignaciones/{suya}"), None)
+        .pedir_entidad(Method::DELETE, &format!("/asignaciones/{suya}"), None)
         .await;
     assert!(s.is_success(), "{s}");
 
     // Sin roles vigentes la copropiedad deja de existir para la cuenta.
     assert_eq!(capacidades(&ph, &token).await.0, StatusCode::NOT_FOUND);
-    let (_, historial) = ph.pedir(Method::GET, "/asignaciones", None).await;
+    let (_, historial) = ph.pedir_entidad(Method::GET, "/asignaciones", None).await;
     let terminada = historial
         .as_array()
         .and_then(|a| a.iter().find(|a| a["id"] == json!(suya)))
@@ -194,14 +194,14 @@ async fn editar_y_revocar_un_rol_cambia_de_inmediato_lo_que_puede_su_titular(poo
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn la_copropiedad_no_se_queda_sin_administrador(pool: PgPool) {
     let ph = ph(pool).await;
-    let (_, asignaciones) = ph.pedir(Method::GET, "/asignaciones", None).await;
+    let (_, asignaciones) = ph.pedir_entidad(Method::GET, "/asignaciones", None).await;
     let unica = asignaciones
         .as_array()
         .map(|a| id(&a[0]))
         .expect("asignación del administrador");
 
     let (s, v) = ph
-        .pedir(Method::DELETE, &format!("/asignaciones/{unica}"), None)
+        .pedir_entidad(Method::DELETE, &format!("/asignaciones/{unica}"), None)
         .await;
 
     assert_eq!(

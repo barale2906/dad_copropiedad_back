@@ -7,19 +7,21 @@ use application::{
         contabilidad::Origen,
         tesoreria::{
             DatosEntidad, FacturaProveedor, FacturaVenta, FilaCertificado, FiltroFacturas,
-            LineaFacturaProveedor, LineaFacturaVenta, RepositorioFacturas, RetencionLinea,
+            LineaFacturaProveedor, LineaFacturaVenta, PagoManual, RepositorioFacturas,
+            RetencionLinea,
         },
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     ArchivoId, CentroCostoId, ComprobanteId, ConceptoRetencionId, CuentaContableId, CuentaId,
-    FacturaProveedorId, FacturaVentaId, PersonaId,
+    FacturaProveedorId, FacturaVentaId, ItemFacturacionId, PersonaId,
     contabilidad::{
         Monto,
         tesoreria::{EstadoFacturaProveedor, EstadoFacturaVenta, ImpuestoRetencion},
-        tributario::ClasificacionTributaria,
     },
+    facturacion::MedioPagoManual,
+    tributario::ClasificacionTributaria,
 };
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -112,6 +114,10 @@ struct FilaFacturaVenta {
     creada_por: Option<Uuid>,
     creada_en: DateTime<Utc>,
     emitida_en: Option<DateTime<Utc>>,
+    pago_manual_fecha: Option<NaiveDate>,
+    pago_manual_medio: Option<String>,
+    pago_manual_referencia: Option<String>,
+    pago_manual_por: Option<Uuid>,
 }
 
 impl FilaFacturaVenta {
@@ -134,6 +140,19 @@ impl FilaFacturaVenta {
             creada_por: self.creada_por.map(CuentaId::from_uuid),
             creada_en: self.creada_en,
             emitida_en: self.emitida_en,
+            pago_manual: match (
+                self.pago_manual_fecha,
+                self.pago_manual_medio,
+                self.pago_manual_por,
+            ) {
+                (Some(fecha), Some(medio), Some(por)) => Some(PagoManual {
+                    fecha,
+                    medio: MedioPagoManual::try_from(medio.as_str())?,
+                    referencia: self.pago_manual_referencia,
+                    por: CuentaId::from_uuid(por),
+                }),
+                _ => None,
+            },
             lineas,
         })
     }
@@ -175,7 +194,7 @@ impl TransaccionPg {
                     .collect::<AppResult<Vec<_>>>()?;
                 Ok(LineaFacturaProveedor {
                     descripcion: l.descripcion,
-                    cuenta_id: CuentaContableId::from_uuid(l.cuenta_id),
+                    cuenta_id: l.cuenta_id.map(CuentaContableId::from_uuid),
                     centro_costo_id: l.centro_costo_id.map(CentroCostoId::from_uuid),
                     base: monto(l.base)?,
                     iva: monto(l.iva)?,
@@ -188,8 +207,8 @@ impl TransaccionPg {
 
     async fn lineas_venta(&mut self, factura: Uuid) -> AppResult<Vec<LineaFacturaVenta>> {
         sqlx::query!(
-            "SELECT descripcion, cuenta_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva,
-                    subtotal, iva, clasificacion
+            "SELECT descripcion, cuenta_id, item_id, centro_costo_id, cantidad, valor_unitario,
+                    tarifa_iva, subtotal, iva, clasificacion
              FROM lineas_factura_venta WHERE factura_id = $1 ORDER BY orden",
             factura
         )
@@ -200,7 +219,8 @@ impl TransaccionPg {
         .map(|l| {
             Ok(LineaFacturaVenta {
                 descripcion: l.descripcion,
-                cuenta_id: CuentaContableId::from_uuid(l.cuenta_id),
+                cuenta_id: l.cuenta_id.map(CuentaContableId::from_uuid),
+                item_id: l.item_id.map(ItemFacturacionId::from_uuid),
                 centro_costo_id: l.centro_costo_id.map(CentroCostoId::from_uuid),
                 cantidad: l.cantidad,
                 valor_unitario: monto(l.valor_unitario)?,
@@ -217,7 +237,8 @@ impl TransaccionPg {
 impl RepositorioFacturas for TransaccionPg {
     async fn datos_entidad(&mut self) -> AppResult<DatosEntidad> {
         let r = sqlx::query!(
-            "SELECT nombre, nit FROM entidades WHERE id = $1",
+            "SELECT nombre, nit, razon_social, direccion, municipio_dane, departamento, correo
+             FROM entidades WHERE id = $1",
             self.ctx.tenant_id.as_uuid()
         )
         .fetch_optional(&mut *self.tx)
@@ -227,6 +248,11 @@ impl RepositorioFacturas for TransaccionPg {
         Ok(DatosEntidad {
             nombre: r.nombre,
             nit: r.nit,
+            razon_social: r.razon_social,
+            direccion: r.direccion,
+            municipio_dane: r.municipio_dane,
+            departamento: r.departamento,
+            correo: r.correo,
         })
     }
 
@@ -281,7 +307,7 @@ impl RepositorioFacturas for TransaccionPg {
                 f.id.as_uuid(),
                 orden,
                 l.descripcion,
-                l.cuenta_id.as_uuid(),
+                l.cuenta_id.map(CuentaContableId::as_uuid),
                 l.centro_costo_id.map(CentroCostoId::as_uuid),
                 l.base.valor(),
                 l.iva.valor(),
@@ -446,14 +472,15 @@ impl RepositorioFacturas for TransaccionPg {
         for (i, l) in f.lineas.iter().enumerate() {
             sqlx::query!(
                 "INSERT INTO lineas_factura_venta (tenant_id, factura_id, orden, descripcion,
-                     cuenta_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva, subtotal, iva,
-                     clasificacion)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
+                     cuenta_id, item_id, centro_costo_id, cantidad, valor_unitario, tarifa_iva,
+                     subtotal, iva, clasificacion)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
                 self.ctx.tenant_id.as_uuid(),
                 f.id.as_uuid(),
                 i16_de(i + 1, "orden")?,
                 l.descripcion,
-                l.cuenta_id.as_uuid(),
+                l.cuenta_id.map(CuentaContableId::as_uuid),
+                l.item_id.map(ItemFacturacionId::as_uuid),
                 l.centro_costo_id.map(CentroCostoId::as_uuid),
                 l.cantidad,
                 l.valor_unitario.valor(),
@@ -474,7 +501,8 @@ impl RepositorioFacturas for TransaccionPg {
             FilaFacturaVenta,
             "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,
                     subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,
-                    creada_por, creada_en, emitida_en
+                    creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,
+                    pago_manual_referencia, pago_manual_por
              FROM facturas_venta WHERE id = $1 FOR UPDATE",
             id.as_uuid()
         )
@@ -499,7 +527,8 @@ impl RepositorioFacturas for TransaccionPg {
             FilaFacturaVenta,
             "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,
                     subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,
-                    creada_por, creada_en, emitida_en
+                    creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,
+                    pago_manual_referencia, pago_manual_por
              FROM facturas_venta
              WHERE ($1::uuid IS NULL OR persona_id = $1) AND ($2::text IS NULL OR estado = $2)
                AND ($3::date IS NULL OR fecha >= $3) AND ($4::date IS NULL OR fecha <= $4)
@@ -521,7 +550,8 @@ impl RepositorioFacturas for TransaccionPg {
     async fn actualizar_factura_venta(&mut self, f: &FacturaVenta) -> AppResult<()> {
         sqlx::query!(
             "UPDATE facturas_venta SET estado = $2, numero = $3, pagado = $4, comprobante_id = $5,
-                 motivo_anulacion = $6, emitida_en = $7
+                 motivo_anulacion = $6, emitida_en = $7, pago_manual_fecha = $8,
+                 pago_manual_medio = $9, pago_manual_referencia = $10, pago_manual_por = $11
              WHERE id = $1",
             f.id.as_uuid(),
             f.estado.as_str(),
@@ -532,6 +562,10 @@ impl RepositorioFacturas for TransaccionPg {
             f.comprobante_id.map(ComprobanteId::as_uuid),
             f.motivo_anulacion,
             f.emitida_en,
+            f.pago_manual.as_ref().map(|p| p.fecha),
+            f.pago_manual.as_ref().map(|p| p.medio.as_str()),
+            f.pago_manual.as_ref().and_then(|p| p.referencia.as_deref()),
+            f.pago_manual.as_ref().map(|p| p.por.as_uuid()),
         )
         .execute(&mut *self.tx)
         .await
@@ -555,7 +589,8 @@ impl RepositorioFacturas for TransaccionPg {
             FilaFacturaVenta,
             "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,
                     subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,
-                    creada_por, creada_en, emitida_en
+                    creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,
+                    pago_manual_referencia, pago_manual_por
              FROM facturas_venta
              WHERE estado IN ('emitida', 'pagada_parcial') AND fecha <= $1
              ORDER BY persona_id, vencimiento",

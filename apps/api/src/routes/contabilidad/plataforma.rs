@@ -16,7 +16,9 @@ use application::{
     },
 };
 use axum::{extract::State, http::StatusCode};
-use domain::{CuentaId, Nit, OrganizacionId, PlantillaContableId, contabilidad::PlantillaContable};
+use domain::{
+    CuentaId, Nit, OrganizacionId, PlantillaContableId, TenantId, contabilidad::PlantillaContable,
+};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -38,6 +40,8 @@ use crate::{
 pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(crear_entidad))
+        .routes(routes!(designar_entidad_plataforma))
+        .routes(routes!(consumo_documentos))
         .routes(routes!(cargar_puc))
         .routes(routes!(catalogo_retenciones, crear_concepto_retencion))
         .routes(routes!(guardar_uvt))
@@ -118,6 +122,93 @@ pub async fn crear_entidad(
             id: id.as_uuid(),
             nombre: p.nombre.trim().to_owned(),
         }),
+    ))
+}
+
+/// Entidad que opera la plataforma.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct EntidadPlataformaPeticion {
+    /// Empresa ya dada de alta (no una copropiedad).
+    pub entidad_id: Uuid,
+}
+
+/// Designa la entidad que opera la plataforma (la empresa de GISLA SAS). Quien tiene roles de
+/// plataforma la recibe como `plataforma` al iniciar sesión. Solo hay una: designar otra le quita
+/// la marca a la anterior.
+#[utoipa::path(
+    put,
+    path = "/entidad-plataforma",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    request_body = EntidadPlataformaPeticion,
+    responses(
+        (status = NO_CONTENT, description = "Entidad designada"),
+        (status = FORBIDDEN, description = "Sin `plataforma.entidad_propia.designar`", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "La entidad no existe o está retirada", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Es una copropiedad (`conflicto`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn designar_entidad_plataforma(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Json(p): Json<EntidadPlataformaPeticion>,
+) -> ApiResult<StatusCode> {
+    uc_plataforma::designar_entidad_plataforma(
+        &state.plataforma,
+        &op.ctx,
+        TenantId::from_uuid(p.entidad_id),
+    )
+    .await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Periodo del consumo.
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct PeriodoConsumo {
+    pub desde: chrono::NaiveDate,
+    pub hasta: chrono::NaiveDate,
+}
+
+/// Documentos electrónicos de una entidad y un tipo en el periodo.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ConsumoDocumentosRespuesta {
+    pub entidad_id: Uuid,
+    pub nombre: String,
+    #[schema(value_type = crate::esquemas::TipoDocumentoElectronico)]
+    pub tipo: domain::tributario::TipoDocumentoElectronico,
+    pub cantidad: u64,
+}
+
+/// Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y
+/// tipo en el periodo: la base para cobrar el módulo de facturación (plan 19). Solo conteos.
+#[utoipa::path(
+    get,
+    path = "/facturacion/consumo",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    params(PeriodoConsumo),
+    responses(
+        (status = OK, description = "Consumo por entidad", body = Vec<ConsumoDocumentosRespuesta>),
+        (status = FORBIDDEN, description = "Sin `plataforma.facturacion.ver`", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Periodo invertido (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn consumo_documentos(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    crate::extractores::Query(q): crate::extractores::Query<PeriodoConsumo>,
+) -> ApiResult<Json<Vec<ConsumoDocumentosRespuesta>>> {
+    let v = uc_plataforma::consumo_documentos(&state.plataforma, &op.ctx, q.desde, q.hasta).await?;
+    Ok(Json(
+        v.into_iter()
+            .map(|c| ConsumoDocumentosRespuesta {
+                entidad_id: c.tenant_id.as_uuid(),
+                nombre: c.nombre,
+                tipo: c.tipo,
+                cantidad: c.cantidad,
+            })
+            .collect(),
     ))
 }
 

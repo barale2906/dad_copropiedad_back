@@ -1,6 +1,8 @@
 //! Rutas de una entidad cualquiera: `/api/v1/entidades/{entidad_id}/…` (ADR 0016). Sirven a
-//! cualquier empresa —con o sin vertical— con el extractor [`crate::sesion::EnEntidad`]; en una
-//! copropiedad, el id es el mismo de `/copropiedades/{copropiedad_id}`.
+//! cualquier empresa —PH, empresa cliente o la plataforma— con el extractor
+//! [`crate::sesion::EnEntidad`]; en una copropiedad, el id es el mismo de
+//! `/copropiedades/{copropiedad_id}`. Lo común: capacidades, roles, archivos, auditoría,
+//! terceros y lo tributario; y los módulos de cualquier entidad: contabilidad y facturación.
 
 use application::{casos_uso::modulos::capacidades as uc_capacidades, puertos::RelojSistema};
 use axum::extract::State;
@@ -19,7 +21,16 @@ use crate::{
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(capacidades_entidad))
+        .merge(super::roles::rutas())
+        .merge(super::archivos::rutas_entidad())
+        .merge(super::auditoria::rutas())
+        .merge(super::contabilidad::rutas_terceros())
+        .nest(
+            "/tributario",
+            super::contabilidad::tributario::rutas_entidad(),
+        )
         .nest("/contabilidad", super::contabilidad::rutas())
+        .nest("/facturacion", super::facturacion::rutas())
 }
 
 /// Permisos de la cuenta en la entidad y módulos habilitados (para cualquier entidad).

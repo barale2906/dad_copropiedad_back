@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE items_facturacion SET descripcion = $2, unidad = $3, precio = $4,\n                 tarifa_iva = $5, clasificacion = $6, cuenta_id = $7, activo = $8,\n                 actualizado_en = $9\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Uuid",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e47096e50ee196a70c0c58a8e752f158d62f3125b38c637ef08359e087a22ecf"
+}

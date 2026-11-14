@@ -52,3 +52,21 @@ solo un módulo (p. ej. asambleas): ningún "paquete" de la vertical debe ser ob
 - Las rutas de roles, archivos y auditoría siguen bajo `/copropiedades/{id}`; las entidades sin
   vertical se administran por ahora con su administrador inicial (se generalizan cuando una
   vertical nueva lo pida).
+
+## Adenda (2026-11-14): elegir la entidad al entrar
+Una persona entra a gestionar una propiedad horizontal, una empresa cliente o la plataforma. La
+plataforma también es una entidad (la empresa de GISLA SAS, que factura y lleva su contabilidad)
+con esa función marcada en `entidades.es_plataforma`: una sola (índice único parcial), nunca una
+copropiedad (trigger), designada por el superusuario con `PUT /plataforma/entidad-plataforma`
+(permiso `plataforma.entidad_propia.designar`, función `designar_entidad_plataforma`, auditado).
+Al iniciar sesión
+(`POST /auth/sesion` y `POST /auth/sesion/segundo-factor`) la respuesta trae, junto con los
+tokens, las entidades donde la cuenta tiene roles vigentes: id, nombre, NIT, **tipo**
+(`TipoEntidad`: `plataforma`; `propiedad_horizontal` si tiene fila en `copropiedades`; si no,
+`empresa`), estado y roles. La plataforma se lista también a quien solo tiene roles de plataforma
+(sus códigos se suman a los roles). La misma lista sale de `GET /yo/entidades`, que reemplaza a `GET /yo/copropiedades` (el
+nombre era histórico; no había frontend). Las entidades retiradas no se listan.
+`GET /entidades/{id}/capacidades` también devuelve el tipo. La sesión no queda atada a una
+entidad: el cliente guarda la elegida y la cambia sin volver a iniciar sesión (las rutas llevan el
+id). Migración `20261114000340_entidades_de_la_cuenta` (cambia el resultado de
+`membresias_de_cuenta`).

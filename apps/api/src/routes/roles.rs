@@ -1,4 +1,5 @@
-//! Roles y asignaciones de una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/roles`,
+//! Roles y asignaciones de una entidad (PH, empresa o la plataforma):
+//! `/api/v1/entidades/{entidad_id}/roles`,
 //! `/asignaciones` y `/cuentas` (búsqueda para asignar). También los DTOs de roles que usa la
 //! plataforma.
 
@@ -23,7 +24,7 @@ use crate::{
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::{Json, Path, Query},
     openapi::ETIQUETA_ROLES,
-    sesion::EnCopropiedad,
+    sesion::EnEntidad,
     state::AppState,
 };
 
@@ -147,7 +148,7 @@ impl PermisosPeticion {
     path = "/roles",
     tag = ETIQUETA_ROLES,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)")),
     responses(
         (status = OK, description = "Roles", body = Vec<RolRespuesta>),
         (status = FORBIDDEN, description = "Sin `roles.ver` (`sin_permiso`)", body = ErrorRespuesta),
@@ -155,7 +156,7 @@ impl PermisosPeticion {
 )]
 pub async fn listar_roles(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
 ) -> ApiResult<Json<Vec<RolRespuesta>>> {
     let roles = uc::listar_roles(&state.unidad, &en.ctx).await?;
     Ok(Json(roles.into_iter().map(Into::into).collect()))
@@ -167,7 +168,7 @@ pub async fn listar_roles(
     path = "/roles",
     tag = ETIQUETA_ROLES,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)")),
     request_body = NuevoRolPeticion,
     responses(
         (status = CREATED, description = "Rol creado", body = RolRespuesta),
@@ -177,7 +178,7 @@ pub async fn listar_roles(
 )]
 pub async fn crear_rol(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Json(p): Json<NuevoRolPeticion>,
 ) -> ApiResult<(StatusCode, Json<RolRespuesta>)> {
     let rol = uc::crear_rol(&state.unidad, &en.ctx, p.into()).await?;
@@ -191,7 +192,7 @@ pub async fn crear_rol(
     tag = ETIQUETA_ROLES,
     security(("bearer" = [])),
     params(
-        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"),
         ("rol_id" = Uuid, Path, description = "Rol"),
     ),
     request_body = PermisosPeticion,
@@ -203,7 +204,7 @@ pub async fn crear_rol(
 )]
 pub async fn editar_permisos(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Path(ruta): Path<(Uuid, Uuid)>,
     Json(p): Json<PermisosPeticion>,
 ) -> ApiResult<Json<RolRespuesta>> {
@@ -262,12 +263,12 @@ pub struct FiltroAsignaciones {
     path = "/asignaciones",
     tag = ETIQUETA_ROLES,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroAsignaciones),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"), FiltroAsignaciones),
     responses((status = OK, description = "Asignaciones", body = Vec<AsignacionRespuesta>))
 )]
 pub async fn listar_asignaciones(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Query(f): Query<FiltroAsignaciones>,
 ) -> ApiResult<Json<Vec<AsignacionRespuesta>>> {
     let lista =
@@ -293,7 +294,7 @@ pub struct AsignacionPeticion {
     path = "/asignaciones",
     tag = ETIQUETA_ROLES,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)")),
     request_body = AsignacionPeticion,
     responses(
         (status = CREATED, description = "Asignado", body = AsignacionRespuesta),
@@ -303,7 +304,7 @@ pub struct AsignacionPeticion {
 )]
 pub async fn asignar(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Json(p): Json<AsignacionPeticion>,
 ) -> ApiResult<(StatusCode, Json<AsignacionRespuesta>)> {
     let a = uc::asignar_rol(
@@ -330,7 +331,7 @@ pub async fn asignar(
     tag = ETIQUETA_ROLES,
     security(("bearer" = [])),
     params(
-        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"),
         ("asignacion_id" = Uuid, Path, description = "Asignación"),
     ),
     responses(
@@ -340,7 +341,7 @@ pub async fn asignar(
 )]
 pub async fn revocar(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Path(ruta): Path<(Uuid, Uuid)>,
 ) -> ApiResult<StatusCode> {
     uc::revocar_asignacion(
@@ -374,7 +375,7 @@ pub struct CuentaEncontrada {
     path = "/cuentas",
     tag = ETIQUETA_ROLES,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), BusquedaCuenta),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"), BusquedaCuenta),
     responses(
         (status = OK, description = "Cuenta", body = CuentaEncontrada),
         (status = NOT_FOUND, description = "No hay una cuenta activa con ese identificador", body = ErrorRespuesta),
@@ -382,7 +383,7 @@ pub struct CuentaEncontrada {
 )]
 pub async fn buscar_cuenta(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Query(b): Query<BusquedaCuenta>,
 ) -> ApiResult<Json<CuentaEncontrada>> {
     let identificador = Identificador::parse(&b.identificador)?;

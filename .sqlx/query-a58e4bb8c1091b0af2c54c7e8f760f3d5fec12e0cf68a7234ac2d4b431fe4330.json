@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM facturas_venta\n             WHERE comprobante_id IS NULL AND estado NOT IN ('borrador', 'anulada')\n               AND fecha BETWEEN $1 AND $2\n             ORDER BY fecha, numero, id\n             LIMIT $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a58e4bb8c1091b0af2c54c7e8f760f3d5fec12e0cf68a7234ac2d4b431fe4330"
+}

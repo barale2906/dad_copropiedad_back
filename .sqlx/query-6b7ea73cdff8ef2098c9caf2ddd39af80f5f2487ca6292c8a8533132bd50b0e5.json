@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO items_facturacion (id, tenant_id, codigo, descripcion, unidad, precio,\n                 tarifa_iva, clasificacion, cuenta_id, activo, creado_por, creado_en,\n                 actualizado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Uuid",
+        "Bool",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6b7ea73cdff8ef2098c9caf2ddd39af80f5f2487ca6292c8a8533132bd50b0e5"
+}

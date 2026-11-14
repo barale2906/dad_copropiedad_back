@@ -67,6 +67,8 @@ pub const ETIQUETA_TESORERIA: &str = "tesoreria";
 pub const ETIQUETA_CARTERA: &str = "cartera";
 /// Etiqueta de lo tributario y los documentos electrónicos (plan 15).
 pub const ETIQUETA_TRIBUTARIO: &str = "tributario";
+/// Etiqueta de la facturación, que se vende sola (plan 18, ADR 0022).
+pub const ETIQUETA_FACTURACION: &str = "facturacion";
 
 /// Registra el esquema de seguridad `bearer` (token de acceso opaco).
 struct EsquemaBearer;
@@ -203,6 +205,11 @@ impl utoipa::Modify for EsquemaBearer {
             documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, \
             preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El \
             sistema prepara; presentar y firmar lo hace el responsable tributario"),
+        (name = ETIQUETA_FACTURACION, description = "Facturación de cualquier entidad, con o sin \
+            contabilidad (plan 18): catálogo de productos y servicios, facturas de venta con \
+            número interno, pago manual sin tesorería, documentos electrónicos, compras para el \
+            documento soporte, facturas recibidas, libros de ventas y compras y paquete de XML y \
+            PDF para el contador. Con contabilidad cada documento se contabiliza solo"),
     ),
     modifiers(&EsquemaBearer),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))

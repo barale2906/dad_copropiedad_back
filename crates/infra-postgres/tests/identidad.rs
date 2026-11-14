@@ -8,7 +8,7 @@ use application::{
     casos_uso::{
         autenticacion::{
             Registro, ResultadoInicio, SolicitudInicio, TokensSesion, autenticar, iniciar_sesion,
-            mis_copropiedades, registrar_cuenta, renovar_sesion,
+            mis_entidades, registrar_cuenta, renovar_sesion,
         },
         organizaciones::{
             NuevoContrato, asignar_rol_por_contrato, crear_organizacion, terminar_contrato,
@@ -97,7 +97,7 @@ async fn iniciar(e: &Entorno, usuario: &str, contrasena: &str) -> Result<TokensS
     )
     .await?;
     match r {
-        ResultadoInicio::Sesion(t) => Ok(t),
+        ResultadoInicio::Sesion(s) => Ok(s.tokens),
         ResultadoInicio::SegundoFactor { .. } => panic!("sin segundo factor en esta prueba"),
     }
 }
@@ -267,10 +267,15 @@ async fn alta_de_copropiedad_deja_administrador_y_membresia(pool: PgPool) {
     .expect("crea");
 
     let ctx = ContextoPlataforma::de_cuenta(admin, Default::default(), None);
-    let mias = mis_copropiedades(&e.plataforma, &ctx).await.expect("lista");
+    let mias = mis_entidades(&e.plataforma, &ctx).await.expect("lista");
     assert_eq!(mias.len(), 1);
     assert_eq!(mias[0].tenant_id, tenant);
     assert_eq!(mias[0].roles, vec!["administrador".to_owned()]);
+    assert_eq!(
+        mias[0].tipo,
+        domain::TipoEntidad::PropiedadHorizontal,
+        "una copropiedad se marca como PH"
+    );
     let permisos = permisos_en_copropiedad(&e.unidad, &RelojSistema, tenant, admin, false)
         .await
         .expect("permisos");

@@ -79,10 +79,18 @@ pub struct TokensSesion {
     pub expira_maximo_en: DateTime<Utc>,
 }
 
+/// Sesión abierta: los tokens y las entidades donde la cuenta puede trabajar. Lo primero que
+/// hace el cliente es pedir en cuál entrar (o entrar directo si es una sola).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SesionIniciada {
+    pub tokens: TokensSesion,
+    pub entidades: Vec<Membresia>,
+}
+
 /// Resultado de usuario + contraseña.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResultadoInicio {
-    Sesion(TokensSesion),
+    Sesion(SesionIniciada),
     /// La cuenta tiene segundo factor: falta el código TOTP. `desafio` es un token de un solo
     /// uso que solo sirve para [`completar_segundo_factor`].
     SegundoFactor {
@@ -373,7 +381,8 @@ pub async fn iniciar_sesion<UP, H>(
 ) -> AppResult<ResultadoInicio>
 where
     UP: UnidadDeTrabajoPlataforma,
-    UP::Transaccion: RepositorioCuentas + RepositorioSesiones + RegistroAuditoria,
+    UP::Transaccion:
+        RepositorioCuentas + RepositorioSesiones + RepositorioPlataforma + RegistroAuditoria,
     H: HashContrasenas,
 {
     let ahora = reloj.ahora();
@@ -444,12 +453,15 @@ where
         sesion.hash_acceso = hashes.acceso;
         sesion.acceso_expira_en = hashes.acceso_expira_en;
         sesion.hash_refresh = hashes.refresh;
-        ResultadoInicio::Sesion(TokensSesion {
-            sesion_id: sesion.id,
-            acceso,
-            acceso_expira_en: sesion.acceso_expira_en,
-            refresh,
-            expira_maximo_en,
+        ResultadoInicio::Sesion(SesionIniciada {
+            tokens: TokensSesion {
+                sesion_id: sesion.id,
+                acceso,
+                acceso_expira_en: sesion.acceso_expira_en,
+                refresh,
+                expira_maximo_en,
+            },
+            entidades: tx.membresias(cuenta.id).await?,
         })
     };
     tx.insertar_sesion(&sesion).await?;
@@ -476,10 +488,11 @@ pub async fn completar_segundo_factor<UP, F>(
     ctx: &ContextoPlataforma,
     desafio: &str,
     codigo: &str,
-) -> AppResult<TokensSesion>
+) -> AppResult<SesionIniciada>
 where
     UP: UnidadDeTrabajoPlataforma,
-    UP::Transaccion: RepositorioCuentas + RepositorioSesiones + RegistroAuditoria,
+    UP::Transaccion:
+        RepositorioCuentas + RepositorioSesiones + RepositorioPlataforma + RegistroAuditoria,
     F: SegundoFactor,
 {
     let ahora = reloj.ahora();
@@ -499,13 +512,17 @@ where
     }
     let (acceso, refresh, hashes) = nuevos_tokens(ahora, sesion.expira_maximo_en)?;
     tx.completar_segundo_factor(sesion.id, &hashes).await?;
+    let entidades = tx.membresias(cuenta.id).await?;
     tx.confirmar().await?;
-    Ok(TokensSesion {
-        sesion_id: sesion.id,
-        acceso,
-        acceso_expira_en: hashes.acceso_expira_en,
-        refresh,
-        expira_maximo_en: sesion.expira_maximo_en,
+    Ok(SesionIniciada {
+        tokens: TokensSesion {
+            sesion_id: sesion.id,
+            acceso,
+            acceso_expira_en: hashes.acceso_expira_en,
+            refresh,
+            expira_maximo_en: sesion.expira_maximo_en,
+        },
+        entidades,
     })
 }
 
@@ -881,15 +898,13 @@ where
     })
 }
 
-/// Copropiedades donde la cuenta autenticada tiene roles vigentes.
+/// Entidades (propiedades horizontales y empresas) donde la cuenta autenticada tiene roles
+/// vigentes, para elegir en cuál trabajar; las retiradas de la plataforma no se listan.
 ///
 /// # Errors
 ///
 /// [`AppError::NoAutenticado`] sin sesión.
-pub async fn mis_copropiedades<UP>(
-    unidad: &UP,
-    ctx: &ContextoPlataforma,
-) -> AppResult<Vec<Membresia>>
+pub async fn mis_entidades<UP>(unidad: &UP, ctx: &ContextoPlataforma) -> AppResult<Vec<Membresia>>
 where
     UP: UnidadDeTrabajoPlataforma,
     UP::Transaccion: RepositorioPlataforma,

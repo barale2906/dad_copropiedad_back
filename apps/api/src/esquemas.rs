@@ -181,8 +181,16 @@ esquema_enum! {
         "Estado de un contrato de servicio con una copropiedad.";
     EstadoConversacion = application::puertos::chat::EstadoConversacion,
         "Estado de una conversación de la bandeja.";
+    AmbienteDian = domain::facturacion::AmbienteDian,
+        "Ambiente del servicio web de la DIAN.";
+    EstadoHabilitacion = domain::facturacion::EstadoHabilitacion,
+        "Estado de la habilitación de la entidad con el motor propio.";
+    EstadoEnvioSet = domain::facturacion::EstadoEnvioSet,
+        "Resultado de un documento del set de pruebas.";
+    MedioPagoManual = domain::facturacion::MedioPagoManual,
+        "Medio de un pago marcado a mano (sin tesorería).";
     EstadoCopropiedad = domain::copropiedad::EstadoCopropiedad,
-        "Estado de la copropiedad en la plataforma.";
+        "Estado de la entidad (copropiedad o empresa) en la plataforma.";
     EstadoCorrespondencia = domain::acceso::EstadoCorrespondencia,
         "Estado de la correspondencia.";
     EstadoCreativo = domain::publicidad::EstadoCreativo,
@@ -317,6 +325,8 @@ esquema_enum! {
         "Tipo de documento de identidad.";
     TipoDocumentoReunion = domain::reunion::TipoDocumentoReunion,
         "Tipo de documento anexo a la convocatoria.";
+    TipoEntidad = domain::entidad::TipoEntidad,
+        "Qué es la entidad: `propiedad_horizontal` (menús de la Ley 675), `empresa` (cliente sin vertical) o `plataforma` (la que opera el sistema).";
     TipoEntrega = domain::reserva::TipoEntrega,
         "Momento de la entrega del recurso.";
     TipoEventoVisita = domain::acceso::TipoEventoVisita,
@@ -361,26 +371,26 @@ esquema_enum! {
         "Unidad de un plazo.";
     UsoBienPrivado = domain::bien_privado::UsoBienPrivado,
         "Destinación del bien privado.";
-    ClasificacionTributaria = domain::contabilidad::tributario::ClasificacionTributaria,
+    ClasificacionTributaria = domain::tributario::ClasificacionTributaria,
         "Clasificación tributaria de lo que se cobra o se vende (solo `alquiler_servicio` y `venta` pueden llevar IVA).";
-    TratamientoIva = domain::contabilidad::tributario::TratamientoIva,
+    TratamientoIva = domain::tributario::TratamientoIva,
         "Tratamiento de IVA de una tarifa del catálogo.";
-    EstadoPerfilTributario = domain::contabilidad::tributario::EstadoPerfilTributario,
+    EstadoPerfilTributario = domain::tributario::EstadoPerfilTributario,
         "Estado de una versión del perfil tributario (sin confirmar no hay automatismos).";
-    CanalFacturacion = domain::contabilidad::tributario::CanalFacturacion,
+    CanalFacturacion = domain::tributario::CanalFacturacion,
         "Cómo factura electrónicamente la entidad.";
-    TipoDocumentoElectronico = domain::contabilidad::tributario::TipoDocumentoElectronico,
+    TipoDocumentoElectronico = domain::tributario::TipoDocumentoElectronico,
         "Tipo de documento electrónico.";
-    TipoNumeracion = domain::contabilidad::tributario::TipoNumeracion,
+    TipoNumeracion = domain::tributario::TipoNumeracion,
         "Documento que numera una resolución de la DIAN.";
-    EstadoDocumentoElectronico = domain::contabilidad::tributario::EstadoDocumentoElectronico,
+    EstadoDocumentoElectronico = domain::tributario::EstadoDocumentoElectronico,
         "Estado de un documento electrónico (un rechazado nunca se marca validado).";
-    EventoRadian = domain::contabilidad::tributario::EventoRadian,
+    EventoRadian = domain::tributario::EventoRadian,
         "Evento RADIAN sobre una factura recibida (cada uno exige sus previos).";
-    EstadoFacturaRecibida = domain::contabilidad::tributario::EstadoFacturaRecibida,
+    EstadoFacturaRecibida = domain::tributario::EstadoFacturaRecibida,
         "Estado de una factura electrónica recibida.";
-    CriterioBeneficiario = domain::contabilidad::tributario::CriterioBeneficiario,
+    CriterioBeneficiario = domain::tributario::CriterioBeneficiario,
         "Criterio por el que una persona es beneficiaria final (RUB).";
-    LadoExogena = domain::contabilidad::tributario::LadoExogena,
+    LadoExogena = domain::tributario::LadoExogena,
         "Lado del movimiento que suma a una columna de la exógena.";
 }

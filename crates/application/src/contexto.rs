@@ -54,6 +54,22 @@ impl Contexto {
     pub fn exigir(&self, permiso: Permiso) -> AppResult<()> {
         exigir(&self.permisos, permiso)
     }
+
+    /// Exige **alguno** de los permisos (p. ej. leer lo tributario con `contabilidad.ver` o con
+    /// `facturacion.ver`).
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::SinPermiso`] con el primero si no tiene ninguno.
+    pub fn exigir_alguno(&self, permisos: &[Permiso]) -> AppResult<()> {
+        match permisos.iter().find(|p| self.permisos.contiene(**p)) {
+            Some(_) => Ok(()),
+            None => match permisos.first() {
+                Some(p) => self.exigir(*p),
+                None => Ok(()),
+            },
+        }
+    }
 }
 
 /// Contexto de un caso de uso **de plataforma** (cuentas, sesiones, roles de plataforma, altas

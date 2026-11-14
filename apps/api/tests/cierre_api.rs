@@ -15,7 +15,13 @@ async fn el_titular_autoriza_consulta_y_reclama_y_la_administracion_responde(poo
     let dueno = ph.api.token("dueno").await;
     let como_dueno = |m: Method, ruta: String, cuerpo| {
         let api = &ph.api;
-        let url = format!("{}{ruta}", ph.base);
+        // La auditoría es común a toda entidad; lo demás, de la PH.
+        let prefijo = if ruta.starts_with("/auditoria") {
+            &ph.entidad
+        } else {
+            &ph.base
+        };
+        let url = format!("{prefijo}{ruta}");
         let t = dueno.clone();
         async move { api.pedir(m, &url, Some(&t), cuerpo).await }
     };
@@ -137,7 +143,7 @@ async fn el_titular_autoriza_consulta_y_reclama_y_la_administracion_responde(poo
 
     // La auditoría registró todo y la consulta el administrador (sin datos personales).
     let (s, a) = ph
-        .pedir(
+        .pedir_entidad(
             Method::GET,
             "/auditoria?accion=proteccion_datos.&limite=50",
             None,
@@ -167,7 +173,7 @@ async fn el_titular_autoriza_consulta_y_reclama_y_la_administracion_responde(poo
         "el detalle no llega a la auditoría"
     );
     let (s, p1) = ph
-        .pedir(
+        .pedir_entidad(
             Method::GET,
             "/auditoria?accion=proteccion_datos.&limite=1",
             None,
@@ -176,7 +182,7 @@ async fn el_titular_autoriza_consulta_y_reclama_y_la_administracion_responde(poo
     assert_eq!(s, StatusCode::OK);
     let siguiente = p1["siguiente"].as_str().expect("cursor");
     let (_, p2) = ph
-        .pedir(
+        .pedir_entidad(
             Method::GET,
             &format!("/auditoria?accion=proteccion_datos.&limite=1&despues={siguiente}"),
             None,

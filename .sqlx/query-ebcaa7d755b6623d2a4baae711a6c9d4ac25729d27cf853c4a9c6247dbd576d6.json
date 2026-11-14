@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE certificados_firma SET activo = FALSE WHERE activo",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "ebcaa7d755b6623d2a4baae711a6c9d4ac25729d27cf853c4a9c6247dbd576d6"
+}

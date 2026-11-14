@@ -10,6 +10,7 @@ use application::{
             self as conf, DatosTipoComprobante, NuevaConfiguracion, NuevaCuenta, NuevaLineaRegla,
             NuevaRegla, NuevoTercero,
         },
+        cuentas_por_cobrar,
         cuentas_por_pagar::{
             self as cxp, NuevaFacturaProveedor, NuevaLineaFacturaProveedor, NuevoConceptoRetencion,
         },
@@ -18,8 +19,10 @@ use application::{
             self as tes, EventoPasarelaVerificado, NuevaCuentaTesoreria, NuevoEgreso, NuevoGasto,
             NuevoRecibo, conceptos, eventos,
         },
+    },
+    casos_uso::{
+        facturacion::ventas::{self, NuevaFacturaVenta, NuevaLineaVenta},
         tributario,
-        ventas::{self, NuevaFacturaVenta, NuevaLineaVenta},
     },
     puertos::{
         AlmacenArchivos, LectorPlanillas, Reloj,
@@ -41,8 +44,8 @@ use domain::{
             EstadoMovimientoExtracto, EstadoRecibo, ImpuestoRetencion, MedioEgreso, MedioRecibo,
             TipoCuentaBancaria, TipoCuentaTesoreria,
         },
-        tributario::{CanalFacturacion, ClasificacionTributaria, ParametrosPerfil},
     },
+    tributario::{CanalFacturacion, ClasificacionTributaria, ParametrosPerfil},
 };
 use infra_postgres::{UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg};
 use rust_decimal::Decimal;
@@ -198,7 +201,7 @@ async fn entorno(pool: PgPool) -> Entorno {
     let tenant = insertar_entidad(&pool, "Gimnasio Fuerza").await;
     sqlx::query(
         "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
-         VALUES (uuidv7(), $1, 'contabilidad', now() - interval '1 day')",
+         VALUES (uuidv7(), $1, 'contabilidad', '2026-01-01T00:00:00Z')",
     )
     .bind(tenant.as_uuid())
     .execute(&pool)
@@ -423,13 +426,13 @@ impl Entorno {
                 descripcion: "Alquiler del salón".into(),
                 origen: None,
                 lineas: vec![NuevaLineaVenta {
-                    descripcion: "Salón social".into(),
-                    cuenta: cod("4170"),
-                    centro_costo: None,
+                    descripcion: Some("Salón social".into()),
+                    cuenta: Some(cod("4170")),
                     cantidad: d(1),
-                    valor_unitario: m(valor),
-                    tarifa_iva: d(0),
-                    clasificacion: ClasificacionTributaria::AlquilerServicio,
+                    valor_unitario: Some(m(valor)),
+                    tarifa_iva: Some(d(0)),
+                    clasificacion: Some(ClasificacionTributaria::AlquilerServicio),
+                    ..NuevaLineaVenta::default()
                 }],
             },
         )
@@ -504,7 +507,7 @@ impl Entorno {
             archivo_id: None,
             lineas: vec![NuevaLineaFacturaProveedor {
                 descripcion: "Servicio".into(),
-                cuenta: cod("5135"),
+                cuenta: Some(cod("5135")),
                 centro_costo: None,
                 base: m(1_000_000),
                 iva: m(190_000),
@@ -526,6 +529,135 @@ fn responsable() -> DatosFiscales {
 // ---------------------------------------------------------------------------------------------
 // Recibos y facturas de venta
 // ---------------------------------------------------------------------------------------------
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn lo_facturado_antes_de_la_contabilidad_se_contabiliza_despues(pool: PgPool) {
+    // Preparar: la entidad factura con el módulo de facturación y la contabilidad aún no rige.
+    let e = entorno(pool).await;
+    let cliente = e
+        .tercero("Cliente", "800111222", DatosFiscales::default())
+        .await;
+    let modulos = |sql: &'static str| {
+        let pool = e.pool.clone();
+        let tenant = e.tenant.as_uuid();
+        async move {
+            sqlx::query(sql)
+                .bind(tenant)
+                .execute(&pool)
+                .await
+                .expect("módulos");
+        }
+    };
+    modulos(
+        "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
+         VALUES (uuidv7(), $1, 'facturacion_electronica', '2026-01-01T00:00:00Z')",
+    )
+    .await;
+    modulos(
+        "UPDATE modulos_habilitados SET desde = '2027-01-01T00:00:00Z'
+         WHERE tenant_id = $1 AND modulo = 'contabilidad'",
+    )
+    .await;
+    let borrador = ventas::crear_factura_venta(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        NuevaFacturaVenta {
+            persona: cliente,
+            fecha: fecha(2026, 3, 2),
+            vencimiento: fecha(2026, 3, 31),
+            descripcion: "Venta sin contabilidad".into(),
+            origen: None,
+            lineas: vec![NuevaLineaVenta {
+                descripcion: Some("Servicio".into()),
+                cantidad: d(1),
+                valor_unitario: Some(m(200_000)),
+                ..NuevaLineaVenta::default()
+            }],
+        },
+    )
+    .await
+    .expect("borrador sin cuentas");
+    let id = borrador.id;
+    let sin = ventas::emitir_factura_venta(&e.unidad, &RelojFijo, &e.contador, id)
+        .await
+        .expect("emite sin contabilidad");
+    modulos(
+        "UPDATE modulos_habilitados SET desde = '2026-01-01T00:00:00Z'
+         WHERE tenant_id = $1 AND modulo = 'contabilidad'",
+    )
+    .await;
+
+    // Ejecutar dos veces: la segunda no encuentra nada (idempotente).
+    let informe = application::casos_uso::facturacion::contabilizacion::contabilizar_pendientes(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        fecha(2026, 1, 1),
+        fecha(2026, 12, 31),
+    )
+    .await
+    .expect("contabiliza");
+    let otra = application::casos_uso::facturacion::contabilizacion::contabilizar_pendientes(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        fecha(2026, 1, 1),
+        fecha(2026, 12, 31),
+    )
+    .await
+    .expect("repite");
+
+    // Verificar
+    let con = ventas::factura_venta(&e.unidad, &RelojFijo, &e.contador, id)
+        .await
+        .expect("factura");
+    assert!(
+        sin.comprobante_id.is_none(),
+        "sin contabilidad no se contabilizó"
+    );
+    assert_eq!(informe.contabilizadas, vec![id]);
+    assert!(informe.fallidas.is_empty(), "{:?}", informe.fallidas);
+    assert!(con.comprobante_id.is_some());
+    assert!(otra.contabilizadas.is_empty());
+    assert_eq!(e.saldo("1305").await, Decimal::from(200_000));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn con_contabilidad_la_factura_se_contabiliza_y_el_pago_va_por_recibo(pool: PgPool) {
+    let e = entorno(pool).await;
+    let cliente = e
+        .tercero("Cliente", "800111222", DatosFiscales::default())
+        .await;
+    let id = e.factura_venta(cliente, 200_000, fecha(2026, 3, 31)).await;
+
+    let f = ventas::factura_venta(&e.unidad, &RelojFijo, &e.contador, id)
+        .await
+        .expect("factura");
+    let manual = ventas::marcar_pagada(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        id,
+        ventas::NuevoPagoManual {
+            fecha: fecha(2026, 3, 1),
+            medio: domain::facturacion::MedioPagoManual::Efectivo,
+            referencia: None,
+        },
+    )
+    .await;
+
+    assert!(
+        f.comprobante_id.is_some(),
+        "con contabilidad se contabiliza al emitir"
+    );
+    assert_eq!(
+        f.numero,
+        Some(1),
+        "el número interno es propio, no el del comprobante"
+    );
+    assert!(matches!(manual, Err(AppError::Conflicto(_))), "{manual:?}");
+}
 
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn recibo_aplicado_paga_la_factura_y_cuadra_la_cartera(pool: PgPool) {
@@ -654,9 +786,14 @@ async fn factura_de_venta_con_recaudo_no_se_anula_y_la_cartera_va_por_edades(poo
 
     let anular =
         ventas::anular_factura_venta(&e.unidad, &RelojFijo, &e.contador, nueva, "Error").await;
-    let cartera = ventas::cartera_por_edades(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 5, 1))
-        .await
-        .expect("cartera");
+    let cartera = cuentas_por_cobrar::cartera_por_edades(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        fecha(2026, 5, 1),
+    )
+    .await
+    .expect("cartera");
 
     assert!(
         matches!(

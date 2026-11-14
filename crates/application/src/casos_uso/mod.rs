@@ -19,6 +19,7 @@ pub mod conversaciones;
 pub mod copropiedades;
 pub mod despachar_salida;
 pub mod directorio;
+pub mod facturacion;
 pub mod importaciones;
 pub mod mantenimiento;
 pub mod modulos;
@@ -31,6 +32,7 @@ pub mod reservas;
 pub mod roles;
 pub mod tickets;
 pub mod titulares;
+pub mod tributario;
 
 pub use archivos::{ArchivoSubido, ResumenMigracion, enlace_descarga, migrar_lote, subir_archivo};
 pub use despachar_salida::{Despachadores, ResumenDespacho, despachar_lote};

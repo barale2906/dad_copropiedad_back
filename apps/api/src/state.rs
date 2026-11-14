@@ -3,13 +3,16 @@
 use std::sync::Arc;
 
 use infra_archivos::AlmacenLocal;
-use infra_facturacion::{LectorUbl, ProveedorSimulado};
+use infra_facturacion::{
+    EmpaquetadorZip, LectorPkcs12, LectorUbl, MotorPropio, ProveedorDian, ProveedorSimulado,
+};
 use infra_pdf::GeneradorTypst;
 use infra_planillas::LectorCsvXlsx;
 use infra_postgres::{
     DirectorioAccesoPg, IdempotenciaPg, PgPool, UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg,
 };
-use infra_seguridad::{Argon2Contrasenas, FirmaQrEd25519, Totp};
+use infra_seguridad::{Argon2Contrasenas, CofreAesGcm, FirmaQrEd25519, Totp};
+use shared::config::{DIAN_URL_HABILITACION, DIAN_URL_PRODUCCION};
 
 /// Estado compartido entre handlers. Clonarlo es barato (todo va detrás de `Arc` o es un pool).
 ///
@@ -42,11 +45,18 @@ pub struct AppState {
     pub limitador: Arc<crate::limite::Limitador>,
     /// Registro de `Idempotency-Key` (reintentos seguros de los POST).
     pub idempotencia: IdempotenciaPg,
-    /// Proveedor de facturación electrónica. Hoy el simulado (sin validez ante la DIAN) hasta
-    /// elegir el proveedor tecnológico (ADR 0020, decisión D3).
-    pub facturacion: ProveedorSimulado,
+    /// Proveedor de facturación electrónica: el motor propio para las entidades con el canal
+    /// `propio` (llevan sus credenciales) y el simulado para las demás (ADR 0020 y 0021).
+    pub facturacion: ProveedorDian,
+    /// Cofre de los secretos de facturación de cada entidad (`FACTURACION_CLAVE_MAESTRA`).
+    /// `new` lo crea **sin clave**; `main` lo configura.
+    pub cofre: Arc<CofreAesGcm>,
+    /// Lector de los certificados `.p12` que cargan las entidades.
+    pub lector_certificados: LectorPkcs12,
     /// Lector de las facturas electrónicas recibidas (XML UBL).
     pub lector_facturas: LectorUbl,
+    /// ZIP del paquete de documentos del periodo para el contador.
+    pub empaquetador: EmpaquetadorZip,
 }
 
 impl AppState {
@@ -74,8 +84,15 @@ impl AppState {
             limitador: Arc::new(crate::limite::Limitador::new(
                 crate::limite::Limites::ninguno(),
             )),
-            facturacion: ProveedorSimulado::new(),
+            facturacion: ProveedorDian::new(
+                ProveedorSimulado::new(),
+                MotorPropio::new(DIAN_URL_HABILITACION, DIAN_URL_PRODUCCION)
+                    .expect("el cliente TLS de la DIAN se arma con las raíces de webpki"),
+            ),
+            cofre: Arc::new(CofreAesGcm::new(None)),
+            lector_certificados: LectorPkcs12,
             lector_facturas: LectorUbl,
+            empaquetador: EmpaquetadorZip,
         }
     }
 }

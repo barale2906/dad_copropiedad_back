@@ -93,7 +93,7 @@ async fn crear_cuenta(pool: &PgPool, usuario: &str) -> CuentaId {
 async fn habilitar_contabilidad(pool: &PgPool, tenant: TenantId) {
     sqlx::query(
         "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
-         VALUES (uuidv7(), $1, 'contabilidad', now() - interval '1 day')",
+         VALUES (uuidv7(), $1, 'contabilidad', '2026-01-01T00:00:00Z')",
     )
     .bind(tenant.as_uuid())
     .execute(pool)

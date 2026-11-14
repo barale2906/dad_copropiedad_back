@@ -9,17 +9,15 @@ use chrono::NaiveDate;
 use domain::{
     BeneficiarioFinalId, ClasificacionArchivo, FormatoExogenaId, GeneracionExogenaId,
     NombreArchivo, Permiso, PersonaId, TipoArchivo,
-    contabilidad::{
-        Cara,
-        tributario::{CriterioBeneficiario, LadoExogena, ValorExogena, consolidar_exogena},
-    },
+    contabilidad::Cara,
+    tributario::{CriterioBeneficiario, LadoExogena, ValorExogena, consolidar_exogena},
 };
 use rust_decimal::Decimal;
 
-use super::facturacion::TxFacturacion;
+use super::TxTesoreria;
 use super::prelude::*;
 use super::tesoreria::{abrir, eventos};
-use super::tributario::perfil_confirmado_en;
+use crate::casos_uso::tributario::perfil_confirmado_en;
 use crate::{
     AppError, AppResult, Contexto,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
@@ -27,7 +25,7 @@ use crate::{
         ArchivoSubido, borrar_huerfano, nuevo_archivo, registrar_en, sha256_hex,
     },
     puertos::{
-        AlmacenArchivos, Reloj, UnidadDeTrabajo,
+        AlmacenArchivos, Reloj, RepositorioArchivos, UnidadDeTrabajo,
         contabilidad::AgrupacionSaldos,
         tributario::{BeneficiarioFinal, GeneracionExogena, ResumenIva, ResumenRetencion},
     },
@@ -36,6 +34,11 @@ use crate::{
 const ACCION_EXOGENA: AccionAuditoria = AccionAuditoria::new("tributario.exogena.generar");
 const ACCION_BENEFICIARIO: AccionAuditoria = AccionAuditoria::new("tributario.rub.registrar");
 const ACCION_BENEFICIARIO_FIN: AccionAuditoria = AccionAuditoria::new("tributario.rub.terminar");
+
+/// Lo que usa una transacción de declaraciones: la de tesorería y los archivos (exógena).
+pub trait TxDeclaraciones: TxTesoreria + RepositorioArchivos {}
+
+impl<T> TxDeclaraciones for T where T: TxTesoreria + RepositorioArchivos {}
 
 fn validacion(texto: impl Into<String>) -> AppError {
     AppError::Validacion(texto.into())
@@ -81,7 +84,7 @@ pub async fn preparar_retencion<U>(
 ) -> AppResult<PreparacionRetencion>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
 {
     rango(desde, hasta)?;
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TributarioPreparar).await?;
@@ -147,7 +150,7 @@ pub async fn preparar_iva<U>(
 ) -> AppResult<PreparacionIva>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
 {
     rango(desde, hasta)?;
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TributarioPreparar).await?;
@@ -210,7 +213,7 @@ pub async fn preparar_ica<U>(
 ) -> AppResult<PreparacionIca>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
 {
     rango(desde, hasta)?;
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TributarioPreparar).await?;
@@ -264,7 +267,7 @@ pub struct ExogenaGenerada {
     pub errores: Vec<String>,
 }
 
-fn csv_exogena(filas: &[domain::contabilidad::tributario::FilaExogena]) -> String {
+fn csv_exogena(filas: &[domain::tributario::FilaExogena]) -> String {
     let columnas: BTreeSet<&str> = filas
         .iter()
         .flat_map(|f| f.columnas.keys().map(String::as_str))
@@ -316,7 +319,7 @@ pub async fn generar_exogena<U, A>(
 ) -> AppResult<ExogenaGenerada>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
     A: AlmacenArchivos,
 {
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TributarioPreparar).await?;
@@ -430,7 +433,7 @@ pub async fn generaciones_exogena<U>(
 ) -> AppResult<Vec<GeneracionExogena>>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
 {
     abrir(unidad, reloj, ctx, Permiso::TributarioPreparar)
         .await?
@@ -454,7 +457,7 @@ pub async fn beneficiarios_finales<U>(
 ) -> AppResult<Vec<BeneficiarioFinal>>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
 {
     abrir(unidad, reloj, ctx, Permiso::TributarioPreparar)
         .await?
@@ -488,7 +491,7 @@ pub async fn registrar_beneficiario<U>(
 ) -> AppResult<BeneficiarioFinal>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
 {
     let porcentaje_ok = match nuevo.criterio {
         CriterioBeneficiario::Propiedad => nuevo
@@ -542,7 +545,7 @@ pub async fn terminar_beneficiario<U>(
 ) -> AppResult<()>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
+    U::Transaccion: TxDeclaraciones,
 {
     let mut tx = abrir(unidad, reloj, ctx, Permiso::TributarioPreparar).await?;
     if !tx.terminar_beneficiario(id, hasta).await? {

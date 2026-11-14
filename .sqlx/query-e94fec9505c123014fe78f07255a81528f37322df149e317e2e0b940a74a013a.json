@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT nombre, nit, razon_social, direccion, municipio_dane, departamento, correo\n             FROM entidades WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nit",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "nit"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "razon_social",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "razon_social"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "direccion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "direccion"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "municipio_dane",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "municipio_dane"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "departamento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "departamento"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "correo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "correo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "e94fec9505c123014fe78f07255a81528f37322df149e317e2e0b940a74a013a"
+}

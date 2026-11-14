@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO configuraciones_facturacion (tenant_id, software_id, pin_cifrado,\n                 test_set_id, ambiente, estado, certificado_id, actualizado_por, actualizado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n             ON CONFLICT (tenant_id) DO UPDATE SET software_id = EXCLUDED.software_id,\n                 pin_cifrado = EXCLUDED.pin_cifrado, test_set_id = EXCLUDED.test_set_id,\n                 ambiente = EXCLUDED.ambiente, estado = EXCLUDED.estado,\n                 certificado_id = EXCLUDED.certificado_id,\n                 actualizado_por = EXCLUDED.actualizado_por,\n                 actualizado_en = EXCLUDED.actualizado_en",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Bytea",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aed7051f56c82a61921411df059f41824a635da85f80808ac800c9ebeab5fe96"
+}

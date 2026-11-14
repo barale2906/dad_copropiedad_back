@@ -3,8 +3,8 @@
 //! catálogo tributario de la plataforma (IVA, ICA y formatos de exógena).
 
 use application::{
-    casos_uso::contabilidad::{
-        declaraciones::{self as uc_decl, NuevoBeneficiario},
+    casos_uso::{
+        contabilidad::declaraciones::{self as uc_decl, NuevoBeneficiario},
         tributario::{
             self as uc, NuevaResolucion, NuevaTarifaIca, NuevaTarifaIva, NuevoFormatoExogena,
         },
@@ -34,17 +34,24 @@ use crate::{
 /// Rutas tributarias de una entidad.
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(catalogo))
-        .routes(routes!(listar_perfiles, crear_perfil))
-        .routes(routes!(confirmar_perfil))
-        .routes(routes!(listar_resoluciones, crear_resolucion))
-        .routes(routes!(activar_resolucion))
         .routes(routes!(preparar_retencion))
         .routes(routes!(preparar_iva))
         .routes(routes!(preparar_ica))
         .routes(routes!(listar_exogena, generar_exogena))
         .routes(routes!(listar_beneficiarios, crear_beneficiario))
         .routes(routes!(terminar_beneficiario))
+}
+
+/// Rutas tributarias comunes de la entidad (se montan en `/entidades/{entidad_id}/tributario`):
+/// catálogo vigente, perfil tributario y resoluciones de numeración. Las usan la contabilidad y
+/// la facturación (ADR 0022).
+pub fn rutas_entidad() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
+        .routes(routes!(catalogo))
+        .routes(routes!(listar_perfiles, crear_perfil))
+        .routes(routes!(confirmar_perfil))
+        .routes(routes!(listar_resoluciones, crear_resolucion))
+        .routes(routes!(activar_resolucion))
 }
 
 /// Rutas del catálogo tributario de la plataforma (se montan en `/api/v1/plataforma`).
@@ -71,13 +78,13 @@ pub struct FechaParametros {
 /// Catálogo tributario de la plataforma (tarifas de IVA e ICA y formatos de exógena).
 #[utoipa::path(
     get,
-    path = "/tributario/catalogo",
+    path = "/catalogo",
     tag = ETIQUETA_TRIBUTARIO,
     security(("bearer" = [])),
     params(("entidad_id" = Uuid, Path, description = "Entidad"), FechaParametros),
     responses(
         (status = OK, description = "Catálogo", body = CatalogoTributarioRespuesta),
-        (status = FORBIDDEN, description = "Sin `contabilidad.ver` o sin el módulo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver` ni `facturacion.ver`, o sin contabilidad ni facturación", body = ErrorRespuesta),
     )
 )]
 pub async fn catalogo(
@@ -96,13 +103,13 @@ pub async fn catalogo(
 /// Versiones del perfil tributario (la más reciente primero).
 #[utoipa::path(
     get,
-    path = "/tributario/perfiles",
+    path = "/perfiles",
     tag = ETIQUETA_TRIBUTARIO,
     security(("bearer" = [])),
     params(("entidad_id" = Uuid, Path, description = "Entidad")),
     responses(
         (status = OK, description = "Versiones", body = Vec<PerfilTributarioRespuesta>),
-        (status = FORBIDDEN, description = "Sin `contabilidad.ver` o sin el módulo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver` ni `facturacion.ver`, o sin contabilidad ni facturación", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_perfiles(
@@ -116,7 +123,7 @@ pub async fn listar_perfiles(
 /// Crea una versión del perfil en borrador (no aplica nada hasta que el contador la confirme).
 #[utoipa::path(
     post,
-    path = "/tributario/perfiles",
+    path = "/perfiles",
     tag = ETIQUETA_TRIBUTARIO,
     security(("bearer" = [])),
     params(("entidad_id" = Uuid, Path, description = "Entidad")),
@@ -149,7 +156,7 @@ pub async fn crear_perfil(
 /// Una versión confirmada no se modifica.
 #[utoipa::path(
     post,
-    path = "/tributario/perfiles/{perfil_id}/confirmacion",
+    path = "/perfiles/{perfil_id}/confirmacion",
     tag = ETIQUETA_TRIBUTARIO,
     security(("bearer" = [])),
     params(("entidad_id" = Uuid, Path, description = "Entidad"), ("perfil_id" = Uuid, Path, description = "Versión del perfil")),
@@ -181,13 +188,13 @@ pub async fn confirmar_perfil(
 /// Resoluciones de numeración (sin la clave técnica).
 #[utoipa::path(
     get,
-    path = "/tributario/resoluciones",
+    path = "/resoluciones",
     tag = ETIQUETA_TRIBUTARIO,
     security(("bearer" = [])),
     params(("entidad_id" = Uuid, Path, description = "Entidad")),
     responses(
         (status = OK, description = "Resoluciones", body = Vec<ResolucionRespuesta>),
-        (status = FORBIDDEN, description = "Sin `contabilidad.ver` o sin el módulo", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver` ni `facturacion.ver`, o sin contabilidad ni facturación", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_resoluciones(
@@ -201,7 +208,7 @@ pub async fn listar_resoluciones(
 /// Registra una resolución de numeración de la DIAN.
 #[utoipa::path(
     post,
-    path = "/tributario/resoluciones",
+    path = "/resoluciones",
     tag = ETIQUETA_TRIBUTARIO,
     security(("bearer" = [])),
     params(("entidad_id" = Uuid, Path, description = "Entidad")),
@@ -241,7 +248,7 @@ pub async fn crear_resolucion(
 /// Activa o desactiva una resolución (solo una activa y vigente numera).
 #[utoipa::path(
     put,
-    path = "/tributario/resoluciones/{resolucion_id}/activa",
+    path = "/resoluciones/{resolucion_id}/activa",
     tag = ETIQUETA_TRIBUTARIO,
     security(("bearer" = [])),
     params(("entidad_id" = Uuid, Path, description = "Entidad"), ("resolucion_id" = Uuid, Path, description = "Resolución")),

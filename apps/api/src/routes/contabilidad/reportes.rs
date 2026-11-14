@@ -26,7 +26,7 @@ use crate::{
     state::AppState,
 };
 
-const CABECERA_HUELLA: HeaderName = HeaderName::from_static("x-contenido-sha256");
+pub(crate) const CABECERA_HUELLA: HeaderName = HeaderName::from_static("x-contenido-sha256");
 
 /// Rutas de reportes.
 pub fn rutas() -> OpenApiRouter<AppState> {

@@ -81,6 +81,16 @@ pub trait AlmacenArchivos: Send + Sync {
     fn url_temporal(&self, descarga: &DescargaArchivo) -> AppResult<String>;
 }
 
+/// Empaqueta varios archivos en uno ZIP (p. ej. los XML y PDF de un periodo para el contador).
+pub trait Empaquetador: Send + Sync {
+    /// ZIP con los archivos dados (nombre dentro del ZIP, contenido), en ese orden.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Validacion`] si un archivo supera los límites del formato.
+    fn empaquetar(&self, archivos: &[(String, Vec<u8>)]) -> AppResult<Vec<u8>>;
+}
+
 /// Registro de archivos dentro de una transacción del tenant.
 pub trait RepositorioArchivos: Send {
     /// Registra un archivo nuevo.

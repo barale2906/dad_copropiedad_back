@@ -32,7 +32,7 @@ impl Empresa {
         self.api
             .pedir(
                 metodo,
-                &format!("/api/v1/entidades/{}/contabilidad{sufijo}", self.id),
+                &format!("/api/v1/entidades/{}{sufijo}", self.id),
                 Some(&self.gerente),
                 cuerpo,
             )
@@ -87,7 +87,7 @@ impl Empresa {
     async fn venta(&self, valor: i64, tarifa_iva: &str) -> String {
         let f = self
             .crear(
-                "/ventas/facturas",
+                "/facturacion/facturas",
                 json!({ "persona_id": self.cliente, "fecha": "2026-03-02",
                         "vencimiento": "2026-04-01", "descripcion": "Alquiler del salón",
                         "lineas": [{ "descripcion": "Salón", "cuenta": "4170",
@@ -97,7 +97,7 @@ impl Empresa {
             )
             .await;
         let f = id(&f);
-        self.crear(&format!("/ventas/facturas/{f}/emision"), json!({}))
+        self.crear(&format!("/facturacion/facturas/{f}/emision"), json!({}))
             .await;
         f
     }
@@ -178,7 +178,7 @@ async fn empresa(pool: PgPool) -> Empresa {
         ("5135", true, false),
     ] {
         e.crear(
-            "/cuentas",
+            "/contabilidad/cuentas",
             json!({ "codigo": codigo, "nombre": format!("Cuenta {codigo}"),
                     "acepta_movimiento": movimiento, "exige_tercero": tercero }),
         )
@@ -186,7 +186,7 @@ async fn empresa(pool: PgPool) -> Empresa {
     }
     for codigo in ["FC", "FV"] {
         e.crear(
-            "/tipos-comprobante",
+            "/contabilidad/tipos-comprobante",
             json!({ "codigo": codigo, "nombre": format!("Tipo {codigo}"), "manual": false }),
         )
         .await;
@@ -194,7 +194,7 @@ async fn empresa(pool: PgPool) -> Empresa {
     let (s, v) = e
         .pedir(
             Method::PUT,
-            "/configuracion",
+            "/contabilidad/configuracion",
             Some(json!({ "marco_tecnico": "grupo_3", "vigente_desde": "2026-01-01" })),
         )
         .await;
@@ -224,7 +224,7 @@ async fn empresa(pool: PgPool) -> Empresa {
         ),
     ] {
         e.crear(
-            "/reglas",
+            "/contabilidad/reglas",
             json!({ "evento": evento, "tipo_comprobante": tipo, "vigente_desde": "2026-01-01",
                     "lineas": lineas }),
         )
@@ -259,7 +259,7 @@ async fn sin_perfil_confirmado_no_hay_iva_y_con_el_solo_en_alquiler_o_venta(pool
     let (s, v) = e
         .pedir(
             Method::POST,
-            "/ventas/facturas",
+            "/facturacion/facturas",
             Some(factura("alquiler_servicio")),
         )
         .await;
@@ -267,7 +267,11 @@ async fn sin_perfil_confirmado_no_hay_iva_y_con_el_solo_en_alquiler_o_venta(pool
 
     e.confirmar_perfil().await;
     let (s, v) = e
-        .pedir(Method::POST, "/ventas/facturas", Some(factura("expensa")))
+        .pedir(
+            Method::POST,
+            "/facturacion/facturas",
+            Some(factura("expensa")),
+        )
         .await;
     assert_eq!(
         s,
@@ -277,7 +281,7 @@ async fn sin_perfil_confirmado_no_hay_iva_y_con_el_solo_en_alquiler_o_venta(pool
     let (s, v) = e
         .pedir(
             Method::POST,
-            "/ventas/facturas",
+            "/facturacion/facturas",
             Some(factura("alquiler_servicio")),
         )
         .await;
@@ -330,7 +334,7 @@ async fn factura_electronica_numerada_idempotente_y_anulada_con_nota_credito(poo
     let e = empresa(pool).await;
     e.confirmar_perfil().await;
     let factura = e.venta(100_000, "19").await;
-    let fe = format!("/ventas/facturas/{factura}/factura-electronica");
+    let fe = format!("/facturacion/facturas/{factura}/factura-electronica");
 
     let (s, v) = e.pedir(Method::POST, &fe, None).await;
     assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "sin resolución: {v}");
@@ -366,7 +370,7 @@ async fn factura_electronica_numerada_idempotente_y_anulada_con_nota_credito(poo
     let segunda = e.venta(50_000, "0").await;
     let siguiente = e
         .crear(
-            &format!("/ventas/facturas/{segunda}/factura-electronica"),
+            &format!("/facturacion/facturas/{segunda}/factura-electronica"),
             json!({}),
         )
         .await;
@@ -375,7 +379,7 @@ async fn factura_electronica_numerada_idempotente_y_anulada_con_nota_credito(poo
     let (s, v) = e
         .pedir(
             Method::POST,
-            &format!("/ventas/facturas/{factura}/anulacion"),
+            &format!("/facturacion/facturas/{factura}/anulacion"),
             Some(json!({ "motivo": "Error de digitación" })),
         )
         .await;
@@ -387,7 +391,7 @@ async fn factura_electronica_numerada_idempotente_y_anulada_con_nota_credito(poo
 
     let nota = e
         .crear(
-            &format!("/ventas/facturas/{factura}/nota-credito"),
+            &format!("/facturacion/facturas/{factura}/nota-credito"),
             json!({ "motivo": "Se facturó un valor equivocado" }),
         )
         .await;
@@ -395,7 +399,11 @@ async fn factura_electronica_numerada_idempotente_y_anulada_con_nota_credito(poo
     assert_eq!(nota["estado"], json!("validado"));
     assert_eq!(nota["referencia_id"], primero["id"]);
     let (_, venta) = e
-        .pedir(Method::GET, &format!("/ventas/facturas/{factura}"), None)
+        .pedir(
+            Method::GET,
+            &format!("/facturacion/facturas/{factura}"),
+            None,
+        )
         .await;
     assert_eq!(venta["estado"], json!("anulada"));
 
@@ -429,7 +437,7 @@ async fn sin_perfil_de_facturador_no_emite(pool: PgPool) {
     let (s, v) = e
         .pedir(
             Method::POST,
-            &format!("/ventas/facturas/{factura}/factura-electronica"),
+            &format!("/facturacion/facturas/{factura}/factura-electronica"),
             None,
         )
         .await;
@@ -451,7 +459,7 @@ async fn la_representacion_grafica_es_un_pdf(pool: PgPool) {
     let factura = e.venta(100_000, "19").await;
     let fe = e
         .crear(
-            &format!("/ventas/facturas/{factura}/factura-electronica"),
+            &format!("/facturacion/facturas/{factura}/factura-electronica"),
             json!({}),
         )
         .await;
@@ -460,7 +468,7 @@ async fn la_representacion_grafica_es_un_pdf(pool: PgPool) {
         .api
         .pedir_texto(
             &format!(
-                "/api/v1/entidades/{}/contabilidad/facturacion/documentos/{}/pdf",
+                "/api/v1/entidades/{}/facturacion/documentos/{}/pdf",
                 e.id,
                 id(&fe)
             ),
@@ -569,7 +577,7 @@ async fn prepara_el_iva_y_la_exogena_es_reproducible(pool: PgPool) {
     let (s, iva) = e
         .pedir(
             Method::GET,
-            "/tributario/iva?desde=2026-03-01&hasta=2026-04-30",
+            "/contabilidad/tributario/iva?desde=2026-03-01&hasta=2026-04-30",
             None,
         )
         .await;
@@ -588,8 +596,10 @@ async fn prepara_el_iva_y_la_exogena_es_reproducible(pool: PgPool) {
         .await;
     assert_eq!(formato["version"], json!(1));
     let generar = json!({ "formato_id": id(&formato) });
-    let primera = e.crear("/tributario/exogena", generar.clone()).await;
-    let segunda = e.crear("/tributario/exogena", generar).await;
+    let primera = e
+        .crear("/contabilidad/tributario/exogena", generar.clone())
+        .await;
+    let segunda = e.crear("/contabilidad/tributario/exogena", generar).await;
     assert_eq!(
         primera["generacion"]["sha256"], segunda["generacion"]["sha256"],
         "los mismos datos y la misma versión dan el mismo archivo"
@@ -597,7 +607,11 @@ async fn prepara_el_iva_y_la_exogena_es_reproducible(pool: PgPool) {
     let csv = primera["csv"].as_str().expect("csv");
     assert!(csv.contains("800111222"), "{csv}");
     let (_, lista) = e
-        .pedir(Method::GET, "/tributario/exogena?anio=2026", None)
+        .pedir(
+            Method::GET,
+            "/contabilidad/tributario/exogena?anio=2026",
+            None,
+        )
         .await;
     assert_eq!(lista.as_array().expect("lista").len(), 2);
 }
@@ -609,7 +623,7 @@ async fn el_ica_exige_perfil_confirmado(pool: PgPool) {
     let (s, v) = e
         .pedir(
             Method::GET,
-            "/tributario/ica?desde=2026-01-01&hasta=2026-12-31",
+            "/contabilidad/tributario/ica?desde=2026-01-01&hasta=2026-12-31",
             None,
         )
         .await;
@@ -623,7 +637,7 @@ async fn beneficiario_final_con_participacion_solo_por_propiedad(pool: PgPool) {
     let (s, v) = e
         .pedir(
             Method::POST,
-            "/tributario/beneficiarios",
+            "/contabilidad/tributario/beneficiarios",
             Some(json!({ "persona_id": e.cliente, "criterio": "control",
                          "porcentaje": "30", "vigente_desde": "2026-01-01" })),
         )
@@ -632,12 +646,15 @@ async fn beneficiario_final_con_participacion_solo_por_propiedad(pool: PgPool) {
 
     let b = e
         .crear(
-            "/tributario/beneficiarios",
+            "/contabilidad/tributario/beneficiarios",
             json!({ "persona_id": e.cliente, "criterio": "propiedad", "porcentaje": "30",
                     "vigente_desde": "2026-01-01" }),
         )
         .await;
-    let terminar = format!("/tributario/beneficiarios/{}/terminacion", id(&b));
+    let terminar = format!(
+        "/contabilidad/tributario/beneficiarios/{}/terminacion",
+        id(&b)
+    );
     let (s, _) = e
         .pedir(
             Method::POST,

@@ -9,18 +9,18 @@ use application::{
         RegistroAuditoria, RegistroOutbox, RepositorioCuentas, RepositorioOrganizaciones,
         RepositorioPlataforma, RepositorioSesiones, Transaccion, UnidadDeTrabajoPlataforma,
         identidad::{
-            AsignacionPlataforma, CambiosFicha, CodigoVerificacion, CopropiedadResumen, Cuenta,
-            FichaOrganizacion, HashesTokens, Membresia, Organizacion, PropositoCodigo, Reclamacion,
-            Rol, Sesion,
+            AsignacionPlataforma, CambiosFicha, CodigoVerificacion, ConsumoDocumentos,
+            CopropiedadResumen, Cuenta, FichaOrganizacion, HashesTokens, Membresia, Organizacion,
+            PropositoCodigo, Reclamacion, Rol, Sesion,
         },
     },
 };
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    Ambito, AsignacionRolId, ConjuntoPermisos, CuentaId, DireccionCorreo, EstadoCuenta,
-    EstadoOrganizacion, EstadoReclamacion, Identificador, NaturalezaOrganizacion, Nit,
-    NombreUsuario, OrganizacionId, Permiso, ReclamacionId, RolId, RolOrganizacion, SesionId,
-    TenantId, TipoOrganizacion, permisos::CODIGO_SUPERUSUARIO,
+    Ambito, AsignacionRolId, ConjuntoPermisos, CuentaId, DireccionCorreo, EstadoCopropiedad,
+    EstadoCuenta, EstadoOrganizacion, EstadoReclamacion, Identificador, NaturalezaOrganizacion,
+    Nit, NombreUsuario, OrganizacionId, Permiso, ReclamacionId, RolId, RolOrganizacion, SesionId,
+    TenantId, TipoEntidad, TipoOrganizacion, permisos::CODIGO_SUPERUSUARIO,
 };
 use sqlx::{PgPool, Postgres};
 use uuid::Uuid;
@@ -694,9 +694,54 @@ impl RepositorioPlataforma for TransaccionPlataformaPg {
         Ok((permisos, fila.superusuario))
     }
 
+    async fn consumo_documentos(
+        &mut self,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> AppResult<Vec<ConsumoDocumentos>> {
+        sqlx::query!(
+            r#"SELECT tenant_id AS "tenant_id!", nombre AS "nombre!", tipo AS "tipo!",
+                      cantidad AS "cantidad!"
+               FROM consumo_documentos_electronicos($1, $2)"#,
+            desde,
+            hasta,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            Ok(ConsumoDocumentos {
+                tenant_id: TenantId::from_uuid(f.tenant_id),
+                nombre: f.nombre,
+                tipo: domain::tributario::TipoDocumentoElectronico::try_from(f.tipo.as_str())?,
+                cantidad: u64::try_from(f.cantidad).unwrap_or_default(),
+            })
+        })
+        .collect()
+    }
+
+    async fn designar_entidad_plataforma(&mut self, entidad: TenantId) -> AppResult<bool> {
+        sqlx::query_scalar!(
+            r#"SELECT designar_entidad_plataforma($1) AS "designada!""#,
+            entidad.as_uuid()
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(|e| match &e {
+            sqlx::Error::Database(d) if d.code().as_deref() == Some("23514") => {
+                AppError::Conflicto(
+                    "una copropiedad no puede ser la entidad de la plataforma".into(),
+                )
+            }
+            _ => AppError::infra(e),
+        })
+    }
+
     async fn membresias(&mut self, cuenta: CuentaId) -> AppResult<Vec<Membresia>> {
-        Ok(sqlx::query!(
-            r#"SELECT tenant_id AS "tenant_id!", nombre AS "nombre!", roles AS "roles!"
+        sqlx::query!(
+            r#"SELECT tenant_id AS "tenant_id!", nombre AS "nombre!", nit,
+                      tipo AS "tipo!", estado AS "estado!", roles AS "roles!"
                FROM membresias_de_cuenta($1)"#,
             cuenta.as_uuid(),
         )
@@ -704,12 +749,17 @@ impl RepositorioPlataforma for TransaccionPlataformaPg {
         .await
         .map_err(AppError::infra)?
         .into_iter()
-        .map(|f| Membresia {
-            tenant_id: TenantId::from_uuid(f.tenant_id),
-            nombre: f.nombre,
-            roles: f.roles,
+        .map(|f| {
+            Ok(Membresia {
+                tenant_id: TenantId::from_uuid(f.tenant_id),
+                nombre: f.nombre,
+                nit: f.nit,
+                tipo: TipoEntidad::try_from(f.tipo.as_str())?,
+                estado: EstadoCopropiedad::try_from(f.estado.as_str())?,
+                roles: f.roles,
+            })
         })
-        .collect())
+        .collect()
     }
 
     async fn roles_plataforma(&mut self) -> AppResult<Vec<Rol>> {

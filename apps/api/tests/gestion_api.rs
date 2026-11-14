@@ -17,7 +17,7 @@ async fn ph_con_modulo(pool: PgPool) -> Ph {
 /// Cuenta nueva con un rol plantilla en la copropiedad; devuelve su token.
 async fn con_rol(ph: &Ph, usuario: &str, codigo_rol: &str) -> String {
     let cuenta = ph.api.registrar(usuario).await;
-    let (s, roles) = ph.pedir(Method::GET, "/roles", None).await;
+    let (s, roles) = ph.pedir_entidad(Method::GET, "/roles", None).await;
     assert_eq!(s, StatusCode::OK, "{roles}");
     let rol = roles
         .as_array()
@@ -26,7 +26,7 @@ async fn con_rol(ph: &Ph, usuario: &str, codigo_rol: &str) -> String {
         .expect("rol plantilla")
         .to_owned();
     let (s, v) = ph
-        .pedir(
+        .pedir_entidad(
             Method::POST,
             "/asignaciones",
             Some(json!({ "cuenta_id": cuenta, "rol_id": rol })),

@@ -352,6 +352,74 @@ impl AccesoConfig {
     }
 }
 
+/// Servicio web de la DIAN en el ambiente de habilitación (pruebas).
+pub const DIAN_URL_HABILITACION: &str = "https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc";
+/// Servicio web de la DIAN en producción.
+pub const DIAN_URL_PRODUCCION: &str = "https://vpfe.dian.gov.co/WcfDianCustomerServices.svc";
+
+/// Facturación electrónica con el motor propio (plan 18 parte B).
+#[derive(Clone)]
+pub struct FacturacionConfig {
+    /// Clave maestra de 32 bytes (`FACTURACION_CLAVE_MAESTRA`, 64 dígitos hexadecimales) con que
+    /// se cifran el certificado `.p12`, su contraseña y el PIN del software de cada entidad.
+    /// `None` = la habilitación con el motor propio no está disponible en este servidor.
+    pub clave_maestra: Option<[u8; 32]>,
+    /// Servicio web de habilitación (`FACTURACION_DIAN_URL_HABILITACION`).
+    pub url_habilitacion: String,
+    /// Servicio web de producción (`FACTURACION_DIAN_URL_PRODUCCION`).
+    pub url_produccion: String,
+}
+
+impl std::fmt::Debug for FacturacionConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FacturacionConfig")
+            .field("clave_maestra", &self.clave_maestra.map(|_| "<oculta>"))
+            .field("url_habilitacion", &self.url_habilitacion)
+            .field("url_produccion", &self.url_produccion)
+            .finish()
+    }
+}
+
+impl FacturacionConfig {
+    /// Lee `FACTURACION_*`.
+    ///
+    /// # Errors
+    ///
+    /// [`ConfigError`] si la clave maestra no son 64 dígitos hexadecimales.
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let _ = dotenvy::dotenv();
+        let clave_maestra = match optional("FACTURACION_CLAVE_MAESTRA") {
+            None => None,
+            Some(hex) => Some(clave_hex(&hex).ok_or_else(|| ConfigError::Invalid {
+                var: "FACTURACION_CLAVE_MAESTRA",
+                detail: "deben ser 64 dígitos hexadecimales (32 bytes)".into(),
+            })?),
+        };
+        Ok(Self {
+            clave_maestra,
+            url_habilitacion: optional("FACTURACION_DIAN_URL_HABILITACION")
+                .unwrap_or_else(|| DIAN_URL_HABILITACION.into()),
+            url_produccion: optional("FACTURACION_DIAN_URL_PRODUCCION")
+                .unwrap_or_else(|| DIAN_URL_PRODUCCION.into()),
+        })
+    }
+}
+
+/// 64 dígitos hexadecimales → 32 bytes.
+fn clave_hex(texto: &str) -> Option<[u8; 32]> {
+    let t = texto.trim();
+    if t.len() != 64 || !t.is_ascii() {
+        return None;
+    }
+    let mut clave = [0u8; 32];
+    for (i, par) in t.as_bytes().chunks(2).enumerate() {
+        let alto = (par[0] as char).to_digit(16)?;
+        let bajo = (par[1] as char).to_digit(16)?;
+        clave[i] = u8::try_from(alto * 16 + bajo).ok()?;
+    }
+    Some(clave)
+}
+
 /// Base de la API de Firebase Cloud Messaging.
 pub const FCM_API_URL_PREDETERMINADA: &str = "https://fcm.googleapis.com";
 
@@ -540,6 +608,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn la_clave_maestra_son_64_hexadecimales() {
+        assert_eq!(clave_hex(&"ab".repeat(32)), Some([0xab; 32]));
+        assert!(clave_hex("corta").is_none());
+        assert!(clave_hex(&"zz".repeat(32)).is_none());
+    }
 
     #[test]
     fn los_origenes_de_cors_se_validan_y_se_normalizan() {

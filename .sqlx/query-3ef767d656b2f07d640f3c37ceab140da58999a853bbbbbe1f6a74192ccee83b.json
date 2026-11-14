@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO envios_set_pruebas (id, tenant_id, tipo, prefijo, numero, codigo, clave,\n                 estado, respuesta, enviado_en, consultado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Int8",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3ef767d656b2f07d640f3c37ceab140da58999a853bbbbbe1f6a74192ccee83b"
+}

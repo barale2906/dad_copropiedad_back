@@ -16,7 +16,7 @@ use chrono::{DateTime, NaiveDate, NaiveTime, Utc, Weekday};
 use domain::{
     AdvertenciaFicha, ArchivoId, CodigoDane, DireccionCorreo, ExcepcionHorario, FormaCopropiedad,
     FranjaSemanal, Horario, Modulo, Nit, Permiso, PlantillaNomenclatura, PuntoAtencionId, Telefono,
-    TipoCopropiedad, TipoPuntoAtencion,
+    TipoCopropiedad, TipoEntidad, TipoPuntoAtencion,
 };
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
@@ -305,11 +305,15 @@ pub async fn cargos_vigentes(
     Ok(Json(cargos.into_iter().map(Into::into).collect()))
 }
 
-/// Lo que la cuenta puede hacer en la copropiedad, para mostrar u ocultar opciones. El backend
+/// Lo que la cuenta puede hacer en la entidad, para mostrar u ocultar opciones. El backend
 /// vuelve a exigir el permiso y el módulo en cada operación.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct CapacidadesRespuesta {
-    /// Permisos efectivos de la cuenta (unión de sus roles vigentes en la copropiedad).
+    /// `propiedad_horizontal` (menús de la PH y lo común), `empresa` (solo lo común) o
+    /// `plataforma` (consola de operación y lo común de su propia empresa).
+    #[schema(value_type = crate::esquemas::TipoEntidad)]
+    pub tipo: TipoEntidad,
+    /// Permisos efectivos de la cuenta (unión de sus roles vigentes en la entidad).
     #[schema(value_type = Vec<crate::esquemas::Permiso>)]
     pub permisos: Vec<Permiso>,
     /// Módulos contratados y vigentes hoy; los demás responden `modulo_no_habilitado`.
@@ -320,6 +324,7 @@ pub struct CapacidadesRespuesta {
 impl From<Capacidades> for CapacidadesRespuesta {
     fn from(c: Capacidades) -> Self {
         Self {
+            tipo: c.tipo,
             permisos: c.permisos.iter().collect(),
             modulos: c.modulos,
         }

@@ -15,7 +15,7 @@ const PNG: &str =
 
 async fn con_rol(ph: &Ph, usuario: &str, codigo_rol: &str) -> String {
     let cuenta = ph.api.registrar(usuario).await;
-    let (_, roles) = ph.pedir(Method::GET, "/roles", None).await;
+    let (_, roles) = ph.pedir_entidad(Method::GET, "/roles", None).await;
     let rol = roles
         .as_array()
         .and_then(|r| r.iter().find(|r| r["codigo"] == codigo_rol))
@@ -23,7 +23,7 @@ async fn con_rol(ph: &Ph, usuario: &str, codigo_rol: &str) -> String {
         .expect("rol plantilla")
         .to_owned();
     let (s, v) = ph
-        .pedir(
+        .pedir_entidad(
             Method::POST,
             "/asignaciones",
             Some(json!({ "cuenta_id": cuenta, "rol_id": rol })),

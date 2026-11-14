@@ -264,14 +264,20 @@ impl Api {
             )
             .await;
         assert_eq!(s, StatusCode::OK, "{v}");
-        v["token_acceso"].as_str().expect("token").to_owned()
+        v["tokens"]["token_acceso"]
+            .as_str()
+            .expect("token")
+            .to_owned()
     }
 }
 
 /// Copropiedad dada de alta por la plataforma con su administrador.
 pub struct Ph {
     pub api: Api,
+    /// `/api/v1/copropiedades/{id}`: lo de la vertical PH.
     pub base: String,
+    /// `/api/v1/entidades/{id}`: lo común a toda entidad (roles, archivos, auditoría…).
+    pub entidad: String,
     pub admin: String,
     pub root: String,
     pub id: String,
@@ -301,6 +307,7 @@ pub async fn ph(pool: PgPool) -> Ph {
     Ph {
         admin: api.token("admin").await,
         base: format!("/api/v1/copropiedades/{id}"),
+        entidad: format!("/api/v1/entidades/{id}"),
         root,
         id,
         api,
@@ -318,6 +325,23 @@ impl Ph {
             .pedir(
                 metodo,
                 &format!("{}{ruta}", self.base),
+                Some(&self.admin),
+                cuerpo,
+            )
+            .await
+    }
+
+    /// Como [`Ph::pedir`], en las rutas comunes de la entidad.
+    pub async fn pedir_entidad(
+        &self,
+        metodo: Method,
+        ruta: &str,
+        cuerpo: Option<Value>,
+    ) -> (StatusCode, Value) {
+        self.api
+            .pedir(
+                metodo,
+                &format!("{}{ruta}", self.entidad),
                 Some(&self.admin),
                 cuerpo,
             )

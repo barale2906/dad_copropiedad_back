@@ -27,6 +27,8 @@ pub(crate) const ACCION_CREAR_COPROPIEDAD: AccionAuditoria =
     AccionAuditoria::new("plataforma.copropiedad.crear");
 pub(crate) const ACCION_CREAR_ENTIDAD: AccionAuditoria =
     AccionAuditoria::new("plataforma.entidad.crear");
+pub(crate) const ACCION_DESIGNAR_PLATAFORMA: AccionAuditoria =
+    AccionAuditoria::new("plataforma.entidad.designar");
 pub(crate) const ACCION_CREAR_ROL: AccionAuditoria = AccionAuditoria::new("plataforma.rol.crear");
 pub(crate) const ACCION_EDITAR_ROL: AccionAuditoria =
     AccionAuditoria::new("plataforma.rol.editar_permisos");
@@ -395,6 +397,68 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(asignacion)
+}
+
+/// Designa la entidad que opera la plataforma (la empresa de GISLA SAS): desde entonces aparece
+/// como `plataforma` a quien tiene roles de plataforma al iniciar sesión, y es la que factura los
+/// servicios de la plataforma. Solo puede haber una; designar otra le quita la marca a la
+/// anterior. Una copropiedad no puede ser la plataforma.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.entidad_propia.designar`; [`AppError::NoEncontrado`]
+/// si la entidad no existe o está retirada; [`AppError::Conflicto`] si es una copropiedad.
+pub async fn designar_entidad_plataforma<UP>(
+    unidad: &UP,
+    ctx: &ContextoPlataforma,
+    entidad: TenantId,
+) -> AppResult<()>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma + RegistroAuditoria,
+{
+    ctx.exigir(Permiso::PlataformaEntidadPropiaDesignar)?;
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    if !tx.designar_entidad_plataforma(entidad).await? {
+        return Err(AppError::NoEncontrado("entidad"));
+    }
+    tx.registrar(EventoAuditoria::ok(
+        ACCION_DESIGNAR_PLATAFORMA,
+        "entidad",
+        entidad.as_uuid(),
+    ))
+    .await?;
+    tx.confirmar().await
+}
+
+/// Documentos electrónicos transmitidos por entidad y tipo en el periodo: la base para cobrar
+/// el módulo de facturación por paquetes de documentos (plan 19). Solo conteos.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.facturacion.ver`; [`AppError::Validacion`] si el
+/// rango está invertido.
+pub async fn consumo_documentos<UP>(
+    unidad: &UP,
+    ctx: &ContextoPlataforma,
+    desde: chrono::NaiveDate,
+    hasta: chrono::NaiveDate,
+) -> AppResult<Vec<crate::puertos::identidad::ConsumoDocumentos>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaFacturacionVer)?;
+    if hasta < desde {
+        return Err(AppError::Validacion(
+            "`hasta` no puede ser anterior a `desde`".into(),
+        ));
+    }
+    unidad
+        .iniciar_plataforma(ctx)
+        .await?
+        .consumo_documentos(desde, hasta)
+        .await
 }
 
 /// Termina una asignación de plataforma. Nunca deja la plataforma sin superusuario.

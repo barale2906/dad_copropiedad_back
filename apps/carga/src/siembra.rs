@@ -125,7 +125,7 @@ async fn token_plataforma(c: &Cliente, o: &OpcionesSiembra) -> anyhow::Result<St
                 )
                 .await
                 .exigir(&[200], "segundo factor del superusuario")?;
-            return v["token_acceso"]
+            return v["tokens"]["token_acceso"]
                 .as_str()
                 .map(str::to_owned)
                 .context("token");

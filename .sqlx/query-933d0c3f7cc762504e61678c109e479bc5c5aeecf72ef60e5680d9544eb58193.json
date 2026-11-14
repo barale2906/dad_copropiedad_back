@@ -1,0 +1,45 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tenant_id AS \"tenant_id!\", nombre AS \"nombre!\", tipo AS \"tipo!\",\n                      cantidad AS \"cantidad!\"\n               FROM consumo_documentos_electronicos($1, $2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tenant_id!",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 1,
+        "name": "nombre!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo!",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 3,
+        "name": "cantidad!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "933d0c3f7cc762504e61678c109e479bc5c5aeecf72ef60e5680d9544eb58193"
+}

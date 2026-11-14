@@ -283,7 +283,7 @@ async fn entorno(pool: PgPool) -> Entorno {
     for modulo in ["contabilidad", "contabilidad_ph"] {
         sqlx::query(
             "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
-             VALUES (uuidv7(), $1, $2, now() - interval '1 day')",
+             VALUES (uuidv7(), $1, $2, '2026-01-01T00:00:00Z')",
         )
         .bind(tenant.as_uuid())
         .bind(modulo)
@@ -1560,7 +1560,7 @@ async fn la_mora_restringe_y_libera_las_reservas(pool: PgPool) {
     let e = entorno(pool).await;
     sqlx::query(
         "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
-         VALUES (uuidv7(), $1, 'bienes_comunes', now() - interval '1 day')",
+         VALUES (uuidv7(), $1, 'bienes_comunes', '2026-01-01T00:00:00Z')",
     )
     .bind(e.contador.tenant_id.as_uuid())
     .execute(&e.pool)
