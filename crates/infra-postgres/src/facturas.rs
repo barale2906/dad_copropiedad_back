@@ -7,8 +7,8 @@ use application::{
         contabilidad::Origen,
         tesoreria::{
             DatosEntidad, FacturaProveedor, FacturaVenta, FilaCertificado, FiltroFacturas,
-            LineaFacturaProveedor, LineaFacturaVenta, PagoManual, RepositorioFacturas,
-            RetencionLinea,
+            LineaFacturaProveedor, LineaFacturaVenta, NotaDebitoVenta, PagoManual,
+            RepositorioFacturas, RetencionLinea,
         },
     },
 };
@@ -21,7 +21,7 @@ use domain::{
         tesoreria::{EstadoFacturaProveedor, EstadoFacturaVenta, ImpuestoRetencion},
     },
     facturacion::MedioPagoManual,
-    tributario::ClasificacionTributaria,
+    tributario::{ClasificacionTributaria, ConceptoNotaDebito},
 };
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -118,6 +118,8 @@ struct FilaFacturaVenta {
     pago_manual_medio: Option<String>,
     pago_manual_referencia: Option<String>,
     pago_manual_por: Option<Uuid>,
+    nota_debito_de: Option<Uuid>,
+    concepto_nota_debito: Option<String>,
 }
 
 impl FilaFacturaVenta {
@@ -150,6 +152,13 @@ impl FilaFacturaVenta {
                     medio: MedioPagoManual::try_from(medio.as_str())?,
                     referencia: self.pago_manual_referencia,
                     por: CuentaId::from_uuid(por),
+                }),
+                _ => None,
+            },
+            nota_debito: match (self.nota_debito_de, self.concepto_nota_debito) {
+                (Some(factura), Some(concepto)) => Some(NotaDebitoVenta {
+                    factura_id: FacturaVentaId::from_uuid(factura),
+                    concepto: ConceptoNotaDebito::try_from(concepto.as_str())?,
                 }),
                 _ => None,
             },
@@ -448,8 +457,9 @@ impl RepositorioFacturas for TransaccionPg {
     async fn insertar_factura_venta(&mut self, f: &FacturaVenta) -> AppResult<()> {
         sqlx::query!(
             "INSERT INTO facturas_venta (id, tenant_id, persona_id, fecha, vencimiento, descripcion,
-                 origen_tipo, origen_id, subtotal, iva, total, pagado, estado, creada_por, creada_en)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
+                 origen_tipo, origen_id, subtotal, iva, total, pagado, estado, creada_por, creada_en,
+                 nota_debito_de, concepto_nota_debito)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)",
             f.id.as_uuid(),
             self.ctx.tenant_id.as_uuid(),
             f.persona_id.as_uuid(),
@@ -465,6 +475,8 @@ impl RepositorioFacturas for TransaccionPg {
             f.estado.as_str(),
             f.creada_por.map(CuentaId::as_uuid),
             f.creada_en,
+            f.nota_debito.map(|n| n.factura_id.as_uuid()),
+            f.nota_debito.map(|n| n.concepto.as_str()),
         )
         .execute(&mut *self.tx)
         .await
@@ -502,7 +514,7 @@ impl RepositorioFacturas for TransaccionPg {
             "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,
                     subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,
                     creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,
-                    pago_manual_referencia, pago_manual_por
+                    pago_manual_referencia, pago_manual_por, nota_debito_de, concepto_nota_debito
              FROM facturas_venta WHERE id = $1 FOR UPDATE",
             id.as_uuid()
         )
@@ -528,7 +540,7 @@ impl RepositorioFacturas for TransaccionPg {
             "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,
                     subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,
                     creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,
-                    pago_manual_referencia, pago_manual_por
+                    pago_manual_referencia, pago_manual_por, nota_debito_de, concepto_nota_debito
              FROM facturas_venta
              WHERE ($1::uuid IS NULL OR persona_id = $1) AND ($2::text IS NULL OR estado = $2)
                AND ($3::date IS NULL OR fecha >= $3) AND ($4::date IS NULL OR fecha <= $4)
@@ -590,7 +602,7 @@ impl RepositorioFacturas for TransaccionPg {
             "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,
                     subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,
                     creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,
-                    pago_manual_referencia, pago_manual_por
+                    pago_manual_referencia, pago_manual_por, nota_debito_de, concepto_nota_debito
              FROM facturas_venta
              WHERE estado IN ('emitida', 'pagada_parcial') AND fecha <= $1
              ORDER BY persona_id, vencimiento",

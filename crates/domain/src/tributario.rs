@@ -266,6 +266,17 @@ impl TipoDocumentoElectronico {
             _ => None,
         }
     }
+
+    /// Prefijo de las notas, que no usan resolución pero llevan número propio: se le agrega el
+    /// año a dos dígitos (`NC26`) y el consecutivo anual de la entidad.
+    pub fn prefijo_nota(self) -> Option<&'static str> {
+        match self {
+            TipoDocumentoElectronico::NotaCredito => Some("NC"),
+            TipoDocumentoElectronico::NotaDebito => Some("ND"),
+            TipoDocumentoElectronico::NotaAjusteDs => Some("NA"),
+            TipoDocumentoElectronico::Factura | TipoDocumentoElectronico::DocumentoSoporte => None,
+        }
+    }
 }
 
 /// Documentos con resolución de numeración de la DIAN.
@@ -274,11 +285,16 @@ impl TipoDocumentoElectronico {
 pub enum TipoNumeracion {
     Factura,
     DocumentoSoporte,
+    /// Talonario de contingencia del facturador (anexo §12.1): numera las facturas de papel
+    /// que se expiden mientras el facturador no puede facturar electrónicamente y que después
+    /// se transcriben como factura tipo 03. No tiene clave técnica.
+    Contingencia,
 }
 
 enum_texto!(TipoNumeracion {
     Factura => "factura",
     DocumentoSoporte => "documento_soporte",
+    Contingencia => "contingencia",
 });
 
 /// Estado de un documento electrónico.
@@ -353,18 +369,55 @@ pub fn rango_por_agotarse(usado: u64, desde: u64, hasta: u64) -> bool {
     quedan < 50 || quedan * 10 < total
 }
 
-/// Evento RADIAN sobre una factura recibida.
+/// Concepto de corrección de una nota débito (lista «ConceptoNotaDebito» del anexo técnico).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConceptoNotaDebito {
+    /// Intereses (1).
+    Intereses,
+    /// Gastos por cobrar (2).
+    GastosPorCobrar,
+    /// Cambio del valor (3).
+    CambioDelValor,
+    /// Otro (4).
+    Otro,
+}
+
+enum_texto!(ConceptoNotaDebito {
+    Intereses => "intereses",
+    GastosPorCobrar => "gastos_por_cobrar",
+    CambioDelValor => "cambio_del_valor",
+    Otro => "otro",
+});
+
+impl ConceptoNotaDebito {
+    /// Código de la DIAN (`cac:DiscrepancyResponse/cbc:ResponseCode`).
+    pub fn codigo(self) -> &'static str {
+        match self {
+            ConceptoNotaDebito::Intereses => "1",
+            ConceptoNotaDebito::GastosPorCobrar => "2",
+            ConceptoNotaDebito::CambioDelValor => "3",
+            ConceptoNotaDebito::Otro => "4",
+        }
+    }
+}
+
+/// Evento RADIAN (anexo técnico 1.9, §6.5): los cuatro primeros los emite quien **recibe** la
+/// factura; la aceptación tácita la emite el **facturador** sobre su propia factura, pasados tres
+/// días hábiles del recibo del bien sin que el adquirente la aceptara ni la reclamara.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EventoRadian {
-    /// Acuse de recibo de la factura.
+    /// Acuse de recibo de la factura (030).
     Acuse,
-    /// Recibo del bien o la prestación del servicio.
+    /// Recibo del bien o la prestación del servicio (032).
     ReciboBien,
-    /// Aceptación expresa.
+    /// Aceptación expresa (033).
     Aceptacion,
-    /// Reclamo (rechazo) de la factura.
+    /// Reclamo (rechazo) de la factura (031).
     Reclamo,
+    /// Aceptación tácita (034), del facturador.
+    AceptacionTacita,
 }
 
 enum_texto!(EventoRadian {
@@ -372,17 +425,84 @@ enum_texto!(EventoRadian {
     ReciboBien => "recibo_bien",
     Aceptacion => "aceptacion",
     Reclamo => "reclamo",
+    AceptacionTacita => "aceptacion_tacita",
 });
 
 impl EventoRadian {
-    /// Eventos que deben existir antes (acuse → recibo del bien → aceptación o reclamo).
+    /// Eventos que deben existir antes (acuse → recibo del bien → aceptación o reclamo). La
+    /// aceptación tácita depende de eventos del adquirente que solo conoce la DIAN.
     pub fn previos(self) -> &'static [EventoRadian] {
         match self {
-            EventoRadian::Acuse => &[],
+            EventoRadian::Acuse | EventoRadian::AceptacionTacita => &[],
             EventoRadian::ReciboBien => &[EventoRadian::Acuse],
             EventoRadian::Aceptacion | EventoRadian::Reclamo => {
                 &[EventoRadian::Acuse, EventoRadian::ReciboBien]
             }
+        }
+    }
+
+    /// Código del evento (`cbc:ResponseCode`).
+    pub fn codigo(self) -> &'static str {
+        match self {
+            EventoRadian::Acuse => "030",
+            EventoRadian::Reclamo => "031",
+            EventoRadian::ReciboBien => "032",
+            EventoRadian::Aceptacion => "033",
+            EventoRadian::AceptacionTacita => "034",
+        }
+    }
+
+    /// Nombre literal que exige la DIAN (`cbc:Description`).
+    pub fn descripcion(self) -> &'static str {
+        match self {
+            EventoRadian::Acuse => "Acuse de recibo de Factura Electrónica de Venta",
+            EventoRadian::Reclamo => "Reclamo de la Factura Electrónica de Venta",
+            EventoRadian::ReciboBien => "Recibo del bien y/o prestación del servicio",
+            EventoRadian::Aceptacion => "Aceptación expresa",
+            EventoRadian::AceptacionTacita => "Aceptación Tácita",
+        }
+    }
+
+    /// ¿Exige identificar a la persona que recibió la factura o el bien?
+    pub fn exige_quien_recibe(self) -> bool {
+        matches!(self, EventoRadian::Acuse | EventoRadian::ReciboBien)
+    }
+
+    /// ¿Lo emite el facturador sobre su propia factura (no quien la recibe)?
+    pub fn es_del_facturador(self) -> bool {
+        self == EventoRadian::AceptacionTacita
+    }
+}
+
+/// Concepto del reclamo de una factura (lista «Concepto de Reclamo» de la caja de herramientas).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ConceptoReclamo {
+    /// Documento con inconsistencias (01).
+    Inconsistencias,
+    /// Mercancía no entregada totalmente (02).
+    NoEntregadaTotal,
+    /// Mercancía no entregada parcialmente (03).
+    NoEntregadaParcial,
+    /// Servicio no prestado (04).
+    ServicioNoPrestado,
+}
+
+enum_texto!(ConceptoReclamo {
+    Inconsistencias => "inconsistencias",
+    NoEntregadaTotal => "no_entregada_total",
+    NoEntregadaParcial => "no_entregada_parcial",
+    ServicioNoPrestado => "servicio_no_prestado",
+});
+
+impl ConceptoReclamo {
+    /// Código y nombre de la DIAN (`ResponseCode@listID` y `@name`).
+    pub fn codigo_y_nombre(self) -> (&'static str, &'static str) {
+        match self {
+            ConceptoReclamo::Inconsistencias => ("01", "Documento con inconsistencias"),
+            ConceptoReclamo::NoEntregadaTotal => ("02", "Mercancía no entregada totalmente"),
+            ConceptoReclamo::NoEntregadaParcial => ("03", "Mercancía no entregada parcialmente"),
+            ConceptoReclamo::ServicioNoPrestado => ("04", "Servicio no prestado"),
         }
     }
 }
@@ -552,6 +672,34 @@ mod tests {
     use rust_decimal::dec;
 
     use super::*;
+
+    #[test]
+    fn solo_las_notas_llevan_prefijo_propio() {
+        assert_eq!(
+            TipoDocumentoElectronico::NotaCredito.prefijo_nota(),
+            Some("NC")
+        );
+        assert_eq!(
+            TipoDocumentoElectronico::NotaAjusteDs.prefijo_nota(),
+            Some("NA")
+        );
+        assert_eq!(TipoDocumentoElectronico::Factura.prefijo_nota(), None);
+    }
+
+    #[test]
+    fn los_eventos_radian_llevan_su_codigo_y_su_regla() {
+        assert_eq!(EventoRadian::Acuse.codigo(), "030");
+        assert_eq!(EventoRadian::Reclamo.codigo(), "031");
+        assert_eq!(EventoRadian::AceptacionTacita.codigo(), "034");
+        assert!(EventoRadian::ReciboBien.exige_quien_recibe());
+        assert!(!EventoRadian::Aceptacion.exige_quien_recibe());
+        assert!(EventoRadian::AceptacionTacita.es_del_facturador());
+        assert!(!EventoRadian::Acuse.es_del_facturador());
+        assert_eq!(
+            ConceptoReclamo::ServicioNoPrestado.codigo_y_nombre().0,
+            "04"
+        );
+    }
 
     #[test]
     fn el_qr_consulta_el_cufe_en_la_dian() {

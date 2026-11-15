@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,\n                    subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,\n                    creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,\n                    pago_manual_referencia, pago_manual_por\n             FROM facturas_venta WHERE id = $1 FOR UPDATE",
+  "query": "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,\n                    subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,\n                    creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,\n                    pago_manual_referencia, pago_manual_por, nota_debito_de, concepto_nota_debito\n             FROM facturas_venta\n             WHERE ($1::uuid IS NULL OR persona_id = $1) AND ($2::text IS NULL OR estado = $2)\n               AND ($3::date IS NULL OR fecha >= $3) AND ($4::date IS NULL OR fecha <= $4)\n             ORDER BY vencimiento, id LIMIT $5",
   "describe": {
     "columns": [
       {
@@ -244,11 +244,37 @@
             "name": "pago_manual_por"
           }
         }
+      },
+      {
+        "ordinal": 22,
+        "name": "nota_debito_de",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "nota_debito_de"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "concepto_nota_debito",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "concepto_nota_debito"
+          }
+        }
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Text",
+        "Date",
+        "Date",
+        "Int8"
       ]
     },
     "nullable": [
@@ -273,8 +299,10 @@
       true,
       true,
       true,
+      true,
+      true,
       true
     ]
   },
-  "hash": "213376d927825e0e236911eba01e0290105d1499322381ef54bcc15b2ecca6e7"
+  "hash": "419699b6c3e8ec08760b2bb65e27bc9dca88b6e2ad907852efe472f104de58d3"
 }

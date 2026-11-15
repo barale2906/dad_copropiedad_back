@@ -247,8 +247,16 @@ pub struct FacturaRecibida {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RegistroRadian {
     pub id: uuid::Uuid,
-    pub factura_recibida_id: FacturaRecibidaId,
+    /// La factura recibida (eventos 030–033)…
+    pub factura_recibida_id: Option<FacturaRecibidaId>,
+    /// …o la factura electrónica propia (aceptación tácita).
+    pub documento_id: Option<DocumentoElectronicoId>,
     pub tipo: EventoRadian,
+    /// Número del evento (con el motor propio).
+    pub numero: Option<String>,
+    pub concepto_reclamo: Option<domain::tributario::ConceptoReclamo>,
+    /// `ApplicationResponse` firmado.
+    pub xml_archivo_id: Option<ArchivoId>,
     /// `enviado` o `rechazado`.
     pub estado: String,
     pub id_externo: Option<String>,
@@ -454,6 +462,12 @@ pub trait RepositorioTributario: Send {
         factura: FacturaRecibidaId,
     ) -> impl Future<Output = AppResult<Vec<RegistroRadian>>> + Send;
 
+    /// Eventos RADIAN que la entidad emitió sobre su propia factura electrónica.
+    fn eventos_radian_documento(
+        &mut self,
+        documento: DocumentoElectronicoId,
+    ) -> impl Future<Output = AppResult<Vec<RegistroRadian>>> + Send;
+
     /// Movimientos del año por cuenta y tercero de las cuentas que empiezan por los prefijos.
     fn movimientos_por_tercero(
         &mut self,
@@ -604,6 +618,44 @@ impl std::fmt::Debug for CredencialesFacturador {
     }
 }
 
+/// Persona que recibió la factura o el bien (eventos 030 y 032, art. 773 y 774 del Código de
+/// Comercio). Datos personales: solo viajan en el evento.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PersonaRecibe {
+    pub tipo_documento: domain::TipoDocumento,
+    pub documento: String,
+    pub nombres: String,
+    pub apellidos: String,
+    pub cargo: Option<String>,
+    pub area: Option<String>,
+}
+
+/// Evento RADIAN listo para emitir.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EventoAEmitir {
+    /// Identifica la firma dentro del XML.
+    pub id: uuid::Uuid,
+    pub tipo: EventoRadian,
+    /// Número del evento (único por entidad).
+    pub numero: String,
+    pub fecha: NaiveDate,
+    /// Quien genera el evento (el adquirente; en la aceptación tácita, el facturador).
+    pub generador: ParteDocumento,
+    /// Quien lo recibe (el facturador; en la aceptación tácita, la DIAN).
+    pub receptor: ParteDocumento,
+    /// Prefijo y número de la factura a la que se refiere.
+    pub factura_numero: String,
+    pub factura_cufe: String,
+    /// Obligatorio en el reclamo.
+    pub concepto_reclamo: Option<domain::tributario::ConceptoReclamo>,
+    /// Obligatorio en el acuse y el recibo del bien.
+    pub quien_recibe: Option<PersonaRecibe>,
+    /// Observaciones (y la constancia de la aceptación tácita).
+    pub nota: Option<String>,
+    /// Con credenciales se emite con el motor propio; sin ellas, con el proveedor configurado.
+    pub credenciales: Option<CredencialesFacturador>,
+}
+
 /// Línea de un documento electrónico.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LineaDocumento {
@@ -649,6 +701,12 @@ pub struct DocumentoAEmitir {
     /// El documento quedó en contingencia de la DIAN: se transmite su versión tipo 04 (la que ya
     /// recibió el adquirente).
     pub contingencia: bool,
+    /// Transcripción de una factura de talonario de la contingencia del facturador (tipo 03,
+    /// numerada con su resolución de contingencia).
+    pub transcripcion_contingencia: bool,
+    /// Concepto de corrección de una nota (código de la DIAN y descripción); sin él, el
+    /// adaptador usa el de anulación (nota crédito) o el de cambio del valor (nota débito).
+    pub correccion: Option<(String, String)>,
 }
 
 /// Respuesta del proveedor a una transmisión o consulta.
@@ -693,16 +751,16 @@ pub trait ProveedorFacturacion: Send + Sync {
         credenciales: Option<&CredencialesFacturador>,
     ) -> impl Future<Output = AppResult<RespuestaProveedor>> + Send;
 
-    /// Registra un evento RADIAN sobre una factura recibida (por su CUFE).
+    /// Emite un evento RADIAN (`ApplicationResponse`) sobre una factura. La respuesta trae en
+    /// `cufe` el CUDE del evento y en `xml` el evento firmado.
     ///
     /// # Errors
     ///
-    /// [`crate::AppError::Infraestructura`] si el proveedor no responde.
+    /// [`crate::AppError::Infraestructura`] si el proveedor no responde;
+    /// [`crate::AppError::Validacion`] si faltan datos del evento.
     fn evento_radian(
         &self,
-        cufe: &str,
-        evento: EventoRadian,
-        motivo: Option<&str>,
+        evento: &EventoAEmitir,
     ) -> impl Future<Output = AppResult<RespuestaProveedor>> + Send;
 }
 
@@ -787,6 +845,17 @@ pub trait HabilitacionDian: Send + Sync {
         credenciales: &CredencialesFacturador,
         nit: &str,
     ) -> impl Future<Output = AppResult<Vec<RangoAutorizado>>> + Send;
+
+    /// Correos de recepción que registraron todos los facturadores electrónicos ante la DIAN
+    /// (`GetExchangeEmails`): `(NIT sin DV, correo)`.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Infraestructura`] si la DIAN no responde.
+    fn correos_recepcion(
+        &self,
+        credenciales: &CredencialesFacturador,
+    ) -> impl Future<Output = AppResult<Vec<(String, String)>>> + Send;
 }
 
 /// Datos de una factura electrónica leídos de su XML (UBL).

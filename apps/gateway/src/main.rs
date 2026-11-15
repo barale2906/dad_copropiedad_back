@@ -19,7 +19,8 @@
 //! - Publicidad de la plataforma ([`worker_publicidad`]): finaliza campañas vencidas y encola
 //!   los masivos (solo a quien autorizó, prioridad 9).
 //! - Cartera de la PH ([`worker_cartera`]): recordatorios de pago y avisos de mora.
-//! - Facturación electrónica ([`worker_facturacion`]): retransmite los documentos en contingencia.
+//! - Facturación electrónica ([`worker_facturacion`]): retransmite los documentos en contingencia
+//!   y sincroniza a diario los correos de recepción de la DIAN.
 
 mod mensajeria;
 mod routes;
@@ -156,19 +157,21 @@ async fn main() -> anyhow::Result<()> {
 
     let facturacion = shared::config::FacturacionConfig::from_env()
         .context("configuración de facturación inválida")?;
+    let motor_dian = infra_facturacion::MotorPropio::new(
+        &facturacion.url_habilitacion,
+        &facturacion.url_produccion,
+    )
+    .map_err(|e| anyhow::anyhow!("{e}"))
+    .context("cliente del servicio web de la DIAN")?;
     let contingencias = tokio::spawn(worker_facturacion::ejecutar(
         infra_postgres::UnidadDeTrabajoPlataformaPg::new(db.clone()),
         UnidadDeTrabajoPg::new(db.clone()),
         worker_facturacion::Medios {
             proveedor: infra_facturacion::ProveedorDian::new(
                 infra_facturacion::ProveedorSimulado::new(),
-                infra_facturacion::MotorPropio::new(
-                    &facturacion.url_habilitacion,
-                    &facturacion.url_produccion,
-                )
-                .map_err(|e| anyhow::anyhow!("{e}"))
-                .context("cliente del servicio web de la DIAN")?,
+                motor_dian.clone(),
             ),
+            habilitacion: motor_dian,
             cofre: Arc::new(infra_seguridad::CofreAesGcm::new(facturacion.clave_maestra)),
             generador: infra_pdf::GeneradorTypst,
             empaquetador: infra_facturacion::EmpaquetadorZip,

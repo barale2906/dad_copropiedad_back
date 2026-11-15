@@ -79,6 +79,11 @@ pub fn generar(
         ),
         Clase::NotaCredito { .. } => ("Nota Crédito", "Contenedor de Nota Crédito"),
         Clase::NotaDebito { .. } => ("Nota Débito", "Contenedor de Nota Débito"),
+        Clase::DocumentoSoporte { .. } | Clase::NotaAjusteSoporte { .. } => {
+            return Err(ErrorMotor::Datos(
+                "el documento soporte no se entrega en un contenedor".into(),
+            ));
+        }
     };
     let fecha = d.emitido.date_naive().to_string();
     let hora = d.emitido.format("%H:%M:%S%:z").to_string();

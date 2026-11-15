@@ -671,10 +671,24 @@ where
         Permiso::TesoreriaFacturasProveedorGestionar,
     )
     .await?;
-    let mut f = factura_existente(&mut tx, id).await?;
+    let f = anular_factura_proveedor_en(&mut tx, reloj, ctx, id, motivo).await?;
+    tx.confirmar().await?;
+    Ok(f)
+}
+
+/// Anula la factura en la transacción (revierte su comprobante si lo tiene); la usa también la
+/// nota de ajuste al documento soporte.
+pub(crate) async fn anular_factura_proveedor_en<T: TxTesoreria>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    id: FacturaProveedorId,
+    motivo: &str,
+) -> AppResult<FacturaProveedor> {
+    let mut f = factura_existente(tx, id).await?;
     f.estado = f.estado.transicionar(EstadoFacturaProveedor::Anulada)?;
     if let Some(c) = f.comprobante_id {
-        revertir_en(&mut tx, reloj, ctx, c, motivo, None).await?;
+        revertir_en(tx, reloj, ctx, c, motivo, None).await?;
     }
     f.motivo_anulacion = Some(texto("motivo", motivo, 500)?);
     tx.actualizar_factura_proveedor(&f).await?;
@@ -684,7 +698,6 @@ where
         id.as_uuid(),
     ))
     .await?;
-    tx.confirmar().await?;
     Ok(f)
 }
 

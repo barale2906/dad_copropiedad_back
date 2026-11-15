@@ -386,7 +386,12 @@ esquema_enum! {
     EstadoDocumentoElectronico = domain::tributario::EstadoDocumentoElectronico,
         "Estado de un documento electrónico (un rechazado nunca se marca validado).";
     EventoRadian = domain::tributario::EventoRadian,
-        "Evento RADIAN sobre una factura recibida (cada uno exige sus previos).";
+        "Evento RADIAN: acuse, recibo del bien, aceptación o reclamo sobre una factura recibida \
+         (cada uno exige sus previos), o aceptación tácita de una factura propia.";
+    ConceptoReclamo = domain::tributario::ConceptoReclamo,
+        "Concepto del reclamo de una factura (lista de la DIAN).";
+    ConceptoNotaDebito = domain::tributario::ConceptoNotaDebito,
+        "Concepto de corrección de una nota débito (lista de la DIAN).";
     EstadoFacturaRecibida = domain::tributario::EstadoFacturaRecibida,
         "Estado de una factura electrónica recibida.";
     CriterioBeneficiario = domain::tributario::CriterioBeneficiario,

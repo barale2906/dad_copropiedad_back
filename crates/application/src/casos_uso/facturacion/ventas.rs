@@ -40,8 +40,8 @@ use crate::{
     puertos::{
         Reloj, UnidadDeTrabajo,
         contabilidad::Origen,
-        facturacion::{ItemFacturacion, RepositorioFacturacion as _},
-        tesoreria::{FacturaVenta, FiltroFacturas, LineaFacturaVenta, PagoManual},
+        facturacion::ItemFacturacion,
+        tesoreria::{FacturaVenta, FiltroFacturas, LineaFacturaVenta, NotaDebitoVenta, PagoManual},
     },
 };
 
@@ -174,6 +174,21 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxVentas,
 {
+    let mut tx = abrir_ventas(unidad, reloj, ctx, Permiso::FacturacionFacturasGestionar).await?;
+    let factura = crear_factura_en(&mut tx, reloj, ctx, nueva, None).await?;
+    tx.confirmar().await?;
+    Ok(factura)
+}
+
+/// Valida, liquida y guarda la factura en borrador dentro de la transacción; con `nota_debito`,
+/// es la nota débito de otra factura (la usa también la nota débito electrónica).
+pub(crate) async fn crear_factura_en<T: TxVentas>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    nueva: NuevaFacturaVenta,
+    nota_debito: Option<NotaDebitoVenta>,
+) -> AppResult<FacturaVenta> {
     if nueva.vencimiento < nueva.fecha {
         return Err(validacion(
             "el vencimiento no puede ser anterior a la fecha",
@@ -184,18 +199,17 @@ where
     {
         return Err(validacion("la factura lleva de 1 a 200 líneas"));
     }
-    let mut tx = abrir_ventas(unidad, reloj, ctx, Permiso::FacturacionFacturasGestionar).await?;
-    exigir_persona(&mut tx, nueva.persona).await?;
-    let contable = con_contabilidad(&mut tx, reloj).await?;
+    exigir_persona(tx, nueva.persona).await?;
+    let contable = con_contabilidad(tx, reloj).await?;
     let mut resueltas = Vec::with_capacity(nueva.lineas.len());
     for l in &nueva.lineas {
-        resueltas.push(resolver_linea(&mut tx, contable, l).await?);
+        resueltas.push(resolver_linea(tx, contable, l).await?);
     }
     let con_iva = resueltas.iter().any(|l| !l.tarifa_iva.is_zero());
     let (perfil, gravadas) = if con_iva {
         (
-            crate::casos_uso::tributario::perfil_confirmado_en(&mut tx, nueva.fecha).await?,
-            crate::casos_uso::tributario::tarifas_gravadas(&mut tx, nueva.fecha).await?,
+            crate::casos_uso::tributario::perfil_confirmado_en(tx, nueva.fecha).await?,
+            crate::casos_uso::tributario::tarifas_gravadas(tx, nueva.fecha).await?,
         )
     } else {
         (None, Vec::new())
@@ -243,6 +257,7 @@ where
         creada_en: reloj.ahora(),
         emitida_en: None,
         pago_manual: None,
+        nota_debito,
         lineas,
     };
     tx.insertar_factura_venta(&factura).await?;
@@ -252,7 +267,6 @@ where
             .con_detalle(detalle),
     )
     .await?;
-    tx.confirmar().await?;
     Ok(factura)
 }
 
@@ -339,7 +353,11 @@ pub(crate) async fn contabilizar_factura<T: TxTesoreria>(
             evento: eventos::FACTURA_VENTA.into(),
             origen: origen(eventos::FACTURA_VENTA, f.id.as_uuid()),
             fecha: f.fecha,
-            descripcion: format!("Factura de venta: {}", f.descripcion),
+            descripcion: if f.nota_debito.is_some() {
+                format!("Nota débito: {}", f.descripcion)
+            } else {
+                format!("Factura de venta: {}", f.descripcion)
+            },
             importes,
         },
     )
@@ -364,11 +382,24 @@ where
     U::Transaccion: TxVentas,
 {
     let mut tx = abrir_ventas(unidad, reloj, ctx, Permiso::FacturacionFacturasGestionar).await?;
-    let mut f = factura_existente(&mut tx, id).await?;
+    let f = factura_existente(&mut tx, id).await?;
+    let f = emitir_factura_en(&mut tx, reloj, ctx, f).await?;
+    tx.confirmar().await?;
+    Ok(f)
+}
+
+/// Emite la factura dentro de la transacción: número interno del año y, con contabilidad, su
+/// comprobante.
+pub(crate) async fn emitir_factura_en<T: TxVentas>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    mut f: FacturaVenta,
+) -> AppResult<FacturaVenta> {
     f.estado = f.estado.transicionar(EstadoFacturaVenta::Emitida)?;
     f.numero = Some(tx.siguiente_numero_factura(f.fecha.year()).await?);
-    if con_contabilidad(&mut tx, reloj).await? {
-        f.comprobante_id = Some(contabilizar_factura(&mut tx, reloj, ctx, &f).await?);
+    if con_contabilidad(tx, reloj).await? {
+        f.comprobante_id = Some(contabilizar_factura(tx, reloj, ctx, &f).await?);
     }
     f.emitida_en = Some(reloj.ahora());
     tx.actualizar_factura_venta(&f).await?;
@@ -377,10 +408,9 @@ where
         .con("total", f.total.valor().to_string())?
         .con("contabilizada", f.comprobante_id.is_some())?;
     tx.registrar(
-        EventoAuditoria::ok(ACCION_EMITIR, "factura_venta", id.as_uuid()).con_detalle(detalle),
+        EventoAuditoria::ok(ACCION_EMITIR, "factura_venta", f.id.as_uuid()).con_detalle(detalle),
     )
     .await?;
-    tx.confirmar().await?;
     Ok(f)
 }
 

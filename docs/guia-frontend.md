@@ -174,7 +174,24 @@ cuenta con su tipo.
     validada, `…/nota-credito` (la anulación responde 409). Cada línea lleva `clasificacion`
     (solo `alquiler_servicio` y `venta` admiten IVA).
   - Documento soporte: registrar la compra en `POST …/compras` (sin contabilidad, sin cuentas ni
-    retenciones) y luego `POST …/compras/{id}/documento-soporte`.
+    retenciones) y luego `POST …/compras/{id}/documento-soporte` (necesita una resolución
+    `documento_soporte` y la dirección del vendedor). Se anula con `POST …/compras/{id}/nota-ajuste`
+    y un motivo: emite la nota de ajuste y anula la compra.
+  - Las notas (crédito, débito, de ajuste) llevan número propio: `prefijo` del tipo y del año
+    (`NC26`, `ND26`, `NA26`) y `numero` consecutivo; muéstrelos juntos como en la factura.
+  - **Nota débito** (cobros que se agregan a una factura con factura electrónica validada:
+    intereses, gastos, cambio del valor): `POST …/facturas/{id}/nota-debito` con `concepto`
+    (`ConceptoNotaDebito`), `motivo`, `fecha`, `vencimiento` y `lineas` (como las de una factura).
+    Devuelve el documento electrónico; la nota misma aparece en `GET …/facturas` con
+    `nota_debito_de` (la factura que ajusta) y se cobra como cualquier factura: entra a la cartera
+    por edades, se abona con recibos de caja o, sin contabilidad, se marca pagada a mano. Muestre
+    las notas débito debajo de su factura.
+  - **Contingencia del facturador** (no puede facturar electrónicamente): registre la resolución
+    de su talonario (`POST /tributario/resoluciones` con `tipo: contingencia`), expida en papel y,
+    al superar el inconveniente (máximo 48 horas), transcriba cada factura de venta con
+    `POST …/facturas/{id}/factura-contingencia` y el `numero_talonario`. 422 si el número no
+    está en una resolución de contingencia vigente; 409 si la factura ya tiene otra factura
+    electrónica.
   - Documentos: `…/documentos`, `…/documentos/{id}`, `…/reintento`, `…/pdf` (con el QR de la
     DIAN en cada página) y `…/paquete` (el ZIP que recibe el adquirente). Al validarse, el
     adquirente recibe ese ZIP por correo en su `correo_facturacion`. Un documento en
@@ -182,8 +199,19 @@ cuenta con su tipo.
     fuerza. Sin el motor propio el proveedor es el **simulado** (`proveedor: "simulado"`, sin
     validez ante la DIAN).
   - Facturas recibidas: el XML va en Base64 (`archivo_base64`) a `POST …/recibidas` (409 si ya se
-    cargó); luego `…/vinculo`, `…/rechazo` o `…/eventos` (RADIAN en orden: `acuse` →
-    `recibo_bien` → `aceptacion` o `reclamo` con motivo; si faltan los previos, 422).
+    cargó); luego `…/vinculo`, `…/rechazo` o `…/eventos`. **Eventos RADIAN** en orden: `acuse` →
+    `recibo_bien` → `aceptacion` o `reclamo` (si faltan los previos, 422). El acuse y el recibo
+    del bien exigen `quien_recibe` (tipo y número de documento, nombres, apellidos; cargo y área
+    opcionales: Código de Comercio, arts. 773 y 774); el reclamo exige `concepto_reclamo`
+    (`ConceptoReclamo`) y admite `motivo`. La respuesta trae `numero`, `cude` y el
+    `xml_archivo_id` del evento firmado; mire `estado`: la DIAN puede rechazarlo. Diseñe un
+    asistente con los cuatro pasos y deshabilite los que aún no aplican.
+  - **Aceptación tácita** de una factura propia a crédito, cuando el cliente no la aceptó ni la
+    reclamó en los tres días hábiles siguientes al recibo del bien:
+    `POST …/documentos/{id}/aceptacion-tacita` (sin cuerpo; la DIAN verifica el plazo). Los
+    eventos de un documento propio: `GET …/documentos/{id}/eventos`.
+  - El correo al cliente sale al buzón que él registró ante la DIAN como facturador; si no está
+    registrado, al `correo_facturacion` del tercero.
   - Para el contador externo (`facturacion.exportar`): `GET …/libro-ventas`, `…/libro-compras`
     (CSV) y `…/paquete` (ZIP con XML y PDF), todos con `?desde=&hasta=` y la cabecera
     `X-Contenido-Sha256`.
@@ -194,7 +222,7 @@ cuenta con su tipo.
     `por_vencer` y envíos del set) → `PUT …/habilitacion/software` (SoftwareID, PIN y TestSetId
     del catálogo de participantes de la DIAN) → `POST …/habilitacion/certificado`
     (`archivo_base64` del `.p12` y `contrasena`) → `POST …/habilitacion/set-pruebas` con la
-    `cantidad` que pide la DIAN → `POST …/habilitacion/set-pruebas/consulta` hasta que el estado
+    `cantidad` de facturas y las `notas_credito` y `notas_debito` que pide la DIAN → `POST …/habilitacion/set-pruebas/consulta` hasta que el estado
     sea `habilitado` → `POST …/habilitacion/produccion` → `POST …/habilitacion/rangos`. El PIN, el
     `.p12` y su contraseña **nunca vuelven** en una respuesta. Sin `FACTURACION_CLAVE_MAESTRA` en el
     servidor, registrar el software responde 422. Para que las facturas salgan por el motor propio,
@@ -281,7 +309,7 @@ no tienen pieza en la maqueta: muéstrelas en la lista de Zonas comunes.
 | Recepción | Datos y usuarios | ninguno | Ficha (`copropiedad.datos.ver`; editar con `copropiedad.datos.editar`) · Usuarios y roles (`roles.ver`) · Auditoría (`auditoria.ver`) | `/entidades/{id}`, `/entidades/{id}/{roles,asignaciones,cuentas,auditoria}` |
 | Contabilidad | Contabilidad | `contabilidad` | Comprobantes (`contabilidad.ver`; crear con `contabilidad.comprobantes.crear`) · Plan de cuentas y centros de costo (`contabilidad.ver`) · Periodos y cierre (`contabilidad.ver`; cerrar con `contabilidad.periodos.cerrar`) · Reportes y estados financieros (`contabilidad.ver`) · Configuración y plantillas (`contabilidad.configurar`) | `/entidades/{id}/contabilidad/…` |
 | Tesorería | Tesorería | `contabilidad` | Recibos de caja (`tesoreria.recibos.registrar`) · Egresos (`tesoreria.egresos.registrar`, `tesoreria.egresos.autorizar`) · Cuentas por pagar (`tesoreria.facturas_proveedor.gestionar`) · Conciliación (`tesoreria.conciliar`) · Cartera de clientes (`contabilidad.ver`) | `…/contabilidad/{tesoreria,cuentas-por-pagar,cuentas-por-cobrar}` |
-| Facturación | Facturación | alguno de `facturacion_electronica`, `contabilidad` | Facturas de venta (`facturacion.ver`; crear con `facturacion.facturas.gestionar`) · Catálogo de productos (`facturacion.items.gestionar`) · Compras y documento soporte (`facturacion.facturas.gestionar`) · Libros y paquete para el contador (`facturacion.exportar`) · **Solo con `facturacion_electronica`:** emitir ante la DIAN (`facturacion.emitir`), recibidas y RADIAN (`facturacion.recibir`), habilitación DIAN (`facturacion.configurar`) | `/entidades/{id}/facturacion/…` |
+| Facturación | Facturación | alguno de `facturacion_electronica`, `contabilidad` | Facturas de venta (`facturacion.ver`; crear con `facturacion.facturas.gestionar`) · Catálogo de productos (`facturacion.items.gestionar`) · Compras y documento soporte (`facturacion.facturas.gestionar`) · Libros y paquete para el contador (`facturacion.exportar`) · **Solo con `facturacion_electronica`:** emitir ante la DIAN, notas, transcripción de contingencia y aceptación tácita (`facturacion.emitir`), recibidas y eventos RADIAN (`facturacion.recibir`), habilitación DIAN (`facturacion.configurar`) | `/entidades/{id}/facturacion/…` |
 | Tributario | Tributario | alguno de `contabilidad`, `facturacion_electronica` | Terceros (`terceros.gestionar`; ver con `contabilidad.ver` o `facturacion.ver`) · Perfil tributario (`tributario.configurar`, `tributario.perfil.confirmar`) · Resoluciones de numeración (`tributario.configurar`) · **Solo con `contabilidad`:** retención, IVA, ICA y exógena (`tributario.preparar`) | `/entidades/{id}/{terceros,tributario}`, `…/contabilidad/tributario` |
 | Archivo | Archivo | ninguno | Documentos (`archivos.ver`) | `/entidades/{id}/archivos` |
 | Sala de juntas | Reportes | `contabilidad` | Estados financieros (`contabilidad.ver`) | `…/contabilidad/reportes` |

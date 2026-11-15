@@ -24,8 +24,8 @@ use domain::{
     ResolucionNumeracionId, TarifaIcaId, TarifaIvaId,
     contabilidad::{Monto, ResponsabilidadFiscal},
     tributario::{
-        CanalFacturacion, CriterioBeneficiario, EstadoDocumentoElectronico, EstadoFacturaRecibida,
-        EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,
+        CanalFacturacion, ConceptoReclamo, CriterioBeneficiario, EstadoDocumentoElectronico,
+        EstadoFacturaRecibida, EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,
         TipoDocumentoElectronico, TipoNumeracion, TratamientoIva,
     },
 };
@@ -987,14 +987,19 @@ impl RepositorioTributario for TransaccionPg {
 
     async fn insertar_evento_radian(&mut self, e: &RegistroRadian) -> AppResult<()> {
         sqlx::query!(
-            "INSERT INTO eventos_radian (id, tenant_id, factura_recibida_id, tipo, estado,
-                 id_externo, motivo, respuesta, creado_por, creado_en)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+            "INSERT INTO eventos_radian (id, tenant_id, factura_recibida_id, documento_id, tipo,
+                 estado, numero, concepto_reclamo, xml_archivo_id, id_externo, motivo, respuesta,
+                 creado_por, creado_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
             e.id,
             self.ctx.tenant_id.as_uuid(),
-            e.factura_recibida_id.as_uuid(),
+            e.factura_recibida_id.map(FacturaRecibidaId::as_uuid),
+            e.documento_id.map(DocumentoElectronicoId::as_uuid),
             e.tipo.as_str(),
             e.estado,
+            e.numero,
+            e.concepto_reclamo.map(|c| c.as_str()),
+            e.xml_archivo_id.map(ArchivoId::as_uuid),
             e.id_externo,
             e.motivo,
             e.respuesta,
@@ -1003,7 +1008,7 @@ impl RepositorioTributario for TransaccionPg {
         )
         .execute(&mut *self.tx)
         .await
-        .map_err(|x| error_contable(x, "ese evento ya se registró", "factura recibida"))?;
+        .map_err(|x| error_contable(x, "ese evento ya se registró", "factura"))?;
         Ok(())
     }
 
@@ -1011,30 +1016,15 @@ impl RepositorioTributario for TransaccionPg {
         &mut self,
         factura: FacturaRecibidaId,
     ) -> AppResult<Vec<RegistroRadian>> {
-        sqlx::query!(
-            "SELECT id, factura_recibida_id, tipo, estado, id_externo, motivo, respuesta,
-                    creado_por, creado_en
-             FROM eventos_radian WHERE factura_recibida_id = $1 ORDER BY creado_en, id",
-            factura.as_uuid(),
-        )
-        .fetch_all(&mut *self.tx)
-        .await
-        .map_err(AppError::infra)?
-        .into_iter()
-        .map(|e| {
-            Ok(RegistroRadian {
-                id: e.id,
-                factura_recibida_id: FacturaRecibidaId::from_uuid(e.factura_recibida_id),
-                tipo: EventoRadian::try_from(e.tipo.as_str())?,
-                estado: e.estado,
-                id_externo: e.id_externo,
-                motivo: e.motivo,
-                respuesta: e.respuesta,
-                creado_por: e.creado_por.map(CuentaId::from_uuid),
-                creado_en: e.creado_en,
-            })
-        })
-        .collect()
+        self.eventos_radian_de(Some(factura.as_uuid()), None).await
+    }
+
+    async fn eventos_radian_documento(
+        &mut self,
+        documento: DocumentoElectronicoId,
+    ) -> AppResult<Vec<RegistroRadian>> {
+        self.eventos_radian_de(None, Some(documento.as_uuid()))
+            .await
     }
 
     async fn movimientos_por_tercero(
@@ -1296,5 +1286,52 @@ impl RepositorioTributario for TransaccionPg {
         .fetch_one(&mut *self.tx)
         .await
         .map_err(AppError::infra)
+    }
+}
+
+impl TransaccionPg {
+    /// Eventos de una factura recibida o de un documento propio, en orden.
+    async fn eventos_radian_de(
+        &mut self,
+        factura: Option<Uuid>,
+        documento: Option<Uuid>,
+    ) -> AppResult<Vec<RegistroRadian>> {
+        sqlx::query!(
+            "SELECT id, factura_recibida_id, documento_id, tipo, estado, numero,
+                    concepto_reclamo, xml_archivo_id, id_externo, motivo, respuesta, creado_por,
+                    creado_en
+             FROM eventos_radian
+             WHERE factura_recibida_id IS NOT DISTINCT FROM $1
+               AND documento_id IS NOT DISTINCT FROM $2
+             ORDER BY creado_en, id",
+            factura,
+            documento,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|e| {
+            Ok(RegistroRadian {
+                id: e.id,
+                factura_recibida_id: e.factura_recibida_id.map(FacturaRecibidaId::from_uuid),
+                documento_id: e.documento_id.map(DocumentoElectronicoId::from_uuid),
+                tipo: EventoRadian::try_from(e.tipo.as_str())?,
+                numero: e.numero,
+                concepto_reclamo: e
+                    .concepto_reclamo
+                    .as_deref()
+                    .map(ConceptoReclamo::try_from)
+                    .transpose()?,
+                xml_archivo_id: e.xml_archivo_id.map(ArchivoId::from_uuid),
+                estado: e.estado,
+                id_externo: e.id_externo,
+                motivo: e.motivo,
+                respuesta: e.respuesta,
+                creado_por: e.creado_por.map(CuentaId::from_uuid),
+                creado_en: e.creado_en,
+            })
+        })
+        .collect()
     }
 }

@@ -242,12 +242,22 @@ pub async fn cargar_certificado(
 /// Cuántos documentos del set de pruebas enviar.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct SetPruebasPeticion {
-    /// De 1 a 50 (la DIAN indica cuántos pide al registrar el software).
+    /// Facturas de prueba (la DIAN indica cuántas pide al registrar el software). El total de
+    /// documentos va de 1 a 50.
     #[schema(example = 8)]
     pub cantidad: u32,
+    /// Notas crédito, cada una referida a una factura de este envío.
+    #[serde(default)]
+    #[schema(example = 1)]
+    pub notas_credito: u32,
+    /// Notas débito, cada una referida a una factura de este envío.
+    #[serde(default)]
+    #[schema(example = 1)]
+    pub notas_debito: u32,
 }
 
-/// Envía facturas de prueba al ambiente de habilitación con el TestSetId.
+/// Envía al ambiente de habilitación las facturas de prueba y las notas crédito y débito que
+/// pida la DIAN, con el TestSetId.
 #[utoipa::path(
     post,
     path = "/habilitacion/set-pruebas",
@@ -272,7 +282,11 @@ pub async fn enviar_set_pruebas(
         (state.facturacion.propio(), state.cofre.as_ref()),
         &RelojSistema,
         &en.ctx,
-        p.cantidad,
+        uc::CantidadesSet {
+            facturas: p.cantidad,
+            notas_credito: p.notas_credito,
+            notas_debito: p.notas_debito,
+        },
     )
     .await?;
     Ok(Json(v.into_iter().map(Into::into).collect()))

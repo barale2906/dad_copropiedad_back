@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT correo_recepcion_dian($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "correo_recepcion_dian",
+        "type_info": "Text",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "8e1bacb2c2d78e73aeb030f1428307004727b75c7f921d922a4f27b5e1019f08"
+}

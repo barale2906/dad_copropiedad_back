@@ -3,10 +3,11 @@
 use application::{
     AppError, AppResult,
     puertos::tributario::{
-        CredencialesFacturador, DocumentoAEmitir, ProveedorFacturacion, RespuestaProveedor,
+        CredencialesFacturador, DocumentoAEmitir, EventoAEmitir, ProveedorFacturacion,
+        RespuestaProveedor,
     },
 };
-use domain::tributario::{EstadoDocumentoElectronico, EventoRadian};
+use domain::tributario::EstadoDocumentoElectronico;
 use sha2::{Digest, Sha384};
 
 /// Proveedor simulado. Determinista: el mismo documento produce siempre el mismo CUFE, así que
@@ -152,21 +153,21 @@ impl ProveedorFacturacion for ProveedorSimulado {
         })
     }
 
-    async fn evento_radian(
-        &self,
-        cufe: &str,
-        evento: EventoRadian,
-        _motivo: Option<&str>,
-    ) -> AppResult<RespuestaProveedor> {
+    async fn evento_radian(&self, e: &EventoAEmitir) -> AppResult<RespuestaProveedor> {
         self.disponible()?;
-        let id = sha384_hex(&format!("{cufe}|{}", evento.as_str()));
+        let id = sha384_hex(&format!(
+            "{}|{}|{}",
+            e.factura_cufe,
+            e.tipo.codigo(),
+            e.numero
+        ));
         Ok(RespuestaProveedor {
             estado: EstadoDocumentoElectronico::Validado,
             id_externo: Some(format!("sim-radian-{}", &id[..32])),
-            cufe: None,
+            cufe: Some(id),
             xml: None,
             adjunto: None,
-            mensaje: Some(format!("evento {} registrado (simulado)", evento.as_str())),
+            mensaje: Some(format!("evento {} registrado (simulado)", e.tipo.codigo())),
         })
     }
 }
@@ -218,6 +219,8 @@ mod tests {
             referencia_fecha: None,
             credenciales: None,
             contingencia: false,
+            transcripcion_contingencia: false,
+            correccion: None,
         }
     }
 
@@ -268,8 +271,32 @@ mod tests {
 
     #[tokio::test]
     async fn el_evento_radian_queda_registrado() {
+        let parte = ParteDocumento {
+            documento: "900123456".into(),
+            dv: Some("8".into()),
+            nombre: "Proveedor SAS".into(),
+            correo: None,
+            persona_natural: false,
+            responsable_iva: true,
+            responsabilidades: Vec::new(),
+            direccion: None,
+        };
+        let evento = application::puertos::tributario::EventoAEmitir {
+            id: uuid::Uuid::nil(),
+            tipo: domain::tributario::EventoRadian::Aceptacion,
+            numero: "EV2026000001".into(),
+            fecha: NaiveDate::from_ymd_opt(2026, 11, 14).expect("fecha"),
+            generador: parte.clone(),
+            receptor: parte,
+            factura_numero: "FE1".into(),
+            factura_cufe: "abc".into(),
+            concepto_reclamo: None,
+            quien_recibe: None,
+            nota: None,
+            credenciales: None,
+        };
         let r = ProveedorSimulado::new()
-            .evento_radian("abc", EventoRadian::Acuse, None)
+            .evento_radian(&evento)
             .await
             .expect("respuesta");
         assert_eq!(r.estado, EstadoDocumentoElectronico::Validado);

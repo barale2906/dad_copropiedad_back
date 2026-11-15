@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO eventos_radian (id, tenant_id, factura_recibida_id, documento_id, tipo,\n                 estado, numero, concepto_reclamo, xml_archivo_id, id_externo, motivo, respuesta,\n                 creado_por, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4b92d9d75debee180a175f3ba672d178d7e9bacf10ddbb8b90d4e0697c5a2dfe"
+}

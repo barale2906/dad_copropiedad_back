@@ -24,6 +24,7 @@ pub mod documentos;
 pub mod exportaciones;
 pub mod habilitacion;
 pub mod items;
+pub mod radian;
 pub mod ventas;
 
 use domain::{Modulo, Permiso};

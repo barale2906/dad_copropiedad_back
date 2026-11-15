@@ -314,21 +314,57 @@ fn adquirente_pruebas() -> ParteDocumento {
     }
 }
 
-/// Envía `cantidad` facturas de prueba al ambiente de habilitación con el TestSetId (rango de
-/// pruebas `SETP`). Cada una queda registrada con su clave para consultarla.
+/// Cuántos documentos de cada tipo pide la DIAN en el set de pruebas (lo muestra el catálogo
+/// de habilitación al registrar el software).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct CantidadesSet {
+    pub facturas: u32,
+    pub notas_credito: u32,
+    pub notas_debito: u32,
+}
+
+impl CantidadesSet {
+    fn validar(self) -> AppResult<Self> {
+        let total = self.facturas + self.notas_credito + self.notas_debito;
+        if !(1..=MAXIMO_SET).contains(&total) {
+            return Err(validacion(format!(
+                "el set de pruebas se envía de 1 a {MAXIMO_SET} documentos"
+            )));
+        }
+        if self.facturas == 0 && total > 0 {
+            return Err(validacion(
+                "las notas del set se refieren a facturas del mismo envío: incluya al menos una",
+            ));
+        }
+        Ok(self)
+    }
+}
+
+/// Prefijo de las notas del set de pruebas (no usan el rango `SETP`).
+fn prefijo_nota_set(tipo: TipoDocumentoElectronico) -> &'static str {
+    if tipo == TipoDocumentoElectronico::NotaDebito {
+        "ND"
+    } else {
+        "NC"
+    }
+}
+
+/// Envía al ambiente de habilitación las facturas de prueba (rango `SETP`) y las notas crédito
+/// y débito que pida la DIAN, cada nota referida a una factura del mismo envío. Cada documento
+/// queda registrado con su clave para consultarlo.
 ///
 /// # Errors
 ///
 /// [`AppError::SinPermiso`] sin `facturacion.configurar`; [`AppError::Validacion`] si falta el
-/// software, el certificado o el TestSetId, o la cantidad no va de 1 a [`MAXIMO_SET`];
-/// [`domain::DominioError::TransicionInvalida`] en producción; [`AppError::Infraestructura`] si
-/// la DIAN no responde.
+/// software, el certificado o el TestSetId, o las cantidades no van de 1 a [`MAXIMO_SET`] con al
+/// menos una factura; [`domain::DominioError::TransicionInvalida`] en producción;
+/// [`AppError::Infraestructura`] si la DIAN no responde.
 pub async fn enviar_set_pruebas<U, H, C>(
     unidad: &U,
     (dian, cofre): (&H, &C),
     reloj: &impl Reloj,
     ctx: &Contexto,
-    cantidad: u32,
+    cantidades: CantidadesSet,
 ) -> AppResult<Vec<EnvioSetPruebas>>
 where
     U: UnidadDeTrabajo,
@@ -336,11 +372,7 @@ where
     H: HabilitacionDian,
     C: Cofre,
 {
-    if !(1..=MAXIMO_SET).contains(&cantidad) {
-        return Err(validacion(format!(
-            "el set de pruebas se envía de 1 a {MAXIMO_SET} documentos"
-        )));
-    }
+    let cantidades = cantidades.validar()?;
     let mut tx = abrir(unidad, reloj, ctx, Permiso::FacturacionConfigurar).await?;
     let mut config = configuracion_lista(&mut tx).await?;
     if config.test_set_id.is_none() {
@@ -350,19 +382,66 @@ where
     let ahora = reloj.ahora();
     let hoy = ahora.date_naive();
     let emisor = emisor(&mut tx, hoy).await?;
-    let mut siguiente = tx
-        .envios_set()
-        .await?
-        .iter()
-        .map(|e| e.numero)
-        .max()
-        .unwrap_or(DESDE_PRUEBAS)
-        + 1;
-    let mut enviados = Vec::new();
-    for _ in 0..cantidad {
-        if siguiente > HASTA_PRUEBAS {
-            return Err(validacion("se agotó el rango de pruebas de la DIAN"));
-        }
+    let previos = tx.envios_set().await?;
+    let ultimo = |prefijo: &str, desde: u64| {
+        previos
+            .iter()
+            .filter(|e| e.prefijo == prefijo)
+            .map(|e| e.numero)
+            .max()
+            .unwrap_or(desde)
+    };
+    let mut siguiente_factura = ultimo(PREFIJO_PRUEBAS, DESDE_PRUEBAS) + 1;
+    let mut siguiente_nc = ultimo("NC", 0) + 1;
+    let mut siguiente_nd = ultimo("ND", 0) + 1;
+    let valor = Decimal::from(100_000);
+    let linea = LineaDocumento {
+        descripcion: "Servicio de prueba de habilitación".into(),
+        unidad: "94".into(),
+        cantidad: Decimal::ONE,
+        valor_unitario: valor,
+        subtotal: valor,
+        tarifa_iva: Decimal::ZERO,
+        iva: Decimal::ZERO,
+    };
+    let base = |tipo, prefijo: &str, numero, credenciales| DocumentoAEmitir {
+        id: domain::DocumentoElectronicoId::nuevo(),
+        tipo,
+        prefijo: prefijo.into(),
+        numero,
+        fecha: hoy,
+        emisor: emisor.clone(),
+        adquirente: adquirente_pruebas(),
+        lineas: vec![linea.clone()],
+        subtotal: valor,
+        iva: Decimal::ZERO,
+        total: valor,
+        clave_tecnica: None,
+        resolucion: None,
+        vencimiento: None,
+        referencia_cufe: None,
+        referencia_numero: None,
+        referencia_fecha: None,
+        credenciales: Some(credenciales),
+        contingencia: false,
+        transcripcion_contingencia: false,
+        correccion: None,
+    };
+    let mut enviados: Vec<EnvioSetPruebas> = Vec::new();
+    let mut facturas: Vec<(String, String)> = Vec::new();
+    let pedidos = std::iter::repeat_n(
+        TipoDocumentoElectronico::Factura,
+        cantidades.facturas as usize,
+    )
+    .chain(std::iter::repeat_n(
+        TipoDocumentoElectronico::NotaCredito,
+        cantidades.notas_credito as usize,
+    ))
+    .chain(std::iter::repeat_n(
+        TipoDocumentoElectronico::NotaDebito,
+        cantidades.notas_debito as usize,
+    ));
+    for (i, tipo) in pedidos.enumerate() {
         let credenciales = cargar_credenciales(
             &mut tx,
             cofre,
@@ -372,48 +451,42 @@ where
             AmbienteDian::Habilitacion,
         )
         .await?;
-        let valor = Decimal::from(100_000);
-        let documento = DocumentoAEmitir {
-            id: domain::DocumentoElectronicoId::nuevo(),
-            tipo: TipoDocumentoElectronico::Factura,
-            prefijo: PREFIJO_PRUEBAS.into(),
-            numero: siguiente,
-            fecha: hoy,
-            emisor: emisor.clone(),
-            adquirente: adquirente_pruebas(),
-            lineas: vec![LineaDocumento {
-                descripcion: "Servicio de prueba de habilitación".into(),
-                unidad: "94".into(),
-                cantidad: Decimal::ONE,
-                valor_unitario: valor,
-                subtotal: valor,
-                tarifa_iva: Decimal::ZERO,
-                iva: Decimal::ZERO,
-            }],
-            subtotal: valor,
-            iva: Decimal::ZERO,
-            total: valor,
-            clave_tecnica: Some(CLAVE_PRUEBAS.into()),
-            resolucion: Some(ResolucionDocumento {
-                numero: "18760000001".into(),
-                vigente_desde: hoy,
-                vigente_hasta: hoy,
-                desde: DESDE_PRUEBAS,
-                hasta: HASTA_PRUEBAS,
-            }),
-            vencimiento: None,
-            referencia_cufe: None,
-            referencia_numero: None,
-            referencia_fecha: None,
-            credenciales: Some(credenciales),
-            contingencia: false,
+        let documento = if tipo == TipoDocumentoElectronico::Factura {
+            if siguiente_factura > HASTA_PRUEBAS {
+                return Err(validacion("se agotó el rango de pruebas de la DIAN"));
+            }
+            DocumentoAEmitir {
+                clave_tecnica: Some(CLAVE_PRUEBAS.into()),
+                resolucion: Some(ResolucionDocumento {
+                    numero: "18760000001".into(),
+                    vigente_desde: hoy,
+                    vigente_hasta: hoy,
+                    desde: DESDE_PRUEBAS,
+                    hasta: HASTA_PRUEBAS,
+                }),
+                ..base(tipo, PREFIJO_PRUEBAS, siguiente_factura, credenciales)
+            }
+        } else {
+            // Las notas se reparten entre las facturas de este envío.
+            let (numero_factura, cufe) = facturas[i % facturas.len()].clone();
+            let numero = if tipo == TipoDocumentoElectronico::NotaDebito {
+                siguiente_nd
+            } else {
+                siguiente_nc
+            };
+            DocumentoAEmitir {
+                referencia_cufe: Some(cufe),
+                referencia_numero: Some(numero_factura),
+                referencia_fecha: Some(hoy),
+                ..base(tipo, prefijo_nota_set(tipo), numero, credenciales)
+            }
         };
         let respuesta = dian.enviar_set_pruebas(&documento).await?;
         let envio = EnvioSetPruebas {
             id: EnvioSetPruebasId::nuevo(),
-            tipo: TipoDocumentoElectronico::Factura,
-            prefijo: PREFIJO_PRUEBAS.into(),
-            numero: siguiente,
+            tipo,
+            prefijo: documento.prefijo.clone(),
+            numero: documento.numero,
             codigo: respuesta.cufe.clone().unwrap_or_default(),
             clave: respuesta.id_externo.clone(),
             estado: EstadoEnvioSet::Enviado,
@@ -422,8 +495,18 @@ where
             consultado_en: None,
         };
         tx.insertar_envio_set(&envio).await?;
+        match tipo {
+            TipoDocumentoElectronico::Factura => {
+                facturas.push((
+                    format!("{PREFIJO_PRUEBAS}{siguiente_factura}"),
+                    envio.codigo.clone(),
+                ));
+                siguiente_factura += 1;
+            }
+            TipoDocumentoElectronico::NotaDebito => siguiente_nd += 1,
+            _ => siguiente_nc += 1,
+        }
         enviados.push(envio);
-        siguiente += 1;
     }
     config.actualizado_por = ctx.actor_id;
     config.actualizado_en = ahora;
@@ -607,4 +690,60 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(nuevas)
+}
+
+/// Sincroniza la lista de correos de recepción que los facturadores registraron ante la DIAN
+/// (`GetExchangeEmails`), con las credenciales de la entidad que opera la plataforma. Devuelve
+/// cuántos guardó, o `None` si la plataforma aún no tiene entidad con el software y el
+/// certificado cargados. La usa el worker del gateway una vez al día.
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si la DIAN no responde; [`AppError::Validacion`] si el certificado de la plataforma está vencido.
+pub async fn sincronizar_correos_recepcion<UP, U, H, C>(
+    (plataforma, unidad): (&UP, &U),
+    (dian, cofre): (&H, &C),
+    reloj: &impl Reloj,
+) -> AppResult<Option<u64>>
+where
+    UP: crate::puertos::UnidadDeTrabajoPlataforma,
+    UP::Transaccion: crate::puertos::RepositorioPlataforma,
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxFacturacion,
+    H: HabilitacionDian,
+    C: Cofre,
+{
+    use crate::puertos::{RepositorioPlataforma as _, Transaccion as _};
+    let sistema = crate::ContextoPlataforma::sistema();
+    let Some(entidad) = plataforma
+        .iniciar_plataforma(&sistema)
+        .await?
+        .entidad_plataforma()
+        .await?
+    else {
+        return Ok(None);
+    };
+    let ctx = Contexto::new(entidad);
+    let mut tx = unidad.iniciar(&ctx).await?;
+    let Some(config) = tx
+        .configuracion_facturacion()
+        .await?
+        .filter(|c| c.certificado_id.is_some())
+    else {
+        return Ok(None);
+    };
+    let ambiente = if config.estado == EstadoHabilitacion::Produccion {
+        AmbienteDian::Produccion
+    } else {
+        AmbienteDian::Habilitacion
+    };
+    let credenciales = cargar_credenciales(&mut tx, cofre, reloj, &ctx, &config, ambiente).await?;
+    tx.confirmar().await?;
+    let correos = dian.correos_recepcion(&credenciales).await?;
+    let mut tx = plataforma.iniciar_plataforma(&sistema).await?;
+    let guardados = tx
+        .guardar_correos_recepcion(&correos, reloj.ahora())
+        .await?;
+    tx.confirmar().await?;
+    Ok(Some(guardados))
 }

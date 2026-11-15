@@ -110,6 +110,26 @@ pub fn cude(datos: &DatosControl<'_>, pin_software: &str) -> String {
     sha384_hex(&datos.cadena(pin_software))
 }
 
+/// CUDS del documento soporte y de su nota de ajuste (anexo técnico del documento soporte v1.1,
+/// §14.1.1): SHA-384(NumDS + FecDS + HorDS + ValDS + `01` + ValImp + ValTot + NumSNO + NITABS +
+/// PIN + TipoAmbiente). En `datos`, `nit_emisor` es el vendedor no obligado (SNO) y
+/// `documento_adquirente` la entidad que adquiere (ABS); no entran el INC ni el ICA.
+pub fn cuds(datos: &DatosControl<'_>, pin_software: &str) -> String {
+    sha384_hex(&format!(
+        "{}{}{}{}01{}{}{}{}{}{}",
+        datos.numero,
+        datos.fecha.format("%Y-%m-%d"),
+        datos.hora,
+        monto_control(datos.valor_bruto),
+        monto_control(datos.iva),
+        monto_control(datos.total),
+        datos.nit_emisor,
+        datos.documento_adquirente,
+        pin_software,
+        datos.ambiente.codigo()
+    ))
+}
+
 /// Huella del software que produjo el documento: SHA-384(SoftwareID + PIN + número del
 /// documento) (anexo §11.8, `sts:SoftwareSecurityCode`).
 pub fn codigo_seguridad_software(software_id: &str, pin: &str, numero_documento: &str) -> String {
@@ -164,6 +184,28 @@ pub fn texto_qr(d: &DatosQr<'_>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn el_cuds_es_el_del_ejemplo_oficial() {
+        // Anexo técnico del documento soporte v1.1, §14.1.1.2.
+        let datos = DatosControl {
+            numero: "0000000001",
+            fecha: NaiveDate::from_ymd_opt(2020, 10, 24).expect("fecha"),
+            hora: "14:04:35-05:00",
+            valor_bruto: Decimal::new(1_500_000, 2),
+            iva: Decimal::new(1_900, 2),
+            inc: Decimal::ZERO,
+            ica: Decimal::ZERO,
+            total: Decimal::new(1_635_000, 2),
+            nit_emisor: "900373076",
+            documento_adquirente: "8355990",
+            ambiente: Ambiente::Produccion,
+        };
+        assert_eq!(
+            cuds(&datos, "12345"),
+            "bf4bb6920d5054ac065ddb7e6df0398e63e3ba2ff29cb341edd7d46ee8f2ea1802f84aaca91a19a24623e5e3baff3a71"
+        );
+    }
     use std::str::FromStr;
 
     fn dec(texto: &str) -> Decimal {
