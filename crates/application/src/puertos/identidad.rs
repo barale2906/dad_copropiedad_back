@@ -468,6 +468,17 @@ pub trait RepositorioPlataforma: Send {
         entidad: TenantId,
     ) -> impl Future<Output = AppResult<bool>> + Send;
 
+    /// La entidad que opera la plataforma, si ya se designó.
+    fn entidad_plataforma(&mut self) -> impl Future<Output = AppResult<Option<TenantId>>> + Send;
+
+    /// Reemplaza o agrega los correos de recepción registrados en la DIAN `(NIT, correo)`;
+    /// devuelve cuántos guardó.
+    fn guardar_correos_recepcion(
+        &mut self,
+        correos: &[(String, String)],
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<u64>> + Send;
+
     /// Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y
     /// tipo, creados entre `desde` y `hasta` (incluidos): solo conteos, para cobrar el módulo.
     fn consumo_documentos(

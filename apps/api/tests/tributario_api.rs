@@ -518,20 +518,51 @@ async fn factura_recibida_por_xml_sin_duplicados_y_eventos_radian_en_orden(pool:
         StatusCode::UNPROCESSABLE_ENTITY,
         "sin acuse ni recibo: {v}"
     );
-    let acuse = e.crear(&eventos, json!({ "tipo": "acuse" })).await;
-    assert_eq!(acuse["estado"], json!("enviado"));
-    let (s, _) = e
-        .pedir(Method::POST, &eventos, Some(json!({ "tipo": "acuse" })))
-        .await;
-    assert_eq!(s, StatusCode::CONFLICT, "un evento no se repite");
-    e.crear(&eventos, json!({ "tipo": "recibo_bien" })).await;
     let (s, v) = e
-        .pedir(Method::POST, &eventos, Some(json!({ "tipo": "reclamo" })))
+        .pedir(Method::POST, &eventos, Some(json!({ "tipo": "acuse" })))
         .await;
     assert_eq!(
         s,
         StatusCode::UNPROCESSABLE_ENTITY,
-        "reclamo sin motivo: {v}"
+        "el acuse identifica a quien recibió: {v}"
+    );
+    let quien = json!({ "tipo_documento": "CC", "documento": "1020304050",
+                        "nombres": "Ana", "apellidos": "Pérez", "cargo": "Auxiliar contable" });
+    let acuse = e
+        .crear(&eventos, json!({ "tipo": "acuse", "quien_recibe": quien }))
+        .await;
+    assert_eq!(acuse["estado"], json!("enviado"));
+    assert!(
+        acuse["numero"]
+            .as_str()
+            .is_some_and(|n| n.starts_with("EV")),
+        "{acuse}"
+    );
+    assert!(acuse["cude"].is_string(), "{acuse}");
+    let (s, _) = e
+        .pedir(
+            Method::POST,
+            &eventos,
+            Some(json!({ "tipo": "acuse", "quien_recibe": quien })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "un evento no se repite");
+    e.crear(
+        &eventos,
+        json!({ "tipo": "recibo_bien", "quien_recibe": quien }),
+    )
+    .await;
+    let (s, v) = e
+        .pedir(
+            Method::POST,
+            &eventos,
+            Some(json!({ "tipo": "reclamo", "motivo": "No llegó completo" })),
+        )
+        .await;
+    assert_eq!(
+        s,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "reclamo sin concepto: {v}"
     );
 
     let rechazada = e
@@ -693,4 +724,68 @@ async fn sin_el_modulo_no_hay_facturacion_electronica(pool: PgPool) {
 
     assert_eq!(s, StatusCode::FORBIDDEN, "{v}");
     assert_eq!(v["error"]["codigo"], json!("modulo_no_habilitado"));
+}
+
+/// Con contabilidad, la nota débito se contabiliza como un documento por cobrar más del cliente
+/// y entra a su cartera por edades junto a la factura que ajusta.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_nota_debito_se_contabiliza_y_suma_a_la_cartera_del_cliente(pool: PgPool) {
+    let e = empresa(pool).await;
+    e.confirmar_perfil().await;
+    e.crear(
+        "/tributario/resoluciones",
+        json!({ "tipo": "factura", "prefijo": "FE", "desde": 1, "hasta": 100,
+                "numero_resolucion": "18764000000001", "fecha_resolucion": "2026-01-01",
+                "vigente_desde": "2026-01-01", "vigente_hasta": "2027-12-31",
+                "clave_tecnica": "clave-de-prueba" }),
+    )
+    .await;
+    let factura = e.venta(100_000, "0").await;
+    let fe = e
+        .crear(
+            &format!("/facturacion/facturas/{factura}/factura-electronica"),
+            json!({}),
+        )
+        .await;
+
+    let nota = e
+        .crear(
+            &format!("/facturacion/facturas/{factura}/nota-debito"),
+            json!({ "concepto": "intereses", "motivo": "Intereses de mora de marzo",
+                    "fecha": "2026-03-15", "vencimiento": "2026-04-15",
+                    "lineas": [{ "descripcion": "Intereses de mora", "cuenta": "4170",
+                                 "cantidad": "1", "valor_unitario": "5000" }] }),
+        )
+        .await;
+    let (_, facturas) = e.pedir(Method::GET, "/facturacion/facturas", None).await;
+    let fila = facturas
+        .as_array()
+        .expect("facturas")
+        .iter()
+        .find(|f| f["nota_debito_de"] == json!(factura))
+        .expect("la nota débito está entre las facturas")
+        .clone();
+    let (s, edades) = e
+        .pedir(
+            Method::GET,
+            "/contabilidad/cuentas-por-cobrar/edades?corte=2026-05-01",
+            None,
+        )
+        .await;
+
+    assert_eq!(nota["tipo"], json!("nota_debito"));
+    assert_eq!(nota["estado"], json!("validado"), "{nota}");
+    assert_eq!(nota["referencia_id"], fe["id"]);
+    assert_eq!(
+        (nota["prefijo"].as_str(), nota["numero"].as_u64()),
+        (Some("ND26"), Some(1))
+    );
+    assert_eq!(fila["concepto_nota_debito"], json!("intereses"));
+    assert!(fila["comprobante_id"].is_string(), "contabilizada: {fila}");
+    assert_eq!(s, StatusCode::OK, "{edades}");
+    assert_eq!(
+        edades[0]["total"],
+        json!("105000.00"),
+        "factura más nota: {edades}"
+    );
 }

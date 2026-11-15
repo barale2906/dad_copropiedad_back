@@ -240,6 +240,28 @@ impl ServicioDian {
         rangos(&xml)
     }
 
+    /// Correos de recepción que registraron los facturadores electrónicos ante la DIAN
+    /// (`GetExchangeEmails`, anexo §7.16): `(NIT, correo)` de todos, sin parámetros.
+    ///
+    /// # Errors
+    ///
+    /// Los de [`ServicioDian::enviar`]; [`ErrorMotor::Respuesta`] si la consulta no tuvo éxito.
+    pub async fn correos_recepcion(
+        &self,
+        credencial: &CredencialFirma,
+        ahora: DateTime<Utc>,
+    ) -> Result<Vec<(String, String)>, ErrorMotor> {
+        let xml = self
+            .llamar(
+                credencial,
+                ahora,
+                "GetExchangeEmails",
+                Elemento::new("wcf:GetExchangeEmails"),
+            )
+            .await?;
+        correos(&xml)
+    }
+
     /// XML de un documento validado por su CUFE/CUDE (`GetXmlByDocumentKey`).
     ///
     /// # Errors
@@ -522,6 +544,30 @@ fn clave_zip(xml: &str) -> Result<String, ErrorMotor> {
     }))
 }
 
+/// Lista de correos: CSV en Base64 con `"NIT","correo","fecha"` por línea.
+fn correos(xml: &str) -> Result<Vec<(String, String)>, ErrorMotor> {
+    let doc = leer(xml)?;
+    if texto_de(&doc, "Success").as_deref() != Some("true") {
+        let detalle = texto_de(&doc, "Message").unwrap_or_default();
+        return Err(ErrorMotor::Respuesta(format!(
+            "consulta de correos de recepción sin éxito: {detalle}"
+        )));
+    }
+    let b64 = texto_de(&doc, "CsvBase64Bytes").unwrap_or_default();
+    let csv = String::from_utf8(decodificar(&b64.split_whitespace().collect::<String>())?)
+        .map_err(|_| ErrorMotor::Respuesta("la lista de correos no es UTF-8".into()))?;
+    Ok(csv
+        .lines()
+        .filter_map(|linea| {
+            let mut campos = linea.split(',').map(|c| c.trim().trim_matches('"').trim());
+            let nit = campos.next()?;
+            let correo = campos.next()?;
+            (nit.chars().all(|c| c.is_ascii_digit()) && !nit.is_empty() && correo.contains('@'))
+                .then(|| (nit.to_owned(), correo.to_owned()))
+        })
+        .collect())
+}
+
 fn rangos(xml: &str) -> Result<Vec<RangoNumeracion>, ErrorMotor> {
     let doc = leer(xml)?;
     let codigo = texto_de(&doc, "OperationCode").unwrap_or_default();
@@ -661,6 +707,31 @@ pub(crate) mod tests {
             "fc8eac422eba16e22ffd8c6f94b3f40a6e38162c"
         );
         assert!(!format!("{:?}", r[0]).contains("fc8eac"));
+    }
+
+    #[test]
+    fn lee_los_correos_de_recepcion_del_ejemplo_del_anexo() {
+        // Anexo técnico 1.9, §7.16.3 (el CSV en Base64 del ejemplo, con su fecha mal formada).
+        let csv = STANDARD.encode(
+            "\"2019053020\",\"new_corre_de_test@gmail.com\",\"2019-11-13\"\r\n\
+             \"72280636\",\"correfacturas@gmail.com\",\"2019-11-13\"\r\n\
+             \"900374006\",\"icano@dian.gov.co\",\"2019-11-12\"",
+        );
+        let xml = format!(
+            "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\"><s:Body>\
+             <GetExchangeEmailsResponse xmlns=\"http://wcf.dian.colombia\">\
+             <GetExchangeEmailsResult xmlns:b=\"x\"><b:CsvBase64Bytes>{csv}</b:CsvBase64Bytes>\
+             <b:StatusCode>0</b:StatusCode><b:Success>true</b:Success>\
+             </GetExchangeEmailsResult></GetExchangeEmailsResponse></s:Body></s:Envelope>"
+        );
+
+        let lista = correos(&xml).expect("correos");
+
+        assert_eq!(lista.len(), 3);
+        assert_eq!(
+            lista[2],
+            ("900374006".to_owned(), "icano@dian.gov.co".to_owned())
+        );
     }
 
     #[test]

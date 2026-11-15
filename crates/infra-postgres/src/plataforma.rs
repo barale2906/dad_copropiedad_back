@@ -694,6 +694,43 @@ impl RepositorioPlataforma for TransaccionPlataformaPg {
         Ok((permisos, fila.superusuario))
     }
 
+    async fn entidad_plataforma(&mut self) -> AppResult<Option<TenantId>> {
+        Ok(
+            sqlx::query_scalar!("SELECT id FROM entidades WHERE es_plataforma")
+                .fetch_optional(&mut *self.tx)
+                .await
+                .map_err(AppError::infra)?
+                .map(TenantId::from_uuid),
+        )
+    }
+
+    async fn guardar_correos_recepcion(
+        &mut self,
+        correos: &[(String, String)],
+        ahora: DateTime<Utc>,
+    ) -> AppResult<u64> {
+        let mut guardados = 0;
+        // Por lotes: la lista de la DIAN trae a todos los facturadores del país.
+        for lote in correos.chunks(5_000) {
+            let (nits, correos): (Vec<String>, Vec<String>) = lote.iter().cloned().unzip();
+            guardados += sqlx::query!(
+                "INSERT INTO correos_recepcion_dian (nit, correo, actualizado_en)
+                 SELECT n, c, $3 FROM unnest($1::text[], $2::text[]) AS t(n, c)
+                 WHERE n ~ '^[0-9]{3,15}$' AND char_length(c) BETWEEN 3 AND 320
+                 ON CONFLICT (nit) DO UPDATE
+                     SET correo = EXCLUDED.correo, actualizado_en = EXCLUDED.actualizado_en",
+                &nits,
+                &correos,
+                ahora,
+            )
+            .execute(&mut *self.tx)
+            .await
+            .map_err(AppError::infra)?
+            .rows_affected();
+        }
+        Ok(guardados)
+    }
+
     async fn documentos_en_contingencia(
         &mut self,
         limite: u32,

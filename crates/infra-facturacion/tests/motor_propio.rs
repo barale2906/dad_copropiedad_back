@@ -149,6 +149,7 @@ fn factura(resolucion: Resolucion) -> DocumentoUbl {
         clase: Clase::Factura {
             resolucion,
             contingencia_dian: false,
+            contingencia_facturador: false,
         },
         emitido: DateTime::parse_from_rfc3339("2027-01-15T10:30:00-05:00").expect("fecha"),
         ambiente: Ambiente::Pruebas,
@@ -469,14 +470,14 @@ async fn sin_servicio_es_error_de_transporte() {
 
 mod adaptador {
     use application::puertos::tributario::{
-        CredencialesFacturador, DireccionDocumento, DocumentoAEmitir, HabilitacionDian,
-        LectorCertificados, LineaDocumento, ParteDocumento, ProveedorFacturacion,
-        ResolucionDocumento,
+        CredencialesFacturador, DireccionDocumento, DocumentoAEmitir, EventoAEmitir,
+        HabilitacionDian, LectorCertificados, LineaDocumento, ParteDocumento, PersonaRecibe,
+        ProveedorFacturacion, ResolucionDocumento,
     };
     use domain::{
         DocumentoElectronicoId,
         facturacion::AmbienteDian,
-        tributario::{EstadoDocumentoElectronico, TipoDocumentoElectronico},
+        tributario::{EstadoDocumentoElectronico, EventoRadian, TipoDocumentoElectronico},
     };
     use infra_facturacion::{LectorPkcs12, MotorPropio, ProveedorDian, ProveedorSimulado};
 
@@ -549,6 +550,8 @@ mod adaptador {
             referencia_fecha: None,
             credenciales,
             contingencia: false,
+            transcripcion_contingencia: false,
+            correccion: None,
         }
     }
 
@@ -589,6 +592,103 @@ mod adaptador {
             enviadas[0].accion.ends_with("SendBillSync"),
             "{}",
             enviadas[0].accion
+        );
+    }
+
+    #[tokio::test]
+    async fn el_acuse_se_firma_y_se_envia_con_send_event_update_status() {
+        let (url, peticiones) = simulador(|_| {
+            (
+                StatusCode::OK,
+                respuesta_validacion(true, "00", &[], "clave"),
+            )
+        })
+        .await;
+        let d = documento(None);
+        let evento = EventoAEmitir {
+            id: uuid::Uuid::now_v7(),
+            tipo: EventoRadian::Acuse,
+            numero: "EV2026000001".into(),
+            fecha: Utc::now().date_naive(),
+            generador: d.emisor.clone(),
+            receptor: ParteDocumento {
+                documento: "900373115".into(),
+                dv: Some("4".into()),
+                nombre: "Proveedor SAS".into(),
+                ..ParteDocumento::default()
+            },
+            factura_numero: "SETP990000123".into(),
+            factura_cufe: "c".repeat(96),
+            concepto_reclamo: None,
+            quien_recibe: Some(PersonaRecibe {
+                tipo_documento: domain::TipoDocumento::Cc,
+                documento: "1020304050".into(),
+                nombres: "Ana".into(),
+                apellidos: "Pérez".into(),
+                cargo: None,
+                area: None,
+            }),
+            nota: None,
+            credenciales: Some(credenciales(AmbienteDian::Produccion)),
+        };
+
+        let r = motor(&url).evento(&evento).await.expect("evento");
+
+        assert_eq!(r.estado, EstadoDocumentoElectronico::Validado);
+        let cude = r.cufe.expect("cude");
+        let xml = String::from_utf8(r.xml.expect("xml")).expect("utf-8");
+        assert!(xml.contains("<ApplicationResponse") && xml.contains(&cude));
+        let enviadas = peticiones.lock().expect("candado");
+        assert!(
+            enviadas[0].accion.ends_with("SendEventUpdateStatus"),
+            "{}",
+            enviadas[0].accion
+        );
+    }
+
+    #[tokio::test]
+    async fn el_documento_soporte_se_transmite_con_el_vendedor_como_proveedor_y_sin_contenedor() {
+        let (url, _) = simulador(|_| {
+            (
+                StatusCode::OK,
+                respuesta_validacion(true, "00", &[], "clave"),
+            )
+        })
+        .await;
+        let mut d = documento(Some(credenciales(AmbienteDian::Produccion)));
+        d.tipo = TipoDocumentoElectronico::DocumentoSoporte;
+        d.prefijo = "DS".into();
+        d.numero = 1;
+        d.clave_tecnica = None;
+        d.resolucion = Some(ResolucionDocumento {
+            desde: 1,
+            hasta: 100,
+            ..d.resolucion.clone().expect("resolución")
+        });
+        d.adquirente = ParteDocumento {
+            documento: "79123456".into(),
+            nombre: "Pedro Gómez".into(),
+            persona_natural: true,
+            direccion: d.emisor.direccion.clone(),
+            ..ParteDocumento::default()
+        };
+
+        let r = motor(&url).emitir(&d).await.expect("documento soporte");
+
+        assert_eq!(r.estado, EstadoDocumentoElectronico::Validado);
+        assert!(
+            r.adjunto.is_none(),
+            "el documento soporte no lleva contenedor"
+        );
+        let xml = String::from_utf8(r.xml.expect("xml")).expect("utf-8");
+        assert!(xml.contains("<cbc:InvoiceTypeCode>05</cbc:InvoiceTypeCode>"));
+        let proveedor = &xml[xml
+            .find("<cac:AccountingSupplierParty>")
+            .expect("proveedor")
+            ..xml.find("</cac:AccountingSupplierParty>").expect("fin")];
+        assert!(
+            proveedor.contains("79123456"),
+            "el vendedor va como proveedor"
         );
     }
 

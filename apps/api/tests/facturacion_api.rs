@@ -453,3 +453,222 @@ async fn la_empresa_ve_y_edita_su_ficha(pool: PgPool) {
         "se guardó"
     );
 }
+
+/// El facturador registra la aceptación tácita de su factura a crédito una sola vez y la ve en
+/// los eventos del documento.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_aceptacion_tacita_de_una_factura_propia_se_registra_una_vez(pool: PgPool) {
+    let t = tienda(pool).await;
+    let cliente = facturador(&t).await;
+    let factura = t
+        .crear(
+            "/facturacion/facturas",
+            json!({ "persona_id": cliente, "fecha": "2026-11-14", "vencimiento": "2026-12-14",
+                    "descripcion": "Asesoría", "lineas": [{ "descripcion": "Asesoría",
+                    "cantidad": "1", "valor_unitario": "100000" }] }),
+        )
+        .await;
+    let f = id(&factura);
+    t.crear(&format!("/facturacion/facturas/{f}/emision"), json!({}))
+        .await;
+    let fe = t
+        .crear(
+            &format!("/facturacion/facturas/{f}/factura-electronica"),
+            json!({}),
+        )
+        .await;
+    let ruta = format!("/facturacion/documentos/{}", id(&fe));
+
+    let tacita = t
+        .crear(&format!("{ruta}/aceptacion-tacita"), json!({}))
+        .await;
+    let (s, _) = t
+        .pedir(
+            Method::POST,
+            &format!("{ruta}/aceptacion-tacita"),
+            Some(json!({})),
+        )
+        .await;
+    let (_, eventos) = t.pedir(Method::GET, &format!("{ruta}/eventos"), None).await;
+
+    assert_eq!(tacita["tipo"], json!("aceptacion_tacita"));
+    assert_eq!(tacita["estado"], json!("enviado"));
+    assert_eq!(s, StatusCode::CONFLICT, "no se repite");
+    assert_eq!(eventos.as_array().map(Vec::len), Some(1), "{eventos}");
+}
+
+/// La empresa compra a un no obligado a facturar: emite el documento soporte con su resolución y
+/// lo anula con una nota de ajuste, que lleva su propio número (`NA` + año) y anula la compra.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_documento_soporte_se_anula_con_una_nota_de_ajuste_numerada(pool: PgPool) {
+    let t = tienda(pool).await;
+    facturador(&t).await;
+    let vendedor = id(&t
+        .crear(
+            "/terceros",
+            json!({ "tipo": "natural", "nombre": "Pedro Gómez", "documento": "79123456",
+                    "fiscal": { "regimen_iva": "no_responsable", "responsabilidades": [] } }),
+        )
+        .await);
+    t.crear(
+        "/tributario/resoluciones",
+        json!({ "tipo": "documento_soporte", "prefijo": "DS", "desde": 1, "hasta": 100,
+                "numero_resolucion": "18764000000002", "fecha_resolucion": "2026-01-01",
+                "vigente_desde": "2026-01-01", "vigente_hasta": "2027-12-31" }),
+    )
+    .await;
+    let compra = id(&t
+        .crear(
+            "/facturacion/compras",
+            json!({ "persona_id": vendedor, "numero": "CC-1", "fecha": "2026-11-14",
+                    "vencimiento": "2026-11-14", "descripcion": "Jardinería",
+                    "lineas": [{ "descripcion": "Poda de jardines", "base": "80000", "iva": "0" }] }),
+        )
+        .await);
+
+    let ds = t
+        .crear(
+            &format!("/facturacion/compras/{compra}/documento-soporte"),
+            json!({}),
+        )
+        .await;
+    let nota = t
+        .crear(
+            &format!("/facturacion/compras/{compra}/nota-ajuste"),
+            json!({ "motivo": "El servicio no se prestó" }),
+        )
+        .await;
+    let (s, _) = t
+        .pedir(
+            Method::POST,
+            &format!("/facturacion/compras/{compra}/nota-ajuste"),
+            Some(json!({ "motivo": "Otra vez" })),
+        )
+        .await;
+
+    assert_eq!(
+        (ds["estado"].as_str(), ds["prefijo"].as_str()),
+        (Some("validado"), Some("DS"))
+    );
+    assert_eq!(nota["tipo"], json!("nota_ajuste_ds"));
+    assert_eq!(nota["estado"], json!("validado"), "{nota}");
+    assert_eq!(nota["prefijo"], json!("NA26"), "prefijo del tipo y del año");
+    assert_eq!(nota["numero"], json!(1));
+    assert!(s.is_client_error(), "la compra ya está anulada: {s}");
+}
+
+/// La factura de papel de la contingencia del facturador se transcribe como tipo 03 con el
+/// número de su talonario, dentro de la resolución de contingencia.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_factura_de_talonario_se_transcribe_con_su_numero_de_contingencia(pool: PgPool) {
+    let t = tienda(pool).await;
+    let cliente = facturador(&t).await;
+    t.crear(
+        "/tributario/resoluciones",
+        json!({ "tipo": "contingencia", "prefijo": "TC", "desde": 1, "hasta": 50,
+                "numero_resolucion": "18764000000003", "fecha_resolucion": "2026-01-01",
+                "vigente_desde": "2026-01-01", "vigente_hasta": "2027-12-31" }),
+    )
+    .await;
+    let factura = t
+        .crear(
+            "/facturacion/facturas",
+            json!({ "persona_id": cliente, "fecha": "2026-11-14", "vencimiento": "2026-11-14",
+                    "descripcion": "Venta en contingencia", "lineas": [{
+                    "descripcion": "Asesoría", "cantidad": "1", "valor_unitario": "50000" }] }),
+        )
+        .await;
+    let f = id(&factura);
+    t.crear(&format!("/facturacion/facturas/{f}/emision"), json!({}))
+        .await;
+    let ruta = format!("/facturacion/facturas/{f}/factura-contingencia");
+
+    let (s_fuera, _) = t
+        .pedir(Method::POST, &ruta, Some(json!({ "numero_talonario": 99 })))
+        .await;
+    let fe = t.crear(&ruta, json!({ "numero_talonario": 7 })).await;
+    let (s_otro, _) = t
+        .pedir(Method::POST, &ruta, Some(json!({ "numero_talonario": 8 })))
+        .await;
+
+    assert_eq!(s_fuera, StatusCode::UNPROCESSABLE_ENTITY, "fuera del rango");
+    assert_eq!(
+        (fe["prefijo"].as_str(), fe["numero"].as_u64()),
+        (Some("TC"), Some(7))
+    );
+    assert_eq!(fe["estado"], json!("validado"), "{fe}");
+    assert_eq!(s_otro, StatusCode::CONFLICT, "ya tiene factura electrónica");
+}
+
+/// Sin contabilidad, la nota débito es otra cuenta por cobrar del cliente que se marca pagada a
+/// mano; no admite su propia factura electrónica (ya la tiene como nota).
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn sin_contabilidad_la_nota_debito_se_cobra_y_se_marca_pagada_a_mano(pool: PgPool) {
+    let t = tienda(pool).await;
+    let cliente = facturador(&t).await;
+    let factura = t
+        .crear(
+            "/facturacion/facturas",
+            json!({ "persona_id": cliente, "fecha": "2026-11-14", "vencimiento": "2026-12-14",
+                    "descripcion": "Asesoría", "lineas": [{ "descripcion": "Asesoría",
+                    "cantidad": "1", "valor_unitario": "100000" }] }),
+        )
+        .await;
+    let f = id(&factura);
+    t.crear(&format!("/facturacion/facturas/{f}/emision"), json!({}))
+        .await;
+    let (s_sin_fe, _) = t
+        .pedir(
+            Method::POST,
+            &format!("/facturacion/facturas/{f}/nota-debito"),
+            Some(json!({ "concepto": "otro", "motivo": "Gastos de envío",
+                         "fecha": "2026-11-20", "vencimiento": "2026-12-20",
+                         "lineas": [{ "descripcion": "Envío", "cantidad": "1",
+                                      "valor_unitario": "8000" }] })),
+        )
+        .await;
+    t.crear(
+        &format!("/facturacion/facturas/{f}/factura-electronica"),
+        json!({}),
+    )
+    .await;
+
+    let nota = t
+        .crear(
+            &format!("/facturacion/facturas/{f}/nota-debito"),
+            json!({ "concepto": "gastos_por_cobrar", "motivo": "Gastos de envío",
+                    "fecha": "2026-11-20", "vencimiento": "2026-12-20",
+                    "lineas": [{ "descripcion": "Envío", "cantidad": "1",
+                                 "valor_unitario": "8000" }] }),
+        )
+        .await;
+    let fila = nota["origen_id"].as_str().expect("origen").to_owned();
+    let (s_fe, _) = t
+        .pedir(
+            Method::POST,
+            &format!("/facturacion/facturas/{fila}/factura-electronica"),
+            Some(json!({})),
+        )
+        .await;
+    let pagada = t
+        .crear(
+            &format!("/facturacion/facturas/{fila}/pago"),
+            json!({ "fecha": "2026-11-25", "medio": "efectivo" }),
+        )
+        .await;
+
+    assert_eq!(
+        s_sin_fe,
+        StatusCode::CONFLICT,
+        "sin factura electrónica no hay nota débito"
+    );
+    assert_eq!(nota["estado"], json!("validado"), "{nota}");
+    assert_eq!(
+        s_fe,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "la nota no lleva factura electrónica"
+    );
+    assert_eq!(pagada["estado"], json!("pagada"));
+    assert_eq!(pagada["nota_debito_de"], json!(f));
+    assert_eq!(pagada["total"], json!("8000.00"));
+}

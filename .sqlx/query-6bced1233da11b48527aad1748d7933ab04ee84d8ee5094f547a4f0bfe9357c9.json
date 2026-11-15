@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO correos_recepcion_dian (nit, correo, actualizado_en)\n                 SELECT n, c, $3 FROM unnest($1::text[], $2::text[]) AS t(n, c)\n                 WHERE n ~ '^[0-9]{3,15}$' AND char_length(c) BETWEEN 3 AND 320\n                 ON CONFLICT (nit) DO UPDATE\n                     SET correo = EXCLUDED.correo, actualizado_en = EXCLUDED.actualizado_en",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6bced1233da11b48527aad1748d7933ab04ee84d8ee5094f547a4f0bfe9357c9"
+}

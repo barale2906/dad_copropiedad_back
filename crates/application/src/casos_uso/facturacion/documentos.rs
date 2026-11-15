@@ -10,7 +10,7 @@
 //! pedirlo devuelve el mismo, con el mismo CUFE); un documento rechazado conserva la respuesta y
 //! no se marca validado (QA-015): se corrige con un documento nuevo o una nota.
 
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use domain::{
     ClasificacionArchivo, DocumentoElectronicoId, FacturaProveedorId, FacturaRecibidaId,
     FacturaVentaId, Modulo, NombreArchivo, Permiso, TipoArchivo,
@@ -20,15 +20,16 @@ use domain::{
     },
     facturacion::{AmbienteDian, EstadoHabilitacion},
     tributario::{
-        CanalFacturacion, EstadoDocumentoElectronico, EstadoFacturaRecibida, EventoRadian,
-        TipoDocumentoElectronico, rango_por_agotarse, siguiente_numero, url_consulta_dian,
+        CanalFacturacion, EstadoDocumentoElectronico, EstadoFacturaRecibida,
+        TipoDocumentoElectronico, TipoNumeracion, rango_por_agotarse, siguiente_numero,
+        url_consulta_dian,
     },
 };
 
 use crate::casos_uso::contabilidad::prelude::*;
 use crate::casos_uso::contabilidad::tesoreria::eventos as eventos_origen;
 use crate::casos_uso::contabilidad::tesoreria::origen;
-use crate::casos_uso::contabilidad::{TxTesoreria, texto, texto_opcional};
+use crate::casos_uso::contabilidad::{TxTesoreria, texto};
 use crate::casos_uso::tributario::perfil_confirmado_en;
 use crate::{
     AppError, AppResult, Contexto,
@@ -62,7 +63,6 @@ const ACCION_REINTENTAR: AccionAuditoria = AccionAuditoria::new("facturacion.doc
 const ACCION_RECIBIR: AccionAuditoria = AccionAuditoria::new("facturacion.recibida.cargar");
 const ACCION_VINCULAR: AccionAuditoria = AccionAuditoria::new("facturacion.recibida.vincular");
 const ACCION_RECHAZAR: AccionAuditoria = AccionAuditoria::new("facturacion.recibida.rechazar");
-const ACCION_RADIAN: AccionAuditoria = AccionAuditoria::new("facturacion.radian.evento");
 
 /// Máximo de documentos en un listado.
 pub const LIMITE_DOCUMENTOS: u32 = 500;
@@ -90,11 +90,11 @@ pub struct Expedicion<'a, P, C, G, E> {
     pub pie: Option<&'a str>,
 }
 
-fn validacion(texto: impl Into<String>) -> AppError {
+pub(crate) fn validacion(texto: impl Into<String>) -> AppError {
     AppError::Validacion(texto.into())
 }
 
-async fn abrir_fe<U>(
+pub(crate) async fn abrir_fe<U>(
     unidad: &U,
     reloj: &impl Reloj,
     ctx: &Contexto,
@@ -286,7 +286,7 @@ async fn aplicar_respuesta<T: TxFacturacion, A: AlmacenArchivos>(
 }
 
 /// Guarda un XML del documento en el almacén y lo registra en `archivos`.
-async fn guardar_xml<T: TxFacturacion, A: AlmacenArchivos>(
+pub(crate) async fn guardar_xml<T: TxFacturacion, A: AlmacenArchivos>(
     tx: &mut T,
     almacen: &A,
     reloj: &impl Reloj,
@@ -372,10 +372,16 @@ where
     E: Empaquetador,
     A: AlmacenArchivos,
 {
-    let (Some(correo), Some(cufe)) = (adquirente.correo.as_deref(), d.cufe.as_deref()) else {
+    // Primero el correo que el adquirente registró ante la DIAN como facturador electrónico;
+    // si no está en la lista, el correo de facturación del tercero.
+    let correo = match tx.correo_recepcion_dian(&adquirente.documento).await? {
+        Some(c) => Some(c),
+        None => adquirente.correo.clone(),
+    };
+    let (Some(correo), Some(cufe)) = (correo, d.cufe.as_deref()) else {
         return Ok(());
     };
-    let Ok(para) = domain::DireccionCorreo::new(correo) else {
+    let Ok(para) = domain::DireccionCorreo::new(&correo) else {
         return Ok(());
     };
     let (nombre_zip, zip) = paquete_adquirente(tx, medios, almacen, reloj, d).await?;
@@ -427,6 +433,9 @@ struct Pedido {
     fecha: NaiveDate,
     total: Monto,
     referencia: Option<DocumentoElectronicoId>,
+    /// Número de la factura de talonario de la contingencia del facturador (se numera con su
+    /// resolución de contingencia, no con el siguiente de la de factura).
+    talonario: Option<u64>,
 }
 
 /// Documento nuevo con número (si su tipo usa resolución) o el existente del mismo origen.
@@ -442,11 +451,38 @@ async fn preparar_documento<T: TxFacturacion, P: ProveedorFacturacion>(
         fecha,
         total,
         referencia,
+        talonario,
     } = pedido;
     if let Some(d) = tx.documento_por_origen(tipo, &origen_documento).await? {
         return Ok((d, false));
     }
-    let (resolucion_id, prefijo, numero) = match tipo.numeracion() {
+    let numeracion = match talonario {
+        Some(_) => Some(TipoNumeracion::Contingencia),
+        None => tipo.numeracion(),
+    };
+    let (resolucion_id, prefijo, numero) = match numeracion {
+        Some(TipoNumeracion::Contingencia) => {
+            let n = talonario.ok_or_else(|| validacion("falta el número del talonario"))?;
+            let r = tx
+                .resoluciones()
+                .await?
+                .into_iter()
+                .find(|r| {
+                    r.tipo == TipoNumeracion::Contingencia
+                        && r.activa
+                        && r.desde <= n
+                        && n <= r.hasta
+                        && r.vigente_desde <= fecha
+                        && fecha <= r.vigente_hasta
+                })
+                .ok_or_else(|| {
+                    validacion(
+                        "el número no está en una resolución de contingencia activa y vigente en \
+                         la fecha de la factura",
+                    )
+                })?;
+            (Some(r.id), r.prefijo, Some(n))
+        }
         Some(t) => {
             let r = tx
                 .resoluciones()
@@ -469,7 +505,18 @@ async fn preparar_documento<T: TxFacturacion, P: ProveedorFacturacion>(
             }
             (Some(r.id), r.prefijo, Some(n))
         }
-        None => (None, String::new(), None),
+        None => match tipo.prefijo_nota() {
+            Some(base) => {
+                let anio = fecha.year();
+                let n = tx.siguiente_numero_nota(tipo, anio).await?;
+                (
+                    None,
+                    format!("{base}{:02}", anio.rem_euclid(100)),
+                    Some(u64::from(n)),
+                )
+            }
+            None => (None, String::new(), None),
+        },
     };
     // Con el canal `propio` transmite el motor propio, sea cual sea el adaptador por defecto.
     let propio = perfil_confirmado_en(tx, fecha)
@@ -506,7 +553,7 @@ async fn preparar_documento<T: TxFacturacion, P: ProveedorFacturacion>(
 }
 
 /// Datos para transmitir un documento según su origen.
-async fn armar_envio<T: TxFacturacion>(
+pub(crate) async fn armar_envio<T: TxFacturacion>(
     tx: &mut T,
     d: &DocumentoElectronico,
 ) -> AppResult<DocumentoAEmitir> {
@@ -547,6 +594,10 @@ async fn armar_envio<T: TxFacturacion>(
             referencia_fecha: referencia.as_ref().map(|x| x.creado_en.date_naive()),
             credenciales: None,
             contingencia: d.estado == EstadoDocumentoElectronico::Contingencia,
+            transcripcion_contingencia: resolucion
+                .as_ref()
+                .is_some_and(|x| x.tipo == TipoNumeracion::Contingencia),
+            correccion: None,
         };
     match d.origen.tipo.as_str() {
         eventos_origen::FACTURA_VENTA => {
@@ -578,6 +629,9 @@ async fn armar_envio<T: TxFacturacion>(
                 iva: f.iva.valor(),
                 total: f.total.valor(),
                 vencimiento: (f.vencimiento > f.fecha).then_some(f.vencimiento),
+                correccion: f
+                    .nota_debito
+                    .map(|n| (n.concepto.codigo().to_owned(), f.descripcion.clone())),
                 ..base(f.fecha, emisor, adquirente)
             })
         }
@@ -669,7 +723,7 @@ pub(crate) async fn cargar_credenciales<T: TxFacturacion, C: Cofre>(
 
 /// Credenciales del motor propio si la entidad factura con él (perfil con canal `propio`): exige
 /// la habilitación en producción. Con otro canal, `None` (lo transmite el proveedor).
-async fn credenciales<T: TxFacturacion, C: Cofre>(
+pub(crate) async fn credenciales<T: TxFacturacion, C: Cofre>(
     tx: &mut T,
     cofre: &C,
     reloj: &impl Reloj,
@@ -777,6 +831,11 @@ where
             "solo una factura de venta emitida (y no anulada) se factura electrónicamente",
         ));
     }
+    if f.nota_debito.is_some() {
+        return Err(validacion(
+            "es una nota débito: su documento electrónico se emitió al crearla",
+        ));
+    }
     exigir_facturador(&mut tx, f.fecha).await?;
     let (mut d, _) = preparar_documento(
         &mut tx,
@@ -788,9 +847,194 @@ where
             fecha: f.fecha,
             total: f.total,
             referencia: None,
+            talonario: None,
         },
     )
     .await?;
+    transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_EMITIR, "documento_electronico", d.id.as_uuid())
+            .con_detalle(auditar(&d)?),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(d)
+}
+
+/// Nota débito de una factura de venta: cobros que se agregan (intereses, gastos o cambio del
+/// valor) con sus propias líneas.
+#[derive(Debug, Clone)]
+pub struct NuevaNotaDebito {
+    pub concepto: domain::tributario::ConceptoNotaDebito,
+    /// Motivo (va como descripción y en la corrección del documento electrónico).
+    pub motivo: String,
+    pub fecha: NaiveDate,
+    pub vencimiento: NaiveDate,
+    pub lineas: Vec<super::ventas::NuevaLineaVenta>,
+}
+
+/// Emite la **nota débito** de una factura de venta con factura electrónica validada: la nota es
+/// un documento por cobrar más del mismo cliente (se guarda como factura de venta de tipo nota
+/// débito: entra a la cartera por edades, se abona con recibos de caja o se marca pagada a mano
+/// y, con contabilidad, se contabiliza con la regla de la factura de venta) y se transmite
+/// referida a la factura electrónica original, todo en una transacción.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `facturacion.facturas.gestionar` o `facturacion.emitir`;
+/// [`AppError::Conflicto`] si la factura no tiene factura electrónica validada;
+/// [`AppError::Validacion`] si la factura está anulada, es otra nota débito o una línea no cumple.
+pub async fn emitir_nota_debito<U, P, C, G, E, A>(
+    unidad: &U,
+    medios: &Expedicion<'_, P, C, G, E>,
+    almacen: &A,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    factura: FacturaVentaId,
+    nueva: NuevaNotaDebito,
+) -> AppResult<DocumentoElectronico>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxFacturacion,
+    P: ProveedorFacturacion,
+    C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
+    ctx.exigir(Permiso::FacturacionFacturasGestionar)?;
+    let motivo = texto("motivo", &nueva.motivo, 300)?;
+    if motivo.chars().count() < 5 {
+        return Err(validacion(
+            "el motivo de la nota débito tiene al menos 5 caracteres",
+        ));
+    }
+    let mut tx = abrir_fe(unidad, reloj, ctx, Permiso::FacturacionEmitir).await?;
+    let original = tx
+        .factura_venta(factura)
+        .await?
+        .ok_or(AppError::NoEncontrado("factura de venta"))?;
+    if original.nota_debito.is_some() || original.estado == EstadoFacturaVenta::Anulada {
+        return Err(validacion(
+            "la nota débito se hace sobre una factura de venta vigente (no sobre otra nota)",
+        ));
+    }
+    let fe = tx
+        .documento_por_origen(
+            TipoDocumentoElectronico::Factura,
+            &origen(eventos_origen::FACTURA_VENTA, factura.as_uuid()),
+        )
+        .await?
+        .filter(|d| d.estado == EstadoDocumentoElectronico::Validado)
+        .ok_or_else(|| {
+            AppError::Conflicto("la factura no tiene factura electrónica validada".into())
+        })?;
+    exigir_facturador(&mut tx, nueva.fecha).await?;
+    let nota = super::ventas::crear_factura_en(
+        &mut tx,
+        reloj,
+        ctx,
+        super::ventas::NuevaFacturaVenta {
+            persona: original.persona_id,
+            fecha: nueva.fecha,
+            vencimiento: nueva.vencimiento,
+            descripcion: motivo,
+            origen: None,
+            lineas: nueva.lineas,
+        },
+        Some(crate::puertos::tesoreria::NotaDebitoVenta {
+            factura_id: factura,
+            concepto: nueva.concepto,
+        }),
+    )
+    .await?;
+    let nota = super::ventas::emitir_factura_en(&mut tx, reloj, ctx, nota).await?;
+    let (mut d, _) = preparar_documento(
+        &mut tx,
+        medios.proveedor,
+        reloj,
+        Pedido {
+            tipo: TipoDocumentoElectronico::NotaDebito,
+            origen: origen(eventos_origen::FACTURA_VENTA, nota.id.as_uuid()),
+            fecha: nota.fecha,
+            total: nota.total,
+            referencia: Some(fe.id),
+            talonario: None,
+        },
+    )
+    .await?;
+    transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_EMITIR, "documento_electronico", d.id.as_uuid())
+            .con_detalle(auditar(&d)?),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(d)
+}
+
+/// Transcribe como factura electrónica **tipo 03** una factura de venta que se expidió en
+/// papel, con el talonario de contingencia del facturador, mientras no pudo facturar
+/// electrónicamente (anexo §12.1). El número es el del talonario y debe estar en una resolución
+/// de contingencia vigente en la fecha de la factura; se transmite y entrega como cualquier
+/// factura electrónica (la DIAN exige hacerlo dentro de las 48 horas siguientes a superar el
+/// inconveniente).
+///
+/// # Errors
+///
+/// Los de [`emitir_factura_electronica`]; [`AppError::Validacion`] si el número no está en una
+/// resolución de contingencia vigente; [`AppError::Conflicto`] si ese número ya se transcribió.
+pub async fn transcribir_factura_contingencia<U, P, C, G, E, A>(
+    unidad: &U,
+    medios: &Expedicion<'_, P, C, G, E>,
+    almacen: &A,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    factura: FacturaVentaId,
+    numero_talonario: u64,
+) -> AppResult<DocumentoElectronico>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxFacturacion,
+    P: ProveedorFacturacion,
+    C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
+    let mut tx = abrir_fe(unidad, reloj, ctx, Permiso::FacturacionEmitir).await?;
+    let f = tx
+        .factura_venta(factura)
+        .await?
+        .ok_or(AppError::NoEncontrado("factura de venta"))?;
+    if matches!(
+        f.estado,
+        EstadoFacturaVenta::Borrador | EstadoFacturaVenta::Anulada
+    ) {
+        return Err(validacion(
+            "solo una factura de venta emitida (y no anulada) se transcribe",
+        ));
+    }
+    exigir_facturador(&mut tx, f.fecha).await?;
+    let (mut d, nuevo) = preparar_documento(
+        &mut tx,
+        medios.proveedor,
+        reloj,
+        Pedido {
+            tipo: TipoDocumentoElectronico::Factura,
+            origen: origen(eventos_origen::FACTURA_VENTA, factura.as_uuid()),
+            fecha: f.fecha,
+            total: f.total,
+            referencia: None,
+            talonario: Some(numero_talonario),
+        },
+    )
+    .await?;
+    if !nuevo && d.numero != Some(numero_talonario) {
+        return Err(AppError::Conflicto(
+            "la factura ya tiene factura electrónica con otro número".into(),
+        ));
+    }
     transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_EMITIR, "documento_electronico", d.id.as_uuid())
@@ -850,6 +1094,7 @@ where
             fecha: reloj.ahora().date_naive(),
             total: f.total,
             referencia: Some(fe.id),
+            talonario: None,
         },
     )
     .await?;
@@ -923,6 +1168,73 @@ where
             fecha: f.fecha,
             total: Monto::new(f.subtotal.valor() + f.iva.valor())?,
             referencia: None,
+            talonario: None,
+        },
+    )
+    .await?;
+    transmitir(&mut tx, medios, almacen, reloj, ctx, &mut d).await?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_EMITIR, "documento_electronico", d.id.as_uuid())
+            .con_detalle(auditar(&d)?),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(d)
+}
+
+/// Emite la **nota de ajuste** que anula el documento soporte validado de una compra: anula la
+/// compra (y su comprobante, si lo tiene) en la misma transacción y transmite la nota.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `facturacion.facturas.gestionar` o `facturacion.emitir`;
+/// [`AppError::Conflicto`] si la compra no tiene documento soporte validado;
+/// [`domain::DominioError::TransicionInvalida`] si la compra tiene pagos o ya se anuló.
+pub async fn emitir_nota_ajuste_soporte<U, P, C, G, E, A>(
+    unidad: &U,
+    medios: &Expedicion<'_, P, C, G, E>,
+    almacen: &A,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    compra: FacturaProveedorId,
+    motivo: &str,
+) -> AppResult<DocumentoElectronico>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxFacturacion,
+    P: ProveedorFacturacion,
+    C: Cofre,
+    G: GeneradorActas,
+    E: Empaquetador,
+    A: AlmacenArchivos,
+{
+    ctx.exigir(Permiso::FacturacionFacturasGestionar)?;
+    let mut tx = abrir_fe(unidad, reloj, ctx, Permiso::FacturacionEmitir).await?;
+    let origen_compra = origen(eventos_origen::FACTURA_PROVEEDOR, compra.as_uuid());
+    let ds = tx
+        .documento_por_origen(TipoDocumentoElectronico::DocumentoSoporte, &origen_compra)
+        .await?
+        .filter(|d| d.estado == EstadoDocumentoElectronico::Validado)
+        .ok_or_else(|| {
+            AppError::Conflicto(
+                "la compra no tiene documento soporte validado: anúlela como compra".into(),
+            )
+        })?;
+    let f = crate::casos_uso::contabilidad::cuentas_por_pagar::anular_factura_proveedor_en(
+        &mut tx, reloj, ctx, compra, motivo,
+    )
+    .await?;
+    let (mut d, _) = preparar_documento(
+        &mut tx,
+        medios.proveedor,
+        reloj,
+        Pedido {
+            tipo: TipoDocumentoElectronico::NotaAjusteDs,
+            origen: origen_compra,
+            fecha: reloj.ahora().date_naive(),
+            total: Monto::new(f.subtotal.valor() + f.iva.valor())?,
+            referencia: Some(ds.id),
+            talonario: None,
         },
     )
     .await?;
@@ -1452,79 +1764,4 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(f)
-}
-
-/// Registra un evento RADIAN (acuse, recibo del bien, aceptación o reclamo) por el proveedor:
-/// exige los eventos previos; el reclamo exige motivo.
-///
-/// # Errors
-///
-/// [`AppError::SinPermiso`] sin `facturacion.recibir`; [`AppError::ModuloNoHabilitado`];
-/// [`AppError::NoEncontrado`]; [`AppError::Validacion`] si faltan los eventos previos o el
-/// motivo; [`AppError::Conflicto`] si el evento ya se registró.
-pub async fn registrar_evento_radian<U, P>(
-    unidad: &U,
-    proveedor: &P,
-    reloj: &impl Reloj,
-    ctx: &Contexto,
-    id: FacturaRecibidaId,
-    tipo: EventoRadian,
-    motivo: Option<&str>,
-) -> AppResult<RegistroRadian>
-where
-    U: UnidadDeTrabajo,
-    U::Transaccion: TxFacturacion,
-    P: ProveedorFacturacion,
-{
-    let motivo = texto_opcional("motivo", motivo, 500)?;
-    if tipo == EventoRadian::Reclamo && motivo.is_none() {
-        return Err(validacion("el reclamo de una factura lleva su motivo"));
-    }
-    let mut tx = abrir_fe(unidad, reloj, ctx, Permiso::FacturacionRecibir).await?;
-    let f = tx
-        .factura_recibida(id)
-        .await?
-        .ok_or(AppError::NoEncontrado("factura recibida"))?;
-    let previos = tx.eventos_radian(id).await?;
-    let faltan: Vec<&str> = tipo
-        .previos()
-        .iter()
-        .filter(|p| {
-            !previos
-                .iter()
-                .any(|e| e.tipo == **p && e.estado == "enviado")
-        })
-        .map(|p| p.as_str())
-        .collect();
-    if !faltan.is_empty() {
-        return Err(validacion(format!("antes registre: {}", faltan.join(", "))));
-    }
-    let respuesta = proveedor
-        .evento_radian(&f.cufe, tipo, motivo.as_deref())
-        .await?;
-    let registro = RegistroRadian {
-        id: uuid::Uuid::now_v7(),
-        factura_recibida_id: id,
-        tipo,
-        estado: if respuesta.estado == EstadoDocumentoElectronico::Rechazado {
-            "rechazado".into()
-        } else {
-            "enviado".into()
-        },
-        id_externo: respuesta.id_externo,
-        motivo,
-        respuesta: respuesta.mensaje,
-        creado_por: ctx.actor_id,
-        creado_en: reloj.ahora(),
-    };
-    tx.insertar_evento_radian(&registro).await?;
-    let detalle = DetalleAuditoria::vacio()
-        .con("tipo", tipo.as_str())?
-        .con("estado", registro.estado.as_str())?;
-    tx.registrar(
-        EventoAuditoria::ok(ACCION_RADIAN, "factura_recibida", id.as_uuid()).con_detalle(detalle),
-    )
-    .await?;
-    tx.confirmar().await?;
-    Ok(registro)
 }

@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO facturas_venta (id, tenant_id, persona_id, fecha, vencimiento, descripcion,\n                 origen_tipo, origen_id, subtotal, iva, total, pagado, estado, creada_por, creada_en,\n                 nota_debito_de, concepto_nota_debito)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Date",
+        "Text",
+        "Text",
+        "Uuid",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "35c8a1755267a10d8317de5174168ed854f9bc5a3774e4b6ac9bbbec9c3fc1dd"
+}

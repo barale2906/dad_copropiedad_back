@@ -106,3 +106,43 @@ software, sin que este sea proveedor tecnológico.
   DEFINER, solo ids) y avisa en los logs los que pasan de 48 horas.
 - **Pendiente**: contingencia del facturador (tipo 03, transcripción del talonario) y el correo de
   recepción desde `GetExchangeEmails`.
+
+## Adenda (2026-11-14): cierre del motor propio (plan 17 fase 7)
+- **Eventos RADIAN propios** (`propio::evento`, anexo 1.9 §6.5 y §11.5): `ApplicationResponse`
+  firmado por quien genera el evento, con CUDE (SHA-384 con el PIN; verificado con el ejemplo
+  oficial), enviado con `SendEventUpdateStatus`. Acuse (030) y recibo del bien (032) identifican a
+  la persona que recibió; el reclamo (031) lleva su concepto (lista de la DIAN); la aceptación
+  tácita (034) la emite el facturador sobre su factura a crédito, dirigida a la DIAN y con la
+  constancia bajo juramento. Número del evento `EV` + año + consecutivo de la entidad; XML en el
+  almacén. Sin el canal `propio`, el evento lo registra el proveedor configurado.
+- **Documento soporte y nota de ajuste** (anexo técnico del documento soporte v1.1, Res. 000167
+  de 2021): `Invoice` tipo 05 y `CreditNote` tipo 95 con CUDS (verificado con el ejemplo
+  oficial), el vendedor no obligado como proveedor (con su ubicación) y la entidad como
+  adquirente, `InvoicePeriod` por operación y la identificación estándar del ítem (`999`).
+  Archivos `ds`/`nas`. Sin contingencia (suplemento C del anexo) y sin contenedor. La nota de
+  ajuste anula el documento soporte y la compra en la misma transacción.
+- **Numeración de las notas**: las notas crédito, débito y de ajuste no usan resolución, pero
+  cada una lleva número propio: prefijo del tipo y del año (`NC26`, `ND26`, `NA26`) y
+  consecutivo anual de la entidad (series `nota_*` en `consecutivos`). Antes salían sin número.
+- **Contingencia del facturador (tipo 03)**: resolución de numeración `contingencia` (sin clave
+  técnica); la factura de papel se transcribe con el número del talonario, `InvoiceTypeCode` 03,
+  CUDE con el PIN y `AdditionalDocumentReference` a la factura de papel (`DocumentTypeCode`
+  propio `FTC`). **Por confirmar en las pruebas de habilitación**: el anexo exige un UUID en esa
+  referencia y no dice cuál para una factura de papel; se usa el CUDE del propio documento.
+- **Correos de recepción** (`GetExchangeEmails`, §7.16): la DIAN entrega el correo de todos los
+  facturadores; el worker del gateway lo sincroniza a diario en `correos_recepcion_dian` con las
+  credenciales de la entidad de la plataforma, y la entrega al adquirente lo usa antes que el
+  correo de facturación del tercero.
+- **Set de pruebas** con notas crédito y débito (cada una referida a una factura del mismo
+  envío). La nota débito usa ahora el concepto 3 («cambio del valor»), no el 2.
+- Todos los tipos (factura, tipo 03, notas, documento soporte, nota de ajuste y evento) validan
+  contra los XSD de la caja de herramientas 1.9.
+- **Nota débito** (decisión del usuario del 2026-11-14): es un documento por cobrar más del
+  cliente con la misma forma que la factura, así que se guarda en `facturas_venta` con la factura
+  que ajusta (`nota_debito_de`) y su concepto de la DIAN. Entra a la cartera por edades, se abona
+  con recibos de caja o se marca pagada a mano y, con contabilidad, se contabiliza con la regla de
+  la factura de venta; se transmite referida a la factura electrónica original, todo en una
+  transacción (`documentos::emitir_nota_debito`). No admite su propia factura electrónica ni
+  nota crédito (anular una nota débito queda para después).
+- **Pendiente**: Schematron con Saxon y el piloto con el `.p12` de GISLA.
+

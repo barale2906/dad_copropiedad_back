@@ -714,6 +714,13 @@ mod habilitacion {
             })
         }
 
+        async fn correos_recepcion(
+            &self,
+            _c: &CredencialesFacturador,
+        ) -> AppResult<Vec<(String, String)>> {
+            Ok(vec![("800111222".into(), "recepcion@cliente.co".into())])
+        }
+
         async fn rangos_numeracion(
             &self,
             c: &CredencialesFacturador,
@@ -762,7 +769,10 @@ mod habilitacion {
             (&dian, &CofrePrueba),
             &RelojFijo,
             &t.facturador,
-            2,
+            hab::CantidadesSet {
+                facturas: 2,
+                ..Default::default()
+            },
         )
         .await;
         let errada = hab::cargar_certificado(
@@ -790,7 +800,11 @@ mod habilitacion {
             (&dian, &CofrePrueba),
             &RelojFijo,
             &t.facturador,
-            2,
+            hab::CantidadesSet {
+                facturas: 2,
+                notas_credito: 1,
+                notas_debito: 1,
+            },
         )
         .await
         .expect("set");
@@ -819,8 +833,12 @@ mod habilitacion {
         );
         assert!(antes.is_err(), "sin set aceptado no hay producción");
         assert_eq!(
-            enviados.iter().map(|e| e.numero).collect::<Vec<_>>(),
-            vec![990_000_001, 990_000_002]
+            enviados
+                .iter()
+                .map(|e| format!("{}{}", e.prefijo, e.numero))
+                .collect::<Vec<_>>(),
+            vec!["SETP990000001", "SETP990000002", "NC1", "ND1"],
+            "las notas llevan su propio consecutivo"
         );
         assert!(
             consultado
@@ -844,7 +862,7 @@ mod habilitacion {
                 .iter()
                 .map(|c| c.consecutivo_archivo)
                 .collect::<Vec<_>>(),
-            vec![1, 2],
+            vec![1, 2, 3, 4],
             "cada archivo enviado lleva su consecutivo del año"
         );
         // En la base nada queda en claro.
@@ -889,5 +907,69 @@ mod habilitacion {
         .await;
 
         assert!(matches!(r, Err(AppError::Dominio(_))), "{r:?}");
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn los_correos_de_recepcion_se_sincronizan_con_la_entidad_de_la_plataforma(pool: PgPool) {
+        let t = tienda(pool.clone(), &[Modulo::FacturacionElectronica]).await;
+        con_nit(&t, &pool).await;
+        let plataforma =
+            infra_postgres::UnidadDeTrabajoPlataformaPg::new(pool_como_app(&pool).await);
+        let dian = DianPrueba::default();
+        let sin_plataforma = hab::sincronizar_correos_recepcion(
+            (&plataforma, &t.unidad),
+            (&dian, &CofrePrueba),
+            &RelojFijo,
+        )
+        .await
+        .expect("sin plataforma");
+        sqlx::query("UPDATE entidades SET es_plataforma = true WHERE id = $1")
+            .bind(t.facturador.tenant_id.as_uuid())
+            .execute(&pool)
+            .await
+            .expect("plataforma");
+        hab::registrar_software(
+            &t.unidad,
+            &CofrePrueba,
+            &RelojFijo,
+            &t.facturador,
+            DatosSoftware {
+                software_id: "sw".into(),
+                pin: "12345".into(),
+                test_set_id: None,
+            },
+        )
+        .await
+        .expect("software");
+        hab::cargar_certificado(
+            &t.unidad,
+            (&CofrePrueba, &LectorPrueba),
+            &RelojFijo,
+            &t.facturador,
+            b"p12",
+            "clave-p12",
+        )
+        .await
+        .expect("certificado");
+
+        let guardados = hab::sincronizar_correos_recepcion(
+            (&plataforma, &t.unidad),
+            (&dian, &CofrePrueba),
+            &RelojFijo,
+        )
+        .await
+        .expect("sincronizados");
+        let correo: Option<String> =
+            sqlx::query_scalar("SELECT correo_recepcion_dian('800111222')")
+                .fetch_one(&pool_como_app(&pool).await)
+                .await
+                .expect("consulta");
+
+        assert_eq!(
+            sin_plataforma, None,
+            "sin entidad de plataforma no se consulta"
+        );
+        assert_eq!(guardados, Some(1));
+        assert_eq!(correo.as_deref(), Some("recepcion@cliente.co"));
     }
 }

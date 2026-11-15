@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, factura_recibida_id, tipo, estado, id_externo, motivo, respuesta,\n                    creado_por, creado_en\n             FROM eventos_radian WHERE factura_recibida_id = $1 ORDER BY creado_en, id",
+  "query": "SELECT id, factura_recibida_id, documento_id, tipo, estado, numero,\n                    concepto_reclamo, xml_archivo_id, id_externo, motivo, respuesta, creado_por,\n                    creado_en\n             FROM eventos_radian\n             WHERE factura_recibida_id IS NOT DISTINCT FROM $1\n               AND documento_id IS NOT DISTINCT FROM $2\n             ORDER BY creado_en, id",
   "describe": {
     "columns": [
       {
@@ -27,6 +27,17 @@
       },
       {
         "ordinal": 2,
+        "name": "documento_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "documento_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
         "name": "tipo",
         "type_info": "Text",
         "origin": {
@@ -37,7 +48,7 @@
         }
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "estado",
         "type_info": "Text",
         "origin": {
@@ -48,7 +59,40 @@
         }
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
+        "name": "numero",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "numero"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "concepto_reclamo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "concepto_reclamo"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "xml_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "eventos_radian",
+            "name": "xml_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "id_externo",
         "type_info": "Text",
         "origin": {
@@ -59,7 +103,7 @@
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 9,
         "name": "motivo",
         "type_info": "Text",
         "origin": {
@@ -70,7 +114,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 10,
         "name": "respuesta",
         "type_info": "Text",
         "origin": {
@@ -81,7 +125,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 11,
         "name": "creado_por",
         "type_info": "Uuid",
         "origin": {
@@ -92,7 +136,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 12,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -105,14 +149,19 @@
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid"
       ]
     },
     "nullable": [
       false,
+      true,
+      true,
       false,
       false,
-      false,
+      true,
+      true,
+      true,
       true,
       true,
       true,
@@ -120,5 +169,5 @@
       false
     ]
   },
-  "hash": "927bfa2559134b1fedc683e832b6e6ff1a2040836f5d8010b88a80b751cec134"
+  "hash": "684f26803f7191765b92bbc387ee9b8a961ae0b5af6625db96bfc7771f65b4d7"
 }

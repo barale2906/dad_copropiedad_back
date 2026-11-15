@@ -20,6 +20,7 @@
 mod adaptador;
 pub mod adjunto;
 pub mod control;
+pub mod evento;
 pub mod firma;
 pub mod pkcs12;
 pub mod servicio;
@@ -91,9 +92,16 @@ pub fn preparar(
         Clase::Factura { .. } => "fv",
         Clase::NotaCredito { .. } => "nc",
         Clase::NotaDebito { .. } => "nd",
+        Clase::DocumentoSoporte { .. } => "ds",
+        Clase::NotaAjusteSoporte { .. } => "nas",
     };
     let anio = documento.emitido.year();
-    let nit = &documento.emisor.documento;
+    // El archivo lleva el NIT de quien factura: en el documento soporte, la entidad que adquiere.
+    let nit = if documento.clase.es_soporte() {
+        &documento.adquirente.documento
+    } else {
+        &documento.emisor.documento
+    };
     Ok(DocumentoFirmado {
         xml: xml::documento(&generado.raiz),
         codigo: generado.codigo,
@@ -206,10 +214,35 @@ mod tests {
             };
         }
         nota_debito.prefijo = "ND".into();
+        let mut transcripcion = ubl_pruebas::factura();
+        if let Clase::Factura {
+            contingencia_facturador,
+            ..
+        } = &mut transcripcion.clase
+        {
+            *contingencia_facturador = true;
+        }
+        let soporte = ubl_pruebas::documento_soporte();
+        let mut ajuste = soporte.clone();
+        ajuste.clase = Clase::NotaAjusteSoporte {
+            referencia: ubl::Referencia {
+                numero: "DS1".into(),
+                cufe: "d".repeat(96),
+                fecha: soporte.emitido.date_naive(),
+            },
+            correccion: ubl::Correccion {
+                concepto: "2".into(),
+                descripcion: "Anulación del documento soporte".into(),
+            },
+        };
+        ajuste.prefijo = "NA27".into();
         for (nombre, d) in [
             ("factura", factura),
             ("nota_credito", nota_credito),
             ("nota_debito", nota_debito),
+            ("factura_contingencia", transcripcion),
+            ("documento_soporte", soporte),
+            ("nota_ajuste_soporte", ajuste),
         ] {
             let firmado = preparar(
                 &d,
@@ -221,5 +254,29 @@ mod tests {
             .expect("firmado");
             std::fs::write(format!("{salida}/{nombre}.xml"), &firmado.xml).expect("escribir");
         }
+        let f = ubl_pruebas::factura();
+        let evento = evento::EventoUbl {
+            codigo: "031".into(),
+            descripcion: "Reclamo de la Factura Electrónica de Venta".into(),
+            numero: "EV2027000001".into(),
+            emitido: f.emitido,
+            ambiente: control::Ambiente::Pruebas,
+            generador: f.emisor.clone(),
+            receptor: f.emisor.clone(),
+            factura_numero: "SETP990000001".into(),
+            factura_cufe: "a".repeat(96),
+            concepto: Some(("01".into(), "Documento con inconsistencias".into())),
+            quien_recibe: None,
+            nota: Some("Valor distinto al pactado".into()),
+        };
+        let firmado = evento::preparar_evento(
+            &evento,
+            &ubl_pruebas::software(),
+            &firma_pruebas::credencial(),
+            1,
+            "evento",
+        )
+        .expect("evento");
+        std::fs::write(format!("{salida}/evento_reclamo.xml"), &firmado.xml).expect("escribir");
     }
 }

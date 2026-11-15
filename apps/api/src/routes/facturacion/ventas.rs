@@ -21,6 +21,7 @@ use uuid::Uuid;
 
 use crate::routes::contabilidad::dto::codigo;
 use crate::routes::contabilidad::dto_tesoreria::*;
+use crate::routes::contabilidad::dto_tributario::DocumentoElectronicoRespuesta;
 use crate::{
     error::{ApiResult, ErrorRespuesta},
     extractores::{Json, Path, Query},
@@ -37,6 +38,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(emitir_factura))
         .routes(routes!(anular_factura))
         .routes(routes!(marcar_pagada))
+        .routes(routes!(emitir_nota_debito))
 }
 
 /// Filtro de facturas de venta.
@@ -82,6 +84,82 @@ pub async fn listar_facturas(
     Ok(Json(v.into_iter().map(Into::into).collect()))
 }
 
+/// Líneas de la petición con su cuenta validada.
+fn lineas_venta(lineas: Vec<LineaVentaPeticion>) -> ApiResult<Vec<NuevaLineaVenta>> {
+    lineas
+        .into_iter()
+        .map(|l| {
+            Ok(NuevaLineaVenta {
+                item: l.item_id.map(ItemFacturacionId::from_uuid),
+                descripcion: l.descripcion,
+                cuenta: l.cuenta.as_deref().map(codigo).transpose()?,
+                centro_costo: l.centro_costo,
+                cantidad: l.cantidad,
+                valor_unitario: l.valor_unitario,
+                tarifa_iva: l.tarifa_iva,
+                clasificacion: l.clasificacion,
+            })
+        })
+        .collect()
+}
+
+/// Nota débito de una factura de venta.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct NotaDebitoPeticion {
+    #[schema(value_type = crate::esquemas::ConceptoNotaDebito)]
+    pub concepto: domain::tributario::ConceptoNotaDebito,
+    /// Motivo (de 5 a 300 caracteres): descripción de la nota y de su corrección ante la DIAN.
+    #[schema(example = "Intereses de mora de noviembre")]
+    pub motivo: String,
+    pub fecha: NaiveDate,
+    pub vencimiento: NaiveDate,
+    pub lineas: Vec<LineaVentaPeticion>,
+}
+
+/// Emite la nota débito de una factura con factura electrónica validada: un documento por
+/// cobrar más del mismo cliente (entra a la cartera, se abona con recibos de caja o se marca
+/// pagada a mano y, con contabilidad, se contabiliza) que se transmite a la DIAN referido a la
+/// factura electrónica original.
+#[utoipa::path(
+    post,
+    path = "/facturas/{factura_id}/nota-debito",
+    tag = ETIQUETA_FACTURACION,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("factura_id" = Uuid, Path, description = "Factura de venta que se ajusta")),
+    request_body = NotaDebitoPeticion,
+    responses(
+        (status = OK, description = "Documento electrónico de la nota débito (su `origen` es la nota, que se ve en `/facturas`)", body = DocumentoElectronicoRespuesta),
+        (status = FORBIDDEN, description = "Sin `facturacion.facturas.gestionar` ni `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "Factura inexistente", body = ErrorRespuesta),
+        (status = CONFLICT, description = "La factura no tiene factura electrónica validada (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Factura anulada, es otra nota débito, motivo o línea inválidos (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn emitir_nota_debito(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+    Json(p): Json<NotaDebitoPeticion>,
+) -> ApiResult<Json<DocumentoElectronicoRespuesta>> {
+    let d = application::casos_uso::facturacion::documentos::emitir_nota_debito(
+        &state.unidad,
+        &state.expedicion(),
+        state.archivos.as_ref(),
+        &RelojSistema,
+        &en.ctx,
+        FacturaVentaId::from_uuid(ruta.1),
+        application::casos_uso::facturacion::documentos::NuevaNotaDebito {
+            concepto: p.concepto,
+            motivo: p.motivo,
+            fecha: p.fecha,
+            vencimiento: p.vencimiento,
+            lineas: lineas_venta(p.lineas)?,
+        },
+    )
+    .await?;
+    Ok(Json(d.into()))
+}
+
 /// Crea una factura de venta en borrador (el IVA de cada línea lo elige quien factura).
 #[utoipa::path(
     post,
@@ -103,19 +181,7 @@ pub async fn crear_factura(
     en: EnEntidad,
     Json(p): Json<NuevaFacturaVentaPeticion>,
 ) -> ApiResult<(StatusCode, Json<FacturaVentaRespuesta>)> {
-    let mut lineas = Vec::with_capacity(p.lineas.len());
-    for l in p.lineas {
-        lineas.push(NuevaLineaVenta {
-            item: l.item_id.map(ItemFacturacionId::from_uuid),
-            descripcion: l.descripcion,
-            cuenta: l.cuenta.as_deref().map(codigo).transpose()?,
-            centro_costo: l.centro_costo,
-            cantidad: l.cantidad,
-            valor_unitario: l.valor_unitario,
-            tarifa_iva: l.tarifa_iva,
-            clasificacion: l.clasificacion,
-        });
-    }
+    let lineas = lineas_venta(p.lineas)?;
     let f = uc::crear_factura_venta(
         &state.unidad,
         &RelojSistema,

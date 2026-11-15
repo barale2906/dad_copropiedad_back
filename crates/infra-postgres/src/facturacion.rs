@@ -135,6 +135,26 @@ impl RepositorioFacturacion for TransaccionPg {
         self.siguiente_en_serie("archivo_dian", anio).await
     }
 
+    async fn siguiente_numero_nota(
+        &mut self,
+        tipo: domain::tributario::TipoDocumentoElectronico,
+        anio: i32,
+    ) -> AppResult<u32> {
+        // La serie es el tipo de la nota (`nota_credito`, `nota_debito`, `nota_ajuste_ds`).
+        self.siguiente_en_serie(tipo.as_str(), anio).await
+    }
+
+    async fn correo_recepcion_dian(&mut self, nit: &str) -> AppResult<Option<String>> {
+        sqlx::query_scalar!("SELECT correo_recepcion_dian($1)", nit)
+            .fetch_one(&mut *self.tx)
+            .await
+            .map_err(AppError::infra)
+    }
+
+    async fn siguiente_numero_evento(&mut self, anio: i32) -> AppResult<u32> {
+        self.siguiente_en_serie("evento_radian", anio).await
+    }
+
     async fn configuracion_facturacion(&mut self) -> AppResult<Option<ConfiguracionFacturacion>> {
         sqlx::query!(
             "SELECT software_id, pin_cifrado, test_set_id, estado, certificado_id,

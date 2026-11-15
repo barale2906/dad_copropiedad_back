@@ -130,6 +130,24 @@ pub trait RepositorioFacturacion: Send {
         anio: i32,
     ) -> impl Future<Output = AppResult<u32>> + Send;
 
+    /// Siguiente número de una nota (crédito, débito o de ajuste) en el año (atómico en la
+    /// transacción; una serie por tipo).
+    fn siguiente_numero_nota(
+        &mut self,
+        tipo: domain::tributario::TipoDocumentoElectronico,
+        anio: i32,
+    ) -> impl Future<Output = AppResult<u32>> + Send;
+
+    /// Correo de recepción que el NIT registró ante la DIAN, si está en la lista sincronizada.
+    fn correo_recepcion_dian(
+        &mut self,
+        nit: &str,
+    ) -> impl Future<Output = AppResult<Option<String>>> + Send;
+
+    /// Siguiente número de evento RADIAN en el año (atómico en la transacción).
+    fn siguiente_numero_evento(&mut self, anio: i32)
+    -> impl Future<Output = AppResult<u32>> + Send;
+
     /// Configuración de la habilitación, si ya se registró.
     fn configuracion_facturacion(
         &mut self,

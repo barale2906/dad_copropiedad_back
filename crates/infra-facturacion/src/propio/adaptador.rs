@@ -12,20 +12,22 @@
 use application::{
     AppError, AppResult,
     puertos::tributario::{
-        CertificadoLeido, CredencialesFacturador, DocumentoAEmitir, HabilitacionDian,
-        LectorCertificados, ParteDocumento, ProveedorFacturacion, RangoAutorizado,
-        RespuestaProveedor,
+        CertificadoLeido, CredencialesFacturador, DocumentoAEmitir, EventoAEmitir,
+        HabilitacionDian, LectorCertificados, ParteDocumento, PersonaRecibe, ProveedorFacturacion,
+        RangoAutorizado, RespuestaProveedor,
     },
 };
 use std::time::Duration;
 
 use chrono::{FixedOffset, TimeZone, Utc};
 use domain::{
+    TipoDocumento,
     facturacion::AmbienteDian,
-    tributario::{EstadoDocumentoElectronico, EventoRadian, TipoDocumentoElectronico},
+    tributario::{EstadoDocumentoElectronico, TipoDocumentoElectronico},
 };
 
 use super::control::Ambiente;
+use super::evento::{EventoUbl, PersonaEvento, preparar_evento};
 use super::firma::CredencialFirma;
 use super::servicio::{RespuestaDian, ServicioDian};
 use super::ubl::{
@@ -120,12 +122,18 @@ fn a_ubl(
                     prefijo: d.prefijo.clone(),
                     desde: r.desde,
                     hasta: r.hasta,
-                    clave_tecnica: d
-                        .clave_tecnica
-                        .clone()
-                        .ok_or_else(|| datos("falta la clave técnica de la resolución"))?,
+                    // La resolución de contingencia del facturador no tiene clave técnica: su
+                    // código es un CUDE con el PIN.
+                    clave_tecnica: if d.transcripcion_contingencia {
+                        String::new()
+                    } else {
+                        d.clave_tecnica
+                            .clone()
+                            .ok_or_else(|| datos("falta la clave técnica de la resolución"))?
+                    },
                 },
                 contingencia_dian: false,
+                contingencia_facturador: d.transcripcion_contingencia,
             }
         }
         TipoDocumentoElectronico::NotaCredito | TipoDocumentoElectronico::NotaDebito => {
@@ -140,9 +148,23 @@ fn a_ubl(
                     .ok_or_else(|| datos("el documento referido no tiene CUFE"))?,
                 fecha: d.referencia_fecha.unwrap_or(d.fecha),
             };
-            let correccion = Correccion {
-                concepto: "2".into(),
-                descripcion: "Anulación de la factura electrónica".into(),
+            // Conceptos de corrección del anexo: la nota crédito anula (2); la nota débito
+            // cambia el valor (3).
+            let correccion = if let Some((concepto, descripcion)) = &d.correccion {
+                Correccion {
+                    concepto: concepto.clone(),
+                    descripcion: descripcion.clone(),
+                }
+            } else if d.tipo == TipoDocumentoElectronico::NotaCredito {
+                Correccion {
+                    concepto: "2".into(),
+                    descripcion: "Anulación de la factura electrónica".into(),
+                }
+            } else {
+                Correccion {
+                    concepto: "3".into(),
+                    descripcion: "Cambio del valor de la factura electrónica".into(),
+                }
             };
             if d.tipo == TipoDocumentoElectronico::NotaCredito {
                 Clase::NotaCredito {
@@ -156,12 +178,48 @@ fn a_ubl(
                 }
             }
         }
-        otro => {
-            return Err(datos(&format!(
-                "el {} todavía no se emite con el motor propio (plan 17, fase 7)",
-                otro.as_str()
-            )));
+        TipoDocumentoElectronico::DocumentoSoporte => {
+            let r = d.resolucion.as_ref().ok_or_else(|| {
+                datos("el documento soporte necesita su resolución de numeración")
+            })?;
+            Clase::DocumentoSoporte {
+                resolucion: Resolucion {
+                    numero: r.numero.clone(),
+                    vigente_desde: r.vigente_desde,
+                    vigente_hasta: r.vigente_hasta,
+                    prefijo: d.prefijo.clone(),
+                    desde: r.desde,
+                    hasta: r.hasta,
+                    // El CUDS usa el PIN del software, no la clave técnica.
+                    clave_tecnica: d.clave_tecnica.clone().unwrap_or_default(),
+                },
+                residente: true,
+            }
         }
+        TipoDocumentoElectronico::NotaAjusteDs => Clase::NotaAjusteSoporte {
+            referencia: Referencia {
+                numero: d.referencia_numero.clone().ok_or_else(|| {
+                    datos("la nota de ajuste necesita el documento soporte al que se refiere")
+                })?,
+                cufe: d
+                    .referencia_cufe
+                    .clone()
+                    .ok_or_else(|| datos("el documento soporte referido no tiene CUDS"))?,
+                fecha: d.referencia_fecha.unwrap_or(d.fecha),
+            },
+            correccion: Correccion {
+                concepto: "2".into(),
+                descripcion: "Anulación del documento soporte en adquisiciones a no obligados"
+                    .into(),
+            },
+        },
+    };
+    // En el documento soporte el vendedor no obligado va como proveedor y la entidad que compra
+    // (quien emite) como adquirente.
+    let (emisor, adquirente) = if clase.es_soporte() {
+        (parte(&d.adquirente), parte(&d.emisor))
+    } else {
+        (parte(&d.emisor), parte(&d.adquirente))
     };
     let ahora = Utc::now().with_timezone(&colombia());
     let emitido = colombia()
@@ -174,8 +232,8 @@ fn a_ubl(
         numero: d.numero,
         emitido,
         ambiente: ambiente(credenciales.ambiente),
-        emisor: parte(&d.emisor),
-        adquirente: parte(&d.adquirente),
+        emisor,
+        adquirente,
         lineas: d
             .lineas
             .iter()
@@ -266,6 +324,68 @@ fn mensaje(r: &RespuestaDian) -> Option<String> {
     (!texto.is_empty()).then_some(texto)
 }
 
+/// Código DIAN del tipo de documento de identidad (tabla 13.2.1 del anexo).
+fn tipo_documento_dian(t: TipoDocumento) -> &'static str {
+    match t {
+        TipoDocumento::Rc => "11",
+        TipoDocumento::Ti => "12",
+        TipoDocumento::Cc => "13",
+        TipoDocumento::Ce => "22",
+        TipoDocumento::Nit => TIPO_DOCUMENTO_NIT,
+        TipoDocumento::Pa => "41",
+        TipoDocumento::Ppt => "48",
+    }
+}
+
+fn persona_evento(p: &PersonaRecibe) -> PersonaEvento {
+    let tipo = tipo_documento_dian(p.tipo_documento);
+    let dv = (p.tipo_documento == TipoDocumento::Nit)
+        .then(|| {
+            domain::Nit::new(&p.documento)
+                .ok()
+                .map(|n| n.dv().to_string())
+        })
+        .flatten();
+    PersonaEvento {
+        tipo_documento: tipo.into(),
+        documento: p.documento.clone(),
+        dv,
+        nombres: p.nombres.clone(),
+        apellidos: p.apellidos.clone(),
+        cargo: p.cargo.clone(),
+        area: p.area.clone(),
+    }
+}
+
+/// Evento de negocio → `ApplicationResponse`.
+fn a_evento(
+    e: &EventoAEmitir,
+    credenciales: &CredencialesFacturador,
+) -> Result<EventoUbl, ErrorMotor> {
+    let ahora = Utc::now().with_timezone(&colombia());
+    let emitido = colombia()
+        .from_local_datetime(&e.fecha.and_time(ahora.time()))
+        .single()
+        .ok_or_else(|| ErrorMotor::Datos("fecha del evento inválida".into()))?;
+    Ok(EventoUbl {
+        codigo: e.tipo.codigo().into(),
+        descripcion: e.tipo.descripcion().into(),
+        numero: e.numero.clone(),
+        emitido,
+        ambiente: ambiente(credenciales.ambiente),
+        generador: parte(&e.generador),
+        receptor: parte(&e.receptor),
+        factura_numero: e.factura_numero.clone(),
+        factura_cufe: e.factura_cufe.clone(),
+        concepto: e.concepto_reclamo.map(|c| {
+            let (codigo, nombre) = c.codigo_y_nombre();
+            (codigo.to_owned(), nombre.to_owned())
+        }),
+        quien_recibe: e.quien_recibe.as_ref().map(persona_evento),
+        nota: e.nota.clone(),
+    })
+}
+
 /// Motor propio: un cliente por ambiente del servicio web de la DIAN.
 #[derive(Debug, Clone)]
 pub struct MotorPropio {
@@ -326,7 +446,7 @@ impl MotorPropio {
                 .await
             {
                 Ok(r) => {
-                    let adjunto = if r.valido {
+                    let adjunto = if r.valido && !preparado.3.clase.es_soporte() {
                         Some(
                             contenedor(
                                 &preparado,
@@ -361,7 +481,12 @@ impl MotorPropio {
             }
         }
         let caida = ErrorMotor::Transporte(caida.unwrap_or_default());
-        if d.tipo != TipoDocumentoElectronico::Factura || d.contingencia {
+        // La contingencia de la DIAN (tipo 04) solo aplica a la factura normal: las notas, el
+        // documento soporte y la transcripción tipo 03 esperan a que la DIAN responda.
+        if d.tipo != TipoDocumentoElectronico::Factura
+            || d.contingencia
+            || d.transcripcion_contingencia
+        {
             return Err(a_app(caida));
         }
         let tipo_04 = firmar(d, true).map_err(a_app)?;
@@ -410,6 +535,61 @@ impl MotorPropio {
             xml: None,
             adjunto: None,
             mensaje: mensaje(&r),
+        })
+    }
+}
+
+impl MotorPropio {
+    /// Firma y envía un evento RADIAN con las credenciales de la entidad
+    /// (`SendEventUpdateStatus`). Los eventos no tienen contingencia: si la DIAN no responde, es
+    /// un error de infraestructura y se registran después.
+    ///
+    /// # Errors
+    ///
+    /// [`AppError::Validacion`] si faltan las credenciales o un dato; [`AppError::Infraestructura`]
+    /// si la DIAN no responde.
+    pub async fn evento(&self, e: &EventoAEmitir) -> AppResult<RespuestaProveedor> {
+        let credenciales = e.credenciales.as_ref().ok_or_else(|| {
+            AppError::Validacion("el motor propio necesita las credenciales de la entidad".into())
+        })?;
+        let firma = CredencialFirma::desde_pkcs12(&credenciales.p12, &credenciales.contrasena)
+            .map_err(a_app)?;
+        if !firma.vigente_en(Utc::now()) {
+            return Err(a_app(ErrorMotor::Certificado(
+                "el certificado de firma está vencido".into(),
+            )));
+        }
+        let software = Software {
+            nit_proveedor: e.generador.documento.clone(),
+            dv_proveedor: e.generador.dv.clone().unwrap_or_default(),
+            id: credenciales.software_id.clone(),
+            pin: credenciales.pin.clone(),
+        };
+        let ubl = a_evento(e, credenciales).map_err(a_app)?;
+        let firmado = preparar_evento(
+            &ubl,
+            &software,
+            &firma,
+            credenciales.consecutivo_archivo,
+            &e.id.to_string(),
+        )
+        .map_err(a_app)?;
+        let r = self
+            .servicio(credenciales.ambiente)
+            .enviar_evento(&firma, Utc::now(), &firmado.zip())
+            .await
+            .map_err(a_app)?;
+        Ok(RespuestaProveedor {
+            estado: if r.valido {
+                EstadoDocumentoElectronico::Validado
+            } else {
+                EstadoDocumentoElectronico::Rechazado
+            },
+            id_externo: Some(firmado.codigo.clone()),
+            mensaje: mensaje(&r),
+            cufe: Some(firmado.codigo),
+            xml: Some(firmado.xml),
+            adjunto: None,
         })
     }
 }
@@ -495,6 +675,18 @@ impl HabilitacionDian for MotorPropio {
             })
             .collect())
     }
+
+    async fn correos_recepcion(
+        &self,
+        credenciales: &CredencialesFacturador,
+    ) -> AppResult<Vec<(String, String)>> {
+        let firma = CredencialFirma::desde_pkcs12(&credenciales.p12, &credenciales.contrasena)
+            .map_err(a_app)?;
+        self.servicio(credenciales.ambiente)
+            .correos_recepcion(&firma, Utc::now())
+            .await
+            .map_err(a_app)
+    }
 }
 
 /// Lee el `.p12` que carga la entidad y valida que sirva para firmar.
@@ -563,12 +755,11 @@ impl ProveedorFacturacion for ProveedorDian {
         }
     }
 
-    async fn evento_radian(
-        &self,
-        cufe: &str,
-        evento: EventoRadian,
-        motivo: Option<&str>,
-    ) -> AppResult<RespuestaProveedor> {
-        self.simulado.evento_radian(cufe, evento, motivo).await
+    async fn evento_radian(&self, e: &EventoAEmitir) -> AppResult<RespuestaProveedor> {
+        if e.credenciales.is_some() {
+            self.propio.evento(e).await
+        } else {
+            self.simulado.evento_radian(e).await
+        }
     }
 }

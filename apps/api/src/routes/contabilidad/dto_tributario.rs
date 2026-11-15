@@ -9,16 +9,16 @@ use application::{
     },
     puertos::tributario::{
         BeneficiarioFinal, CampoExogena, DocumentoElectronico, EventoDocumento, FacturaRecibida,
-        FormatoExogena, GeneracionExogena, PerfilTributario, RegistroRadian, ResolucionNumeracion,
-        ResumenIva, ResumenRetencion, TarifaIca, TarifaIva,
+        FormatoExogena, GeneracionExogena, PerfilTributario, PersonaRecibe, RegistroRadian,
+        ResolucionNumeracion, ResumenIva, ResumenRetencion, TarifaIca, TarifaIva,
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     contabilidad::ResponsabilidadFiscal,
     tributario::{
-        CanalFacturacion, CriterioBeneficiario, EstadoDocumentoElectronico, EstadoFacturaRecibida,
-        EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,
+        CanalFacturacion, ConceptoReclamo, CriterioBeneficiario, EstadoDocumentoElectronico,
+        EstadoFacturaRecibida, EstadoPerfilTributario, EventoRadian, LadoExogena, ParametrosPerfil,
         TipoDocumentoElectronico, TipoNumeracion, TratamientoIva,
     },
 };
@@ -551,6 +551,14 @@ pub struct EventoRadianRespuesta {
     pub tipo: EventoRadian,
     /// `enviado` o `rechazado`.
     pub estado: String,
+    /// Número del evento (con el motor propio).
+    pub numero: Option<String>,
+    /// CUDE del evento (o el identificador del proveedor).
+    pub cude: Option<String>,
+    #[schema(value_type = Option<crate::esquemas::ConceptoReclamo>)]
+    pub concepto_reclamo: Option<ConceptoReclamo>,
+    /// `ApplicationResponse` firmado (descárguelo con un enlace de `/archivos`).
+    pub xml_archivo_id: Option<Uuid>,
     pub motivo: Option<String>,
     pub respuesta: Option<String>,
     pub creado_en: DateTime<Utc>,
@@ -562,6 +570,10 @@ impl From<RegistroRadian> for EventoRadianRespuesta {
             id: e.id,
             tipo: e.tipo,
             estado: e.estado,
+            numero: e.numero,
+            cude: e.id_externo,
+            concepto_reclamo: e.concepto_reclamo,
+            xml_archivo_id: e.xml_archivo_id.map(|a| a.as_uuid()),
             motivo: e.motivo,
             respuesta: e.respuesta,
             creado_en: e.creado_en,
@@ -592,10 +604,45 @@ pub struct RechazoPeticion {
 /// Evento RADIAN a registrar.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct EventoRadianPeticion {
+    /// `acuse`, `recibo_bien`, `aceptacion` o `reclamo` (la aceptación tácita es de las facturas
+    /// propias: `POST …/documentos/{id}/aceptacion-tacita`).
     #[schema(value_type = crate::esquemas::EventoRadian)]
     pub tipo: EventoRadian,
-    /// Obligatorio en un reclamo.
+    /// Observaciones; en un reclamo, el detalle de lo reclamado.
     pub motivo: Option<String>,
+    /// Obligatorio en un reclamo.
+    #[schema(value_type = Option<crate::esquemas::ConceptoReclamo>)]
+    pub concepto_reclamo: Option<ConceptoReclamo>,
+    /// Obligatorio en el acuse y el recibo del bien (Código de Comercio, arts. 773 y 774).
+    pub quien_recibe: Option<PersonaRecibePeticion>,
+}
+
+/// Persona que recibió la factura o el bien. Solo viaja en el evento a la DIAN.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PersonaRecibePeticion {
+    #[schema(value_type = crate::esquemas::TipoDocumento)]
+    pub tipo_documento: domain::TipoDocumento,
+    /// Sin puntos ni guiones.
+    #[schema(example = "1020304050")]
+    pub documento: String,
+    pub nombres: String,
+    pub apellidos: String,
+    pub cargo: Option<String>,
+    /// Área, sección o departamento.
+    pub area: Option<String>,
+}
+
+impl From<PersonaRecibePeticion> for PersonaRecibe {
+    fn from(p: PersonaRecibePeticion) -> Self {
+        Self {
+            tipo_documento: p.tipo_documento,
+            documento: p.documento,
+            nombres: p.nombres,
+            apellidos: p.apellidos,
+            cargo: p.cargo,
+            area: p.area,
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------------------------

@@ -801,6 +801,10 @@ pub struct FacturaVentaRespuesta {
     pub motivo_anulacion: Option<String>,
     pub creada_en: DateTime<Utc>,
     pub emitida_en: Option<DateTime<Utc>>,
+    /// Si es una nota débito: la factura que ajusta.
+    pub nota_debito_de: Option<Uuid>,
+    #[schema(value_type = Option<crate::esquemas::ConceptoNotaDebito>)]
+    pub concepto_nota_debito: Option<domain::tributario::ConceptoNotaDebito>,
     pub lineas: Vec<LineaVentaRespuesta>,
 }
 
@@ -826,6 +830,8 @@ impl From<FacturaVenta> for FacturaVentaRespuesta {
             motivo_anulacion: f.motivo_anulacion,
             creada_en: f.creada_en,
             emitida_en: f.emitida_en,
+            nota_debito_de: f.nota_debito.map(|n| n.factura_id.as_uuid()),
+            concepto_nota_debito: f.nota_debito.map(|n| n.concepto),
             lineas: f.lineas.into_iter().map(Into::into).collect(),
         }
     }

@@ -390,8 +390,19 @@ pub struct FacturaVenta {
     /// Pago marcado a mano por quien factura sin tesorería (con contabilidad el pago es un
     /// recibo de caja).
     pub pago_manual: Option<PagoManual>,
+    /// Si es una nota débito: la factura que ajusta y el concepto de la DIAN. Una nota débito es
+    /// un documento por cobrar más (cartera, recaudo y contabilización como una factura).
+    pub nota_debito: Option<NotaDebitoVenta>,
     /// Vacío en los listados.
     pub lineas: Vec<LineaFacturaVenta>,
+}
+
+/// Lo que hace de una factura de venta una nota débito.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NotaDebitoVenta {
+    /// Factura que ajusta (con factura electrónica validada).
+    pub factura_id: FacturaVentaId,
+    pub concepto: domain::tributario::ConceptoNotaDebito,
 }
 
 /// Pago de una factura marcado a mano.

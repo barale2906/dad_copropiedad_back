@@ -3,7 +3,7 @@
 
 use application::{
     AppError,
-    casos_uso::facturacion::documentos as uc,
+    casos_uso::facturacion::{documentos as uc, radian},
     puertos::{RelojSistema, tributario::FiltroDocumentos},
 };
 use axum::{
@@ -34,8 +34,10 @@ use crate::{
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(emitir_factura_electronica))
+        .routes(routes!(transcribir_factura_contingencia))
         .routes(routes!(emitir_nota_credito))
         .routes(routes!(emitir_documento_soporte))
+        .routes(routes!(emitir_nota_ajuste_soporte))
         .routes(routes!(listar_documentos))
         .routes(routes!(ver_documento))
         .routes(routes!(reintentar_documento))
@@ -46,6 +48,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(vincular_recibida))
         .routes(routes!(rechazar_recibida))
         .routes(routes!(evento_radian))
+        .routes(routes!(aceptacion_tacita))
+        .routes(routes!(eventos_documento))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -79,6 +83,52 @@ pub async fn emitir_factura_electronica(
         &RelojSistema,
         &en.ctx,
         FacturaVentaId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(Json(d.into()))
+}
+
+/// Factura de talonario que se transcribe.
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
+pub struct TranscripcionPeticion {
+    /// Número de la factura de papel, dentro de una resolución de contingencia vigente en la
+    /// fecha de la factura (`tipo: contingencia` en `/tributario/resoluciones`).
+    #[schema(example = 7)]
+    pub numero_talonario: u64,
+}
+
+/// Transcribe como factura electrónica **tipo 03** una factura de venta que se expidió en papel
+/// con el talonario de contingencia del facturador mientras no pudo facturar electrónicamente.
+/// La DIAN exige transcribirla dentro de las 48 horas siguientes a superar el inconveniente.
+#[utoipa::path(
+    post,
+    path = "/facturas/{factura_id}/factura-contingencia",
+    tag = ETIQUETA_FACTURACION,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("factura_id" = Uuid, Path, description = "Factura de venta")),
+    request_body = TranscripcionPeticion,
+    responses(
+        (status = OK, description = "Documento (validado, rechazado o en espera de la DIAN)", body = DocumentoElectronicoRespuesta),
+        (status = FORBIDDEN, description = "Sin `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "Factura inexistente", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Ese número ya se transcribió o la factura ya tiene otra factura electrónica (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "El número no está en una resolución de contingencia vigente o la factura no está emitida (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn transcribir_factura_contingencia(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+    Json(p): Json<TranscripcionPeticion>,
+) -> ApiResult<Json<DocumentoElectronicoRespuesta>> {
+    let d = uc::transcribir_factura_contingencia(
+        &state.unidad,
+        &state.expedicion(),
+        state.archivos.as_ref(),
+        &RelojSistema,
+        &en.ctx,
+        FacturaVentaId::from_uuid(ruta.1),
+        p.numero_talonario,
     )
     .await?;
     Ok(Json(d.into()))
@@ -146,6 +196,42 @@ pub async fn emitir_documento_soporte(
         &RelojSistema,
         &en.ctx,
         FacturaProveedorId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(Json(d.into()))
+}
+
+/// Emite la nota de ajuste que anula el documento soporte validado de una compra (anula
+/// también la compra y, con contabilidad, revierte su comprobante).
+#[utoipa::path(
+    post,
+    path = "/compras/{factura_id}/nota-ajuste",
+    tag = ETIQUETA_FACTURACION,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("factura_id" = Uuid, Path, description = "Factura de proveedor")),
+    request_body = NotaCreditoPeticion,
+    responses(
+        (status = OK, description = "Nota de ajuste", body = DocumentoElectronicoRespuesta),
+        (status = FORBIDDEN, description = "Sin `facturacion.facturas.gestionar` ni `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "Compra inexistente", body = ErrorRespuesta),
+        (status = CONFLICT, description = "La compra no tiene documento soporte validado o ya tiene pagos (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Motivo inválido (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn emitir_nota_ajuste_soporte(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+    Json(p): Json<NotaCreditoPeticion>,
+) -> ApiResult<Json<DocumentoElectronicoRespuesta>> {
+    let d = uc::emitir_nota_ajuste_soporte(
+        &state.unidad,
+        &state.expedicion(),
+        state.archivos.as_ref(),
+        &RelojSistema,
+        &en.ctx,
+        FacturaProveedorId::from_uuid(ruta.1),
+        &p.motivo,
     )
     .await?;
     Ok(Json(d.into()))
@@ -509,7 +595,8 @@ pub async fn rechazar_recibida(
     Ok(Json(f.into()))
 }
 
-/// Registra un evento RADIAN (acuse, recibo del bien, aceptación o reclamo) por medio del
+/// Registra un evento RADIAN (acuse, recibo del bien, aceptación expresa o reclamo) sobre una
+/// factura recibida. Con el canal `propio` se firma y se envía a la DIAN; si no, lo registra el
 /// proveedor. Cada evento exige sus previos y no se repite.
 #[utoipa::path(
     post,
@@ -519,11 +606,11 @@ pub async fn rechazar_recibida(
     params(("entidad_id" = Uuid, Path, description = "Entidad"), ("recibida_id" = Uuid, Path, description = "Factura recibida")),
     request_body = EventoRadianPeticion,
     responses(
-        (status = CREATED, description = "Evento registrado", body = EventoRadianRespuesta),
-        (status = FORBIDDEN, description = "Sin `facturacion.recibir` o sin el módulo", body = ErrorRespuesta),
+        (status = CREATED, description = "Evento registrado (mire `estado`: la DIAN pudo rechazarlo)", body = EventoRadianRespuesta),
+        (status = FORBIDDEN, description = "Sin `facturacion.recibir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "Factura inexistente", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya registrado (`conflicto`)", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Faltan los eventos previos o reclamo sin motivo (`validacion`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Faltan los eventos previos, el concepto del reclamo o quien recibió (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn evento_radian(
@@ -532,15 +619,81 @@ pub async fn evento_radian(
     Path(ruta): Path<(Uuid, Uuid)>,
     Json(p): Json<EventoRadianPeticion>,
 ) -> ApiResult<(StatusCode, Json<EventoRadianRespuesta>)> {
-    let e = uc::registrar_evento_radian(
+    let e = radian::registrar_evento_radian(
         &state.unidad,
-        &state.facturacion,
+        &state.expedicion(),
+        state.archivos.as_ref(),
         &RelojSistema,
         &en.ctx,
         FacturaRecibidaId::from_uuid(ruta.1),
-        p.tipo,
-        p.motivo.as_deref(),
+        radian::DatosEvento {
+            tipo: p.tipo,
+            motivo: p.motivo,
+            concepto_reclamo: p.concepto_reclamo,
+            quien_recibe: p.quien_recibe.map(Into::into),
+        },
     )
     .await?;
     Ok((StatusCode::CREATED, Json(e.into())))
+}
+
+/// Registra la aceptación tácita (evento 034) de una factura electrónica propia, validada y a
+/// crédito, cuando el adquirente no la aceptó ni la reclamó en los tres días hábiles siguientes
+/// al recibo del bien. La DIAN verifica el plazo y los eventos del adquirente.
+#[utoipa::path(
+    post,
+    path = "/documentos/{documento_id}/aceptacion-tacita",
+    tag = ETIQUETA_FACTURACION,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("documento_id" = Uuid, Path, description = "Factura electrónica")),
+    responses(
+        (status = CREATED, description = "Evento registrado (mire `estado`: la DIAN pudo rechazarlo)", body = EventoRadianRespuesta),
+        (status = FORBIDDEN, description = "Sin `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "Documento inexistente", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Ya registrada (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "No es una factura validada a crédito (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn aceptacion_tacita(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<(StatusCode, Json<EventoRadianRespuesta>)> {
+    let e = radian::registrar_aceptacion_tacita(
+        &state.unidad,
+        &state.expedicion(),
+        state.archivos.as_ref(),
+        &RelojSistema,
+        &en.ctx,
+        DocumentoElectronicoId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok((StatusCode::CREATED, Json(e.into())))
+}
+
+/// Eventos RADIAN que la entidad registró sobre su propia factura electrónica.
+#[utoipa::path(
+    get,
+    path = "/documentos/{documento_id}/eventos",
+    tag = ETIQUETA_FACTURACION,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("documento_id" = Uuid, Path, description = "Factura electrónica")),
+    responses(
+        (status = OK, description = "Eventos", body = Vec<EventoRadianRespuesta>),
+        (status = FORBIDDEN, description = "Sin `facturacion.ver` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn eventos_documento(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<Json<Vec<EventoRadianRespuesta>>> {
+    let eventos = radian::eventos_de_documento(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        DocumentoElectronicoId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(Json(eventos.into_iter().map(Into::into).collect()))
 }

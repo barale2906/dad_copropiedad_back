@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,\n                    subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,\n                    creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,\n                    pago_manual_referencia, pago_manual_por\n             FROM facturas_venta\n             WHERE estado IN ('emitida', 'pagada_parcial') AND fecha <= $1\n             ORDER BY persona_id, vencimiento",
+  "query": "SELECT id, persona_id, numero, fecha, vencimiento, descripcion, origen_tipo, origen_id,\n                    subtotal, iva, total, pagado, estado, comprobante_id, motivo_anulacion,\n                    creada_por, creada_en, emitida_en, pago_manual_fecha, pago_manual_medio,\n                    pago_manual_referencia, pago_manual_por, nota_debito_de, concepto_nota_debito\n             FROM facturas_venta\n             WHERE estado IN ('emitida', 'pagada_parcial') AND fecha <= $1\n             ORDER BY persona_id, vencimiento",
   "describe": {
     "columns": [
       {
@@ -244,6 +244,28 @@
             "name": "pago_manual_por"
           }
         }
+      },
+      {
+        "ordinal": 22,
+        "name": "nota_debito_de",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "nota_debito_de"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "concepto_nota_debito",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "facturas_venta",
+            "name": "concepto_nota_debito"
+          }
+        }
       }
     ],
     "parameters": {
@@ -273,8 +295,10 @@
       true,
       true,
       true,
+      true,
+      true,
       true
     ]
   },
-  "hash": "981f7dcb5d5457fe7c66f24299d62db0a734643b8d1db1c6335cc672ed2981f6"
+  "hash": "4abd6e607ea0d6cdabeb61182d8ce5afa23484fa84f159be74d3530ccf6c6e94"
 }

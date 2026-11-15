@@ -46254,6 +46254,114 @@
         ]
       }
     },
+    "/api/v1/entidades/{entidad_id}/facturacion/facturas/{factura_id}/nota-debito": {
+      "post": {
+        "tags": [
+          "facturacion"
+        ],
+        "summary": "Emite la nota débito de una factura con factura electrónica validada: un documento por\ncobrar más del mismo cliente (entra a la cartera, se abona con recibos de caja o se marca\npagada a mano y, con contabilidad, se contabiliza) que se transmite a la DIAN referido a la\nfactura electrónica original.",
+        "operationId": "emitir_nota_debito",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura de venta que se ajusta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotaDebitoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Documento electrónico de la nota débito (su `origen` es la nota, que se ve en `/facturas`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.facturas.gestionar` ni `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La factura no tiene factura electrónica validada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Factura anulada, es otra nota débito, motivo o línea inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/entidades/{entidad_id}/facturacion/facturas/{factura_id}/factura-electronica": {
       "post": {
         "tags": [
@@ -46326,6 +46434,114 @@
           },
           "422": {
             "description": "Sin perfil de facturador, sin resolución vigente o factura sin emitir (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/facturacion/facturas/{factura_id}/factura-contingencia": {
+      "post": {
+        "tags": [
+          "facturacion"
+        ],
+        "summary": "Transcribe como factura electrónica **tipo 03** una factura de venta que se expidió en papel\ncon el talonario de contingencia del facturador mientras no pudo facturar electrónicamente.\nLa DIAN exige transcribirla dentro de las 48 horas siguientes a superar el inconveniente.",
+        "operationId": "transcribir_factura_contingencia",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura de venta",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscripcionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Documento (validado, rechazado o en espera de la DIAN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Factura inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ese número ya se transcribió o la factura ya tiene otra factura electrónica (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "El número no está en una resolución de contingencia vigente o la factura no está emitida (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -46522,6 +46738,114 @@
           },
           "422": {
             "description": "El proveedor factura electrónicamente, la compra no está causada o no hay resolución (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/facturacion/compras/{factura_id}/nota-ajuste": {
+      "post": {
+        "tags": [
+          "facturacion"
+        ],
+        "summary": "Emite la nota de ajuste que anula el documento soporte validado de una compra (anula\ntambién la compra y, con contabilidad, revierte su comprobante).",
+        "operationId": "emitir_nota_ajuste_soporte",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "factura_id",
+            "in": "path",
+            "description": "Factura de proveedor",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotaCreditoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Nota de ajuste",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentoElectronicoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.facturas.gestionar` ni `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Compra inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "La compra no tiene documento soporte validado o ya tiene pagos (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Motivo inválido (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -47401,7 +47725,7 @@
         "tags": [
           "facturacion"
         ],
-        "summary": "Registra un evento RADIAN (acuse, recibo del bien, aceptación o reclamo) por medio del\nproveedor. Cada evento exige sus previos y no se repite.",
+        "summary": "Registra un evento RADIAN (acuse, recibo del bien, aceptación expresa o reclamo) sobre una\nfactura recibida. Con el canal `propio` se firma y se envía a la DIAN; si no, lo registra el\nproveedor. Cada evento exige sus previos y no se repite.",
         "operationId": "evento_radian",
         "parameters": [
           {
@@ -47437,7 +47761,7 @@
         },
         "responses": {
           "201": {
-            "description": "Evento registrado",
+            "description": "Evento registrado (mire `estado`: la DIAN pudo rechazarlo)",
             "content": {
               "application/json": {
                 "schema": {
@@ -47457,7 +47781,7 @@
             }
           },
           "403": {
-            "description": "Sin `facturacion.recibir` o sin el módulo",
+            "description": "Sin `facturacion.recibir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -47487,7 +47811,176 @@
             }
           },
           "422": {
-            "description": "Faltan los eventos previos o reclamo sin motivo (`validacion`)",
+            "description": "Faltan los eventos previos, el concepto del reclamo o quien recibió (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/facturacion/documentos/{documento_id}/aceptacion-tacita": {
+      "post": {
+        "tags": [
+          "facturacion"
+        ],
+        "summary": "Registra la aceptación tácita (evento 034) de una factura electrónica propia, validada y a\ncrédito, cuando el adquirente no la aceptó ni la reclamó en los tres días hábiles siguientes\nal recibo del bien. La DIAN verifica el plazo y los eventos del adquirente.",
+        "operationId": "aceptacion_tacita",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documento_id",
+            "in": "path",
+            "description": "Factura electrónica",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Evento registrado (mire `estado`: la DIAN pudo rechazarlo)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventoRadianRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.emitir` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Documento inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya registrada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No es una factura validada a crédito (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/facturacion/documentos/{documento_id}/eventos": {
+      "get": {
+        "tags": [
+          "facturacion"
+        ],
+        "summary": "Eventos RADIAN que la entidad registró sobre su propia factura electrónica.",
+        "operationId": "eventos_documento",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "documento_id",
+            "in": "path",
+            "description": "Factura electrónica",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventoRadianRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `facturacion.ver` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -48074,7 +48567,7 @@
         "tags": [
           "facturacion"
         ],
-        "summary": "Envía facturas de prueba al ambiente de habilitación con el TestSetId.",
+        "summary": "Envía al ambiente de habilitación las facturas de prueba y las notas crédito y débito que\npida la DIAN, con el TestSetId.",
         "operationId": "enviar_set_pruebas",
         "parameters": [
           {
@@ -53036,6 +53529,26 @@
           }
         }
       },
+      "ConceptoNotaDebito": {
+        "type": "string",
+        "description": "Concepto de corrección de una nota débito (lista de la DIAN).",
+        "enum": [
+          "intereses",
+          "gastos_por_cobrar",
+          "cambio_del_valor",
+          "otro"
+        ]
+      },
+      "ConceptoReclamo": {
+        "type": "string",
+        "description": "Concepto del reclamo de una factura (lista de la DIAN).",
+        "enum": [
+          "inconsistencias",
+          "no_entregada_total",
+          "no_entregada_parcial",
+          "servicio_no_prestado"
+        ]
+      },
       "ConceptoRetencionRespuesta": {
         "type": "object",
         "description": "Versión de un concepto de retención.",
@@ -57931,12 +58444,13 @@
       },
       "EventoRadian": {
         "type": "string",
-        "description": "Evento RADIAN sobre una factura recibida (cada uno exige sus previos).",
+        "description": "Evento RADIAN: acuse, recibo del bien, aceptación o reclamo sobre una factura recibida (cada uno exige sus previos), o aceptación tácita de una factura propia.",
         "enum": [
           "acuse",
           "recibo_bien",
           "aceptacion",
-          "reclamo"
+          "reclamo",
+          "aceptacion_tacita"
         ]
       },
       "EventoRadianPeticion": {
@@ -57947,14 +58461,37 @@
         ],
         "properties": {
           "tipo": {
-            "$ref": "#/components/schemas/EventoRadian"
+            "$ref": "#/components/schemas/EventoRadian",
+            "description": "`acuse`, `recibo_bien`, `aceptacion` o `reclamo` (la aceptación tácita es de las facturas\npropias: `POST …/documentos/{id}/aceptacion-tacita`)."
           },
           "motivo": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Obligatorio en un reclamo."
+            "description": "Observaciones; en un reclamo, el detalle de lo reclamado."
+          },
+          "concepto_reclamo": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConceptoReclamo",
+                "description": "Obligatorio en un reclamo."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "quien_recibe": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PersonaRecibePeticion",
+                "description": "Obligatorio en el acuse y el recibo del bien (Código de Comercio, arts. 773 y 774)."
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -57978,6 +58515,38 @@
           "estado": {
             "type": "string",
             "description": "`enviado` o `rechazado`."
+          },
+          "numero": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Número del evento (con el motor propio)."
+          },
+          "cude": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "CUDE del evento (o el identificador del proveedor)."
+          },
+          "concepto_reclamo": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConceptoReclamo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "xml_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "`ApplicationResponse` firmado (descárguelo con un enlace de `/archivos`)."
           },
           "motivo": {
             "type": [
@@ -58724,6 +59293,24 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "nota_debito_de": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Si es una nota débito: la factura que ajusta."
+          },
+          "concepto_nota_debito": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ConceptoNotaDebito"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "lineas": {
             "type": "array",
@@ -62275,6 +62862,41 @@
             ],
             "format": "date",
             "description": "Fecha contable (por defecto, hoy)."
+          }
+        }
+      },
+      "NotaDebitoPeticion": {
+        "type": "object",
+        "description": "Nota débito de una factura de venta.",
+        "required": [
+          "concepto",
+          "motivo",
+          "fecha",
+          "vencimiento",
+          "lineas"
+        ],
+        "properties": {
+          "concepto": {
+            "$ref": "#/components/schemas/ConceptoNotaDebito"
+          },
+          "motivo": {
+            "type": "string",
+            "description": "Motivo (de 5 a 300 caracteres): descripción de la nota y de su corrección ante la DIAN.",
+            "example": "Intereses de mora de noviembre"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaVentaPeticion"
+            }
           }
         }
       },
@@ -67875,6 +68497,45 @@
           }
         }
       },
+      "PersonaRecibePeticion": {
+        "type": "object",
+        "description": "Persona que recibió la factura o el bien. Solo viaja en el evento a la DIAN.",
+        "required": [
+          "tipo_documento",
+          "documento",
+          "nombres",
+          "apellidos"
+        ],
+        "properties": {
+          "tipo_documento": {
+            "$ref": "#/components/schemas/TipoDocumento"
+          },
+          "documento": {
+            "type": "string",
+            "description": "Sin puntos ni guiones.",
+            "example": "1020304050"
+          },
+          "nombres": {
+            "type": "string"
+          },
+          "apellidos": {
+            "type": "string"
+          },
+          "cargo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "area": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Área, sección o departamento."
+          }
+        }
+      },
       "PersonaRespuesta": {
         "type": "object",
         "description": "Persona (datos personales). La fecha de nacimiento y la movilidad reducida solo se ven con\n`personas.datos_sensibles.ver`.",
@@ -72500,8 +73161,22 @@
           "cantidad": {
             "type": "integer",
             "format": "int32",
-            "description": "De 1 a 50 (la DIAN indica cuántos pide al registrar el software).",
+            "description": "Facturas de prueba (la DIAN indica cuántas pide al registrar el software). El total de\ndocumentos va de 1 a 50.",
             "example": 8,
+            "minimum": 0
+          },
+          "notas_credito": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Notas crédito, cada una referida a una factura de este envío.",
+            "example": 1,
+            "minimum": 0
+          },
+          "notas_debito": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Notas débito, cada una referida a una factura de este envío.",
+            "example": 1,
             "minimum": 0
           }
         }
@@ -73820,7 +74495,8 @@
         "description": "Documento que numera una resolución de la DIAN.",
         "enum": [
           "factura",
-          "documento_soporte"
+          "documento_soporte",
+          "contingencia"
         ]
       },
       "TipoOrden": {
@@ -74260,6 +74936,22 @@
           },
           "saldo": {
             "type": "string"
+          }
+        }
+      },
+      "TranscripcionPeticion": {
+        "type": "object",
+        "description": "Factura de talonario que se transcribe.",
+        "required": [
+          "numero_talonario"
+        ],
+        "properties": {
+          "numero_talonario": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Número de la factura de papel, dentro de una resolución de contingencia vigente en la\nfecha de la factura (`tipo: contingencia` en `/tributario/resoluciones`).",
+            "example": 7,
+            "minimum": 0
           }
         }
       },
