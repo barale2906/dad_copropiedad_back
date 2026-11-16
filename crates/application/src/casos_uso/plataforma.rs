@@ -13,13 +13,16 @@ use domain::{
 use crate::{
     AppError, AppResult, Contexto, ContextoPlataforma,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
-    casos_uso::roles::{NuevoRol, SolicitudAsignacion, asignar_en, validar_nuevo_rol},
+    casos_uso::{
+        roles::{NuevoRol, SolicitudAsignacion, asignar_en, validar_nuevo_rol},
+        usuarios::{NuevoUsuario, TxUsuarios, crear_en},
+    },
     puertos::{
-        RegistroAuditoria, Reloj, RepositorioCopropiedad, RepositorioCuentas,
-        RepositorioPlataforma, RepositorioRoles, RepositorioSesiones, Transaccion, UnidadDeTrabajo,
+        RegistroAuditoria, Reloj, RepositorioCuentas, RepositorioEntidad, RepositorioPlataforma,
+        RepositorioRoles, RepositorioSesiones, Transaccion, UnidadDeTrabajo,
         UnidadDeTrabajoPlataforma,
         copropiedades::AltaCopropiedad,
-        identidad::{AsignacionPlataforma, CopropiedadResumen, Rol},
+        identidad::{AccesoSoporte, AsignacionPlataforma, CopropiedadResumen, EntidadResumen, Rol},
     },
 };
 
@@ -38,9 +41,15 @@ pub(crate) const ACCION_REVOCAR: AccionAuditoria =
     AccionAuditoria::new("plataforma.asignacion.terminar");
 pub(crate) const ACCION_BLOQUEAR: AccionAuditoria =
     AccionAuditoria::new("plataforma.cuenta.bloquear");
+pub(crate) const ACCION_DESBLOQUEAR: AccionAuditoria =
+    AccionAuditoria::new("plataforma.cuenta.desbloquear");
 
 pub(crate) const ACCION_CAMBIAR_ESTADO: AccionAuditoria =
-    AccionAuditoria::new("plataforma.copropiedad.cambiar_estado");
+    AccionAuditoria::new("plataforma.entidad.cambiar_estado");
+pub(crate) const ACCION_GESTIONAR_USUARIOS: AccionAuditoria =
+    AccionAuditoria::new("plataforma.entidad.gestionar_usuarios");
+pub(crate) const ACCION_ABRIR_SOPORTE: AccionAuditoria =
+    AccionAuditoria::new("plataforma.soporte.abrir");
 
 /// Da de alta una copropiedad (en configuración): la entidad y su extensión de la vertical PH
 /// (ADR 0016), sin módulos vendibles; le asigna su primer administrador.
@@ -50,20 +59,21 @@ pub(crate) const ACCION_CAMBIAR_ESTADO: AccionAuditoria =
 /// - [`AppError::SinPermiso`] sin `plataforma.copropiedades.crear`.
 /// - [`AppError::Validacion`] si el nombre está vacío.
 /// - [`AppError::NoEncontrado`] si la cuenta del administrador no existe.
-/// - [`AppError::Conflicto`] si el NIT ya lo usa otra copropiedad.
+/// - [`AppError::Conflicto`] si el NIT ya lo usa otra copropiedad, o con un administrador
+///   nuevo, los de [`crate::casos_uso::usuarios::crear_usuario`].
 pub async fn crear_copropiedad<UP, U>(
     plataforma: &UP,
     unidad: &U,
     reloj: &impl Reloj,
     ctx: &ContextoPlataforma,
     alta: AltaCopropiedad,
-    administrador: CuentaId,
+    administrador: AdministradorAlta,
 ) -> AppResult<TenantId>
 where
     UP: UnidadDeTrabajoPlataforma,
     UP::Transaccion: RepositorioCuentas,
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioRoles + RegistroAuditoria,
+    U::Transaccion: TxUsuarios,
 {
     ctx.exigir(Permiso::PlataformaCopropiedadesCrear)?;
     let alta = AltaCopropiedad {
@@ -90,7 +100,8 @@ where
 /// - [`AppError::SinPermiso`] sin `plataforma.entidades.crear`.
 /// - [`AppError::Validacion`] si el nombre está vacío.
 /// - [`AppError::NoEncontrado`] si la cuenta del administrador no existe.
-/// - [`AppError::Conflicto`] si el NIT ya lo usa otra entidad.
+/// - [`AppError::Conflicto`] si el NIT ya lo usa otra entidad, o con un administrador nuevo,
+///   los de [`crate::casos_uso::usuarios::crear_usuario`].
 pub async fn crear_entidad<UP, U>(
     plataforma: &UP,
     unidad: &U,
@@ -98,13 +109,13 @@ pub async fn crear_entidad<UP, U>(
     ctx: &ContextoPlataforma,
     nombre: &str,
     nit: Option<domain::Nit>,
-    administrador: CuentaId,
+    administrador: AdministradorAlta,
 ) -> AppResult<TenantId>
 where
     UP: UnidadDeTrabajoPlataforma,
     UP::Transaccion: RepositorioCuentas,
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioRoles + RegistroAuditoria,
+    U::Transaccion: TxUsuarios,
 {
     ctx.exigir(Permiso::PlataformaEntidadesCrear)?;
     let nombre = domain::copropiedad::texto_obligatorio("nombre", nombre, 200)?;
@@ -120,7 +131,22 @@ where
     .await
 }
 
-/// Crea la entidad (y, si viene, su extensión de copropiedad) y asigna el administrador.
+/// Primer administrador de una entidad que se da de alta.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AdministradorAlta {
+    /// Una cuenta activa que ya existe.
+    Existente(CuentaId),
+    /// Una persona que puede no tener cuenta: se crea (o se reconoce por el correo) como en
+    /// [`crate::casos_uso::usuarios::crear_usuario`] y define su contraseña con un código.
+    Nuevo {
+        nombre: String,
+        correo: domain::DireccionCorreo,
+        usuario: Option<domain::NombreUsuario>,
+    },
+}
+
+/// Crea la entidad (y, si viene, su extensión de copropiedad) y asigna el administrador, todo en
+/// una transacción de la entidad.
 async fn dar_de_alta<UP, U>(
     plataforma: &UP,
     unidad: &U,
@@ -128,31 +154,28 @@ async fn dar_de_alta<UP, U>(
     ctx: &ContextoPlataforma,
     (nombre, nit): (String, Option<domain::Nit>),
     copropiedad: Option<&AltaCopropiedad>,
-    administrador: CuentaId,
+    administrador: AdministradorAlta,
 ) -> AppResult<TenantId>
 where
     UP: UnidadDeTrabajoPlataforma,
     UP::Transaccion: RepositorioCuentas,
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioRoles + RegistroAuditoria,
+    U::Transaccion: TxUsuarios,
 {
-    plataforma
-        .iniciar_plataforma(ctx)
-        .await?
-        .cuenta_por_id(administrador)
-        .await?
-        .filter(|c| c.estado == EstadoCuenta::Activa)
-        .ok_or(AppError::NoEncontrado("cuenta"))?;
+    if let AdministradorAlta::Existente(cuenta) = &administrador {
+        plataforma
+            .iniciar_plataforma(ctx)
+            .await?
+            .cuenta_por_id(*cuenta)
+            .await?
+            .filter(|c| c.estado == EstadoCuenta::Activa)
+            .ok_or(AppError::NoEncontrado("cuenta"))?;
+    }
 
     let tenant = TenantId::nuevo();
     // Quien da de alta actúa en la entidad nueva con todos los permisos, solo para dejarla con
     // su administrador; queda auditado a su nombre.
-    let ctx_ph = Contexto {
-        tenant_id: tenant,
-        actor_id: ctx.actor_id,
-        request_id: ctx.request_id.clone(),
-        permisos: ConjuntoPermisos::todos(Ambito::Copropiedad),
-    };
+    let ctx_ph = en_entidad(ctx, tenant);
     let mut tx = unidad.iniciar(&ctx_ph).await?;
     tx.insertar_entidad(&nombre, nit.as_ref()).await?;
     let (accion, entidad) = match copropiedad {
@@ -168,61 +191,273 @@ where
         .ok_or(AppError::NoEncontrado("rol administrador"))?;
     tx.registrar(EventoAuditoria::ok(accion, entidad, tenant.as_uuid()))
         .await?;
-    asignar_en(
-        &mut tx,
-        reloj,
-        &ctx_ph,
-        SolicitudAsignacion::manual(administrador, rol.id),
-    )
-    .await?;
+    match administrador {
+        AdministradorAlta::Existente(cuenta) => {
+            asignar_en(
+                &mut tx,
+                reloj,
+                &ctx_ph,
+                SolicitudAsignacion::manual(cuenta, rol.id),
+            )
+            .await?;
+        }
+        AdministradorAlta::Nuevo {
+            nombre,
+            correo,
+            usuario,
+        } => {
+            crear_en(
+                &mut tx,
+                reloj,
+                &ctx_ph,
+                &NuevoUsuario {
+                    nombre,
+                    correo,
+                    usuario,
+                    telefono: None,
+                    documento: None,
+                    rol_id: rol.id,
+                },
+            )
+            .await?;
+        }
+    }
     tx.confirmar().await?;
     Ok(tenant)
 }
 
-/// Cambia el estado de una copropiedad (activar, suspender, reactivar o retirar). La
-/// plataforma decide el ciclo de vida del servicio; la máquina de estados es
+/// Contexto de **sistema** en una entidad a nombre de una cuenta de la plataforma: para dejar
+/// una entidad con su administrador, cambiar su estado o gestionar sus usuarios (todo queda
+/// auditado a su nombre en la entidad).
+fn en_entidad(ctx: &ContextoPlataforma, tenant: TenantId) -> Contexto {
+    Contexto {
+        tenant_id: tenant,
+        actor_id: ctx.actor_id,
+        request_id: ctx.request_id.clone(),
+        permisos: ConjuntoPermisos::todos(Ambito::Copropiedad),
+    }
+}
+
+/// Entidad por su id vista desde la plataforma.
+async fn entidad<T: RepositorioPlataforma>(
+    tx: &mut T,
+    tenant: TenantId,
+    ahora: chrono::DateTime<chrono::Utc>,
+) -> AppResult<EntidadResumen> {
+    tx.entidades(
+        None,
+        Some(tenant),
+        crate::SolicitudPagina::new(Some(1), None)?,
+        ahora,
+    )
+    .await?
+    .datos
+    .into_iter()
+    .next()
+    .ok_or(AppError::NoEncontrado("entidad"))
+}
+
+/// Cambia el estado de una entidad —PH o empresa— (activar, suspender, reactivar o retirar).
+/// La plataforma decide el ciclo de vida del servicio; la máquina de estados es
 /// [`EstadoCopropiedad::transicionar`].
 ///
 /// # Errors
 ///
-/// - [`AppError::SinPermiso`] sin `plataforma.copropiedades.crear`.
-/// - [`AppError::NoEncontrado`] si la copropiedad no existe.
+/// - [`AppError::SinPermiso`] sin `plataforma.copropiedades.crear` (PH) o
+///   `plataforma.entidades.crear` (empresa o la plataforma).
+/// - [`AppError::NoEncontrado`] si la entidad no existe.
 /// - [`AppError::Dominio`] si la transición no está permitida.
-pub async fn cambiar_estado_copropiedad<U>(
+pub async fn cambiar_estado_entidad<UP, U>(
+    plataforma: &UP,
     unidad: &U,
+    reloj: &impl Reloj,
     ctx: &ContextoPlataforma,
     tenant: TenantId,
     hacia: EstadoCopropiedad,
 ) -> AppResult<EstadoCopropiedad>
 where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma,
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioCopropiedad + RegistroAuditoria,
+    U::Transaccion: RepositorioEntidad + RegistroAuditoria,
 {
-    ctx.exigir(Permiso::PlataformaCopropiedadesCrear)?;
-    let ctx_ph = Contexto {
-        tenant_id: tenant,
-        actor_id: ctx.actor_id,
-        request_id: ctx.request_id.clone(),
-        permisos: ConjuntoPermisos::todos(Ambito::Copropiedad),
-    };
-    let mut tx = unidad.iniciar(&ctx_ph).await?;
-    let mut ficha = tx
-        .ficha()
+    let resumen = entidad(
+        &mut plataforma.iniciar_plataforma(ctx).await?,
+        tenant,
+        reloj.ahora(),
+    )
+    .await?;
+    ctx.exigir(match resumen.tipo {
+        domain::TipoEntidad::PropiedadHorizontal => Permiso::PlataformaCopropiedadesCrear,
+        domain::TipoEntidad::Empresa | domain::TipoEntidad::Plataforma => {
+            Permiso::PlataformaEntidadesCrear
+        }
+    })?;
+    let mut tx = unidad.iniciar(&en_entidad(ctx, tenant)).await?;
+    let ficha = tx
+        .ficha_entidad()
         .await?
-        .ok_or(AppError::NoEncontrado("copropiedad"))?;
+        .ok_or(AppError::NoEncontrado("entidad"))?;
     let desde = ficha.estado;
-    ficha.estado = desde.transicionar(hacia)?;
-    tx.guardar_ficha(&ficha).await?;
+    let nuevo = desde.transicionar(hacia)?;
+    tx.guardar_estado_entidad(nuevo).await?;
     let detalle = DetalleAuditoria::vacio()
         .con("desde", desde.as_str())?
         .con("hacia", hacia.as_str())?;
     tx.registrar(
-        EventoAuditoria::ok(ACCION_CAMBIAR_ESTADO, "copropiedad", tenant.as_uuid())
+        EventoAuditoria::ok(ACCION_CAMBIAR_ESTADO, "entidad", tenant.as_uuid())
             .con_detalle(detalle),
     )
     .await?;
     tx.confirmar().await?;
-    Ok(hacia)
+    Ok(nuevo)
+}
+
+/// Entidades de la plataforma (PH, empresas y la plataforma) con su tipo, estado y módulos.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.copropiedades.ver`.
+pub async fn listar_entidades<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    texto: Option<&str>,
+    pagina: crate::SolicitudPagina,
+) -> AppResult<crate::Pagina<EntidadResumen>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaCopropiedadesVer)?;
+    unidad
+        .iniciar_plataforma(ctx)
+        .await?
+        .entidades(texto, None, pagina, reloj.ahora())
+        .await
+}
+
+/// Contexto para gestionar los usuarios y roles de una entidad desde la plataforma (U3): todos
+/// los permisos de la entidad a nombre de la cuenta, que debe tener
+/// `plataforma.entidades.usuarios`. La intervención queda en la auditoría de la plataforma y
+/// cada cambio, en la de la entidad.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.entidades.usuarios`; [`AppError::NoEncontrado`] si
+/// la entidad no existe.
+pub async fn contexto_gestion_usuarios<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+) -> AppResult<Contexto>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma + RegistroAuditoria,
+{
+    ctx.exigir(Permiso::PlataformaEntidadesUsuarios)?;
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    entidad(&mut tx, tenant, reloj.ahora()).await?;
+    tx.registrar(EventoAuditoria::ok(
+        ACCION_GESTIONAR_USUARIOS,
+        "entidad",
+        tenant.as_uuid(),
+    ))
+    .await?;
+    tx.confirmar().await?;
+    Ok(en_entidad(ctx, tenant))
+}
+
+/// Vigencia de un acceso de soporte.
+pub const VIDA_SOPORTE: chrono::Duration = chrono::Duration::hours(2);
+
+/// Abre un acceso de soporte de solo lectura a una entidad cliente ([`VIDA_SOPORTE`]), con
+/// motivo. Queda en la auditoría de la plataforma y en la de la entidad.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.soporte.ver`; [`AppError::NoAutenticado`] sin
+/// cuenta; [`AppError::NoEncontrado`] si la entidad no existe; [`AppError::Validacion`] sin
+/// motivo.
+pub async fn abrir_soporte<UP, U>(
+    plataforma: &UP,
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+    motivo: &str,
+) -> AppResult<AccesoSoporte>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma + RegistroAuditoria,
+    U: UnidadDeTrabajo,
+    U::Transaccion: RegistroAuditoria,
+{
+    ctx.exigir(Permiso::PlataformaSoporteVer)?;
+    let cuenta = ctx.actor_id.ok_or(AppError::NoAutenticado)?;
+    let motivo = domain::copropiedad::texto_obligatorio("motivo", motivo, 500)?;
+    let ahora = reloj.ahora();
+    let acceso = AccesoSoporte {
+        id: uuid::Uuid::now_v7(),
+        cuenta_id: cuenta,
+        tenant_id: tenant,
+        motivo,
+        desde: ahora,
+        hasta: ahora + VIDA_SOPORTE,
+    };
+    let mut tx = plataforma.iniciar_plataforma(ctx).await?;
+    entidad(&mut tx, tenant, ahora).await?;
+    tx.insertar_acceso_soporte(&acceso).await?;
+    let detalle = DetalleAuditoria::vacio()
+        .con("entidad_id", tenant.to_string())?
+        .con("motivo", acceso.motivo.as_str())?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_ABRIR_SOPORTE, "acceso_soporte", acceso.id).con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    let mut tx = unidad.iniciar(&en_entidad(ctx, tenant)).await?;
+    let detalle = DetalleAuditoria::vacio()
+        .con("motivo", acceso.motivo.as_str())?
+        .con("hasta", acceso.hasta.to_rfc3339())?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_ABRIR_SOPORTE, "acceso_soporte", acceso.id).con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(acceso)
+}
+
+/// Permisos de soporte de la cuenta en la entidad: los de solo lectura
+/// ([`domain::permisos::permisos_soporte`]) si tiene `plataforma.soporte.ver` y un acceso
+/// vigente; `None` si no.
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si falla la base de datos.
+pub async fn permisos_de_soporte<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+) -> AppResult<Option<ConjuntoPermisos>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma,
+{
+    let Some(cuenta) = ctx.actor_id else {
+        return Ok(None);
+    };
+    if !ctx.permisos.contiene(Permiso::PlataformaSoporteVer) {
+        return Ok(None);
+    }
+    let vigente = unidad
+        .iniciar_plataforma(ctx)
+        .await?
+        .acceso_soporte_vigente(cuenta, tenant, reloj.ahora())
+        .await?;
+    Ok(vigente.map(|_| domain::permisos::permisos_soporte()))
 }
 
 /// Todas las copropiedades.
@@ -364,6 +599,23 @@ where
 {
     ctx.exigir(Permiso::PlataformaRolesAsignar)?;
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    let asignacion = asignar_plataforma_en(&mut tx, reloj, ctx, cuenta, rol_id).await?;
+    tx.confirmar().await?;
+    Ok(asignacion)
+}
+
+/// Asigna un rol de plataforma dentro de una transacción ya abierta (también al crear un
+/// usuario de la plataforma). Exige que el actor tenga todos los permisos del rol.
+pub(crate) async fn asignar_plataforma_en<T>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    cuenta: CuentaId,
+    rol_id: RolId,
+) -> AppResult<AsignacionPlataforma>
+where
+    T: RepositorioPlataforma + RepositorioCuentas + RegistroAuditoria,
+{
     let rol = tx
         .rol_plataforma(rol_id)
         .await?
@@ -395,7 +647,6 @@ where
         .con_detalle(detalle),
     )
     .await?;
-    tx.confirmar().await?;
     Ok(asignacion)
 }
 
@@ -549,4 +800,101 @@ where
     ))
     .await?;
     tx.confirmar().await
+}
+
+/// Desbloquea una cuenta bloqueada por la plataforma (y quita un bloqueo temporal por intentos).
+/// Un superusuario solo lo desbloquea otro. El motivo queda en la auditoría.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.cuentas.bloquear`; [`AppError::NoEncontrado`];
+/// [`AppError::Validacion`] si el motivo está vacío o la cuenta no está bloqueada.
+pub async fn desbloquear_cuenta<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    cuenta: CuentaId,
+    motivo: &str,
+) -> AppResult<()>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma + RepositorioCuentas + RegistroAuditoria,
+{
+    ctx.exigir(Permiso::PlataformaCuentasBloquear)?;
+    let motivo = domain::copropiedad::texto_obligatorio("motivo", motivo, 500)?;
+    let ahora = reloj.ahora();
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    let actual = tx
+        .cuenta_por_id(cuenta)
+        .await?
+        .ok_or(AppError::NoEncontrado("cuenta"))?;
+    if actual.estado != EstadoCuenta::Bloqueada {
+        return Err(AppError::Validacion("la cuenta no está bloqueada".into()));
+    }
+    let (_, objetivo_es_super) = tx.permisos_plataforma(cuenta, ahora).await?;
+    if objetivo_es_super
+        && !ctx
+            .permisos
+            .incluye(&ConjuntoPermisos::todos(Ambito::Plataforma))
+    {
+        return Err(AppError::SinPermiso(Permiso::PlataformaCuentasBloquear));
+    }
+    tx.cambiar_estado(cuenta, EstadoCuenta::Activa).await?;
+    tx.registrar_fallo(cuenta, 0, None).await?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_DESBLOQUEAR, "cuenta", cuenta.as_uuid())
+            .con_detalle(DetalleAuditoria::vacio().con("motivo", motivo.as_str())?),
+    )
+    .await?;
+    tx.confirmar().await
+}
+
+/// Cuenta vista por la plataforma (soporte): estado, contraseña pendiente y segundo factor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CuentaConsultada {
+    pub id: CuentaId,
+    pub nombre_mostrar: String,
+    pub usuario: Option<domain::NombreUsuario>,
+    pub correo: Option<domain::DireccionCorreo>,
+    pub correo_verificado: bool,
+    pub estado: EstadoCuenta,
+    pub contrasena_pendiente: bool,
+    pub segundo_factor_activo: bool,
+    /// Bloqueo temporal por contraseñas fallidas, si sigue vigente.
+    pub bloqueo_temporal_hasta: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+/// Busca una cuenta por usuario o correo exactos (nunca listados).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.cuentas.ver`.
+pub async fn consultar_cuenta<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    identificador: &domain::Identificador,
+) -> AppResult<Option<CuentaConsultada>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioCuentas,
+{
+    ctx.exigir(Permiso::PlataformaCuentasVer)?;
+    let ahora = reloj.ahora();
+    Ok(unidad
+        .iniciar_plataforma(ctx)
+        .await?
+        .cuenta_por_identificador(identificador)
+        .await?
+        .map(|c| CuentaConsultada {
+            id: c.id,
+            nombre_mostrar: c.nombre_mostrar,
+            usuario: c.usuario,
+            correo: c.correo,
+            correo_verificado: c.correo_verificado,
+            estado: c.estado,
+            contrasena_pendiente: c.hash_contrasena.is_none(),
+            segundo_factor_activo: c.totp_activo,
+            bloqueo_temporal_hasta: c.bloqueo_hasta.filter(|b| *b > ahora),
+        }))
 }

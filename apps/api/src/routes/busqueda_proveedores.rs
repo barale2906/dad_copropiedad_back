@@ -173,6 +173,9 @@ pub struct EstadoEnlaceRespuesta {
     /// ¿Hay un enlace vigente?
     pub activo: bool,
     pub creado_en: Option<DateTime<Utc>>,
+    /// Token del enlace vigente: el mismo mientras no se regenere ni se revoque. `null` si no
+    /// hay enlace o es anterior a que se guardaran cifrados (genere otro).
+    pub token: Option<String>,
     /// Enlace que abre el chat de la PH con «Busco …» escrito.
     #[schema(example = "https://wa.me/573000000000?text=Busco%20")]
     pub whatsapp_url: Option<String>,
@@ -181,14 +184,15 @@ pub struct EstadoEnlaceRespuesta {
 /// Enlace recién generado.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct EnlaceGeneradoRespuesta {
-    /// Token del enlace: se entrega **una sola vez** (el front arma la página pública con él).
+    /// Token del enlace (el front arma la página pública con él; `GET` lo vuelve a entregar).
     pub token: String,
     pub creado_en: DateTime<Utc>,
     #[schema(example = "https://wa.me/573000000000?text=Busco%20")]
     pub whatsapp_url: Option<String>,
 }
 
-/// Estado del enlace público del directorio y el enlace `wa.me` para los grupos.
+/// El enlace público vigente del directorio (con su token, sin cambiarlo) y el enlace `wa.me`
+/// para los grupos.
 #[utoipa::path(
     get,
     path = "/directorio/enlace-publico",
@@ -204,10 +208,11 @@ pub async fn estado_enlace(
     State(state): State<AppState>,
     en: EnCopropiedad,
 ) -> ApiResult<Json<EstadoEnlaceRespuesta>> {
-    let e = uc::estado_enlace_directorio(&state.unidad, &en.ctx).await?;
+    let e = uc::estado_enlace_directorio(&state.unidad, state.cofre.as_ref(), &en.ctx).await?;
     Ok(Json(EstadoEnlaceRespuesta {
         activo: e.creado_en.is_some(),
         creado_en: e.creado_en,
+        token: e.token,
         whatsapp_url: e.whatsapp,
     }))
 }
@@ -223,13 +228,16 @@ pub async fn estado_enlace(
     responses(
         (status = CREATED, description = "Enlace generado", body = EnlaceGeneradoRespuesta),
         (status = FORBIDDEN, description = "Sin `directorio.compartir` (`sin_permiso`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "El servidor no tiene clave del Cofre (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn generar_enlace(
     State(state): State<AppState>,
     en: EnCopropiedad,
 ) -> ApiResult<(StatusCode, Json<EnlaceGeneradoRespuesta>)> {
-    let e = uc::generar_enlace_directorio(&state.unidad, &RelojSistema, &en.ctx).await?;
+    let e =
+        uc::generar_enlace_directorio(&state.unidad, state.cofre.as_ref(), &RelojSistema, &en.ctx)
+            .await?;
     Ok((
         StatusCode::CREATED,
         Json(EnlaceGeneradoRespuesta {

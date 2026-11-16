@@ -67,6 +67,14 @@ impl SolicitudTitular {
     pub fn vence(&self) -> NaiveDate {
         self.prorrogada_hasta.unwrap_or(self.vence_el)
     }
+
+    /// Días hábiles que quedan para responder contados desde `hoy` (hora de Colombia): 0 = vence
+    /// hoy o ya venció. `None` si ya se respondió.
+    pub fn dias_habiles_restantes(&self, hoy: NaiveDate) -> Option<u32> {
+        self.respondida_en
+            .is_none()
+            .then(|| domain::calendario::dias_habiles_entre(hoy, self.vence()))
+    }
 }
 
 /// Autorización con su estado.

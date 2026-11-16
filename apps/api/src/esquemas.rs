@@ -199,6 +199,8 @@ esquema_enum! {
         "Estado de una credencial.";
     EstadoCuadro = domain::cuadro_coeficientes::EstadoCuadro,
         "Estado de un cuadro de coeficientes.";
+    EstadoCuenta = domain::EstadoCuenta,
+        "Estado de una cuenta: `activa`, `bloqueada` por la plataforma (no inicia sesión) o `eliminada` a pedido del titular.";
     EstadoImportacion = domain::importacion::EstadoImportacion,
         "Estado de una importación.";
     EstadoLinea = application::puertos::asambleas::EstadoLinea,
@@ -211,6 +213,8 @@ esquema_enum! {
         "Estado de una orden de trabajo. `programada → en_ejecucion → ejecutada → verificada`; `programada | en_ejecucion → cancelada`; la verificación puede devolverla (`ejecutada → en_ejecucion`).";
     EstadoOrganizacion = domain::organizacion::EstadoOrganizacion,
         "Estado de una organización en la plataforma.";
+    DestinoCobro = domain::reserva::DestinoCobro,
+        "Cómo se cobra el valor de las reservas de un recurso: `manual`, `cartera` o `factura`.";
     EstadoPago = domain::reserva::EstadoPago,
         "Estado del pago del valor de la reserva. Hoy se registra a mano; el pago en línea llegará con una pasarela (decisión pendiente) o con el módulo de contabilidad.";
     EstadoPoder = domain::asistente::EstadoPoder,

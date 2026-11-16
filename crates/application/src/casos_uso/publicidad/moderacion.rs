@@ -16,6 +16,7 @@ use crate::{
     puertos::{
         RegistroAuditoria, Reloj, RepositorioPublicidad, Transaccion, UnidadDeTrabajo,
         UnidadDeTrabajoPlataforma,
+        cofre::Cofre,
         publicidad::{Campana, Creativo, CreativoReportado, PantallaPublicidad},
     },
     seguridad::token_aleatorio,
@@ -29,6 +30,16 @@ pub(crate) const ACCION_REPORTES: AccionAuditoria =
     AccionAuditoria::new("publicidad.reporte.atender");
 pub(crate) const ACCION_PANTALLA: AccionAuditoria =
     AccionAuditoria::new("publicidad.pantalla.generar");
+
+/// Cuatro ojos (plan 20): quien cargó o editó lo que se modera no lo modera.
+fn otra_cuenta(ctx: &ContextoPlataforma, cargado: &[Option<domain::CuentaId>]) -> AppResult<()> {
+    match ctx.actor_id {
+        Some(actor) if cargado.contains(&Some(actor)) => Err(AppError::Conflicto(
+            "otra cuenta debe moderar lo que usted cargó (cuatro ojos)".into(),
+        )),
+        _ => Ok(()),
+    }
+}
 
 /// Decisión de la moderación.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -81,12 +92,12 @@ where
         .await
 }
 
-/// Aprueba o rechaza un creativo pendiente.
+/// Aprueba o rechaza un creativo pendiente. Lo modera una cuenta distinta de la que lo cargó.
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`]; [`AppError::NoEncontrado`]; [`AppError::Dominio`] si no está
-/// pendiente; [`AppError::Validacion`] si se rechaza sin motivo.
+/// [`AppError::SinPermiso`]; [`AppError::NoEncontrado`]; [`AppError::Conflicto`] si no está
+/// pendiente o lo cargó quien modera; [`AppError::Validacion`] si se rechaza sin motivo.
 pub async fn moderar_creativo<UP>(
     unidad: &UP,
     reloj: &impl Reloj,
@@ -107,12 +118,14 @@ where
     if c.estado != EstadoCreativo::Pendiente {
         return Err(AppError::Conflicto("el creativo no está pendiente".into()));
     }
+    otra_cuenta(ctx, &[c.cargado_por])?;
     let (hacia, m) = match &decision {
         Decision::Aprobar => (EstadoCreativo::Aprobado, None),
         Decision::Rechazar { motivo: m } => (EstadoCreativo::Rechazado, Some(motivo(m)?)),
     };
     c.estado = c.estado.transicionar(hacia)?;
     c.motivo_estado = m;
+    c.revisado_por = ctx.actor_id;
     c.actualizado_en = reloj.ahora();
     tx.actualizar_creativo(&c).await?;
     let detalle = DetalleAuditoria::vacio().con("hacia", hacia.as_str())?;
@@ -126,12 +139,14 @@ where
 
 /// Aprueba o rechaza una campaña en revisión. Aprobar exige el anunciante verificado, todos
 /// sus creativos aprobados y una tarifa vigente del modelo, que queda fijada en la campaña.
-/// El conflicto de interés se vuelve a calcular.
+/// El conflicto de interés se vuelve a calcular. La modera una cuenta distinta de la que la creó
+/// o la editó por última vez.
 ///
 /// # Errors
 ///
 /// [`AppError::SinPermiso`]; [`AppError::NoEncontrado`]; [`AppError::Dominio`] si no está en
-/// revisión; [`AppError::Validacion`] si falta algo para aprobarla o se rechaza sin motivo.
+/// revisión; [`AppError::Conflicto`] si la cargó quien modera; [`AppError::Validacion`] si
+/// falta algo para aprobarla o se rechaza sin motivo.
 pub async fn moderar_campana<UP>(
     unidad: &UP,
     reloj: &impl Reloj,
@@ -150,6 +165,7 @@ where
         .campana(id, true)
         .await?
         .ok_or(AppError::NoEncontrado("campaña"))?;
+    otra_cuenta(ctx, &[c.creada_por, c.editada_por])?;
     c.conflicto_interes = tx.conflicto_interes(id).await?;
     match &decision {
         Decision::Aprobar => {
@@ -270,14 +286,31 @@ where
     Ok(n)
 }
 
-/// Genera el token de la pantalla del lobby de una copropiedad (reemplaza el anterior). Lo
-/// hace la plataforma, que instala la pantalla; se entrega una sola vez.
+fn contexto_pantalla(tenant: TenantId) -> String {
+    format!("pantalla:{tenant}")
+}
+
+/// Contexto de la plataforma en la PH solo para su pantalla, sin permisos de copropiedad.
+fn en_pantalla(ctx: &ContextoPlataforma, tenant: TenantId) -> Contexto {
+    Contexto {
+        tenant_id: tenant,
+        actor_id: ctx.actor_id,
+        request_id: ctx.request_id.clone(),
+        permisos: ConjuntoPermisos::vacio(),
+    }
+}
+
+/// Genera el token de la pantalla del lobby de una copropiedad (reemplaza el anterior, que deja
+/// de servir). Lo hace la plataforma, que instala la pantalla; se guarda también cifrado para
+/// volver a consultarlo con [`token_pantalla`].
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`] sin `plataforma.modulos.gestionar`.
-pub async fn generar_pantalla<U>(
+/// [`AppError::SinPermiso`] sin `plataforma.modulos.gestionar`; [`AppError::Validacion`] si el
+/// servidor no tiene clave del Cofre.
+pub async fn generar_pantalla<U, C>(
     unidad: &U,
+    cofre: &C,
     reloj: &impl Reloj,
     ctx: &ContextoPlataforma,
     tenant: TenantId,
@@ -285,19 +318,15 @@ pub async fn generar_pantalla<U>(
 where
     U: UnidadDeTrabajo,
     U::Transaccion: TxPublicidad,
+    C: Cofre,
 {
     ctx.exigir(Permiso::PlataformaModulosGestionar)?;
-    // La plataforma actúa en la PH solo sobre la pantalla, sin permisos de copropiedad.
-    let ctx_ph = Contexto {
-        tenant_id: tenant,
-        actor_id: ctx.actor_id,
-        request_id: ctx.request_id.clone(),
-        permisos: ConjuntoPermisos::vacio(),
-    };
     let token = token_aleatorio()?;
-    let mut tx = unidad.iniciar(&ctx_ph).await?;
+    let cifrado = cofre.cifrar(&contexto_pantalla(tenant), token.as_bytes())?;
+    let mut tx = unidad.iniciar(&en_pantalla(ctx, tenant)).await?;
     tx.guardar_pantalla(&PantallaPublicidad {
         token_hash: huella(&token)?,
+        token_cifrado: Some(cifrado),
         creado_por: ctx.actor_id,
         creado_en: reloj.ahora(),
     })
@@ -310,4 +339,33 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(token)
+}
+
+/// El token vigente de la pantalla, sin cambiarlo; `None` si no tiene o es anterior al plan 20
+/// (no se guardó cifrado: genere otro).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.modulos.gestionar`; los del Cofre.
+pub async fn token_pantalla<U, C>(
+    unidad: &U,
+    cofre: &C,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+) -> AppResult<Option<String>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxPublicidad,
+    C: Cofre,
+{
+    ctx.exigir(Permiso::PlataformaModulosGestionar)?;
+    let mut tx = unidad.iniciar(&en_pantalla(ctx, tenant)).await?;
+    tx.pantalla()
+        .await?
+        .and_then(|p| p.token_cifrado)
+        .map(|c| {
+            let claro = cofre.descifrar(&contexto_pantalla(tenant), &c)?;
+            String::from_utf8(claro).map_err(AppError::infra)
+        })
+        .transpose()
 }

@@ -555,6 +555,16 @@ impl TryFrom<FilaResena> for Resena {
 }
 
 impl RepositorioDirectorio for TransaccionPg {
+    async fn publicidad_permitida(&mut self, ahora: DateTime<Utc>) -> AppResult<bool> {
+        sqlx::query_scalar!(
+            r#"SELECT publicidad_habilitada(app_tenant_id(), $1) AS "permitida!""#,
+            ahora
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
     async fn fichas_directorio(
         &mut self,
         f: &FiltroDirectorio,

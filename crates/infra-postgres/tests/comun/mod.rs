@@ -48,3 +48,24 @@ pub async fn insertar_entidad(pool: &PgPool, nombre: &str) -> TenantId {
         .expect("entidad");
     tenant
 }
+
+/// Cofre de pruebas: "cifra" anteponiendo el contexto (descifrar con otro contexto falla).
+#[allow(dead_code)]
+pub struct CofrePrueba;
+
+impl application::puertos::cofre::Cofre for CofrePrueba {
+    fn cifrar(&self, contexto: &str, datos: &[u8]) -> application::AppResult<Vec<u8>> {
+        let mut v = contexto.as_bytes().to_vec();
+        v.push(0);
+        v.extend_from_slice(datos);
+        Ok(v)
+    }
+
+    fn descifrar(&self, contexto: &str, cifrado: &[u8]) -> application::AppResult<Vec<u8>> {
+        let prefijo = [contexto.as_bytes(), &[0]].concat();
+        cifrado
+            .strip_prefix(prefijo.as_slice())
+            .map(<[u8]>::to_vec)
+            .ok_or_else(|| application::AppError::Validacion("otro contexto".into()))
+    }
+}

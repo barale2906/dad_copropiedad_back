@@ -9,9 +9,9 @@ use application::{
         RegistroAuditoria, RegistroOutbox, RepositorioCuentas, RepositorioOrganizaciones,
         RepositorioPlataforma, RepositorioSesiones, Transaccion, UnidadDeTrabajoPlataforma,
         identidad::{
-            AsignacionPlataforma, CambiosFicha, CodigoVerificacion, ConsumoDocumentos,
-            CopropiedadResumen, Cuenta, FichaOrganizacion, HashesTokens, Membresia, Organizacion,
-            PropositoCodigo, Reclamacion, Rol, Sesion,
+            AccesoSoporte, AsignacionPlataforma, CambiosFicha, CodigoVerificacion,
+            ConsumoDocumentos, CopropiedadResumen, Cuenta, EntidadResumen, FichaOrganizacion,
+            HashesTokens, Membresia, Organizacion, PropositoCodigo, Reclamacion, Rol, Sesion,
         },
     },
 };
@@ -133,7 +133,7 @@ struct FilaCuenta {
     correo: Option<String>,
     correo_verificado_en: Option<DateTime<Utc>>,
     estado: String,
-    hash_contrasena: String,
+    hash_contrasena: Option<String>,
     intentos_fallidos: i32,
     bloqueo_hasta: Option<DateTime<Utc>>,
     totp_secreto: Option<String>,
@@ -167,7 +167,7 @@ impl RepositorioCuentas for TransaccionPlataformaPg {
         sqlx::query!(
             "INSERT INTO cuentas (id, nombre_mostrar, usuario, correo, estado, hash_contrasena,
                                   contrasena_actualizada_en, creada_en)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $7)",
+             VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $6::text IS NULL THEN NULL ELSE $7::timestamptz END, $7)",
             c.id.as_uuid(),
             c.nombre_mostrar,
             c.usuario.as_ref().map(NombreUsuario::as_str),
@@ -664,7 +664,89 @@ impl TransaccionPlataformaPg {
     }
 }
 
+/// Escapa los comodines de `LIKE` y envuelve en `%…%`.
+fn patron_like(texto: &str) -> String {
+    let e = texto
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    format!("%{e}%")
+}
+
 impl RepositorioPlataforma for TransaccionPlataformaPg {
+    async fn entidades(
+        &mut self,
+        texto: Option<&str>,
+        id: Option<TenantId>,
+        pagina: application::SolicitudPagina,
+        ahora: DateTime<Utc>,
+    ) -> AppResult<application::Pagina<EntidadResumen>> {
+        let filas = sqlx::query!(
+            r#"SELECT id AS "id!", nombre AS "nombre!", nit, tipo AS "tipo!", estado AS "estado!",
+                      modulos AS "modulos!"
+               FROM entidades_plataforma($1, $2, $3, $4, $5)"#,
+            ahora,
+            id.map(TenantId::as_uuid),
+            texto.map(patron_like),
+            pagina.despues(),
+            i32::try_from(pagina.filas_a_consultar()).unwrap_or(i32::MAX),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            Ok(EntidadResumen {
+                id: TenantId::from_uuid(f.id),
+                nombre: f.nombre,
+                nit: f.nit,
+                tipo: TipoEntidad::try_from(f.tipo.as_str())?,
+                estado: EstadoCopropiedad::try_from(f.estado.as_str())?,
+                modulos: f.modulos,
+            })
+        })
+        .collect::<AppResult<Vec<_>>>()?;
+        Ok(application::Pagina::desde_filas(filas, pagina, |e| {
+            e.id.as_uuid()
+        }))
+    }
+
+    async fn insertar_acceso_soporte(&mut self, a: &AccesoSoporte) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO accesos_soporte (id, cuenta_id, tenant_id, motivo, desde, hasta)
+             VALUES ($1, $2, $3, $4, $5, $6)",
+            a.id,
+            a.cuenta_id.as_uuid(),
+            a.tenant_id.as_uuid(),
+            a.motivo,
+            a.desde,
+            a.hasta,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
+    async fn acceso_soporte_vigente(
+        &mut self,
+        cuenta: CuentaId,
+        tenant: TenantId,
+        ahora: DateTime<Utc>,
+    ) -> AppResult<Option<DateTime<Utc>>> {
+        sqlx::query_scalar!(
+            "SELECT hasta FROM accesos_soporte
+             WHERE cuenta_id = $1 AND tenant_id = $2 AND desde <= $3 AND hasta > $3
+             ORDER BY hasta DESC LIMIT 1",
+            cuenta.as_uuid(),
+            tenant.as_uuid(),
+            ahora,
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
     async fn permisos_plataforma(
         &mut self,
         cuenta: CuentaId,

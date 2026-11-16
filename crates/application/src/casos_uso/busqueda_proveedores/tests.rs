@@ -3,6 +3,8 @@
 //! `infra-postgres/tests/busqueda_proveedores.rs`.
 
 use chrono::{DateTime, TimeZone, Utc};
+
+use crate::puertos::cofre::memoria::CofrePrueba;
 use domain::{ConjuntoPermisos, CuentaId, Telefono, TipoPersona};
 use rust_decimal::{Decimal, dec};
 
@@ -240,7 +242,7 @@ async fn la_auditoria_no_guarda_lo_que_se_busco() {
 }
 
 #[tokio::test]
-async fn la_destacada_solo_va_primero_con_el_modulo_de_publicidad() {
+async fn la_destacada_va_primero_salvo_en_una_entidad_excluida_de_la_publicidad() {
     let mut destacada = ficha("Arreglos Express", "costura", None, None);
     destacada.destacada = true;
     let fichas = vec![
@@ -248,8 +250,8 @@ async fn la_destacada_solo_va_primero_con_el_modulo_de_publicidad() {
         destacada,
     ];
     let sin = entorno(fichas.clone());
+    sin.unidad.con_datos(|d| d.directorio.excluida = true);
     let con = entorno(fichas);
-    con.unidad.habilitar(Modulo::Publicidad);
 
     let r_sin = sin.buscar("busco costurera", "w1").await.expect("busca");
     let r_con = con.buscar("busco costurera", "w1").await.expect("busca");
@@ -501,7 +503,7 @@ fn boton_de_opinion_ida_y_vuelta() {
 async fn el_enlace_publico_abre_el_directorio_y_el_chat() {
     let e = entorno(vec![ficha("Modistería Rosa", "costura", None, None)]);
 
-    let enlace = generar_enlace_directorio(&e.unidad, &reloj(), &e.ctx())
+    let enlace = generar_enlace_directorio(&e.unidad, &CofrePrueba, &reloj(), &e.ctx())
         .await
         .expect("genera");
     let d = directorio_publico(
@@ -522,19 +524,23 @@ async fn el_enlace_publico_abre_el_directorio_y_el_chat() {
     assert_eq!(d.fichas.datos.len(), 1);
     assert_eq!(d.whatsapp, enlace.whatsapp);
     assert_eq!(d.copropiedad, "PH en memoria");
-    // Solo se guarda la huella del token.
+    // Se guarda la huella y el token cifrado: se vuelve a entregar el mismo sin cambiarlo.
     let guardado = e.unidad.datos().directorio.enlace.expect("enlace");
     assert_eq!(guardado.token_hash.len(), 32);
     assert_ne!(guardado.token_hash, enlace.token.as_bytes());
+    let estado = estado_enlace_directorio(&e.unidad, &CofrePrueba, &e.ctx())
+        .await
+        .expect("estado");
+    assert_eq!(estado.token.as_deref(), Some(enlace.token.as_str()));
 }
 
 #[tokio::test]
 async fn un_token_ajeno_o_reemplazado_no_abre_el_directorio() {
     let e = entorno(vec![]);
-    let primero = generar_enlace_directorio(&e.unidad, &reloj(), &e.ctx())
+    let primero = generar_enlace_directorio(&e.unidad, &CofrePrueba, &reloj(), &e.ctx())
         .await
         .expect("genera");
-    let segundo = generar_enlace_directorio(&e.unidad, &reloj(), &e.ctx())
+    let segundo = generar_enlace_directorio(&e.unidad, &CofrePrueba, &reloj(), &e.ctx())
         .await
         .expect("regenera");
     let abrir = |t: String| {
@@ -572,7 +578,7 @@ async fn un_token_ajeno_o_reemplazado_no_abre_el_directorio() {
         abrir(segundo.token).await,
         Err(AppError::NoAutenticado)
     ));
-    let estado = estado_enlace_directorio(&e.unidad, &e.ctx())
+    let estado = estado_enlace_directorio(&e.unidad, &CofrePrueba, &e.ctx())
         .await
         .expect("estado");
     assert_eq!(estado.creado_en, None);
@@ -587,7 +593,7 @@ async fn solo_quien_puede_compartir_genera_el_enlace() {
         [Permiso::DirectorioVer].into_iter().collect(),
     );
 
-    let r = generar_enlace_directorio(&e.unidad, &reloj(), &residente).await;
+    let r = generar_enlace_directorio(&e.unidad, &CofrePrueba, &reloj(), &residente).await;
 
     assert!(matches!(
         r,

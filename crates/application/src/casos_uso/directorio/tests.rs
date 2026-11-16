@@ -99,8 +99,9 @@ impl Entorno {
 }
 
 #[tokio::test]
-async fn sin_modulo_de_publicidad_ninguna_ficha_sale_destacada() {
+async fn en_una_entidad_excluida_ninguna_ficha_sale_destacada() {
     let e = entorno();
+    e.unidad.con_datos(|d| d.directorio.excluida = true);
 
     let fichas = e.directorio().await;
     let destacadas = destacadas(&e.unidad, &reloj(), &e.ctx_residente(), None)
@@ -110,16 +111,15 @@ async fn sin_modulo_de_publicidad_ninguna_ficha_sale_destacada() {
     assert_eq!(
         fichas.len(),
         2,
-        "el directorio básico funciona sin el módulo"
+        "el directorio funciona aunque la entidad esté excluida de la pauta"
     );
     assert!(fichas.iter().all(|f| !f.destacada));
     assert!(destacadas.is_empty());
 }
 
 #[tokio::test]
-async fn con_modulo_de_publicidad_las_destacadas_se_marcan() {
+async fn sin_habilitar_nada_las_destacadas_se_marcan() {
     let e = entorno();
-    e.unidad.habilitar(Modulo::Publicidad);
 
     let fichas = e.directorio().await;
     let destacadas = destacadas(&e.unidad, &reloj(), &e.ctx_residente(), None)

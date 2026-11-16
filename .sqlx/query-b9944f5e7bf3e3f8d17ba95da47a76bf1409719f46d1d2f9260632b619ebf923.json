@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT publicidad_habilitada(app_tenant_id(), $1) AS \"permitida!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "permitida!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "b9944f5e7bf3e3f8d17ba95da47a76bf1409719f46d1d2f9260632b619ebf923"
+}

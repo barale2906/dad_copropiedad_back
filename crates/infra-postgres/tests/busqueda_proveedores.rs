@@ -19,7 +19,7 @@ use application::{
         identidad::NuevaOrganizacion,
     },
 };
-use comun::{MIGRACIONES, crear_copropiedad, pool_como_app};
+use comun::{CofrePrueba, MIGRACIONES, crear_copropiedad, pool_como_app};
 use domain::{
     AnuncianteId, CanalSolicitud, Cobertura, CodigoCategoria, CodigoDane, Coordenadas,
     NaturalezaOrganizacion, Nit, PersonaId, Telefono, TenantId, TipoOrganizacion, Ubicacion,
@@ -410,7 +410,7 @@ async fn el_enlace_publico_abre_solo_el_directorio_de_su_ph(pool: PgPool) {
         .await;
     let otra = ph(&pool).await;
 
-    let enlace = uc::generar_enlace_directorio(&e.unidad, &RelojSistema, &e.ctx())
+    let enlace = uc::generar_enlace_directorio(&e.unidad, &CofrePrueba, &RelojSistema, &e.ctx())
         .await
         .expect("genera");
     let abrir = |tenant: TenantId, token: String| {

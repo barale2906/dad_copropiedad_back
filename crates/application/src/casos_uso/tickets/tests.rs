@@ -818,3 +818,33 @@ async fn categorias_inactivas_no_se_usan_al_radicar() {
     .await;
     assert!(matches!(r, Err(AppError::NoEncontrado(_))));
 }
+
+#[tokio::test]
+async fn el_detalle_trae_las_transiciones_que_acepta_para_quien_consulta() {
+    let e = entorno();
+    let t = e
+        .radicar(&e.residente(), TipoTicket::Queja, "r")
+        .await
+        .expect("t");
+    let reloj = RelojFijo(ahora());
+
+    let del_residente = ver_ticket(&e.unidad, &reloj, &e.residente(), t.id)
+        .await
+        .expect("detalle");
+    let del_asistente = ver_ticket(&e.unidad, &reloj, &e.asistente(), t.id)
+        .await
+        .expect("detalle");
+
+    // El solicitante no gestiona un ticket abierto; la administración sí.
+    assert!(
+        !del_residente
+            .transiciones_permitidas
+            .contains(&EstadoTicket::Rechazado)
+    );
+    let hacia = *del_asistente
+        .transiciones_permitidas
+        .first()
+        .expect("la administración puede mover un ticket abierto");
+    let r = transicion(&e, &e.asistente(), t.id, hacia, Some("motivo"), ahora()).await;
+    assert!(r.is_ok(), "{hacia} se ofrece y debe aceptarse: {r:?}");
+}

@@ -18,8 +18,8 @@
 
 use chrono::{DateTime, Duration, Utc};
 use domain::{
-    AnuncianteId, CanalSolicitud, CodigoCategoria, Modulo, Permiso, PersonaId,
-    SolicitudProveedorId, TenantId,
+    AnuncianteId, CanalSolicitud, CodigoCategoria, Permiso, PersonaId, SolicitudProveedorId,
+    TenantId,
     directorio::busqueda::{
         Candidato, CategoriaBuscable, MAXIMO_SUGERENCIAS, TEXTO_ENLACE_GRUPOS,
         comparar_sugerencias, consulta_busqueda, enlace_whatsapp, resolver_categoria,
@@ -37,8 +37,9 @@ use crate::{
     outbox::{EventoSaliente, MensajeOutbox, PrioridadSalida},
     puertos::{
         RegistroAuditoria, Reloj, RepositorioCopropiedad, RepositorioDirectorio,
-        RepositorioModulos, RepositorioPersonas, RepositorioSolicitudesProveedor,
-        RepositorioTickets, Transaccion, UnidadDeTrabajo,
+        RepositorioPersonas, RepositorioSolicitudesProveedor, RepositorioTickets, Transaccion,
+        UnidadDeTrabajo,
+        cofre::Cofre,
         directorio::{
             Categoria, EnlaceDirectorio, FichaDirectorio, FiltroDirectorio, SolicitudProveedor,
         },
@@ -203,7 +204,7 @@ where
         .ok_or(AppError::NoEncontrado("persona"))?;
     let categorias = tx.categorias_directorio().await?;
     let codigo = resolver_categoria(&consulta, &buscables(&categorias));
-    let con_pauta = tx.modulo_habilitado(Modulo::Publicidad, ahora).await?;
+    let con_pauta = tx.publicidad_permitida(ahora).await?;
     let pagina = SolicitudPagina::new(Some(CANDIDATOS), None)?;
     let mut fichas = Vec::new();
     if let Some(c) = &codigo {
@@ -514,7 +515,7 @@ where
 // Enlace público del directorio (grupos de WhatsApp)
 // ---------------------------------------------------------------------------------------------
 
-/// Enlace recién generado. El token se entrega **una sola vez**.
+/// Enlace recién generado.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnlaceGenerado {
     pub token: String,
@@ -528,6 +529,9 @@ pub struct EnlaceGenerado {
 pub struct EstadoEnlace {
     /// Fecha del enlace vigente; `None` = no hay.
     pub creado_en: Option<DateTime<Utc>>,
+    /// Token del enlace vigente, el mismo mientras no se regenere ni se revoque (`None` si no
+    /// hay o es anterior al plan 20: genere otro).
+    pub token: Option<String>,
     pub whatsapp: Option<String>,
 }
 
@@ -538,27 +542,38 @@ async fn enlace_wa<T: RepositorioSolicitudesProveedor>(tx: &mut T) -> AppResult<
         .and_then(|n| enlace_whatsapp(&n, TEXTO_ENLACE_GRUPOS)))
 }
 
-/// Genera el enlace público del directorio (reemplaza el anterior, que deja de funcionar).
+fn contexto_enlace(ctx: &Contexto) -> String {
+    format!("enlace_directorio:{}", ctx.tenant_id)
+}
+
+/// Genera el enlace público del directorio (reemplaza el anterior, que deja de funcionar). Se
+/// guarda también cifrado: [`estado_enlace_directorio`] lo vuelve a entregar sin cambiarlo
+/// (el enlace se fija una vez en los grupos de WhatsApp).
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`] sin `directorio.compartir`.
-pub async fn generar_enlace_directorio<U>(
+/// [`AppError::SinPermiso`] sin `directorio.compartir`; [`AppError::Validacion`] si el servidor
+/// no tiene clave del Cofre.
+pub async fn generar_enlace_directorio<U, C>(
     unidad: &U,
+    cofre: &C,
     reloj: &impl Reloj,
     ctx: &Contexto,
 ) -> AppResult<EnlaceGenerado>
 where
     U: UnidadDeTrabajo,
     U::Transaccion: TxBusquedaProveedores,
+    C: Cofre,
 {
     ctx.exigir(Permiso::DirectorioCompartir)?;
     let token = token_aleatorio()?;
+    let cifrado = cofre.cifrar(&contexto_enlace(ctx), token.as_bytes())?;
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar(ctx).await?;
     let reemplaza = tx.enlace_directorio().await?.is_some();
     tx.guardar_enlace_directorio(&EnlaceDirectorio {
         token_hash: huella(&token)?,
+        token_cifrado: Some(cifrado),
         creado_por: ctx.actor_id,
         creado_en: ahora,
     })
@@ -582,21 +597,35 @@ where
     })
 }
 
-/// ¿Hay un enlace vigente? (El token no se puede volver a ver: se genera otro.)
+/// El enlace vigente con su token, sin cambiarlo.
 ///
 /// # Errors
 ///
-/// [`AppError::SinPermiso`] sin `directorio.compartir`.
-pub async fn estado_enlace_directorio<U>(unidad: &U, ctx: &Contexto) -> AppResult<EstadoEnlace>
+/// [`AppError::SinPermiso`] sin `directorio.compartir`; los del Cofre.
+pub async fn estado_enlace_directorio<U, C>(
+    unidad: &U,
+    cofre: &C,
+    ctx: &Contexto,
+) -> AppResult<EstadoEnlace>
 where
     U: UnidadDeTrabajo,
     U::Transaccion: TxBusquedaProveedores,
+    C: Cofre,
 {
     ctx.exigir(Permiso::DirectorioCompartir)?;
     let mut tx = unidad.iniciar(ctx).await?;
-    let creado_en = tx.enlace_directorio().await?.map(|e| e.creado_en);
+    let enlace = tx.enlace_directorio().await?;
+    let token = enlace
+        .as_ref()
+        .and_then(|e| e.token_cifrado.as_ref())
+        .map(|c| {
+            let claro = cofre.descifrar(&contexto_enlace(ctx), c)?;
+            String::from_utf8(claro).map_err(AppError::infra)
+        })
+        .transpose()?;
     Ok(EstadoEnlace {
-        creado_en,
+        creado_en: enlace.map(|e| e.creado_en),
+        token,
         whatsapp: enlace_wa(&mut tx).await?,
     })
 }
@@ -676,7 +705,7 @@ where
         solo_destacadas: false,
         ..filtro
     };
-    let con_pauta = tx.modulo_habilitado(Modulo::Publicidad, ahora).await?;
+    let con_pauta = tx.publicidad_permitida(ahora).await?;
     let fichas = tx
         .fichas_directorio(&filtro, ahora, pagina)
         .await?

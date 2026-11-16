@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE recursos SET destino_cobro = $2, item_facturacion_id = $3,\n                                 actualizado_en = now()\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a3e6b17f8210d4112fa2ab5ad22d1231d4e5c4c7bc4d819052e8289ca46aab25"
+}

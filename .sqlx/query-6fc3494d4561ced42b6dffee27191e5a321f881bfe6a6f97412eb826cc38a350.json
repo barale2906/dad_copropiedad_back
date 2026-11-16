@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,\n                    condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                    plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en\n             FROM creativos WHERE campana_id = $1 ORDER BY id",
+  "query": "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,\n                    condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,\n                    actualizado_en\n             FROM creativos\n             WHERE estado = 'pendiente' AND ($1::uuid IS NULL OR id > $1)\n             ORDER BY id LIMIT $2",
   "describe": {
     "columns": [
       {
@@ -181,6 +181,28 @@
       },
       {
         "ordinal": 16,
+        "name": "cargado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "cargado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "revisado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "revisado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -191,7 +213,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 19,
         "name": "actualizado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -204,7 +226,8 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Int8"
       ]
     },
     "nullable": [
@@ -224,9 +247,11 @@
       true,
       false,
       true,
+      true,
+      true,
       false,
       false
     ]
   },
-  "hash": "a5263712bc02a3de3481d1c10bc3ac069765959ce0ca7130f662163567bb5f3b"
+  "hash": "6fc3494d4561ced42b6dffee27191e5a321f881bfe6a6f97412eb826cc38a350"
 }

@@ -57,15 +57,18 @@ contrato cambia y el compilador del frontend lo señala.
 
 ## 3. Rutas
 
-- `/api/v1/auth/…`: registro, sesión, recuperación de contraseña (sin sesión).
+- `/api/v1/auth/…`: sesión, recuperación y definición de la contraseña (sin sesión). El registro
+  abierto (`POST /auth/registro`) solo existe en desarrollo (`REGISTRO_ABIERTO`); en producción
+  responde 404 (ver «Usuarios» en el §7).
 - `/api/v1/yo/…`: la cuenta autenticada (sus entidades, perfil y permisos de plataforma, sesiones,
   dispositivos push).
 - `/api/v1/entidades/{entidad_id}/…`: lo común de cualquier entidad (capacidades, roles,
   archivos, auditoría, terceros, tributario, contabilidad y facturación). Mismo 404 sin roles.
 - `/api/v1/copropiedades/{copropiedad_id}/…`: lo propio de una copropiedad. Responde **404** si la
   cuenta no tiene roles en ella (no se revela si existe).
-- `/api/v1/organizaciones/{organizacion_id}/…`, `/api/v1/anunciantes/…`: portales de empresas y
-  anunciantes.
+- `/api/v1/organizaciones/{organizacion_id}/…`: portal de las organizaciones. No hay portal del
+  anunciante: la publicidad la opera la plataforma (ADR 0023); el comercio solo redime cupones
+  con su enlace (`POST /api/v1/publicidad/cupones/redimir` con `X-Comercio`).
 - `/api/v1/plataforma/…`: operación de la plataforma; exige **segundo factor** activo.
 
 ### Al entrar: elegir la entidad
@@ -122,7 +125,9 @@ cuenta con su tipo.
   `POST …/anulacion` y un motivo (se revierte su comprobante). Un egreso pasa por
   `…/autorizacion` (otra cuenta: si es la misma responde 409 `conflicto`) y `…/pago`. El extracto
   bancario viaja en Base64 dentro del JSON (`archivo_base64`) con el mapeo de columnas del banco;
-  primero `…/extractos/vista-previa` y luego `…/extractos`. El certificado de retenciones en PDF
+  primero `…/extractos/vista-previa` y luego `…/extractos`. El último mapeo de la cuenta se
+  guarda al importar: prellene el formulario con `GET …/cuentas/{id}/mapeo-extracto` (`PUT` lo
+  cambia). El certificado de retenciones en PDF
   es `GET …/certificados/{persona_id}/pdf`.
 - **Cartera de la PH** (ADR 0019, etiqueta `cartera`, módulo `contabilidad_ph`):
   `/copropiedades/{id}/cartera/…`. Orden de configuración: conceptos de cobro → política →
@@ -265,7 +270,6 @@ los dos). El backend vuelve a exigir todo: si una acción visible responde 403
 | `contabilidad_ph` | Cartera de la PH: liquidación de expensas, recaudos, mora, paz y salvos, presupuesto | PH | Exige además `contabilidad`. |
 | `contabilidad` | Contabilidad, tesorería, declaraciones y exógena; además terceros, perfil tributario y facturas de venta | PH y empresa | |
 | `facturacion_electronica` | Documentos electrónicos ante la DIAN, recibidas y RADIAN, habilitación; además terceros, perfil tributario y facturas de venta | PH y empresa | Se vende solo (ADR 0022). |
-| `publicidad` | Fichas **destacadas** del directorio y piezas publicitarias para residentes | PH | El directorio funciona sin él. |
 
 ### Catálogo de la PH (plantilla `conjunto`)
 
@@ -280,7 +284,7 @@ los dos). El backend vuelve a exigir todo: si una acción visible responde 403
 | Salón social, piscina, cancha, gimnasio | Zonas comunes | `bienes_comunes` | Reservar (`reservas.crear`) · Disponibilidad (`bienes_comunes.ver`) · Aprobar reservas (`reservas.aprobar`) · Entregas y recibos (`reservas.entregas.registrar`) · Recursos y reglas (`bienes_comunes.ver`; editar con `bienes_comunes.editar`) · Restricciones (`reservas.restringir`) | `…/{recursos,reservas,restricciones-reserva}` |
 | Parqueaderos | Zonas comunes | `bienes_comunes` | Parqueaderos (`parqueaderos.ver`; asignar con `parqueaderos.asignar`) · Sorteos (`sorteos.gestionar`; ver con `bienes_comunes.ver`) | `…/{parqueaderos,sorteos}` |
 | Portería | Portería | `control_acceso` | Visitas (`acceso.registrar`, `acceso.visitantes.autorizar`) · Correspondencia (`acceso.correspondencia.entregar`, `acceso.registrar`) · Bitácora (`acceso.bitacora.ver`) · Minuta (`acceso.minuta.ver`, `acceso.minuta.registrar`) · Credenciales y autorizaciones (`acceso.credenciales.gestionar`) · Biometría (`acceso.biometria.enrolar`) · Puntos, puentes y configuración (`acceso.configurar`) | `…/{visitas,correspondencia,eventos-acceso,minuta,credenciales,autorizaciones-acceso,puntos-acceso,puentes,acceso}` |
-| Pantalla del lobby | Directorio | ninguno (destacados con `publicidad`) | Directorio (`directorio.ver`) · Reseñar (`directorio.resenar`) · Enlace para los grupos de WhatsApp (`directorio.compartir`) | `…/directorio/…`, `…/publicidad/{piezas,autorizacion}` |
+| Pantalla del lobby | Directorio | ninguno (la publicidad no es un módulo) | Directorio (`directorio.ver`) · Reseñar (`directorio.resenar`) · Enlace para los grupos de WhatsApp (`directorio.compartir`) | `/entidades/{id}/directorio/…`, `/entidades/{id}/publicidad/{piezas,autorizacion}`, reseñas y enlace en `/copropiedades/{id}/directorio/…` |
 
 **Zonas comunes concretas.** La maqueta trae salón, piscina, cancha y gimnasio genéricos; cada
 PH crea sus recursos con el nombre que quiere, pero al crearlos elige su **categoría**
@@ -375,8 +379,8 @@ del frontend (los permisos que usa existen todos en el catálogo):
    activa: emitir ante la DIAN, recibidas y habilitación (`facturacion_electronica`), y
    declaraciones y exógena (`contabilidad`). Conviene un campo `modulos` en la sección (alguno
    de) y uno opcional en la acción.
-2. **Publicidad y directorio**: el directorio no exige el módulo `publicidad` (la sección
-   quedaría apagada en casi todas las PH). La acción «Pantallas» con `copropiedad.datos.ver` no
+2. **Publicidad y directorio**: la publicidad ya no es un módulo (ADR 0023): el directorio y las
+   piezas salen en toda PH y empresa que la plataforma no haya excluido. La acción «Pantallas» con `copropiedad.datos.ver` no
    tiene ruta en la PH: las pantallas las gestiona la plataforma. Cambie la acción por «Enlace
    para los grupos» (`directorio.compartir`).
 3. **Ficha y protección de datos**: la ficha sirve a toda entidad con `GET/PATCH /entidades/{id}`
@@ -411,7 +415,7 @@ distintas):
 | Mesa de la asamblea | `asambleas.registrar` | Búsqueda en el padrón (`…/mesa`), registro de asistentes, rótulos. |
 | Propietario o residente | Rutas `mis-…` y permisos de autoservicio | «Mis bienes», mi cartera, mis paquetes y visitas, reservas, mis tickets, comunicados, papeleta. Diseño móvil primero. |
 | Operador de la plataforma | `permisos_plataforma` de `GET /yo` (exige segundo factor) | Consola: entidades y módulos, moderación, catálogos normativos, líneas de WhatsApp, consumo. |
-| Anunciante | `GET /anunciantes` con resultados | Portal: ficha, campañas, métricas, leads, redimir cupones. |
+| Soporte de la plataforma | `capacidades.modo_soporte = true` | La entidad en solo lectura con un aviso fijo; oculte toda acción que escriba (responde 403). |
 
 **Rutas del propio usuario** (no exigen permisos de administración, solo el vínculo):
 `/yo/…` (perfil, correo, contraseña, segundo factor, sesiones, dispositivos, `GET /yo/tickets`
@@ -434,9 +438,10 @@ correspondencia (un residente solo ve las de su bien).
    la diferencia en el mensaje; muéstrela junto al total. No se activa con una asamblea instalada.
 4. Titulares de cada bien (suman 100 % por clase de derecho y uno es el representante); cambiar de
    dueño es `…/transferencias`, no editar. El rol `propietario` se deriva solo.
-5. Roles y asignaciones (`/entidades/{id}/roles`, `…/asignaciones`; buscar la cuenta con
-   `…/cuentas?identificador=` con el usuario o el correo exactos; no hay listados de cuentas). Nadie otorga lo que no tiene: un 403 al asignar
-   significa eso.
+5. Usuarios y roles: crear cada usuario con su rol (`POST /entidades/{id}/usuarios`) o en lote
+   (`…/usuarios/importaciones`, ver §7 «Usuarios»); ver el equipo en `GET …/usuarios` y los roles
+   en `/entidades/{id}/roles`. A una cuenta ya existente se le asigna otro rol con
+   `…/asignaciones`. Nadie otorga lo que no tiene: un 403 al asignar significa eso.
 6. Censo (residencias, vehículos, mascotas) y política de protección de datos.
 7. Módulos contratados según `capacidades.modulos`.
 
@@ -456,13 +461,18 @@ franjas libres (horario − excepciones − reservas − alistamiento), en hora 
 `POST …/reservas` responde `aprobada` (confirmación inmediata) o `solicitada`. Ciclo:
 solicitada → aprobada → en_curso (`…/entrega`) → finalizada o con_novedad (`…/recibo`), o
 cancelada, rechazada, no_asistio. Cancelar tarde puede generar penalidad. Un bien en mora o
-sancionado no reserva (`…/restricciones-reserva`). Parqueaderos y sorteos con semilla publicada
+sancionado no reserva (`…/restricciones-reserva`). **Cobro**: el contador elige por recurso
+(`PUT …/recursos/{id}/cobro`) `manual` (se registra en `…/pago`), `cartera` (al aprobarse queda
+como cargo y sale en la cuenta de cobro) o `factura` (con un ítem; `POST …/reservas/{id}/factura`
+crea la factura en borrador, una por reserva). Con `cartera` o `factura`, `…/pago` responde 422. Parqueaderos y sorteos con semilla publicada
 (muestre el compromiso al crear y la semilla al ejecutar: es la prueba de transparencia).
 
 ### Tickets y chat (`tickets`, `conversaciones`, módulo `gestion_administrativa`)
 Número `PQR-AAAA-NNNNN`, vencimiento calculado en días u horas hábiles (muestre el semáforo con
 `vence_en` y `vencido`). Estados en `EstadoTicket`; las transiciones permitidas dependen del papel de la cuenta
-(gestiona, atiende o es el solicitante): si una transición no aplica, 409 `conflicto_estado`.
+(gestiona, atiende o es el solicitante): el detalle (`GET …/tickets/{id}`) trae
+`transiciones_permitidas` calculadas para quien consulta; muestre solo esos botones (cada uno se
+acepta en `POST …/transiciones`).
 Mensajes públicos y **notas internas** (el solicitante nunca las ve; márquelas distinto). Los
 reportes de convivencia ocultan la identidad sin `tickets.convivencia.ver`. Encuesta de
 satisfacción una vez resuelto. La bandeja de **conversaciones** son los chats de WhatsApp que el
@@ -529,18 +539,21 @@ confirmación clara del voto registrado.
 ### Protección de datos (`proteccion_datos`)
 Política versionada; la persona autoriza por **finalidad** bajo la política vigente y puede
 revocar. Muestre la política antes de pedir la autorización. Solicitudes del titular (consulta,
-reclamo…) con vencimiento en días hábiles y una prórroga única: muestre el plazo restante.
+reclamo…) con vencimiento en días hábiles y una prórroga única: muestre «quedan N días hábiles»
+con `dias_habiles_restantes` (0 = vence hoy o venció; `null` si ya se respondió).
 «Mis datos» (`…/proteccion-datos/mis-datos`) para el titular.
 
 ### Directorio y publicidad (`directorio`, `publicidad`)
-El directorio funciona en toda PH; las fichas destacadas solo con el módulo `publicidad`.
-Reseñas anónimas (una por cuenta, solo propietarios y residentes vigentes) y reporte para
-moderación. «Busco …»: `POST …/directorio/busquedas` y **solo** con el «Sí» explícito
+El directorio y las piezas funcionan en toda **PH y empresa** (`/entidades/{id}/directorio/…`,
+`/entidades/{id}/publicidad/…`); las destacadas y las piezas salen salvo que la plataforma haya
+excluido la entidad (ADR 0023). Solo en la PH: reseñas anónimas (una por cuenta, solo
+propietarios y residentes vigentes) y su reporte, «busco …» por WhatsApp, el enlace público, la
+pantalla del lobby y los masivos. «Busco …»: `POST …/directorio/busquedas` y **solo** con el «Sí» explícito
 (`…/contacto`) se comparte el contacto con esos proveedores: haga ese consentimiento visible y
 específico. Piezas publicitarias solo para quien autorizó la publicidad de la plataforma
-(`…/publicidad/autorizacion`; la PH no puede autorizar por el titular). Pantalla del lobby con
-`X-Pantalla`. Portal del anunciante en `/anunciantes/…` (campañas y creativos siempre pasan por
-moderación).
+(`…/publicidad/autorizacion`; la entidad no puede autorizar por el titular). Pantalla del lobby
+con `X-Pantalla`. El enlace del directorio para los grupos es **estable**: `GET
+…/directorio/enlace-publico` devuelve el mismo `token` mientras no se regenere ni se revoque.
 
 ### Organizaciones y contratos (`organizaciones`)
 Administradoras, contables, vigilancia… son organizaciones globales que se buscan por **NIT
@@ -549,10 +562,27 @@ con la PH y su personal recibe roles **derivados** que vencen con el contrato.
 
 ### Consola de la plataforma (`plataforma`)
 Exige segundo factor (si falta: 403 `segundo_factor_requerido`, lleve a `/yo/segundo-factor`).
-Alta de copropiedades y entidades, estado y **módulos** de cada una, roles de plataforma, bloqueo
-de cuentas, reclamaciones de organizaciones, líneas y tarifas de WhatsApp, catálogos normativos
+Alta de copropiedades y entidades (con su administrador, nuevo o existente), estado y **módulos**
+de cada una, usuarios y roles de plataforma (`POST /plataforma/cuentas`), consulta, bloqueo y
+desbloqueo de cuentas (`GET /plataforma/cuentas?identificador=`, `…/bloquear`, `…/desbloquear`),
+reclamaciones de organizaciones, líneas y tarifas de WhatsApp, catálogos normativos
 (PUC, retenciones y UVT, IVA, ICA, exógena, tasas de referencia), plantillas contables, consumo de
 facturación electrónica, moderación del directorio y la publicidad.
+
+- **Entidades** (`/plataforma/entidades`): PH, empresas y la plataforma en una tabla (tipo, estado,
+  módulos, búsqueda `q` por nombre o NIT); `POST …/{id}/estado` para empresas y PH (la ruta de
+  copropiedades queda como alias).
+- **Usuarios de cualquier entidad** (`plataforma.entidades.usuarios`): `/plataforma/entidades/{id}/
+  {roles,asignaciones,usuarios}` con los mismos esquemas que `/entidades/{id}/…`.
+- **Soporte** (`plataforma.soporte.ver`): `POST /plataforma/entidades/{id}/soporte` con `motivo`
+  abre 2 h de solo lectura; luego se navega la entidad con las rutas normales
+  (`capacidades.modo_soporte`). Nunca muestra datos sensibles, votos reservados ni convivencia.
+- **Publicidad** (`plataforma.publicidad.gestionar`, ADR 0023): alta del comercio y su ficha,
+  campañas y piezas en `/plataforma/publicidad/anunciantes/{id}/campanas/…`, métricas, leads, el
+  enlace de cupones del comercio (`…/enlace-cupones`: `GET` lo vuelve a entregar, `POST` lo
+  reemplaza, `DELETE` lo revoca) y exclusiones de entidades (`/plataforma/publicidad/exclusiones`).
+  **Otra cuenta** modera (quien cargó o editó recibe 409 `conflicto`). El token de la pantalla del
+  lobby también se vuelve a consultar con `GET /plataforma/publicidad/pantallas/{id}`.
 
 ## 6. Estados de los recursos
 
@@ -611,6 +641,31 @@ si aun así llega el 409, recargue el recurso. Los principales:
 
 Los tokens se muestran una sola vez (el servidor guarda solo su hash). En la web, guárdelos en
 memoria y el de renovación en almacenamiento seguro; en Flutter, en el almacén seguro del sistema.
+
+### Usuarios (sin registro abierto, plan 20)
+
+- **Quién crea a quién.** El superusuario y quien tenga `plataforma.cuentas.crear` crean usuarios
+  de la plataforma (`POST /plataforma/cuentas`, con `rol_plataforma_id` opcional). Al dar de alta
+  una PH o empresa (`POST /plataforma/copropiedades` o `/plataforma/entidades`) se envía
+  `administrador: { nombre, correo, usuario? }` (o `administrador_cuenta_id`, uno de los dos). El
+  administrador de cada entidad crea su equipo con `POST /entidades/{id}/usuarios`
+  (`nombre`, `correo`, `rol_id`, opcionales `usuario`, `telefono`, `documento`; exige
+  `roles.asignar` y nunca un rol con permisos que él no tiene).
+- **Una persona, una cuenta.** Si el correo ya tiene cuenta (trabaja en otra PH o empresa), no se
+  crea otra: se le asigna el rol y le llega un aviso; la respuesta trae `cuenta_nueva: false`.
+  Solo es 409 si el `usuario` pedido es de otra cuenta o la cuenta de ese correo está bloqueada.
+  Se crea o vincula también su persona en la entidad (`persona_id`).
+- **Definir la contraseña.** Le llega por correo un código de 6 dígitos (vence en 72 h). La
+  pantalla «Definir contraseña» envía `correo`, `codigo` y `contrasena_nueva` a
+  `POST /auth/contrasena/restablecer` (la misma de «olvidé mi contraseña»). Mientras tanto no
+  puede iniciar sesión. Reenviar: `POST /entidades/{id}/usuarios/{cuenta_id}/codigo-contrasena`;
+  `GET /entidades/{id}/usuarios` muestra `contrasena_pendiente` y sus roles.
+- **Carga masiva** por entidad: `GET …/usuarios/importaciones/plantilla` (CSV con `nombre`,
+  `correo`, `rol` (código) y opcionales `usuario`, `telefono`, `documento`) →
+  `POST …/usuarios/importaciones?nombre=archivo.csv` (cuerpo crudo; vista previa con errores por
+  fila) → `POST …/usuarios/importaciones/{id}/confirmar` (todo o nada; un choque dice la fila).
+- **Inactivar.** En una entidad: terminar sus asignaciones (`DELETE …/asignaciones/{id}`). En
+  toda la plataforma: bloquear la cuenta (cierra sus sesiones) y desbloquearla con un motivo.
 
 ## 8. Errores
 
@@ -691,9 +746,23 @@ antes de reintentar y muestre un aviso; no reintente en bucle.
 | `X-Papeleta` | Papeleta virtual de una asamblea (el token del enlace personal del asistente). |
 | `X-Enlace-Directorio` | Directorio público de la copropiedad (enlace que se comparte en grupos). |
 | `X-Pantalla` | Pantalla de publicidad del lobby. |
+| `X-Comercio` | El comercio redime cupones (`POST /publicidad/cupones/redimir`); enlace sugerido `https://<web>/comercio#t=<token>`. |
 
 El token llega en el enlace que se le entrega a la persona; el frontend lo lee de la URL y lo
 envía en la cabecera, nunca en la ruta de la API.
+
+**Formato acordado de los enlaces** (el backend no arma URLs de la web ni las envía hoy: entrega
+los tokens y el frontend construye el enlace). El token va en el fragmento (`#t=…`), que no llega
+al servidor ni queda en los registros de Nginx ni en `Referer`:
+
+| Credencial | Enlace de la web | Cabecera hacia la API |
+|---|---|---|
+| Papeleta | `https://<web>/papeleta/<copropiedad_id>#t=<token>` | `X-Papeleta` |
+| Directorio público | `https://<web>/directorio/<copropiedad_id>#t=<token>` | `X-Enlace-Directorio` |
+| Pantalla del lobby | `https://<web>/pantalla/<copropiedad_id>#t=<token>` | `X-Pantalla` |
+
+Si algún día el backend envía estos enlaces (p. ej. la papeleta por WhatsApp), usará este mismo
+formato con la URL pública de la web en su configuración.
 
 ## 14. Tablero en vivo de las asambleas (WebSocket)
 

@@ -58,6 +58,7 @@ mod tickets;
 mod titulares;
 mod tributario;
 mod unidad_trabajo;
+mod usuarios;
 
 pub use acceso::DirectorioAccesoPg;
 pub use asambleas::{CANAL_EN_VIVO, DirectorioAsambleasPg, OyenteEnVivo};

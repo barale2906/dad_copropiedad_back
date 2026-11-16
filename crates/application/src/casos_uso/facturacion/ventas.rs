@@ -576,3 +576,82 @@ where
     let mut tx = abrir_ventas(unidad, reloj, ctx, Permiso::FacturacionVer).await?;
     tx.facturas_venta(&filtro, LIMITE_LISTADO).await
 }
+
+/// Tipo de origen de la factura de una reserva (plan 20).
+pub const ORIGEN_RESERVA: &str = "reservas.reserva";
+
+/// Factura en borrador por el valor de una reserva de un recurso que se cobra con factura (lo
+/// decidió el contador en la configuración de cobro del recurso): una línea con el ítem del
+/// recurso por el valor liquidado de la reserva, a nombre de quien la solicitó. Una reserva se
+/// factura una sola vez.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `facturacion.facturas.gestionar`;
+/// [`AppError::ModuloNoHabilitado`] sin facturación ni contabilidad; [`AppError::NoEncontrado`]
+/// si la reserva no existe; [`AppError::Validacion`] si el recurso no se cobra con factura, la
+/// reserva no tiene valor, no está aprobada o no tiene solicitante; [`AppError::Conflicto`] si
+/// ya tiene factura.
+pub async fn facturar_reserva<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    reserva: domain::ReservaId,
+) -> AppResult<FacturaVenta>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxVentas + crate::puertos::RepositorioReservas,
+{
+    use crate::puertos::RepositorioReservas as _;
+    use domain::{DestinoCobro, EstadoReserva};
+    let mut tx = abrir_ventas(unidad, reloj, ctx, Permiso::FacturacionFacturasGestionar).await?;
+    let r = tx
+        .reserva(reserva)
+        .await?
+        .ok_or(AppError::NoEncontrado("reserva"))?;
+    let cobro = tx.cobro_recurso(r.recurso_id).await?;
+    let item = match (cobro.destino(), cobro.item()) {
+        (DestinoCobro::Factura, Some(item)) => item,
+        _ => {
+            return Err(validacion(
+                "el recurso de la reserva no se cobra con factura",
+            ));
+        }
+    };
+    if r.valor.is_zero() {
+        return Err(validacion("la reserva no tiene valor que facturar"));
+    }
+    if matches!(
+        r.estado,
+        EstadoReserva::Solicitada | EstadoReserva::Rechazada | EstadoReserva::Cancelada
+    ) {
+        return Err(validacion("solo se factura una reserva aprobada"));
+    }
+    let persona = r
+        .solicitante_persona_id
+        .ok_or_else(|| validacion("la reserva no tiene a quién facturar"))?;
+    let fecha = domain::proteccion_datos::fecha_en_colombia(reloj.ahora());
+    let nueva = NuevaFacturaVenta {
+        persona,
+        fecha,
+        vencimiento: fecha.max(r.franja.inicio().date_naive()),
+        descripcion: "Reserva de un bien común".into(),
+        origen: Some(Origen {
+            tipo: ORIGEN_RESERVA.into(),
+            id: reserva.as_uuid(),
+        }),
+        lineas: vec![NuevaLineaVenta {
+            item: Some(item),
+            descripcion: None,
+            cuenta: None,
+            centro_costo: None,
+            cantidad: Decimal::ONE,
+            valor_unitario: Some(Monto::new(r.valor)?),
+            tarifa_iva: None,
+            clasificacion: None,
+        }],
+    };
+    let factura = crear_factura_en(&mut tx, reloj, ctx, nueva, None).await?;
+    tx.confirmar().await?;
+    Ok(factura)
+}

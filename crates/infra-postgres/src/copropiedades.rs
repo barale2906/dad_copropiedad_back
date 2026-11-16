@@ -228,6 +228,18 @@ impl RepositorioEntidad for TransaccionPg {
         .map_err(|e| error_escritura(e, "otra entidad ya tiene ese NIT", "archivo"))?;
         Ok(())
     }
+
+    async fn guardar_estado_entidad(&mut self, estado: EstadoCopropiedad) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE entidades SET estado = $2, actualizado_en = now() WHERE id = $1",
+            self.ctx.tenant_id.as_uuid(),
+            estado.as_str(),
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
 }
 
 impl RepositorioCopropiedad for TransaccionPg {

@@ -555,7 +555,7 @@ pub trait RepositorioTitulares: Send {
 // Importaciones
 // ---------------------------------------------------------------------------------------------
 
-/// Resumen de lo que hace (o hizo) una importación de bienes privados.
+/// Resumen de lo que hace (o hizo) una importación (bienes privados o usuarios).
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ResumenImportacion {
     pub bienes_privados: u32,
@@ -565,6 +565,12 @@ pub struct ResumenImportacion {
     pub coeficientes: u32,
     /// Borrador creado con los coeficientes del archivo.
     pub cuadro_borrador_id: Option<CuadroCoeficientesId>,
+    /// Importación de usuarios (plan 20): usuarios de la planilla.
+    #[serde(default)]
+    pub usuarios: u32,
+    /// Importación de usuarios: cuántos no tenían cuenta y se les creó una.
+    #[serde(default)]
+    pub cuentas_nuevas: u32,
 }
 
 /// Importación registrada.

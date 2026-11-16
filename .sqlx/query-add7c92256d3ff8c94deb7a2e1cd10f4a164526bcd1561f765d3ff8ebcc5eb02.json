@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO creativos (id, campana_id, anunciante_id, formato, titulo, texto, boton,\n                 enlace, condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                 plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en,\n                 cargado_por, revisado_por)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,\n                     $17, $18, $19, $20)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Text",
+        "Int4",
+        "Int4",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "add7c92256d3ff8c94deb7a2e1cd10f4a164526bcd1561f765d3ff8ebcc5eb02"
+}

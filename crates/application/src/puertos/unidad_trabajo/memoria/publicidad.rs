@@ -5,7 +5,7 @@
 use chrono::{DateTime, Utc};
 use domain::{
     AutorizacionId, CampanaId, CanalPublicidad, CreativoId, FinalidadTratamiento, FormatoCreativo,
-    MedioAutorizacion, Modulo, PersonaId, PoliticaPublicidadId,
+    MedioAutorizacion, PersonaId, PoliticaPublicidadId,
     publicidad::{Conteo, PiezaCandidata, puede_recibir_masivo},
 };
 use rust_decimal::Decimal;
@@ -61,14 +61,9 @@ impl RepositorioPublicidad for TransaccionEnMemoria {
     async fn piezas(
         &mut self,
         formatos: &[FormatoCreativo],
-        ahora: DateTime<Utc>,
+        _ahora: DateTime<Utc>,
     ) -> AppResult<Vec<PiezaPublicidad>> {
-        let con_modulo = self
-            .datos
-            .modulos
-            .iter()
-            .any(|p| p.modulo == Modulo::Publicidad && p.cubre(ahora));
-        if !con_modulo {
+        if self.datos.directorio.excluida {
             return Ok(Vec::new());
         }
         Ok(self

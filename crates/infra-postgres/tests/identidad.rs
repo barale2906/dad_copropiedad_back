@@ -14,8 +14,9 @@ use application::{
             NuevoContrato, asignar_rol_por_contrato, crear_organizacion, terminar_contrato,
             vincular_organizacion,
         },
-        plataforma::{asignar_rol_plataforma, crear_copropiedad},
+        plataforma::{AdministradorAlta, asignar_rol_plataforma, crear_copropiedad},
         roles::{NuevoRol, SolicitudAsignacion, asignar_rol, crear_rol, permisos_en_copropiedad},
+        usuarios::{NuevoUsuario, crear_usuario, listar_usuarios},
     },
     puertos::{
         HashContrasenas, RelojSistema, RepositorioPlataforma, RepositorioRoles, UnidadDeTrabajo,
@@ -261,7 +262,7 @@ async fn alta_de_copropiedad_deja_administrador_y_membresia(pool: PgPool) {
         &RelojSistema,
         &ContextoPlataforma::sistema(),
         AltaCopropiedad::con_nombre("Conjunto Alameda"),
-        admin,
+        AdministradorAlta::Existente(admin),
     )
     .await
     .expect("crea");
@@ -540,4 +541,165 @@ async fn el_rol_de_otra_copropiedad_se_rechaza_tambien_en_la_bd(pool: PgPool) {
         err.to_string().contains("no pertenece a la copropiedad"),
         "{err}"
     );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Usuarios creados por la plataforma o la entidad (plan 20)
+// ---------------------------------------------------------------------------------------------
+
+/// Alta de una PH con un administrador que aún no tenía cuenta.
+async fn ph_con_administrador_nuevo(e: &Entorno, correo: &str) -> TenantId {
+    crear_copropiedad(
+        &e.plataforma,
+        &e.unidad,
+        &RelojSistema,
+        &ContextoPlataforma::sistema(),
+        AltaCopropiedad::con_nombre("Conjunto Alameda"),
+        AdministradorAlta::Nuevo {
+            nombre: "Ana Administradora".into(),
+            correo: DireccionCorreo::new(correo).expect("válido"),
+            usuario: None,
+        },
+    )
+    .await
+    .expect("crea")
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn alta_con_administrador_nuevo_deja_cuenta_pendiente_codigo_y_persona(pool: PgPool) {
+    let e = entorno(pool).await;
+
+    let tenant = ph_con_administrador_nuevo(&e, "ana@correo.co").await;
+
+    let (pendiente, codigos, personas, correos): (bool, i64, i64, i64) = sqlx::query_as(
+        "SELECT c.hash_contrasena IS NULL,
+                (SELECT count(*) FROM codigos_verificacion v
+                 WHERE v.cuenta_id = c.id AND v.proposito = 'definir_contrasena'
+                   AND v.expira_en > now() + interval '71 hours'),
+                (SELECT count(*) FROM personas p WHERE p.cuenta_id = c.id AND p.tenant_id = $1),
+                (SELECT count(*) FROM outbox o WHERE o.tenant_id = $1 AND o.canal = 'correo')
+         FROM cuentas c WHERE c.correo = 'ana@correo.co'",
+    )
+    .bind(tenant.as_uuid())
+    .fetch_one(&e.pool)
+    .await
+    .expect("consulta");
+    assert_eq!((pendiente, codigos, personas, correos), (true, 1, 1, 1));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn cuenta_pendiente_no_inicia_sesion(pool: PgPool) {
+    let e = entorno(pool).await;
+    ph_con_administrador_nuevo(&e, "ana@correo.co").await;
+
+    let r = iniciar_sesion(
+        &e.plataforma,
+        &HashPrueba,
+        &RelojSistema,
+        &ContextoPlataforma::anonimo(None),
+        SolicitudInicio {
+            identificador: Identificador::parse("ana@correo.co").expect("válido"),
+            contrasena: CONTRASENA.into(),
+            equipo_compartido: false,
+            agente: None,
+        },
+    )
+    .await;
+
+    assert!(matches!(r, Err(AppError::CredencialesInvalidas)));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_misma_persona_trabaja_en_dos_entidades_con_una_cuenta(pool: PgPool) {
+    let e = entorno(pool).await;
+    let primera = ph_con_administrador_nuevo(&e, "ana@correo.co").await;
+    let segunda = crear_ph(&e.pool).await;
+    let ctx = Contexto::new(segunda);
+    let contador = e
+        .unidad
+        .iniciar(&ctx)
+        .await
+        .expect("inicia")
+        .rol_por_codigo("contador")
+        .await
+        .expect("consulta")
+        .expect("plantilla")
+        .id;
+
+    let creado = crear_usuario(
+        &e.unidad,
+        &RelojSistema,
+        &ctx,
+        NuevoUsuario {
+            nombre: "Ana".into(),
+            correo: DireccionCorreo::new("ANA@correo.co").expect("válido"),
+            usuario: None,
+            telefono: None,
+            documento: None,
+            rol_id: contador,
+        },
+    )
+    .await
+    .expect("asigna");
+
+    let cuentas: i64 = sqlx::query_scalar("SELECT count(*) FROM cuentas")
+        .fetch_one(&e.pool)
+        .await
+        .expect("conteo");
+    assert_eq!(cuentas, 1);
+    assert!(!creado.cuenta_nueva);
+    let pagina = listar_usuarios(
+        &e.unidad,
+        &RelojSistema,
+        &ctx,
+        &Default::default(),
+        application::SolicitudPagina::new(None, None).expect("página"),
+    )
+    .await
+    .expect("lista");
+    assert_eq!(pagina.datos.len(), 1);
+    assert_eq!(pagina.datos[0].roles, vec!["contador".to_owned()]);
+    assert!(pagina.datos[0].contrasena_pendiente);
+    // La primera entidad sigue viendo solo a su administradora.
+    let en_primera = listar_usuarios(
+        &e.unidad,
+        &RelojSistema,
+        &Contexto::new(primera),
+        &Default::default(),
+        application::SolicitudPagina::new(None, None).expect("página"),
+    )
+    .await
+    .expect("lista");
+    assert_eq!(en_primera.datos[0].roles, vec!["administrador".to_owned()]);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_entidad_no_emite_codigos_para_cuentas_ajenas(pool: PgPool) {
+    let e = entorno(pool).await;
+    let ajena = registrar(&e, "luis").await;
+    sqlx::query(
+        "UPDATE cuentas SET hash_contrasena = NULL, contrasena_actualizada_en = NULL WHERE id = $1",
+    )
+    .bind(ajena.as_uuid())
+    .execute(&e.pool)
+    .await
+    .expect("pendiente");
+    let tenant = crear_ph(&e.pool).await;
+    let mut tx = e
+        .unidad
+        .iniciar(&Contexto::new(tenant))
+        .await
+        .expect("inicia");
+
+    let emitido = application::puertos::RepositorioUsuarios::emitir_codigo_definir(
+        &mut tx,
+        ajena,
+        &"0".repeat(64),
+        chrono::Utc::now() + chrono::Duration::hours(1),
+        chrono::Utc::now(),
+    )
+    .await
+    .expect("consulta");
+
+    assert!(!emitido);
 }

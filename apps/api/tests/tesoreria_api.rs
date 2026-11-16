@@ -459,6 +459,9 @@ async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
         "saldo_final": "250000",
     });
     let ruta = format!("/contabilidad/tesoreria/cuentas/{}/extractos", e.banco);
+    let mapeo = format!("/contabilidad/tesoreria/cuentas/{}/mapeo-extracto", e.banco);
+    let (s, v) = e.pedir(Method::GET, &mapeo, None).await;
+    assert_eq!((s, &v["mapeo"]), (StatusCode::OK, &Value::Null), "{v}");
 
     let (s, previa) = e
         .pedir(
@@ -471,6 +474,12 @@ async fn importa_el_extracto_concilia_y_el_informe_cuadra(pool: PgPool) {
     assert_eq!(previa["movimientos"].as_array().map(Vec::len), Some(2));
     let extracto = e.crear(&ruta, peticion.clone()).await;
     assert_eq!(extracto["movimientos"], json!(2));
+    let (_, v) = e.pedir(Method::GET, &mapeo, None).await;
+    assert_eq!(
+        v["mapeo"]["descripcion"], "Detalle",
+        "la importación guarda el mapeo"
+    );
+    assert_eq!(v["mapeo"]["separador_decimal"], "coma");
     let (s, v) = e.pedir(Method::POST, &ruta, Some(peticion)).await;
     assert_eq!(
         (s, &v["error"]["codigo"]),

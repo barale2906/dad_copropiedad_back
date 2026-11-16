@@ -47,7 +47,9 @@ pub struct Cuenta {
     pub correo: Option<DireccionCorreo>,
     pub correo_verificado: bool,
     pub estado: EstadoCuenta,
-    pub hash_contrasena: String,
+    /// `None` = la persona aún no definió su contraseña (cuenta creada por otro): no puede
+    /// iniciar sesión hasta usar el código de [`PropositoCodigo::DefinirContrasena`].
+    pub hash_contrasena: Option<String>,
     pub intentos_fallidos: u32,
     pub bloqueo_hasta: Option<DateTime<Utc>>,
     /// Secreto TOTP (pendiente de confirmar si `totp_activo` es `false`).
@@ -61,11 +63,14 @@ pub struct Cuenta {
 pub enum PropositoCodigo {
     VerificarCorreo,
     RecuperarContrasena,
+    /// Primera contraseña de una cuenta creada por la plataforma o una entidad.
+    DefinirContrasena,
 }
 
 domain::enum_texto!(PropositoCodigo {
     VerificarCorreo => "verificar_correo",
     RecuperarContrasena => "recuperar_contrasena",
+    DefinirContrasena => "definir_contrasena",
 });
 
 /// Código de un solo uso guardado (solo el hash).
@@ -439,8 +444,55 @@ pub struct CopropiedadResumen {
     pub nombre: String,
 }
 
+/// Entidad vista desde la consola de la plataforma.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EntidadResumen {
+    pub id: TenantId,
+    pub nombre: String,
+    pub nit: Option<String>,
+    pub tipo: TipoEntidad,
+    pub estado: EstadoCopropiedad,
+    /// Módulos vigentes (los códigos de `domain::Modulo`).
+    pub modulos: Vec<String>,
+}
+
+/// Acceso de soporte de una cuenta de la plataforma a una entidad (solo lectura, plan 20).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AccesoSoporte {
+    pub id: Uuid,
+    pub cuenta_id: CuentaId,
+    pub tenant_id: TenantId,
+    pub motivo: String,
+    pub desde: DateTime<Utc>,
+    pub hasta: DateTime<Utc>,
+}
+
 /// Roles de plataforma y vistas que cruzan copropiedades (transacción de plataforma).
 pub trait RepositorioPlataforma: Send {
+    /// Entidades (PH, empresas y la plataforma) con su tipo, estado y módulos; por cursor, con
+    /// búsqueda por nombre (sin tildes ni mayúsculas) o NIT, o una sola por `id`.
+    fn entidades(
+        &mut self,
+        texto: Option<&str>,
+        id: Option<TenantId>,
+        pagina: crate::SolicitudPagina,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<crate::Pagina<EntidadResumen>>> + Send;
+
+    /// Guarda un acceso de soporte.
+    fn insertar_acceso_soporte(
+        &mut self,
+        acceso: &AccesoSoporte,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Hasta cuándo dura el acceso de soporte vigente de la cuenta a la entidad, si tiene uno.
+    fn acceso_soporte_vigente(
+        &mut self,
+        cuenta: CuentaId,
+        tenant: TenantId,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<Option<DateTime<Utc>>>> + Send;
+
     /// Permisos de plataforma vigentes de la cuenta y si es superusuario.
     fn permisos_plataforma(
         &mut self,

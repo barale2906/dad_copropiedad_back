@@ -89,6 +89,7 @@ pub(crate) mod memoria {
     pub mod gestion;
     pub mod publicidad;
     mod reservas;
+    pub mod usuarios;
 
     /// Datos de negocio en memoria. La transacción trabaja sobre una copia y la reemplaza
     /// al confirmar.
@@ -118,6 +119,8 @@ pub(crate) mod memoria {
         pub sorteos: Vec<crate::puertos::reservas::Sorteo>,
         pub inscripciones_sorteo: Vec<crate::puertos::reservas::InscripcionSorteo>,
         pub recordadas: Vec<domain::ReservaId>,
+        /// Cómo se cobra cada recurso (los que no están, a mano).
+        pub cobros_recurso: Vec<(domain::RecursoId, domain::CobroReserva)>,
         pub archivos: BTreeMap<ArchivoId, Archivo>,
         pub politicas: Vec<PoliticaTratamiento>,
         /// Autorizaciones con su fecha de revocación.
@@ -143,6 +146,8 @@ pub(crate) mod memoria {
         pub directorio: directorio::DatosDirectorio,
         /// Publicidad en la copropiedad (plan 08, fases 4 a 6).
         pub publicidad: publicidad::DatosPublicidad,
+        /// Cuentas de la plataforma vistas desde la entidad (plan 20).
+        pub usuarios: usuarios::DatosUsuarios,
     }
 
     /// Plantillas con ids fijos (en la BD se derivan del código).

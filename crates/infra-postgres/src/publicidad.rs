@@ -14,11 +14,10 @@ use application::{
     outbox::EventoSaliente,
     puertos::{
         DirectorioPublicidad, RepositorioPublicidad, RepositorioPublicidadPlataforma,
-        directorio::Anunciante,
         publicidad::{
-            Campana, ConsumoPeriodo, Creativo, CreativoReportado, DestinatarioMasivo, Lead,
-            Liquidacion, MetricaCampana, PantallaPublicidad, PiezaPublicidad, PoliticaPublicidad,
-            ReportePublicidad, TarifaPublicidad,
+            Campana, ConsumoPeriodo, Creativo, CreativoReportado, DestinatarioMasivo,
+            ExclusionPublicidad, Lead, Liquidacion, MetricaCampana, PantallaPublicidad,
+            PiezaPublicidad, PoliticaPublicidad, ReportePublicidad, TarifaPublicidad,
         },
     },
 };
@@ -27,8 +26,8 @@ use domain::{
     AnuncianteId, CampanaId, CanalPublicidad, CodigoCategoria, CodigoCupon, CodigoDane, CreativoId,
     CuentaId, EstadoCampana, EstadoCreativo, EstadoLiquidacion, FormatoCreativo, LiquidacionId,
     MedioAutorizacion, ModeloCobro, Nit, ObjetivoCampana, OrganizacionId, PersonaId,
-    PoliticaPublicidadId, RolOrganizacion, Segmentacion, SolicitudProveedorId, Telefono, TenantId,
-    TipoCopropiedad,
+    PoliticaPublicidadId, Segmentacion, SolicitudProveedorId, Telefono, TenantId, TipoCopropiedad,
+    TipoEntidad,
     publicidad::{
         ContenidoCreativo, Conteo, Cupon, FRECUENCIA_MASIVA_DIAS, PiezaCandidata, Presupuesto,
     },
@@ -37,10 +36,7 @@ use rust_decimal::Decimal;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{
-    TransaccionPg, TransaccionPlataformaPg, directorio::FilaAnunciante,
-    plataforma::conflicto_si_unico,
-};
+use crate::{TransaccionPg, TransaccionPlataformaPg, plataforma::conflicto_si_unico};
 
 fn u32_de(v: i64) -> u32 {
     u32::try_from(v.max(0)).unwrap_or(u32::MAX)
@@ -73,13 +69,15 @@ struct FilaCampana {
     seg_bienes_min: Option<i32>,
     seg_bienes_max: Option<i32>,
     seg_estratos: Vec<i16>,
-    copropiedades: Vec<Uuid>,
+    seg_tipos_entidad: Vec<String>,
+    entidades: Vec<Uuid>,
     conflicto_interes: bool,
     estado: String,
     motivo_estado: Option<String>,
     revisada_por: Option<Uuid>,
     revisada_en: Option<DateTime<Utc>>,
     creada_por: Option<Uuid>,
+    editada_por: Option<Uuid>,
     creada_en: DateTime<Utc>,
     actualizada_en: DateTime<Utc>,
 }
@@ -89,11 +87,12 @@ impl TryFrom<FilaCampana> for Campana {
 
     fn try_from(f: FilaCampana) -> AppResult<Self> {
         let segmentacion = Segmentacion {
-            copropiedades: f
-                .copropiedades
-                .into_iter()
-                .map(TenantId::from_uuid)
-                .collect(),
+            entidades: f.entidades.into_iter().map(TenantId::from_uuid).collect(),
+            tipos_entidad: f
+                .seg_tipos_entidad
+                .iter()
+                .map(|t| TipoEntidad::try_from(t.as_str()))
+                .collect::<Result<_, _>>()?,
             radio_km: f.seg_radio_km.and_then(|r| u16::try_from(r).ok()),
             municipios: f
                 .seg_municipios
@@ -132,6 +131,7 @@ impl TryFrom<FilaCampana> for Campana {
             revisada_por: f.revisada_por.map(CuentaId::from_uuid),
             revisada_en: f.revisada_en,
             creada_por: f.creada_por.map(CuentaId::from_uuid),
+            editada_por: f.editada_por.map(CuentaId::from_uuid),
             creada_en: f.creada_en,
             actualizada_en: f.actualizada_en,
         })
@@ -155,6 +155,8 @@ struct FilaCreativo {
     plantilla_whatsapp: Option<String>,
     estado: String,
     motivo_estado: Option<String>,
+    cargado_por: Option<Uuid>,
+    revisado_por: Option<Uuid>,
     creado_en: DateTime<Utc>,
     actualizado_en: DateTime<Utc>,
 }
@@ -192,6 +194,8 @@ impl TryFrom<FilaCreativo> for Creativo {
             cupon_usos: u32::try_from(f.cupon_usos).unwrap_or(0),
             estado: EstadoCreativo::try_from(f.estado.as_str())?,
             motivo_estado: f.motivo_estado,
+            cargado_por: f.cargado_por.map(CuentaId::from_uuid),
+            revisado_por: f.revisado_por.map(CuentaId::from_uuid),
             creado_en: f.creado_en,
             actualizado_en: f.actualizado_en,
         })
@@ -275,7 +279,7 @@ impl TransaccionPlataformaPg {
         .map_err(AppError::infra)?;
         let ids: Vec<Uuid> = c
             .segmentacion
-            .copropiedades
+            .entidades
             .iter()
             .map(|t| t.as_uuid())
             .collect();
@@ -291,7 +295,7 @@ impl TransaccionPlataformaPg {
             if e.as_database_error()
                 .is_some_and(|d| d.is_foreign_key_violation())
             {
-                AppError::Validacion("alguna copropiedad de la segmentación no existe".into())
+                AppError::Validacion("alguna entidad de la segmentación no existe".into())
             } else {
                 AppError::infra(e)
             }
@@ -312,43 +316,114 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
         .map(OrganizacionId::from_uuid))
     }
 
-    async fn anunciantes_de_cuenta(
+    async fn enlace_comercio(&mut self, anunciante: AnuncianteId) -> AppResult<Option<Vec<u8>>> {
+        sqlx::query_scalar!(
+            "SELECT token_cifrado FROM enlaces_comercio WHERE anunciante_id = $1",
+            anunciante.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
+    async fn guardar_enlace_comercio(
         &mut self,
-        cuenta: CuentaId,
-    ) -> AppResult<Vec<(Anunciante, RolOrganizacion)>> {
-        let filas = sqlx::query!(
-            "SELECT a.id, a.organizacion_id, a.nombre_comercial, a.direccion, a.municipio_dane,
-                    a.latitud, a.longitud, a.estado_verificacion, a.motivo_estado, a.creado_por,
-                    a.creado_en, a.actualizado_en, m.rol
-             FROM anunciantes a
-             JOIN organizaciones_miembros m ON m.organizacion_id = a.organizacion_id
-             WHERE m.cuenta_id = $1 ORDER BY a.nombre_comercial, a.id",
-            cuenta.as_uuid(),
+        anunciante: AnuncianteId,
+        token_hash: &[u8],
+        token_cifrado: &[u8],
+        creado_por: Option<CuentaId>,
+        ahora: DateTime<Utc>,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO enlaces_comercio (anunciante_id, token_hash, token_cifrado, creado_por,
+                                           creado_en)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (anunciante_id) DO UPDATE SET token_hash = EXCLUDED.token_hash,
+                 token_cifrado = EXCLUDED.token_cifrado, creado_por = EXCLUDED.creado_por,
+                 creado_en = EXCLUDED.creado_en",
+            anunciante.as_uuid(),
+            token_hash,
+            token_cifrado,
+            creado_por.map(CuentaId::as_uuid),
+            ahora,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
+    async fn borrar_enlace_comercio(&mut self, anunciante: AnuncianteId) -> AppResult<bool> {
+        Ok(sqlx::query!(
+            "DELETE FROM enlaces_comercio WHERE anunciante_id = $1",
+            anunciante.as_uuid()
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .rows_affected()
+            > 0)
+    }
+
+    async fn anunciante_por_enlace(
+        &mut self,
+        token_hash: &[u8],
+    ) -> AppResult<Option<AnuncianteId>> {
+        Ok(sqlx::query_scalar!(
+            "SELECT anunciante_id FROM enlaces_comercio WHERE token_hash = $1",
+            token_hash
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(AnuncianteId::from_uuid))
+    }
+
+    async fn excluir_de_publicidad(&mut self, x: &ExclusionPublicidad) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO exclusiones_publicidad (tenant_id, motivo, creada_por, creada_en)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (tenant_id) DO UPDATE SET motivo = EXCLUDED.motivo,
+                 creada_por = EXCLUDED.creada_por, creada_en = EXCLUDED.creada_en",
+            x.tenant_id.as_uuid(),
+            x.motivo,
+            x.creada_por.map(CuentaId::as_uuid),
+            x.creada_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| crate::copropiedades::error_escritura(e, "ya está excluida", "entidad"))?;
+        Ok(())
+    }
+
+    async fn quitar_exclusion(&mut self, tenant: TenantId) -> AppResult<bool> {
+        Ok(sqlx::query!(
+            "DELETE FROM exclusiones_publicidad WHERE tenant_id = $1",
+            tenant.as_uuid()
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .rows_affected()
+            > 0)
+    }
+
+    async fn exclusiones(&mut self) -> AppResult<Vec<ExclusionPublicidad>> {
+        Ok(sqlx::query!(
+            "SELECT tenant_id, motivo, creada_por, creada_en FROM exclusiones_publicidad
+             ORDER BY creada_en DESC"
         )
         .fetch_all(&mut *self.tx)
         .await
-        .map_err(AppError::infra)?;
-        filas
-            .into_iter()
-            .map(|f| {
-                let rol = RolOrganizacion::try_from(f.rol.as_str())?;
-                let a = Anunciante::try_from(FilaAnunciante {
-                    id: f.id,
-                    organizacion_id: f.organizacion_id,
-                    nombre_comercial: f.nombre_comercial,
-                    direccion: f.direccion,
-                    municipio_dane: f.municipio_dane,
-                    latitud: f.latitud,
-                    longitud: f.longitud,
-                    estado_verificacion: f.estado_verificacion,
-                    motivo_estado: f.motivo_estado,
-                    creado_por: f.creado_por,
-                    creado_en: f.creado_en,
-                    actualizado_en: f.actualizado_en,
-                })?;
-                Ok((a, rol))
-            })
-            .collect()
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| ExclusionPublicidad {
+            tenant_id: TenantId::from_uuid(f.tenant_id),
+            motivo: f.motivo,
+            creada_por: f.creada_por.map(CuentaId::from_uuid),
+            creada_en: f.creada_en,
+        })
+        .collect())
     }
 
     async fn insertar_campana(&mut self, c: &Campana) -> AppResult<()> {
@@ -357,9 +432,9 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
                  modelo, presupuesto_total, presupuesto_diario, tarifa, consumido, seg_radio_km,
                  seg_municipios, seg_tipos, seg_bienes_min, seg_bienes_max, seg_estratos,
                  conflicto_interes, estado, motivo_estado, revisada_por, revisada_en, creada_por,
-                 creada_en, actualizada_en)
+                 creada_en, actualizada_en, seg_tipos_entidad, editada_por)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
-                     $18, $19, $20, $21, $22, $23, $24, $25, $26)",
+                     $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)",
             c.id.as_uuid(),
             c.anunciante_id.as_uuid(),
             c.nombre,
@@ -396,6 +471,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             c.creada_por.map(CuentaId::as_uuid),
             c.creada_en,
             c.actualizada_en,
+            &textos(&c.segmentacion.tipos_entidad, TipoEntidad::as_str),
+            c.editada_por.map(CuentaId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
@@ -418,7 +495,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
                  tarifa = $10, seg_radio_km = $11, seg_municipios = $12, seg_tipos = $13,
                  seg_bienes_min = $14, seg_bienes_max = $15, seg_estratos = $16,
                  conflicto_interes = $17, estado = $18, motivo_estado = $19, revisada_por = $20,
-                 revisada_en = $21, actualizada_en = $22
+                 revisada_en = $21, actualizada_en = $22, seg_tipos_entidad = $23,
+                 editada_por = $24
              WHERE id = $1",
             c.id.as_uuid(),
             c.nombre,
@@ -452,6 +530,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             c.revisada_por.map(CuentaId::as_uuid),
             c.revisada_en,
             c.actualizada_en,
+            &textos(&c.segmentacion.tipos_entidad, TipoEntidad::as_str),
+            c.editada_por.map(CuentaId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
@@ -474,11 +554,11 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             r#"SELECT c.id, c.anunciante_id, c.nombre, c.objetivo, c.categoria, c.inicio, c.fin,
                       c.modelo, c.presupuesto_total, c.presupuesto_diario, c.tarifa, c.consumido,
                       c.seg_radio_km, c.seg_municipios, c.seg_tipos, c.seg_bienes_min,
-                      c.seg_bienes_max, c.seg_estratos,
+                      c.seg_bienes_max, c.seg_estratos, c.seg_tipos_entidad,
                       ARRAY(SELECT x.tenant_id FROM campana_copropiedades x
-                            WHERE x.campana_id = c.id ORDER BY 1) AS "copropiedades!",
+                            WHERE x.campana_id = c.id ORDER BY 1) AS "entidades!",
                       c.conflicto_interes, c.estado, c.motivo_estado, c.revisada_por,
-                      c.revisada_en, c.creada_por, c.creada_en, c.actualizada_en
+                      c.revisada_en, c.creada_por, c.editada_por, c.creada_en, c.actualizada_en
                FROM campanas c WHERE c.id = $1"#,
             id.as_uuid(),
         )
@@ -499,11 +579,11 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             r#"SELECT c.id, c.anunciante_id, c.nombre, c.objetivo, c.categoria, c.inicio, c.fin,
                       c.modelo, c.presupuesto_total, c.presupuesto_diario, c.tarifa, c.consumido,
                       c.seg_radio_km, c.seg_municipios, c.seg_tipos, c.seg_bienes_min,
-                      c.seg_bienes_max, c.seg_estratos,
+                      c.seg_bienes_max, c.seg_estratos, c.seg_tipos_entidad,
                       ARRAY(SELECT x.tenant_id FROM campana_copropiedades x
-                            WHERE x.campana_id = c.id ORDER BY 1) AS "copropiedades!",
+                            WHERE x.campana_id = c.id ORDER BY 1) AS "entidades!",
                       c.conflicto_interes, c.estado, c.motivo_estado, c.revisada_por,
-                      c.revisada_en, c.creada_por, c.creada_en, c.actualizada_en
+                      c.revisada_en, c.creada_por, c.editada_por, c.creada_en, c.actualizada_en
                FROM campanas c
                WHERE c.anunciante_id = $1 AND ($2::uuid IS NULL OR c.id > $2)
                ORDER BY c.id LIMIT $3"#,
@@ -527,11 +607,11 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             r#"SELECT c.id, c.anunciante_id, c.nombre, c.objetivo, c.categoria, c.inicio, c.fin,
                       c.modelo, c.presupuesto_total, c.presupuesto_diario, c.tarifa, c.consumido,
                       c.seg_radio_km, c.seg_municipios, c.seg_tipos, c.seg_bienes_min,
-                      c.seg_bienes_max, c.seg_estratos,
+                      c.seg_bienes_max, c.seg_estratos, c.seg_tipos_entidad,
                       ARRAY(SELECT x.tenant_id FROM campana_copropiedades x
-                            WHERE x.campana_id = c.id ORDER BY 1) AS "copropiedades!",
+                            WHERE x.campana_id = c.id ORDER BY 1) AS "entidades!",
                       c.conflicto_interes, c.estado, c.motivo_estado, c.revisada_por,
-                      c.revisada_en, c.creada_por, c.creada_en, c.actualizada_en
+                      c.revisada_en, c.creada_por, c.editada_por, c.creada_en, c.actualizada_en
                FROM campanas c
                WHERE c.estado = 'en_revision' AND ($1::uuid IS NULL OR c.id > $1)
                ORDER BY c.id LIMIT $2"#,
@@ -566,9 +646,10 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
         sqlx::query!(
             "INSERT INTO creativos (id, campana_id, anunciante_id, formato, titulo, texto, boton,
                  enlace, condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
-                 plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en)
+                 plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en,
+                 cargado_por, revisado_por)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-                     $17, $18)",
+                     $17, $18, $19, $20)",
             c.id.as_uuid(),
             c.campana_id.as_uuid(),
             c.anunciante_id.as_uuid(),
@@ -587,6 +668,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             c.motivo_estado,
             c.creado_en,
             c.actualizado_en,
+            c.cargado_por.map(CuentaId::as_uuid),
+            c.revisado_por.map(CuentaId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
@@ -601,7 +684,7 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             "UPDATE creativos SET formato = $2, titulo = $3, texto = $4, boton = $5, enlace = $6,
                  condiciones = $7, es_promocion = $8, cupon_codigo = $9, cupon_limite = $10,
                  plantilla_whatsapp = $11, estado = $12, motivo_estado = $13,
-                 actualizado_en = $14
+                 actualizado_en = $14, cargado_por = $15, revisado_por = $16
              WHERE id = $1",
             c.id.as_uuid(),
             k.formato.as_str(),
@@ -617,6 +700,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             c.estado.as_str(),
             c.motivo_estado,
             c.actualizado_en,
+            c.cargado_por.map(CuentaId::as_uuid),
+            c.revisado_por.map(CuentaId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
@@ -629,7 +714,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             FilaCreativo,
             "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,
                     condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
-                    plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en
+                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,
+                    actualizado_en
              FROM creativos WHERE id = $1",
             id.as_uuid(),
         )
@@ -645,7 +731,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             FilaCreativo,
             "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,
                     condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
-                    plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en
+                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,
+                    actualizado_en
              FROM creativos WHERE campana_id = $1 ORDER BY id",
             campana.as_uuid(),
         )
@@ -662,7 +749,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             FilaCreativo,
             "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,
                     condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
-                    plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en
+                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,
+                    actualizado_en
              FROM creativos
              WHERE estado = 'pendiente' AND ($1::uuid IS NULL OR id > $1)
              ORDER BY id LIMIT $2",
@@ -1437,7 +1525,7 @@ impl RepositorioPublicidad for TransaccionPg {
 
     async fn pantalla(&mut self) -> AppResult<Option<PantallaPublicidad>> {
         Ok(sqlx::query!(
-            "SELECT token_hash, creado_por, creado_en FROM pantallas_publicidad
+            "SELECT token_hash, token_cifrado, creado_por, creado_en FROM pantallas_publicidad
              WHERE tenant_id = $1",
             self.ctx.tenant_id.as_uuid(),
         )
@@ -1446,6 +1534,7 @@ impl RepositorioPublicidad for TransaccionPg {
         .map_err(AppError::infra)?
         .map(|f| PantallaPublicidad {
             token_hash: f.token_hash,
+            token_cifrado: f.token_cifrado,
             creado_por: f.creado_por.map(CuentaId::from_uuid),
             creado_en: f.creado_en,
         }))
@@ -1453,15 +1542,17 @@ impl RepositorioPublicidad for TransaccionPg {
 
     async fn guardar_pantalla(&mut self, p: &PantallaPublicidad) -> AppResult<()> {
         sqlx::query!(
-            "INSERT INTO pantallas_publicidad (tenant_id, token_hash, creado_por, creado_en)
-             VALUES ($1, $2, $3, $4)
+            "INSERT INTO pantallas_publicidad (tenant_id, token_hash, creado_por, creado_en,
+                                               token_cifrado)
+             VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (tenant_id) DO UPDATE
                  SET token_hash = EXCLUDED.token_hash, creado_por = EXCLUDED.creado_por,
-                     creado_en = EXCLUDED.creado_en",
+                     creado_en = EXCLUDED.creado_en, token_cifrado = EXCLUDED.token_cifrado",
             self.ctx.tenant_id.as_uuid(),
             p.token_hash,
             p.creado_por.map(CuentaId::as_uuid),
             p.creado_en,
+            p.token_cifrado.as_deref(),
         )
         .execute(&mut *self.tx)
         .await
@@ -1470,7 +1561,7 @@ impl RepositorioPublicidad for TransaccionPg {
     }
 }
 
-/// Copropiedades con el módulo `publicidad` (worker de envíos masivos).
+/// Copropiedades con publicidad (sin exclusión), para el worker de envíos masivos.
 #[derive(Debug, Clone)]
 pub struct DirectorioPublicidadPg {
     pool: PgPool,

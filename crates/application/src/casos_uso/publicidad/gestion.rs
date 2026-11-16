@@ -1,46 +1,40 @@
-//! Portal del anunciante (plan 08, fase 3): lo usan las cuentas miembros de la organización
-//! anunciante, con su papel ([`domain::publicidad::permite`]): dueño y gestor administran todo;
-//! el operario solo redime cupones. A quien no es miembro se le responde «no encontrado».
+//! Gestión de la pauta por el personal de la plataforma (plan 20; antes, el portal del
+//! anunciante del plan 08): los comercios **no** usan la plataforma. Quien tiene
+//! `plataforma.publicidad.gestionar` carga las campañas y piezas de cualquier comercio, ve sus
+//! métricas agregadas y sus contactos autorizados, administra el enlace con que el comercio
+//! redime cupones y excluye entidades de la publicidad. La moderación la hace **otra cuenta**
+//! (cuatro ojos, [`super::moderacion`]).
 //!
-//! Lo que ve el anunciante nunca incluye datos de residentes, salvo los contactos que un
+//! Lo que se ve de un comercio nunca incluye datos de residentes, salvo los contactos que un
 //! residente autorizó expresamente compartirle para una solicitud ([`leads`]).
 
 use chrono::{DateTime, Utc};
 use domain::{
     AnuncianteId, CampanaId, CodigoCategoria, CodigoCupon, CreativoId, EstadoCampana,
-    EstadoCreativo, EstadoVerificacion, ModeloCobro, ObjetivoCampana, RolOrganizacion,
-    Segmentacion,
+    EstadoCreativo, ModeloCobro, ObjetivoCampana, Permiso, Segmentacion, TenantId,
     copropiedad::texto_obligatorio,
     publicidad::{
-        AccionAnunciante, ContenidoCreativo, Conteo, Presupuesto, ajustar_al_presupuesto, costo,
-        permite, presupuesto_agotado, validar_redencion,
+        ContenidoCreativo, Conteo, Presupuesto, ajustar_al_presupuesto, costo, presupuesto_agotado,
+        validar_redencion,
     },
 };
 use rust_decimal::Decimal;
 
 use super::TxPublicidadPlataforma;
-use crate::puertos::{
-    RegistroAuditoria, RepositorioDirectorioPlataforma, RepositorioPublicidadPlataforma,
-    identidad::RepositorioOrganizaciones,
-};
+use crate::puertos::{RegistroAuditoria, RepositorioPublicidadPlataforma};
 use crate::{
     AppError, AppResult, ContextoPlataforma, Pagina, SolicitudPagina,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
-    casos_uso::{
-        directorio::{DatosAnunciante, DatosFicha, guardar_ficha_en},
-        organizaciones::validar_nueva,
-    },
+    casos_uso::busqueda_proveedores::huella,
     puertos::{
         Reloj, Transaccion, UnidadDeTrabajoPlataforma,
-        directorio::{Anunciante, Ficha, OrganizacionAnunciante},
-        identidad::NuevaOrganizacion,
-        publicidad::{Campana, Creativo, Lead, MetricaCampana},
+        cofre::Cofre,
+        directorio::Anunciante,
+        publicidad::{Campana, Creativo, ExclusionPublicidad, Lead, MetricaCampana},
     },
+    seguridad::token_aleatorio,
 };
 
-pub(crate) const ACCION_REGISTRAR: AccionAuditoria =
-    AccionAuditoria::new("publicidad.anunciante.registrar");
-pub(crate) const ACCION_FICHA: AccionAuditoria = AccionAuditoria::new("publicidad.ficha.editar");
 pub(crate) const ACCION_CREAR_CAMPANA: AccionAuditoria =
     AccionAuditoria::new("publicidad.campana.crear");
 pub(crate) const ACCION_EDITAR_CAMPANA: AccionAuditoria =
@@ -50,21 +44,25 @@ pub(crate) const ACCION_ESTADO_CAMPANA: AccionAuditoria =
 pub(crate) const ACCION_CREATIVO: AccionAuditoria =
     AccionAuditoria::new("publicidad.creativo.guardar");
 pub(crate) const ACCION_REDIMIR: AccionAuditoria = AccionAuditoria::new("publicidad.cupon.redimir");
+pub(crate) const ACCION_ENLACE: AccionAuditoria =
+    AccionAuditoria::new("publicidad.enlace_comercio.generar");
+pub(crate) const ACCION_REVOCAR_ENLACE: AccionAuditoria =
+    AccionAuditoria::new("publicidad.enlace_comercio.revocar");
+pub(crate) const ACCION_EXCLUIR: AccionAuditoria =
+    AccionAuditoria::new("publicidad.entidad.excluir");
+pub(crate) const ACCION_INCLUIR: AccionAuditoria =
+    AccionAuditoria::new("publicidad.entidad.incluir");
 
-/// El anunciante, si la cuenta es miembro de su organización con un papel que permite la
-/// acción.
+/// El comercio, si la cuenta tiene `plataforma.publicidad.gestionar`.
 async fn anunciante_para<T: TxPublicidadPlataforma>(
     tx: &mut T,
     ctx: &ContextoPlataforma,
     id: AnuncianteId,
-    accion: AccionAnunciante,
 ) -> AppResult<Anunciante> {
-    let no = AppError::NoEncontrado("anunciante");
-    let a = tx.anunciante(id).await?.ok_or(no)?;
-    match tx.rol_miembro(a.organizacion_id, ctx.cuenta()?).await? {
-        Some(rol) if permite(rol, accion) => Ok(a),
-        _ => Err(AppError::NoEncontrado("anunciante")),
-    }
+    ctx.exigir(Permiso::PlataformaPublicidadGestionar)?;
+    tx.anunciante(id)
+        .await?
+        .ok_or(AppError::NoEncontrado("anunciante"))
 }
 
 /// La campaña del anunciante (bloqueada para cambiarla).
@@ -77,158 +75,6 @@ async fn campana_de<T: TxPublicidadPlataforma>(
         .await?
         .filter(|c| c.anunciante_id == anunciante)
         .ok_or(AppError::NoEncontrado("campaña"))
-}
-
-// ---------------------------------------------------------------------------------------------
-// Registro y ficha
-// ---------------------------------------------------------------------------------------------
-
-/// Registra la cuenta como anunciante: crea la organización (y la deja como dueña) o usa la
-/// existente si ya es su dueña o gestora. El anunciante queda **pendiente** hasta que la
-/// moderación lo verifique.
-///
-/// # Errors
-///
-/// [`AppError::NoAutenticado`]; [`AppError::Validacion`] / [`AppError::Dominio`] si los datos
-/// no son válidos; [`AppError::Conflicto`] si la organización ya existe y la cuenta no la
-/// administra (debe reclamarla) o ya tiene un anunciante.
-pub async fn registrarse<UP>(
-    unidad: &UP,
-    reloj: &impl Reloj,
-    ctx: &ContextoPlataforma,
-    organizacion: NuevaOrganizacion,
-    datos: DatosAnunciante,
-) -> AppResult<Anunciante>
-where
-    UP: UnidadDeTrabajoPlataforma,
-    UP::Transaccion: TxPublicidadPlataforma,
-{
-    let cuenta = ctx.cuenta()?;
-    validar_nueva(&organizacion)?;
-    let datos = datos.validados()?;
-    let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    if let Some(existente) = tx.organizacion_por_nit(&organizacion.nit).await? {
-        let rol = tx.rol_miembro(existente, cuenta).await?;
-        if !rol.is_some_and(RolOrganizacion::edita_ficha) {
-            return Err(AppError::Conflicto(
-                "la organización ya está registrada: pida a quien la administra que lo agregue \
-                 o reclámela"
-                    .into(),
-            ));
-        }
-    }
-    let organizacion_id = tx
-        .organizacion_para_anunciante(&OrganizacionAnunciante::Nueva(organizacion), Some(cuenta))
-        .await?
-        .ok_or(AppError::NoEncontrado("organización"))?;
-    if tx.rol_miembro(organizacion_id, cuenta).await?.is_none() {
-        tx.guardar_miembro(organizacion_id, cuenta, RolOrganizacion::Dueno)
-            .await?;
-    }
-    let ahora = reloj.ahora();
-    let anunciante = Anunciante {
-        id: AnuncianteId::nuevo(),
-        organizacion_id,
-        nombre_comercial: datos.nombre_comercial,
-        direccion: datos.direccion,
-        ubicacion: datos.ubicacion,
-        estado: EstadoVerificacion::Pendiente,
-        motivo_estado: None,
-        creado_por: Some(cuenta),
-        creado_en: ahora,
-        actualizado_en: ahora,
-    };
-    tx.insertar_anunciante(&anunciante).await?;
-    tx.registrar(EventoAuditoria::ok(
-        ACCION_REGISTRAR,
-        "anunciante",
-        anunciante.id.as_uuid(),
-    ))
-    .await?;
-    tx.confirmar().await?;
-    Ok(anunciante)
-}
-
-/// Anunciantes de la cuenta con su papel.
-///
-/// # Errors
-///
-/// [`AppError::NoAutenticado`].
-pub async fn mis_anunciantes<UP>(
-    unidad: &UP,
-    ctx: &ContextoPlataforma,
-) -> AppResult<Vec<(Anunciante, RolOrganizacion)>>
-where
-    UP: UnidadDeTrabajoPlataforma,
-    UP::Transaccion: TxPublicidadPlataforma,
-{
-    let cuenta = ctx.cuenta()?;
-    unidad
-        .iniciar_plataforma(ctx)
-        .await?
-        .anunciantes_de_cuenta(cuenta)
-        .await
-}
-
-/// El anunciante con su ficha (cualquier miembro).
-///
-/// # Errors
-///
-/// [`AppError::NoEncontrado`] si no existe o la cuenta no es miembro.
-pub async fn mi_anunciante<UP>(
-    unidad: &UP,
-    ctx: &ContextoPlataforma,
-    id: AnuncianteId,
-) -> AppResult<(Anunciante, Option<Ficha>)>
-where
-    UP: UnidadDeTrabajoPlataforma,
-    UP::Transaccion: TxPublicidadPlataforma,
-{
-    let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    let a = anunciante_para(&mut tx, ctx, id, AccionAnunciante::RedimirCupones).await?;
-    let ficha = tx.ficha(id).await?;
-    Ok((a, ficha))
-}
-
-/// El anunciante edita su ficha del directorio. La fecha de destacada no la decide él (es una
-/// suscripción que gestiona la plataforma): se conserva la vigente.
-///
-/// # Errors
-///
-/// [`AppError::NoEncontrado`]; los de la validación de la ficha (categorías restringidas,
-/// cobertura, contacto).
-pub async fn editar_ficha<UP>(
-    unidad: &UP,
-    reloj: &impl Reloj,
-    ctx: &ContextoPlataforma,
-    id: AnuncianteId,
-    datos: DatosFicha,
-) -> AppResult<Ficha>
-where
-    UP: UnidadDeTrabajoPlataforma,
-    UP::Transaccion: TxPublicidadPlataforma,
-{
-    let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, id, AccionAnunciante::Gestionar).await?;
-    let destacada_hasta = tx.ficha(id).await?.and_then(|f| f.destacada_hasta);
-    let ficha = guardar_ficha_en(
-        &mut tx,
-        reloj.ahora(),
-        id,
-        DatosFicha {
-            destacada_hasta,
-            ..datos
-        },
-    )
-    .await?;
-    tx.registrar(EventoAuditoria::ok(
-        ACCION_FICHA,
-        "anunciante",
-        id.as_uuid(),
-    ))
-    .await?;
-    tx.confirmar().await?;
-    Ok(ficha)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -303,7 +149,7 @@ where
 {
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::Gestionar).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
     let (d, presupuesto) = validar_campana(&mut tx, anunciante, datos, ahora).await?;
     let c = Campana {
         id: CampanaId::nuevo(),
@@ -324,6 +170,7 @@ where
         revisada_por: None,
         revisada_en: None,
         creada_por: ctx.actor_id,
+        editada_por: None,
         creada_en: ahora,
         actualizada_en: ahora,
     };
@@ -359,7 +206,7 @@ where
 {
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::Gestionar).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
     let mut c = campana_de(&mut tx, anunciante, id).await?;
     if !c.estado.editable() {
         c.estado = c.estado.transicionar(EstadoCampana::Borrador)?;
@@ -379,6 +226,10 @@ where
     c.presupuesto = presupuesto;
     c.segmentacion = d.segmentacion;
     c.tarifa = None;
+    // Vuelve a moderación: quien la editó no la revisa, y la revisión anterior ya no vale.
+    c.editada_por = ctx.actor_id;
+    c.revisada_por = None;
+    c.revisada_en = None;
     c.actualizada_en = ahora;
     tx.actualizar_campana(&c).await?;
     tx.registrar(EventoAuditoria::ok(
@@ -391,7 +242,7 @@ where
     Ok(c)
 }
 
-/// Cambio de estado que pide el anunciante.
+/// Cambio de estado de una campaña que pide la plataforma.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccionCampana {
     /// Borrador → en revisión (calcula el conflicto de interés).
@@ -423,7 +274,7 @@ where
 {
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    let a = anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::Gestionar).await?;
+    let a = anunciante_para(&mut tx, ctx, anunciante).await?;
     let mut c = campana_de(&mut tx, anunciante, id).await?;
     let hacia = match accion {
         AccionCampana::EnviarARevision => EstadoCampana::EnRevision,
@@ -492,7 +343,7 @@ where
     UP::Transaccion: TxPublicidadPlataforma,
 {
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::VerMetricas).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
     tx.campanas_de_anunciante(anunciante, pagina).await
 }
 
@@ -512,7 +363,7 @@ where
     UP::Transaccion: TxPublicidadPlataforma,
 {
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::VerMetricas).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
     let c = tx
         .campana(id, false)
         .await?
@@ -545,7 +396,7 @@ where
     let contenido = contenido.validado()?;
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::Gestionar).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
     let c = campana_de(&mut tx, anunciante, campana).await?;
     if !c.estado.editable() {
         return Err(AppError::Conflicto(
@@ -562,6 +413,8 @@ where
                 cupon_usos: 0,
                 estado: EstadoCreativo::Pendiente,
                 motivo_estado: None,
+                cargado_por: ctx.actor_id,
+                revisado_por: None,
                 creado_en: ahora,
                 actualizado_en: ahora,
             };
@@ -580,6 +433,8 @@ where
                 }
                 x.motivo_estado = None;
                 x.contenido = contenido;
+                x.cargado_por = ctx.actor_id;
+                x.revisado_por = None;
             }
             x.actualizado_en = ahora;
             tx.actualizar_creativo(&x).await?;
@@ -626,7 +481,7 @@ where
     UP::Transaccion: TxPublicidadPlataforma,
 {
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::VerMetricas).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
     let c = tx
         .campana(id, false)
         .await?
@@ -664,7 +519,7 @@ where
     UP::Transaccion: TxPublicidadPlataforma,
 {
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::VerLeads).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
     tx.leads(anunciante, pagina).await
 }
 
@@ -678,18 +533,20 @@ pub struct Redencion {
     pub restantes: Option<u32>,
 }
 
-/// Redime un cupón en el mostrador. Una oferta vigente se honra aunque el presupuesto ya no
-/// alcance para cobrarla (Ley 1480): se cobra lo que cabe y la campaña se finaliza.
+/// El comercio redime un cupón en el mostrador con **su enlace** (cabecera `X-Comercio`, sin
+/// cuenta). Una oferta vigente se honra aunque el presupuesto ya no alcance para cobrarla (Ley
+/// 1480): se cobra lo que cabe y la campaña se finaliza.
 ///
 /// # Errors
 ///
-/// [`AppError::NoEncontrado`] si el código no es de una oferta del anunciante;
-/// [`AppError::Dominio`] si no está vigente o se agotaron los usos.
+/// [`AppError::NoAutenticado`] si el enlace no existe o fue revocado; [`AppError::NoEncontrado`]
+/// si el código no es de una oferta del comercio; [`AppError::Dominio`] si no está vigente o se
+/// agotaron los usos.
 pub async fn redimir_cupon<UP>(
     unidad: &UP,
     reloj: &impl Reloj,
     ctx: &ContextoPlataforma,
-    anunciante: AnuncianteId,
+    token_comercio: &str,
     codigo: &str,
 ) -> AppResult<Redencion>
 where
@@ -699,7 +556,10 @@ where
     let codigo = CodigoCupon::new(codigo)?;
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
-    anunciante_para(&mut tx, ctx, anunciante, AccionAnunciante::RedimirCupones).await?;
+    let anunciante = tx
+        .anunciante_por_enlace(&huella(token_comercio)?)
+        .await?
+        .ok_or(AppError::NoAutenticado)?;
     let creativo = tx
         .creativo_por_cupon(anunciante, &codigo)
         .await?
@@ -740,4 +600,194 @@ where
         usos,
         restantes: cupon.limite_usos.map(|l| l.saturating_sub(usos)),
     })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Enlace del comercio
+// ---------------------------------------------------------------------------------------------
+
+/// Contexto del cifrado del token de un comercio (no sirve para otro comercio ni otro uso).
+fn contexto_enlace(anunciante: AnuncianteId) -> String {
+    format!("enlace_comercio:{anunciante}")
+}
+
+/// Genera (o reemplaza: el anterior deja de servir) el enlace con que el comercio redime
+/// cupones. Devuelve el token; el frontend arma el enlace.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.publicidad.gestionar`; [`AppError::NoEncontrado`];
+/// [`AppError::Validacion`] si el servidor no tiene clave del Cofre.
+pub async fn generar_enlace_comercio<UP, C>(
+    unidad: &UP,
+    cofre: &C,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    anunciante: AnuncianteId,
+) -> AppResult<String>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+    C: Cofre,
+{
+    let token = token_aleatorio()?;
+    let cifrado = cofre.cifrar(&contexto_enlace(anunciante), token.as_bytes())?;
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
+    tx.guardar_enlace_comercio(
+        anunciante,
+        &huella(&token)?,
+        &cifrado,
+        ctx.actor_id,
+        reloj.ahora(),
+    )
+    .await?;
+    tx.registrar(EventoAuditoria::ok(
+        ACCION_ENLACE,
+        "anunciante",
+        anunciante.as_uuid(),
+    ))
+    .await?;
+    tx.confirmar().await?;
+    Ok(token)
+}
+
+/// El token vigente del enlace del comercio, sin cambiarlo; `None` si no tiene.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`]; [`AppError::NoEncontrado`]; los del Cofre.
+pub async fn enlace_comercio<UP, C>(
+    unidad: &UP,
+    cofre: &C,
+    ctx: &ContextoPlataforma,
+    anunciante: AnuncianteId,
+) -> AppResult<Option<String>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+    C: Cofre,
+{
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
+    tx.enlace_comercio(anunciante)
+        .await?
+        .map(|cifrado| {
+            let claro = cofre.descifrar(&contexto_enlace(anunciante), &cifrado)?;
+            String::from_utf8(claro).map_err(AppError::infra)
+        })
+        .transpose()
+}
+
+/// Revoca el enlace del comercio (deja de redimir hasta que se genere otro).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`]; [`AppError::NoEncontrado`] si no existe o no tenía enlace.
+pub async fn revocar_enlace_comercio<UP>(
+    unidad: &UP,
+    ctx: &ContextoPlataforma,
+    anunciante: AnuncianteId,
+) -> AppResult<()>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+{
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    anunciante_para(&mut tx, ctx, anunciante).await?;
+    if !tx.borrar_enlace_comercio(anunciante).await? {
+        return Err(AppError::NoEncontrado("enlace"));
+    }
+    tx.registrar(EventoAuditoria::ok(
+        ACCION_REVOCAR_ENLACE,
+        "anunciante",
+        anunciante.as_uuid(),
+    ))
+    .await?;
+    tx.confirmar().await
+}
+
+// ---------------------------------------------------------------------------------------------
+// Exclusiones
+// ---------------------------------------------------------------------------------------------
+
+/// Excluye una entidad de la publicidad (no recibe piezas ni destacadas; el directorio sigue).
+/// Solo la plataforma decide: la entidad no controla la publicidad.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.publicidad.gestionar`; [`AppError::Validacion`] sin
+/// motivo; [`AppError::NoEncontrado`] si la entidad no existe.
+pub async fn excluir_entidad<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+    motivo: &str,
+) -> AppResult<ExclusionPublicidad>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaPublicidadGestionar)?;
+    let exclusion = ExclusionPublicidad {
+        tenant_id: tenant,
+        motivo: super::motivo(motivo)?,
+        creada_por: ctx.actor_id,
+        creada_en: reloj.ahora(),
+    };
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    tx.excluir_de_publicidad(&exclusion).await?;
+    let detalle = DetalleAuditoria::vacio().con("motivo", exclusion.motivo.as_str())?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_EXCLUIR, "entidad", tenant.as_uuid()).con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(exclusion)
+}
+
+/// Vuelve a incluir una entidad en la publicidad.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`]; [`AppError::NoEncontrado`] si no estaba excluida.
+pub async fn incluir_entidad<UP>(
+    unidad: &UP,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+) -> AppResult<()>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaPublicidadGestionar)?;
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    if !tx.quitar_exclusion(tenant).await? {
+        return Err(AppError::NoEncontrado("exclusión"));
+    }
+    tx.registrar(EventoAuditoria::ok(
+        ACCION_INCLUIR,
+        "entidad",
+        tenant.as_uuid(),
+    ))
+    .await?;
+    tx.confirmar().await
+}
+
+/// Entidades excluidas de la publicidad.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.publicidad.gestionar`.
+pub async fn exclusiones<UP>(
+    unidad: &UP,
+    ctx: &ContextoPlataforma,
+) -> AppResult<Vec<ExclusionPublicidad>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaPublicidadGestionar)?;
+    unidad.iniciar_plataforma(ctx).await?.exclusiones().await
 }

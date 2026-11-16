@@ -202,7 +202,7 @@ impl RepositorioSolicitudesProveedor for TransaccionPg {
 
     async fn enlace_directorio(&mut self) -> AppResult<Option<EnlaceDirectorio>> {
         Ok(sqlx::query!(
-            "SELECT token_hash, creado_por, creado_en FROM enlaces_directorio
+            "SELECT token_hash, token_cifrado, creado_por, creado_en FROM enlaces_directorio
              WHERE tenant_id = $1",
             self.ctx.tenant_id.as_uuid(),
         )
@@ -211,6 +211,7 @@ impl RepositorioSolicitudesProveedor for TransaccionPg {
         .map_err(AppError::infra)?
         .map(|f| EnlaceDirectorio {
             token_hash: f.token_hash,
+            token_cifrado: f.token_cifrado,
             creado_por: f.creado_por.map(CuentaId::from_uuid),
             creado_en: f.creado_en,
         }))
@@ -218,15 +219,17 @@ impl RepositorioSolicitudesProveedor for TransaccionPg {
 
     async fn guardar_enlace_directorio(&mut self, e: &EnlaceDirectorio) -> AppResult<()> {
         sqlx::query!(
-            "INSERT INTO enlaces_directorio (tenant_id, token_hash, creado_por, creado_en)
-             VALUES ($1, $2, $3, $4)
+            "INSERT INTO enlaces_directorio (tenant_id, token_hash, creado_por, creado_en,
+                                             token_cifrado)
+             VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (tenant_id) DO UPDATE
                  SET token_hash = EXCLUDED.token_hash, creado_por = EXCLUDED.creado_por,
-                     creado_en = EXCLUDED.creado_en",
+                     creado_en = EXCLUDED.creado_en, token_cifrado = EXCLUDED.token_cifrado",
             self.ctx.tenant_id.as_uuid(),
             e.token_hash,
             e.creado_por.map(|c| c.as_uuid()),
             e.creado_en,
+            e.token_cifrado.as_deref(),
         )
         .execute(&mut *self.tx)
         .await

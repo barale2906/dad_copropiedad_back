@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT token_hash, creado_por, creado_en FROM pantallas_publicidad\n             WHERE tenant_id = $1",
+  "query": "SELECT token_hash, token_cifrado, creado_por, creado_en FROM pantallas_publicidad\n             WHERE tenant_id = $1",
   "describe": {
     "columns": [
       {
@@ -16,6 +16,17 @@
       },
       {
         "ordinal": 1,
+        "name": "token_cifrado",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "pantallas_publicidad",
+            "name": "token_cifrado"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
         "name": "creado_por",
         "type_info": "Uuid",
         "origin": {
@@ -26,7 +37,7 @@
         }
       },
       {
-        "ordinal": 2,
+        "ordinal": 3,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -45,8 +56,9 @@
     "nullable": [
       false,
       true,
+      true,
       false
     ]
   },
-  "hash": "98bcce4624977c421d4184b3dd2c40baa502091b514829751e81a5262f8f33b9"
+  "hash": "c72610dce7fb43e297ab58bf5b6f9aae06787b66318015a775488a73b987eac6"
 }

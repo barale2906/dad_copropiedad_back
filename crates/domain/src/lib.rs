@@ -149,9 +149,9 @@ pub use publicidad::{
 };
 pub use quorum::{Convocatoria, Quorum, QuorumReunion};
 pub use reserva::{
-    CanalReserva, CategoriaBienComun, CobroPor, ConceptoCargo, EstadoPago, EstadoRecurso,
-    EstadoReserva, Franja, MetodoEntrega, ModalidadCita, ModoAsignacion, PoliticaReserva,
-    QuienReserva, TipoEntrega, TipoRecurso, VinculoSolicitante,
+    CanalReserva, CategoriaBienComun, CobroPor, CobroReserva, ConceptoCargo, DestinoCobro,
+    EstadoPago, EstadoRecurso, EstadoReserva, Franja, MetodoEntrega, ModalidadCita, ModoAsignacion,
+    PoliticaReserva, QuienReserva, TipoEntrega, TipoRecurso, VinculoSolicitante,
 };
 pub use resultados::{Conteo, Decision, Escrutinio, ResultadoOpcion, VotosOpcion};
 pub use reunion::{

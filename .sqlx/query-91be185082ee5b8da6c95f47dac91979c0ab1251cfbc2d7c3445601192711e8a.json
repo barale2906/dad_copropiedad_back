@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO exclusiones_publicidad (tenant_id, motivo, creada_por, creada_en)\n             VALUES ($1, $2, $3, $4)\n             ON CONFLICT (tenant_id) DO UPDATE SET motivo = EXCLUDED.motivo,\n                 creada_por = EXCLUDED.creada_por, creada_en = EXCLUDED.creada_en",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "91be185082ee5b8da6c95f47dac91979c0ab1251cfbc2d7c3445601192711e8a"
+}

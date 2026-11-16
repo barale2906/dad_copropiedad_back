@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cuentas_tesoreria SET mapeo_extracto = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6a5723a1e41a308f3c49387917389adf8f2eaad9fa888ceee5c4d882bdffd583"
+}

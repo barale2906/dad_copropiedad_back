@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT mapeo_extracto FROM cuentas_tesoreria WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "mapeo_extracto",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "cuentas_tesoreria",
+            "name": "mapeo_extracto"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "4c6bd6728bd3644a09886bcd19a682ab4c666f2a5fb8759f121675b103ab85d7"
+}

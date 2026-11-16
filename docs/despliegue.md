@@ -223,7 +223,8 @@ docker save dad_carga | ssh usuario@vps docker load
 
 # 2. VPS: entorno de prueba aparte (otro proyecto, otros volúmenes, otros puertos). Sin gateway:
 #    no se envía nada. .env.carga es una copia de .env.produccion con API_PUERTO=18080,
-#    GATEWAY_PUERTO=18081 y LIMITE_AUTH_POR_MINUTO=0.
+#    GATEWAY_PUERTO=18081, LIMITE_AUTH_POR_MINUTO=0 y REGISTRO_ABIERTO=true (la siembra crea los
+#    administradores de prueba con /auth/registro; en producción el registro está cerrado).
 alias dcc='docker compose -p dad_carga -f docker-compose.prod.yml --env-file .env.carga'
 dcc up -d postgres && dcc run --rm migracion && dcc up -d api
 read -rs -p "Contraseña del superusuario de prueba: " CARGA_ROOT_CONTRASENA; echo

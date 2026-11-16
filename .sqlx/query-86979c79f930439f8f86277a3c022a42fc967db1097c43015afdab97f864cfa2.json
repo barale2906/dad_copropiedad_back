@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT hasta FROM accesos_soporte\n             WHERE cuenta_id = $1 AND tenant_id = $2 AND desde <= $3 AND hasta > $3\n             ORDER BY hasta DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "accesos_soporte",
+            "name": "hasta"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "86979c79f930439f8f86277a3c022a42fc967db1097c43015afdab97f864cfa2"
+}

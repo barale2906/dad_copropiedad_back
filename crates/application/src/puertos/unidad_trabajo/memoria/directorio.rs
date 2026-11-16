@@ -20,6 +20,8 @@ use crate::{
 
 #[derive(Default, Clone)]
 pub struct DatosDirectorio {
+    /// La plataforma excluyó a la entidad de la publicidad.
+    pub excluida: bool,
     pub fichas: Vec<FichaDirectorio>,
     pub categorias: Vec<Categoria>,
     /// Cuentas propietarias o residentes vigentes.
@@ -39,6 +41,10 @@ pub struct DatosDirectorio {
 }
 
 impl RepositorioDirectorio for TransaccionEnMemoria {
+    async fn publicidad_permitida(&mut self, _ahora: DateTime<Utc>) -> AppResult<bool> {
+        Ok(!self.datos.directorio.excluida)
+    }
+
     async fn fichas_directorio(
         &mut self,
         f: &FiltroDirectorio,

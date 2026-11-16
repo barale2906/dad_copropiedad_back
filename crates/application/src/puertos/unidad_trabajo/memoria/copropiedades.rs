@@ -35,6 +35,13 @@ impl crate::puertos::RepositorioEntidad for TransaccionEnMemoria {
     ) -> AppResult<()> {
         Ok(())
     }
+
+    async fn guardar_estado_entidad(
+        &mut self,
+        _estado: domain::EstadoCopropiedad,
+    ) -> AppResult<()> {
+        Ok(())
+    }
 }
 
 impl RepositorioCopropiedad for TransaccionEnMemoria {

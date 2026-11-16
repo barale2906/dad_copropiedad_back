@@ -35,6 +35,9 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(ver_ficha, actualizar_ficha))
         .routes(routes!(capacidades_entidad))
         .merge(super::roles::rutas())
+        .merge(super::usuarios::rutas_entidad())
+        .merge(super::directorio::rutas_entidad())
+        .merge(super::publicidad::rutas_entidad())
         .merge(super::archivos::rutas_entidad())
         .merge(super::auditoria::rutas())
         .merge(super::contabilidad::rutas_terceros())
@@ -63,7 +66,7 @@ pub async fn capacidades_entidad(
     en: EnEntidad,
 ) -> ApiResult<Json<CapacidadesRespuesta>> {
     let c = uc_capacidades(&state.unidad, &RelojSistema, &en.ctx).await?;
-    Ok(Json(c.into()))
+    Ok(Json(CapacidadesRespuesta::con_modo(c, en.modo_soporte)))
 }
 
 /// Datos generales de la entidad.

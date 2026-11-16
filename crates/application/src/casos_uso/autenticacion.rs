@@ -53,6 +53,9 @@ pub const VIDA_SESION_COMPARTIDA: Duration = Duration::hours(12);
 pub const VIDA_DESAFIO: Duration = Duration::minutes(5);
 /// Vida de un código enviado por correo.
 pub const VIDA_CODIGO: Duration = Duration::minutes(30);
+/// Vida del código para definir la primera contraseña de una cuenta creada por otro: la persona
+/// puede no leer el correo de inmediato.
+pub const VIDA_CODIGO_DEFINIR: Duration = Duration::hours(72);
 /// Intentos fallidos de contraseña antes del bloqueo temporal.
 pub const MAX_INTENTOS: u32 = 5;
 /// Cuánto dura el bloqueo temporal tras [`MAX_INTENTOS`] contraseñas fallidas.
@@ -174,7 +177,7 @@ where
         correo: registro.correo,
         correo_verificado: false,
         estado: EstadoCuenta::Activa,
-        hash_contrasena: hasher.hash(&registro.contrasena).await?,
+        hash_contrasena: Some(hasher.hash(&registro.contrasena).await?),
         intentos_fallidos: 0,
         bloqueo_hasta: None,
         totp_secreto: None,
@@ -200,7 +203,7 @@ where
     Ok(cuenta.id)
 }
 
-async fn enviar_codigo<T>(
+pub(crate) async fn enviar_codigo<T>(
     tx: &mut T,
     cuenta: &Cuenta,
     correo: &DireccionCorreo,
@@ -216,7 +219,7 @@ where
         cuenta_id: cuenta.id,
         proposito,
         hash_codigo: hash_secreto(&codigo),
-        expira_en: ahora + VIDA_CODIGO,
+        expira_en: ahora + vida_codigo(proposito),
         intentos: 0,
         creado_en: ahora,
     })
@@ -238,6 +241,9 @@ where
                 cuenta.nombre_mostrar
             ),
         ),
+        PropositoCodigo::DefinirContrasena => {
+            texto_definir_contrasena(&cuenta.nombre_mostrar, &codigo)
+        }
     };
     tx.encolar(EventoSaliente {
         prioridad: PrioridadSalida::Confirmacion,
@@ -250,6 +256,26 @@ where
         }),
     })
     .await
+}
+
+/// Vida del código según su propósito.
+pub(crate) fn vida_codigo(proposito: PropositoCodigo) -> Duration {
+    match proposito {
+        PropositoCodigo::DefinirContrasena => VIDA_CODIGO_DEFINIR,
+        PropositoCodigo::VerificarCorreo | PropositoCodigo::RecuperarContrasena => VIDA_CODIGO,
+    }
+}
+
+/// Asunto y texto del correo con el código para definir la contraseña.
+pub(crate) fn texto_definir_contrasena(nombre: &str, codigo: &str) -> (&'static str, String) {
+    (
+        "Defina su contraseña de DAD Copropiedad",
+        format!(
+            "Hola, {nombre}.\n\nSe creó su usuario en DAD Copropiedad. Para entrar, abra «Definir \
+             contraseña», escriba su correo y este código: {codigo}\n\nVence en 72 horas. Si no \
+             esperaba este mensaje, ignórelo."
+        ),
+    )
 }
 
 /// Verifica un código de un solo uso: lo marca usado si es correcto, cuenta el intento si no.
@@ -398,9 +424,14 @@ where
     if cuenta.bloqueo_hasta.is_some_and(|b| b > ahora) {
         return Err(AppError::DemasiadosIntentos);
     }
-    let correcta = hasher
-        .verificar(&solicitud.contrasena, &cuenta.hash_contrasena)
-        .await;
+    let correcta = match &cuenta.hash_contrasena {
+        Some(hash) => hasher.verificar(&solicitud.contrasena, hash).await,
+        // Contraseña pendiente: nadie entra todavía, y tarda lo mismo que una verificación.
+        None => {
+            hasher.igualar_tiempo(&solicitud.contrasena).await;
+            false
+        }
+    };
     if !correcta || cuenta.estado != EstadoCuenta::Activa {
         let intentos = cuenta.intentos_fallidos + 1;
         let bloqueo = (intentos >= MAX_INTENTOS).then(|| ahora + DURACION_BLOQUEO);
@@ -704,6 +735,8 @@ where
 }
 
 /// Restablece la contraseña con el código recibido por correo y cierra todas las sesiones.
+/// También define la primera contraseña de una cuenta creada por otro (código de
+/// [`PropositoCodigo::DefinirContrasena`]).
 ///
 /// # Errors
 ///
@@ -730,7 +763,8 @@ where
         .cuenta_por_identificador(&Identificador::Correo(correo.clone()))
         .await?
         .ok_or_else(invalido)?;
-    if !consumir_codigo(
+    // Sirve el código de recuperar o el de definir la primera contraseña (mismo formulario).
+    let valido = consumir_codigo(
         &mut tx,
         cuenta.id,
         PropositoCodigo::RecuperarContrasena,
@@ -738,7 +772,15 @@ where
         ahora,
     )
     .await?
-    {
+        || consumir_codigo(
+            &mut tx,
+            cuenta.id,
+            PropositoCodigo::DefinirContrasena,
+            codigo,
+            ahora,
+        )
+        .await?;
+    if !valido {
         tx.confirmar().await?;
         return Err(invalido());
     }
@@ -774,7 +816,10 @@ where
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
     let cuenta = cuenta_existente(&mut tx, ctx.cuenta()?).await?;
-    if !hasher.verificar(actual, &cuenta.hash_contrasena).await {
+    let Some(hash_actual) = &cuenta.hash_contrasena else {
+        return Err(AppError::CredencialesInvalidas);
+    };
+    if !hasher.verificar(actual, hash_actual).await {
         return Err(AppError::CredencialesInvalidas);
     }
     let hash = hasher.hash(nueva).await?;

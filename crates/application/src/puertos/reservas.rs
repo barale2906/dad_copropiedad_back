@@ -287,8 +287,36 @@ pub trait RepositorioReservas: Send {
         reserva: ReservaId,
     ) -> impl Future<Output = AppResult<Vec<Entrega>>> + Send;
 
-    /// Guarda un cargo pendiente (penalidad o daño).
+    /// Guarda un cargo pendiente (penalidad, daño o valor de la reserva).
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si la reserva ya tiene su cargo por el valor.
     fn insertar_cargo(&mut self, c: &CargoPendiente) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Anula el cargo pendiente por el valor de la reserva (se canceló antes de cobrarse en la
+    /// cartera). `false` si no había uno pendiente.
+    fn anular_cargo_valor_reserva(
+        &mut self,
+        reserva: ReservaId,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// Cómo se cobran las reservas del recurso (por defecto, a mano).
+    fn cobro_recurso(
+        &mut self,
+        recurso: RecursoId,
+    ) -> impl Future<Output = AppResult<domain::CobroReserva>> + Send;
+
+    /// Guarda cómo se cobran las reservas del recurso.
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::NoEncontrado`] si el ítem de facturación no existe en la entidad.
+    fn guardar_cobro_recurso(
+        &mut self,
+        recurso: RecursoId,
+        cobro: &domain::CobroReserva,
+    ) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Autoriza (o no) las reservas de un tenedor.
     fn autorizar_reservas(

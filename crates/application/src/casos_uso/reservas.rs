@@ -60,6 +60,8 @@ pub(crate) const ACCION_ENTREGA: AccionAuditoria =
 pub(crate) const ACCION_RECIBO: AccionAuditoria = AccionAuditoria::new("reservas.reserva.recibir");
 pub(crate) const ACCION_NO_ASISTIO: AccionAuditoria =
     AccionAuditoria::new("reservas.reserva.no_asistio");
+pub(crate) const ACCION_COBRO_RECURSO: AccionAuditoria =
+    AccionAuditoria::new("reservas.recurso.configurar_cobro");
 pub(crate) const ACCION_PAGO: AccionAuditoria =
     AccionAuditoria::new("reservas.reserva.registrar_pago");
 pub(crate) const ACCION_RESTRINGIR: AccionAuditoria =
@@ -674,6 +676,7 @@ where
     )
     .await?;
     if estado == EstadoReserva::Aprobada {
+        cargar_a_cartera(&mut tx, &reserva, &recurso, ahora).await?;
         avisar(
             &mut tx,
             reserva.solicitante_persona_id,
@@ -688,6 +691,31 @@ where
     }
     tx.confirmar().await?;
     Ok(reserva)
+}
+
+/// Si el recurso se cobra en la cartera, el valor de la reserva aprobada queda como cargo
+/// pendiente del bien privado (sale en su próxima cuenta de cobro).
+async fn cargar_a_cartera<T: RepositorioReservas>(
+    tx: &mut T,
+    reserva: &Reserva,
+    recurso: &Recurso,
+    ahora: DateTime<Utc>,
+) -> AppResult<()> {
+    if reserva.valor.is_zero()
+        || tx.cobro_recurso(recurso.id).await?.destino() != domain::DestinoCobro::Cartera
+    {
+        return Ok(());
+    }
+    tx.insertar_cargo(&CargoPendiente {
+        id: CargoId::nuevo(),
+        bien_privado_id: reserva.bien_privado_id,
+        concepto: ConceptoCargo::ValorReserva,
+        descripcion: Some(format!("Reserva: {}", recurso.nombre)),
+        valor: reserva.valor,
+        reserva_id: Some(reserva.id),
+        creado_en: ahora,
+    })
+    .await
 }
 
 async fn cargar<T: RepositorioReservas>(
@@ -740,6 +768,9 @@ where
     r.estado = r.estado.transicionar(hacia)?;
     r.observacion = texto_opcional("motivo", motivo.as_deref(), 500)?;
     tx.actualizar_reserva(&r).await?;
+    if aprobar {
+        cargar_a_cartera(&mut tx, &r, &recurso, reloj.ahora()).await?;
+    }
     let tz = zona(&mut tx).await?;
     let (asunto, texto) = if aprobar {
         (
@@ -813,6 +844,8 @@ where
             .penalidad(r.valor, r.franja.inicio(), ahora);
     }
     tx.actualizar_reserva(&r).await?;
+    // Lo que aún no se cobró en la cartera ya no se debe; la penalidad, si aplica, va aparte.
+    tx.anular_cargo_valor_reserva(r.id).await?;
     if r.penalidad > Decimal::ZERO {
         tx.insertar_cargo(&CargoPendiente {
             id: CargoId::nuevo(),
@@ -1035,12 +1068,14 @@ where
     Ok(r)
 }
 
-/// Registra a mano el estado del pago (pagado o exonerado).
+/// Registra a mano el estado del pago (pagado o exonerado). Solo en los recursos que se cobran a
+/// mano: los de cartera o factura se pagan allá.
 ///
 /// # Errors
 ///
 /// [`AppError::SinPermiso`] sin `reservas.aprobar`; [`AppError::NoEncontrado`];
-/// [`AppError::Validacion`] si la reserva no tiene valor que pagar.
+/// [`AppError::Validacion`] si la reserva no tiene valor que pagar o el recurso se cobra en la
+/// cartera o con factura.
 pub async fn registrar_pago<U>(
     unidad: &U,
     reloj: &impl Reloj,
@@ -1055,7 +1090,20 @@ where
     ctx.exigir(Permiso::ReservasAprobar)?;
     let mut tx = unidad.iniciar(ctx).await?;
     exigir_modulo_en(&mut tx, reloj, Modulo::BienesComunes).await?;
-    let (mut r, _) = cargar(&mut tx, id).await?;
+    let (mut r, recurso) = cargar(&mut tx, id).await?;
+    match tx.cobro_recurso(recurso.id).await?.destino() {
+        domain::DestinoCobro::Manual => {}
+        domain::DestinoCobro::Cartera => {
+            return Err(AppError::Validacion(
+                "este recurso se cobra en la cuenta de cobro de la cartera".into(),
+            ));
+        }
+        domain::DestinoCobro::Factura => {
+            return Err(AppError::Validacion(
+                "este recurso se cobra con factura: registre el pago en la factura".into(),
+            ));
+        }
+    }
     if r.estado_pago == EstadoPago::NoAplica || estado == EstadoPago::NoAplica {
         return Err(AppError::Validacion(
             "la reserva no tiene valor que pagar".into(),
@@ -1068,6 +1116,68 @@ where
         .await?;
     tx.confirmar().await?;
     Ok(r)
+}
+
+/// Cómo se cobran las reservas del recurso.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `bienes_comunes.ver`; [`AppError::ModuloNoHabilitado`];
+/// [`AppError::NoEncontrado`].
+pub async fn cobro_de_recurso<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    recurso: RecursoId,
+) -> AppResult<domain::CobroReserva>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioReservas + RepositorioModulos,
+{
+    ctx.exigir(Permiso::BienesComunesVer)?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    exigir_modulo_en(&mut tx, reloj, Modulo::BienesComunes).await?;
+    tx.recurso(recurso)
+        .await?
+        .ok_or(AppError::NoEncontrado("recurso"))?;
+    tx.cobro_recurso(recurso).await
+}
+
+/// El contador decide cómo se cobra el valor de las reservas del recurso: a mano, en la cartera
+/// o con factura (con el ítem de facturación). Rige para las reservas que se aprueben desde
+/// ahora.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `cartera.configurar` ni `contabilidad.configurar`;
+/// [`AppError::ModuloNoHabilitado`]; [`AppError::NoEncontrado`] si el recurso o el ítem no
+/// existen.
+pub async fn configurar_cobro<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    recurso: RecursoId,
+    cobro: domain::CobroReserva,
+) -> AppResult<domain::CobroReserva>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioReservas + RepositorioModulos + RegistroAuditoria,
+{
+    ctx.exigir_alguno(&[Permiso::CarteraConfigurar, Permiso::ContabilidadConfigurar])?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    exigir_modulo_en(&mut tx, reloj, Modulo::BienesComunes).await?;
+    tx.recurso(recurso)
+        .await?
+        .ok_or(AppError::NoEncontrado("recurso"))?;
+    tx.guardar_cobro_recurso(recurso, &cobro).await?;
+    let detalle = DetalleAuditoria::vacio().con("destino", cobro.destino().as_str())?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_COBRO_RECURSO, "recurso", recurso.as_uuid())
+            .con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(cobro)
 }
 
 /// Reservas: todas (con `reservas.ver_todas`) o las que pidió la cuenta (`solo_mias`).
@@ -1793,6 +1903,58 @@ pub(crate) mod tests {
 
         assert_eq!(r.estado, EstadoReserva::ConNovedad);
         assert!(e.unidad.datos().gestion.tickets.is_empty());
+    }
+
+    #[tokio::test]
+    async fn en_cartera_el_valor_aprobado_queda_como_cargo_y_cancelar_lo_anula() {
+        let e = entorno().await;
+        let r = salon(
+            &e,
+            PoliticaReserva {
+                tarifa: dec!(100000),
+                ..PoliticaReserva::default()
+            },
+            false,
+        )
+        .await;
+        let cartera =
+            domain::CobroReserva::new(domain::DestinoCobro::Cartera, None).expect("válido");
+        let sin_permiso = configurar_cobro(&e.unidad, &reloj(), &e.dueno, r.id, cartera).await;
+        assert!(matches!(sin_permiso, Err(AppError::SinPermiso(_))));
+        configurar_cobro(&e.unidad, &reloj(), &e.ctx, r.id, cartera)
+            .await
+            .expect("el contador configura");
+        let a = solicitar_reserva(
+            &e.unidad,
+            &reloj(),
+            &e.dueno,
+            solicitud(&e, &r, 20, 14, 16, "c"),
+        )
+        .await
+        .expect("solicita");
+        assert!(e.unidad.datos().cargos.is_empty(), "solo al aprobar");
+
+        resolver_reserva(&e.unidad, &reloj(), &e.ctx, a.id, true, None)
+            .await
+            .expect("aprueba");
+        let cargos = e.unidad.datos().cargos;
+        assert_eq!(
+            cargos
+                .iter()
+                .map(|c| (c.concepto, c.valor))
+                .collect::<Vec<_>>(),
+            vec![(ConceptoCargo::ValorReserva, dec!(100000))]
+        );
+        let manual = registrar_pago(&e.unidad, &reloj(), &e.ctx, a.id, EstadoPago::Pagado).await;
+        assert!(
+            matches!(manual, Err(AppError::Validacion(_))),
+            "se paga en la cartera"
+        );
+
+        cancelar_reserva(&e.unidad, &reloj(), &e.ctx, a.id, None)
+            .await
+            .expect("cancela");
+        assert!(e.unidad.datos().cargos.is_empty(), "lo no cobrado se anula");
     }
 
     #[tokio::test]

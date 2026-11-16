@@ -330,7 +330,7 @@ mod tests {
             assert_eq!(res.is_ok(), esperado, "día {d}");
         }
         assert!(
-            exigir_modulo(&unidad, &RelojEn(dia(6)), &ctx, Modulo::Publicidad)
+            exigir_modulo(&unidad, &RelojEn(dia(6)), &ctx, Modulo::ControlAcceso)
                 .await
                 .is_err()
         );
@@ -346,7 +346,7 @@ mod tests {
             &RelojEn(dia(1)),
             &plataforma(),
             ctx.tenant_id,
-            Modulo::Publicidad,
+            Modulo::GestionAdministrativa,
             None,
             None,
         )
@@ -358,21 +358,31 @@ mod tests {
             &RelojEn(dia(8)),
             &plataforma(),
             ctx.tenant_id,
-            Modulo::Publicidad,
+            Modulo::GestionAdministrativa,
         )
         .await
         .expect("termina");
 
         assert_eq!(terminados, 1);
         assert!(
-            exigir_modulo(&unidad, &RelojEn(dia(7)), &ctx, Modulo::Publicidad)
-                .await
-                .is_ok()
+            exigir_modulo(
+                &unidad,
+                &RelojEn(dia(7)),
+                &ctx,
+                Modulo::GestionAdministrativa
+            )
+            .await
+            .is_ok()
         );
         assert!(
-            exigir_modulo(&unidad, &RelojEn(dia(8)), &ctx, Modulo::Publicidad)
-                .await
-                .is_err()
+            exigir_modulo(
+                &unidad,
+                &RelojEn(dia(8)),
+                &ctx,
+                Modulo::GestionAdministrativa
+            )
+            .await
+            .is_err()
         );
         assert_eq!(unidad.confirmados()[1].1.accion, ACCION_TERMINAR);
     }
@@ -401,7 +411,7 @@ mod tests {
         let unidad = UnidadEnMemoria::default();
         let tenant = TenantId::nuevo();
         for (modulo, desde, hasta) in [
-            (Modulo::Publicidad, dia(1), None),
+            (Modulo::GestionAdministrativa, dia(1), None),
             (Modulo::Asambleas, dia(1), None),
             (Modulo::ControlAcceso, dia(1), Some(dia(3))),
         ] {
@@ -426,7 +436,10 @@ mod tests {
 
         assert_eq!(c.permisos, permisos);
         // El vencido no aparece; el orden es el de `Modulo::TODOS`, no el de alta.
-        assert_eq!(c.modulos, vec![Modulo::Asambleas, Modulo::Publicidad]);
+        assert_eq!(
+            c.modulos,
+            vec![Modulo::Asambleas, Modulo::GestionAdministrativa]
+        );
     }
 
     #[tokio::test]

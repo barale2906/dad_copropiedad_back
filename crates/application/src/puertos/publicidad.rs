@@ -15,15 +15,13 @@ use domain::{
     AnuncianteId, CampanaId, CanalPublicidad, CodigoCategoria, CodigoCupon, CreativoId, CuentaId,
     EstadoCampana, EstadoCreativo, EstadoLiquidacion, FormatoCreativo, LiquidacionId,
     MedioAutorizacion, ModeloCobro, Nit, ObjetivoCampana, OrganizacionId, PersonaId,
-    PoliticaPublicidadId, ReportePublicidadId, RolOrganizacion, Segmentacion, SolicitudProveedorId,
-    Telefono, TenantId,
+    PoliticaPublicidadId, ReportePublicidadId, Segmentacion, SolicitudProveedorId, Telefono,
+    TenantId,
     publicidad::{ContenidoCreativo, Conteo, PiezaCandidata, Presupuesto},
 };
 use rust_decimal::Decimal;
 
-use crate::{
-    AppResult, Pagina, SolicitudPagina, outbox::EventoSaliente, puertos::directorio::Anunciante,
-};
+use crate::{AppResult, Pagina, SolicitudPagina, outbox::EventoSaliente};
 
 /// Campaña de un anunciante.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,6 +46,8 @@ pub struct Campana {
     pub revisada_por: Option<CuentaId>,
     pub revisada_en: Option<DateTime<Utc>>,
     pub creada_por: Option<CuentaId>,
+    /// Última cuenta que la editó: tampoco puede moderarla (cuatro ojos, plan 20).
+    pub editada_por: Option<CuentaId>,
     pub creada_en: DateTime<Utc>,
     pub actualizada_en: DateTime<Utc>,
 }
@@ -62,6 +62,10 @@ pub struct Creativo {
     pub cupon_usos: u32,
     pub estado: EstadoCreativo,
     pub motivo_estado: Option<String>,
+    /// Cuenta que cargó el contenido vigente: no puede moderarlo (cuatro ojos, plan 20).
+    pub cargado_por: Option<CuentaId>,
+    /// Cuenta que lo aprobó o rechazó.
+    pub revisado_por: Option<CuentaId>,
     pub creado_en: DateTime<Utc>,
     pub actualizado_en: DateTime<Utc>,
 }
@@ -145,6 +149,15 @@ pub struct PoliticaPublicidad {
     pub creada_en: DateTime<Utc>,
 }
 
+/// Entidad que la plataforma excluyó de la publicidad (no recibe piezas ni destacadas).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExclusionPublicidad {
+    pub tenant_id: TenantId,
+    pub motivo: String,
+    pub creada_por: Option<CuentaId>,
+    pub creada_en: DateTime<Utc>,
+}
+
 /// Publicidad en la transacción de plataforma.
 pub trait RepositorioPublicidadPlataforma: Send {
     /// La organización con ese NIT, si ya existe.
@@ -153,11 +166,48 @@ pub trait RepositorioPublicidadPlataforma: Send {
         nit: &Nit,
     ) -> impl Future<Output = AppResult<Option<OrganizacionId>>> + Send;
 
-    /// Anunciantes de las organizaciones de las que la cuenta es miembro, con su papel.
-    fn anunciantes_de_cuenta(
+    /// Token cifrado del enlace de redención del comercio, si tiene uno.
+    fn enlace_comercio(
         &mut self,
-        cuenta: CuentaId,
-    ) -> impl Future<Output = AppResult<Vec<(Anunciante, RolOrganizacion)>>> + Send;
+        anunciante: AnuncianteId,
+    ) -> impl Future<Output = AppResult<Option<Vec<u8>>>> + Send;
+
+    /// Crea o reemplaza el enlace de redención del comercio.
+    fn guardar_enlace_comercio(
+        &mut self,
+        anunciante: AnuncianteId,
+        token_hash: &[u8],
+        token_cifrado: &[u8],
+        creado_por: Option<CuentaId>,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Revoca el enlace del comercio. `false` si no tenía.
+    fn borrar_enlace_comercio(
+        &mut self,
+        anunciante: AnuncianteId,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// El comercio dueño del enlace con ese hash.
+    fn anunciante_por_enlace(
+        &mut self,
+        token_hash: &[u8],
+    ) -> impl Future<Output = AppResult<Option<AnuncianteId>>> + Send;
+
+    /// Excluye la entidad de la publicidad (o actualiza el motivo).
+    fn excluir_de_publicidad(
+        &mut self,
+        exclusion: &ExclusionPublicidad,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Vuelve a incluir la entidad. `false` si no estaba excluida.
+    fn quitar_exclusion(
+        &mut self,
+        tenant: TenantId,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// Entidades excluidas de la publicidad.
+    fn exclusiones(&mut self) -> impl Future<Output = AppResult<Vec<ExclusionPublicidad>>> + Send;
 
     /// Guarda una campaña nueva.
     fn insertar_campana(&mut self, c: &Campana) -> impl Future<Output = AppResult<()>> + Send;
@@ -365,6 +415,9 @@ pub struct ReportePublicidad {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PantallaPublicidad {
     pub token_hash: Vec<u8>,
+    /// El token cifrado con el Cofre, para volver a entregarlo (`None` en las anteriores al
+    /// plan 20: hay que generar otra).
+    pub token_cifrado: Option<Vec<u8>>,
     pub creado_por: Option<CuentaId>,
     pub creado_en: DateTime<Utc>,
 }

@@ -67,7 +67,7 @@ async fn propietario_encuentra_al_proveedor_y_lo_califica_sin_autor(pool: PgPool
         .api
         .pedir(
             Method::GET,
-            &format!("{}/directorio?q=modista", p.base),
+            &format!("{}/directorio?q=modista", p.entidad),
             Some(&dueno),
             None,
         )
@@ -109,7 +109,7 @@ async fn propietario_encuentra_al_proveedor_y_lo_califica_sin_autor(pool: PgPool
         .api
         .pedir(
             Method::GET,
-            &format!("{}/directorio/anunciantes/{id}", p.base),
+            &format!("{}/directorio/anunciantes/{id}", p.entidad),
             Some(&dueno),
             None,
         )
@@ -124,7 +124,7 @@ async fn el_administrador_ve_el_directorio_pero_no_califica(pool: PgPool) {
     let p = ph(pool).await;
     let id = anunciante(&p).await;
 
-    let (s, v) = p.pedir(Method::GET, "/directorio", None).await;
+    let (s, v) = p.pedir_entidad(Method::GET, "/directorio", None).await;
     assert_eq!(s, StatusCode::OK, "{v}");
     let (s, v) = p
         .pedir(
@@ -156,7 +156,7 @@ async fn una_categoria_restringida_se_rechaza(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
-async fn sin_el_modulo_no_hay_destacadas_y_con_el_si(pool: PgPool) {
+async fn las_destacadas_salen_sin_modulo_salvo_si_la_plataforma_excluye_la_entidad(pool: PgPool) {
     let p = ph(pool).await;
     let id = anunciante(&p).await;
     let (s, v) = p
@@ -173,12 +173,25 @@ async fn sin_el_modulo_no_hay_destacadas_y_con_el_si(pool: PgPool) {
         .await;
     assert_eq!(s, StatusCode::OK, "{v}");
 
-    let (_, sin) = p.pedir(Method::GET, "/directorio/destacadas", None).await;
-    assert_eq!(sin, json!([]));
-    p.habilitar("publicidad").await;
-    let (_, con) = p.pedir(Method::GET, "/directorio/destacadas", None).await;
+    let (_, con) = p
+        .pedir_entidad(Method::GET, "/directorio/destacadas", None)
+        .await;
     assert_eq!(con[0]["anunciante_id"], id.as_str());
     assert_eq!(con[0]["destacada"], true);
+    let (s, v) = p
+        .api
+        .pedir(
+            Method::POST,
+            "/api/v1/plataforma/publicidad/exclusiones",
+            Some(&p.root),
+            Some(json!({ "entidad_id": p.id, "motivo": "Sin publicidad por contrato" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    let (_, sin) = p
+        .pedir_entidad(Method::GET, "/directorio/destacadas", None)
+        .await;
+    assert_eq!(sin, json!([]));
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
@@ -268,7 +281,12 @@ async fn la_gestion_del_directorio_es_de_la_plataforma(pool: PgPool) {
     assert_eq!(s, StatusCode::FORBIDDEN, "{v}");
     let (s, _) = p
         .api
-        .pedir(Method::GET, &format!("{}/directorio", p.base), None, None)
+        .pedir(
+            Method::GET,
+            &format!("{}/directorio", p.entidad),
+            None,
+            None,
+        )
         .await;
     assert_eq!(s, StatusCode::UNAUTHORIZED);
 
@@ -286,7 +304,9 @@ async fn la_gestion_del_directorio_es_de_la_plataforma(pool: PgPool) {
         .await;
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v["sinonimos"], json!(["celular", "pantalla rota"]));
-    let (_, v) = p.pedir(Method::GET, "/directorio/categorias", None).await;
+    let (_, v) = p
+        .pedir_entidad(Method::GET, "/directorio/categorias", None)
+        .await;
     let codigos: Vec<&str> = v
         .as_array()
         .expect("lista")

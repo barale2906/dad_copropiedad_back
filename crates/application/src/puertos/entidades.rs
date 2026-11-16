@@ -44,4 +44,10 @@ pub trait RepositorioEntidad: Send {
         &mut self,
         ficha: &FichaEntidad,
     ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Cambia el estado de la entidad (lo decide la plataforma).
+    fn guardar_estado_entidad(
+        &mut self,
+        estado: EstadoCopropiedad,
+    ) -> impl Future<Output = AppResult<()>> + Send;
 }

@@ -700,6 +700,52 @@ pub struct DetalleTicket {
     pub mensajes: Vec<MensajeVista>,
     pub adjuntos: Vec<AdjuntoTicket>,
     pub eventos: Vec<EventoTicket>,
+    /// Estados a los que **quien consulta** puede llevar el ticket ahora con
+    /// [`transicionar_ticket`] (la misma regla; la asignación va aparte).
+    pub transiciones_permitidas: Vec<EstadoTicket>,
+}
+
+/// ¿El papel de la cuenta permite llevar el ticket a `hacia`? (Sin el diagrama ni los plazos.)
+/// `None` para `asignado`, que tiene su propia operación.
+fn papel_permite(
+    ctx: &Contexto,
+    v: &VisibilidadTickets,
+    t: &Ticket,
+    hacia: EstadoTicket,
+) -> Option<bool> {
+    use EstadoTicket::*;
+    let gestiona = tiene(ctx, Permiso::TicketsAsignar);
+    Some(match hacia {
+        EnRevision | Rechazado | Duplicado => gestiona,
+        EnProgreso | EnEsperaTercero | EnEsperaSolicitante | Resuelto => {
+            gestiona || atiende(ctx, v, t)
+        }
+        Cerrado | Reabierto => gestiona || es_solicitante(ctx, t),
+        Asignado => return None,
+        Abierto => false,
+    })
+}
+
+/// El solicitante solo reabre dentro del plazo; quien gestiona, siempre.
+fn reapertura_vencida(ctx: &Contexto, t: &Ticket, ahora: DateTime<Utc>) -> bool {
+    !tiene(ctx, Permiso::TicketsAsignar) && t.reabrible_hasta.is_none_or(|h| ahora > h)
+}
+
+/// Estados a los que la cuenta puede llevar el ticket ahora: su papel lo permite, el diagrama
+/// lo admite y, para reabrir, no venció el plazo.
+pub(crate) fn transiciones_permitidas(
+    ctx: &Contexto,
+    v: &VisibilidadTickets,
+    t: &Ticket,
+    ahora: DateTime<Utc>,
+) -> Vec<EstadoTicket> {
+    EstadoTicket::TODOS
+        .iter()
+        .copied()
+        .filter(|h| papel_permite(ctx, v, t, *h) == Some(true))
+        .filter(|h| t.estado.transicionar(*h).is_ok())
+        .filter(|h| *h != EstadoTicket::Reabierto || !reapertura_vencida(ctx, t, ahora))
+        .collect()
 }
 
 async fn cargar_visible<T: TxTickets>(
@@ -771,6 +817,7 @@ where
         })
         .collect();
     Ok(DetalleTicket {
+        transiciones_permitidas: transiciones_permitidas(ctx, &v, &t, ahora),
         ticket: vista_t,
         mensajes,
         adjuntos: tx.adjuntos_ticket(id, internos).await?,
@@ -1071,21 +1118,12 @@ where
     let ahora = reloj.ahora();
     let mut tx = abrir(unidad, reloj, ctx).await?;
     let (mut t, v) = cargar_visible(&mut tx, ctx, id, ahora).await?;
-    let gestiona = tiene(ctx, Permiso::TicketsAsignar);
     let solicitante = es_solicitante(ctx, &t);
     use EstadoTicket::*;
-    let permitido = match cambio.hacia {
-        EnRevision | Rechazado | Duplicado => gestiona,
-        EnProgreso | EnEsperaTercero | EnEsperaSolicitante | Resuelto => {
-            gestiona || atiende(ctx, &v, &t)
-        }
-        Cerrado | Reabierto => gestiona || solicitante,
-        Asignado => {
-            return Err(AppError::Validacion(
-                "para asignar use la operación de asignación".into(),
-            ));
-        }
-        Abierto => false,
+    let Some(permitido) = papel_permite(ctx, &v, &t, cambio.hacia) else {
+        return Err(AppError::Validacion(
+            "para asignar use la operación de asignación".into(),
+        ));
     };
     if !permitido {
         return Err(AppError::SinPermiso(if solicitante {
@@ -1109,7 +1147,7 @@ where
         }
         t.duplicado_de = Some(original);
     }
-    if cambio.hacia == Reabierto && !gestiona && t.reabrible_hasta.is_none_or(|h| ahora > h) {
+    if cambio.hacia == Reabierto && reapertura_vencida(ctx, &t, ahora) {
         return Err(AppError::Conflicto(
             "venció el plazo para reabrir; radique una nueva solicitud".into(),
         ));

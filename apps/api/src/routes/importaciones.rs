@@ -85,6 +85,10 @@ pub struct ResumenRespuesta {
     pub coeficientes: u32,
     /// Borrador con los coeficientes del archivo (actívelo en `/cuadros-coeficientes`).
     pub cuadro_borrador_id: Option<Uuid>,
+    /// Importación de usuarios: usuarios de la planilla.
+    pub usuarios: u32,
+    /// Importación de usuarios: cuántos no tenían cuenta (solo se conoce al aplicar).
+    pub cuentas_nuevas: u32,
 }
 
 impl From<ResumenImportacion> for ResumenRespuesta {
@@ -96,6 +100,8 @@ impl From<ResumenImportacion> for ResumenRespuesta {
             personas_nuevas: r.personas_nuevas,
             coeficientes: r.coeficientes,
             cuadro_borrador_id: r.cuadro_borrador_id.map(CuadroCoeficientesId::as_uuid),
+            usuarios: r.usuarios,
+            cuentas_nuevas: r.cuentas_nuevas,
         }
     }
 }

@@ -673,6 +673,19 @@ pub struct Conciliacion {
 
 /// Extractos, movimientos y conciliaciones.
 pub trait RepositorioConciliacion: Send {
+    /// Último mapeo de columnas que usó la cuenta para importar un extracto en planilla.
+    fn mapeo_extracto(
+        &mut self,
+        cuenta: CuentaTesoreriaId,
+    ) -> impl Future<Output = AppResult<Option<domain::contabilidad::extracto::MapeoColumnas>>> + Send;
+
+    /// Guarda el mapeo de columnas de la cuenta (reemplaza el anterior).
+    fn guardar_mapeo_extracto(
+        &mut self,
+        cuenta: CuentaTesoreriaId,
+        mapeo: &domain::contabilidad::extracto::MapeoColumnas,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
     /// Extracto con el mismo archivo en la cuenta.
     fn extracto_por_hash(
         &mut self,

@@ -16,9 +16,7 @@ use application::{
     },
 };
 use axum::{extract::State, http::StatusCode};
-use domain::{
-    CuentaId, Nit, OrganizacionId, PlantillaContableId, TenantId, contabilidad::PlantillaContable,
-};
+use domain::{Nit, OrganizacionId, PlantillaContableId, TenantId, contabilidad::PlantillaContable};
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
@@ -75,8 +73,11 @@ pub struct NuevaEntidadPeticion {
     /// NIT con o sin dígito de verificación.
     #[schema(value_type = Option<String>, example = "900123456-8")]
     pub nit: Option<Nit>,
-    /// Cuenta que será su primer administrador.
-    pub administrador_cuenta_id: Uuid,
+    /// Cuenta existente que será su primer administrador (o `administrador`, no los dos).
+    pub administrador_cuenta_id: Option<Uuid>,
+    /// Administrador nuevo: se crea su cuenta (o se usa la de ese correo) y recibe el código
+    /// para definir su contraseña.
+    pub administrador: Option<crate::routes::usuarios::AdministradorNuevoPeticion>,
 }
 
 /// Entidad creada.
@@ -98,7 +99,8 @@ pub struct EntidadRespuesta {
         (status = CREATED, description = "Entidad creada", body = EntidadRespuesta),
         (status = FORBIDDEN, description = "Sin `plataforma.entidades.crear`", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "La cuenta del administrador no existe", body = ErrorRespuesta),
-        (status = CONFLICT, description = "Otra entidad tiene ese NIT (`conflicto`)", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Otra entidad tiene ese NIT, o el `usuario` del administrador nuevo es de otra cuenta o la de su correo está bloqueada (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Falta el administrador o vienen los dos, o datos inválidos (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_entidad(
@@ -106,6 +108,8 @@ pub async fn crear_entidad(
     OperadorPlataforma(op): OperadorPlataforma,
     Json(p): Json<NuevaEntidadPeticion>,
 ) -> ApiResult<(StatusCode, Json<EntidadRespuesta>)> {
+    let administrador =
+        crate::routes::usuarios::administrador_alta(p.administrador_cuenta_id, p.administrador)?;
     let id = uc_plataforma::crear_entidad(
         &state.plataforma,
         &state.unidad,
@@ -113,7 +117,7 @@ pub async fn crear_entidad(
         &op.ctx,
         &p.nombre,
         p.nit,
-        CuentaId::from_uuid(p.administrador_cuenta_id),
+        administrador,
     )
     .await?;
     Ok((

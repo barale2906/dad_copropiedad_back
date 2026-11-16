@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cuentas (id, nombre_mostrar, usuario, correo, estado, hash_contrasena,\n                                  contrasena_actualizada_en, creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $6::text IS NULL THEN NULL ELSE $7::timestamptz END, $7)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "53f8b220e5c1114d83eb260c8d0d9c7162aa5d96cb550dadab9464711639150e"
+}

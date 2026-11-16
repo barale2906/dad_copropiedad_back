@@ -34,6 +34,9 @@ pub struct AppState {
     pub planillas: LectorCsvXlsx,
     /// `PLATAFORMA_EXIGE_SEGUNDO_FACTOR`.
     pub plataforma_exige_segundo_factor: bool,
+    /// `REGISTRO_ABIERTO`: `new` lo deja **abierto** (las pruebas crean cuentas así); `main` lo
+    /// configura (cerrado por defecto).
+    pub registro_abierto: bool,
     /// Actas y hojas de rótulos en PDF (Typst).
     pub actas: GeneradorTypst,
     /// Tableros en vivo de las asambleas (WebSocket).
@@ -95,6 +98,7 @@ impl AppState {
             totp: Arc::new(Totp::new("DAD Copropiedad")),
             planillas: LectorCsvXlsx,
             plataforma_exige_segundo_factor,
+            registro_abierto: true,
             actas: GeneradorTypst,
             en_vivo: Arc::new(crate::en_vivo::EnVivo::new()),
             firma_qr: Arc::new(firma_qr),

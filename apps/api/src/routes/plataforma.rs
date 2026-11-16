@@ -45,6 +45,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(asignar))
         .routes(routes!(revocar))
         .routes(routes!(bloquear_cuenta))
+        .merge(super::usuarios::rutas_plataforma())
+        .merge(super::plataforma_entidades::rutas())
         .routes(routes!(reclamaciones_pendientes))
         .routes(routes!(resolver_reclamacion))
         .merge(super::asambleas::lineas::rutas())
@@ -93,8 +95,11 @@ pub async fn listar_copropiedades(
 pub struct NuevaCopropiedadPeticion {
     #[schema(example = "Conjunto Residencial Alameda")]
     pub nombre: String,
-    /// Cuenta que será su primer administrador.
-    pub administrador_cuenta_id: Uuid,
+    /// Cuenta existente que será su primer administrador (o `administrador`, no los dos).
+    pub administrador_cuenta_id: Option<Uuid>,
+    /// Administrador nuevo: se crea su cuenta (o se usa la de ese correo) y recibe el código
+    /// para definir su contraseña.
+    pub administrador: Option<crate::routes::usuarios::AdministradorNuevoPeticion>,
     /// NIT con o sin dígito de verificación (se valida con el algoritmo de la DIAN).
     #[schema(value_type = Option<String>, example = "900123456-8")]
     pub nit: Option<Nit>,
@@ -118,7 +123,8 @@ pub struct NuevaCopropiedadPeticion {
         (status = CREATED, description = "Copropiedad creada", body = CopropiedadRespuesta),
         (status = FORBIDDEN, description = "Sin `plataforma.copropiedades.crear`", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "La cuenta del administrador no existe", body = ErrorRespuesta),
-        (status = CONFLICT, description = "Otra copropiedad tiene ese NIT (`conflicto`)", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Otra copropiedad tiene ese NIT, o el `usuario` del administrador nuevo es de otra cuenta o la de su correo está bloqueada (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Falta el administrador o vienen los dos, o datos inválidos (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_copropiedad(
@@ -126,6 +132,8 @@ pub async fn crear_copropiedad(
     OperadorPlataforma(op): OperadorPlataforma,
     Json(p): Json<NuevaCopropiedadPeticion>,
 ) -> ApiResult<(StatusCode, Json<CopropiedadRespuesta>)> {
+    let administrador =
+        crate::routes::usuarios::administrador_alta(p.administrador_cuenta_id, p.administrador)?;
     let id = uc::crear_copropiedad(
         &state.plataforma,
         &state.unidad,
@@ -137,7 +145,7 @@ pub async fn crear_copropiedad(
             tipo: p.tipo.unwrap_or(TipoCopropiedad::Residencial),
             forma: p.forma.unwrap_or(FormaCopropiedad::Conjunto),
         },
-        CuentaId::from_uuid(p.administrador_cuenta_id),
+        administrador,
     )
     .await?;
     Ok((
@@ -164,7 +172,8 @@ pub struct EstadoCopropiedadRespuesta {
     pub estado: EstadoCopropiedad,
 }
 
-/// Activa, suspende, reactiva o retira una copropiedad.
+/// Activa, suspende, reactiva o retira una copropiedad (alias de
+/// `POST /plataforma/entidades/{entidad_id}/estado`).
 #[utoipa::path(
     post,
     path = "/copropiedades/{copropiedad_id}/estado",
@@ -185,8 +194,10 @@ pub async fn cambiar_estado_copropiedad(
     Path(copropiedad_id): Path<Uuid>,
     Json(p): Json<EstadoCopropiedadPeticion>,
 ) -> ApiResult<Json<EstadoCopropiedadRespuesta>> {
-    let estado = uc::cambiar_estado_copropiedad(
+    let estado = uc::cambiar_estado_entidad(
+        &state.plataforma,
         &state.unidad,
+        &RelojSistema,
         &op.ctx,
         TenantId::from_uuid(copropiedad_id),
         p.estado,
