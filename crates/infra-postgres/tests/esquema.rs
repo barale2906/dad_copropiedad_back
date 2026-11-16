@@ -349,6 +349,9 @@ const TENANT_CON_POLITICA_PROPIA: &[&str] = &[
     // Plan 20: tablas de plataforma con política `solo_plataforma` (la entidad no las lee).
     "accesos_soporte",
     "exclusiones_publicidad",
+    // Plan 19: cobro de la plataforma (`solo_plataforma`); la entidad ve lo suyo por la API.
+    "suscripciones",
+    "mediciones_consumo",
 ];
 
 /// Multi-tenant (§8): toda tabla de negocio con `tenant_id` tiene RLS activa y la política

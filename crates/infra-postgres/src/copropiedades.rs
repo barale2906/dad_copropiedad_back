@@ -170,6 +170,18 @@ impl TransaccionPg {
 }
 
 impl RepositorioEntidad for TransaccionPg {
+    async fn estado_entidad(&mut self) -> AppResult<Option<EstadoCopropiedad>> {
+        sqlx::query_scalar!(
+            "SELECT estado FROM entidades WHERE id = $1",
+            self.ctx.tenant_id.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(|e| EstadoCopropiedad::try_from(e.as_str()).map_err(AppError::from))
+        .transpose()
+    }
+
     async fn ficha_entidad(&mut self) -> AppResult<Option<FichaEntidad>> {
         let Some(f) = sqlx::query!(
             "SELECT nombre, razon_social, nit, direccion, municipio_dane, departamento, barrio,

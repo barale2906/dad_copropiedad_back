@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO cortes_facturacion (id, suscripcion_id, liquidacion_id, periodo_desde,\n                 periodo_hasta, lineas, total, huella, estado, motivo, aprobado_por, aprobado_en,\n                 factura_venta_id, factura_externa, facturado_en, vencimiento, pagado_en,\n                 ultimo_aviso_en, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,\n                     $18, $19)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Date",
+        "Date",
+        "Jsonb",
+        "Numeric",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Text",
+        "Date",
+        "Date",
+        "Date",
+        "Date",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e955a936bec5bae7ef89c5a9439787c780c5a795ad269eeccb8fb4f876da0dc3"
+}

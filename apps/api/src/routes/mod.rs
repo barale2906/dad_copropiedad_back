@@ -25,6 +25,7 @@ mod busqueda_proveedores;
 mod campanas_censo;
 mod cartera;
 mod censo;
+mod cobros;
 mod coeficientes;
 mod comunicados;
 mod contabilidad;

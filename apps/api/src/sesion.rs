@@ -29,7 +29,7 @@ use application::{
         autenticacion::{SesionAutenticada, autenticar},
         modulos::exigir_copropiedad,
         plataforma::permisos_de_soporte,
-        roles::permisos_en_copropiedad,
+        roles::permisos_y_suspension,
     },
     puertos::RelojSistema,
 };
@@ -106,6 +106,8 @@ pub struct EnCopropiedad {
     pub ctx: Contexto,
     /// Entra como soporte de la plataforma (solo lectura).
     pub modo_soporte: bool,
+    /// La entidad está suspendida (solo lectura salvo portería y titulares de datos).
+    pub suspendida: bool,
 }
 
 async fn tenant_de_parametro(
@@ -138,15 +140,23 @@ impl FromRequestParts<AppState> for EnCopropiedad {
     }
 }
 
+/// Contexto de la cuenta en la entidad.
+pub(crate) struct ContextoEntidad {
+    pub ctx: Contexto,
+    pub modo_soporte: bool,
+    /// La entidad está suspendida: la cuenta entra en solo lectura (plan 19).
+    pub suspendida: bool,
+}
+
 /// Permisos de la cuenta en la entidad y su contexto; 404 si no tiene ningún rol allí (ni un
-/// acceso de soporte vigente). El `bool` dice si entra en modo soporte.
+/// acceso de soporte vigente).
 async fn contexto_en_entidad(
     parts: &Parts,
     state: &AppState,
     tenant: TenantId,
     cuenta: &CuentaAutenticada,
-) -> Result<(Contexto, bool), ApiError> {
-    let mut permisos = permisos_en_copropiedad(
+) -> Result<ContextoEntidad, ApiError> {
+    let (mut permisos, suspendida) = permisos_y_suspension(
         &state.unidad,
         &RelojSistema,
         tenant,
@@ -176,11 +186,12 @@ async fn contexto_en_entidad(
             Permiso::PlataformaSoporteVer,
         )));
     }
-    Ok((
-        Contexto::de_cuenta(tenant, cuenta.sesion.cuenta_id, permisos)
+    Ok(ContextoEntidad {
+        ctx: Contexto::de_cuenta(tenant, cuenta.sesion.cuenta_id, permisos)
             .con_request_id(request_id(parts)),
         modo_soporte,
-    ))
+        suspendida,
+    })
 }
 
 async fn en_copropiedad(
@@ -189,7 +200,11 @@ async fn en_copropiedad(
     tenant: TenantId,
     cuenta: CuentaAutenticada,
 ) -> Result<EnCopropiedad, ApiError> {
-    let (ctx, modo_soporte) = contexto_en_entidad(parts, state, tenant, &cuenta)
+    let ContextoEntidad {
+        ctx,
+        modo_soporte,
+        suspendida,
+    } = contexto_en_entidad(parts, state, tenant, &cuenta)
         .await
         .map_err(|e| match e {
             ApiError::App(AppError::NoEncontrado(_)) => {
@@ -203,6 +218,7 @@ async fn en_copropiedad(
         sesion: cuenta.sesion,
         ctx,
         modo_soporte,
+        suspendida,
     })
 }
 
@@ -218,6 +234,8 @@ pub struct EnEntidad {
     pub ctx: Contexto,
     /// Entra como soporte de la plataforma (solo lectura).
     pub modo_soporte: bool,
+    /// La entidad está suspendida (solo lectura salvo portería y titulares de datos).
+    pub suspendida: bool,
 }
 
 impl FromRequestParts<AppState> for EnEntidad {
@@ -226,11 +244,12 @@ impl FromRequestParts<AppState> for EnEntidad {
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
         let tenant = tenant_de_parametro(parts, state, PARAMETRO_ENTIDAD).await?;
         let cuenta = CuentaAutenticada::from_request_parts(parts, state).await?;
-        let (ctx, modo_soporte) = contexto_en_entidad(parts, state, tenant, &cuenta).await?;
+        let c = contexto_en_entidad(parts, state, tenant, &cuenta).await?;
         Ok(Self {
             sesion: cuenta.sesion,
-            ctx,
-            modo_soporte,
+            ctx: c.ctx,
+            modo_soporte: c.modo_soporte,
+            suspendida: c.suspendida,
         })
     }
 }

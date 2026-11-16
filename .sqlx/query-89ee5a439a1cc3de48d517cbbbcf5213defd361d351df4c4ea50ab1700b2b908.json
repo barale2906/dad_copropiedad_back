@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE suscripciones SET plazo_pago_dias = $2, correo_facturacion = $3, estado = $4,\n                 suspendida_por_mora = $5, terminada_en = $6\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int2",
+        "Text",
+        "Text",
+        "Bool",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "89ee5a439a1cc3de48d517cbbbcf5213defd361d351df4c4ea50ab1700b2b908"
+}

@@ -11,6 +11,7 @@ pub mod auditoria;
 pub mod cartera;
 pub mod censo;
 pub mod chat;
+pub mod cobros;
 pub mod cofre;
 pub mod cola_salida;
 pub mod comunicados;
@@ -49,6 +50,7 @@ pub use auditoria::LecturaAuditoria;
 pub use cartera::RepositorioCartera;
 pub use censo::{RepositorioCampanasCenso, RepositorioCenso};
 pub use chat::{DirectorioTelefonos, RepositorioChat};
+pub use cobros::RepositorioCobros;
 pub use cola_salida::{ColaSalida, LoteSalida, MensajePendiente};
 pub use comunicados::RepositorioComunicados;
 pub use copropiedades::{

@@ -90,6 +90,12 @@ catalogo_permisos! {
     /// Dar de alta anunciantes del directorio, editar sus fichas y el catálogo de categorías.
     PlataformaDirectorioGestionar => "plataforma.directorio.gestionar", Plataforma;
     PlataformaFacturacionVer => "plataforma.facturacion.ver", Plataforma;
+    /// Catálogo comercial, tarifas y suscripciones de los clientes (plan 19).
+    PlataformaComercialGestionar => "plataforma.comercial.gestionar", Plataforma;
+    /// Calcular, aprobar o descartar los cortes de cobro (plan 19).
+    PlataformaCobrosAprobar => "plataforma.cobros.aprobar", Plataforma;
+    /// Facturar los cortes aprobados y registrar sus pagos (plan 19).
+    PlataformaCobrosFacturar => "plataforma.cobros.facturar", Plataforma;
     /// Líneas de WhatsApp (estado, franquicia) y tarifas de Meta.
     PlataformaWhatsappGestionar => "plataforma.whatsapp.gestionar", Plataforma;
 
@@ -111,6 +117,8 @@ catalogo_permisos! {
     PersonasDatosSensiblesVer => "personas.datos_sensibles.ver", Copropiedad;
     /// Políticas de tratamiento, autorizaciones de terceros y solicitudes de titulares.
     ProteccionDatosGestionar => "proteccion_datos.gestionar", Copropiedad;
+    /// Ver el plan contratado con la plataforma, su consumo y sus facturas (plan 19).
+    SuscripcionVer => "suscripcion.ver", Copropiedad;
     OrganizacionesCrear => "organizaciones.crear", Copropiedad;
     OrganizacionesVincular => "organizaciones.vincular", Copropiedad;
     ContratosGestionar => "contratos.gestionar", Copropiedad;
@@ -420,6 +428,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::PlataformaDirectorioGestionar,
             P::PlataformaPublicidadLiquidar,
             P::PlataformaPublicidadGestionar,
+            P::PlataformaComercialGestionar,
         ]),
     },
     RolPlantilla {
@@ -439,6 +448,8 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::PlataformaCopropiedadesVer,
             P::PlataformaFacturacionVer,
             P::PlataformaPublicidadLiquidar,
+            P::PlataformaCobrosAprobar,
+            P::PlataformaCobrosFacturar,
         ]),
     },
     RolPlantilla {
@@ -735,6 +746,23 @@ enum_texto!(OrigenAsignacion {
     Asamblea => "asamblea",
 });
 
+/// Permisos de una cuenta en una entidad **suspendida** por la plataforma (p. ej. por mora,
+/// plan 19): solo sus lecturas (`….ver`, `….ver_*`), más lo que no se puede detener —la portería
+/// (`acceso.*`) y la atención a los titulares de datos personales (`proteccion_datos.*`)—.
+pub fn permisos_en_suspension(permisos: &ConjuntoPermisos) -> ConjuntoPermisos {
+    permisos
+        .iter()
+        .filter(|p| {
+            let codigo = p.as_str();
+            let ultimo = codigo.rsplit('.').next().unwrap_or_default();
+            ultimo == "ver"
+                || ultimo.starts_with("ver_")
+                || codigo.starts_with("acceso.")
+                || codigo.starts_with("proteccion_datos.")
+        })
+        .collect()
+}
+
 /// Lecturas que **nunca** da un acceso de soporte: datos sensibles, archivos personales, el
 /// detalle de los votos reservados y la identidad en convivencia. Solo el superusuario lo ve todo.
 const VEDADOS_A_SOPORTE: &[Permiso] = &[
@@ -762,6 +790,17 @@ pub fn permisos_soporte() -> ConjuntoPermisos {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn suspendida_solo_lee_salvo_porteria_y_titulares() {
+        use super::{Ambito, ConjuntoPermisos, Permiso};
+        let p = super::permisos_en_suspension(&ConjuntoPermisos::todos(Ambito::Copropiedad));
+        assert!(p.contiene(Permiso::PersonasVer));
+        assert!(p.contiene(Permiso::AccesoRegistrar));
+        assert!(p.contiene(Permiso::ProteccionDatosGestionar));
+        assert!(!p.contiene(Permiso::PersonasEditar));
+        assert!(!p.contiene(Permiso::RolesAsignar));
+    }
+
     #[test]
     fn soporte_solo_lee_y_nunca_lo_sensible() {
         let soporte = super::permisos_soporte();

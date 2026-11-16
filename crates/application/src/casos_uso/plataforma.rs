@@ -18,9 +18,9 @@ use crate::{
         usuarios::{NuevoUsuario, TxUsuarios, crear_en},
     },
     puertos::{
-        RegistroAuditoria, Reloj, RepositorioCuentas, RepositorioEntidad, RepositorioPlataforma,
-        RepositorioRoles, RepositorioSesiones, Transaccion, UnidadDeTrabajo,
-        UnidadDeTrabajoPlataforma,
+        RegistroAuditoria, Reloj, RepositorioCoeficientes as _, RepositorioCuentas,
+        RepositorioEntidad, RepositorioPlataforma, RepositorioRoles, RepositorioSesiones,
+        Transaccion, UnidadDeTrabajo, UnidadDeTrabajoPlataforma,
         copropiedades::AltaCopropiedad,
         identidad::{AccesoSoporte, AsignacionPlataforma, CopropiedadResumen, EntidadResumen, Rol},
     },
@@ -267,6 +267,7 @@ async fn entidad<T: RepositorioPlataforma>(
 ///   `plataforma.entidades.crear` (empresa o la plataforma).
 /// - [`AppError::NoEncontrado`] si la entidad no existe.
 /// - [`AppError::Dominio`] si la transición no está permitida.
+/// - [`AppError::Conflicto`] si se suspende con una asamblea instalada (nunca en plena asamblea).
 pub async fn cambiar_estado_entidad<UP, U>(
     plataforma: &UP,
     unidad: &U,
@@ -279,7 +280,8 @@ where
     UP: UnidadDeTrabajoPlataforma,
     UP::Transaccion: RepositorioPlataforma,
     U: UnidadDeTrabajo,
-    U::Transaccion: RepositorioEntidad + RegistroAuditoria,
+    U::Transaccion:
+        RepositorioEntidad + RegistroAuditoria + crate::puertos::RepositorioCoeficientes,
 {
     let resumen = entidad(
         &mut plataforma.iniciar_plataforma(ctx).await?,
@@ -300,6 +302,11 @@ where
         .ok_or(AppError::NoEncontrado("entidad"))?;
     let desde = ficha.estado;
     let nuevo = desde.transicionar(hacia)?;
+    if nuevo == EstadoCopropiedad::Suspendida && tx.reuniones_instaladas().await? > 0 {
+        return Err(AppError::Conflicto(
+            "hay una asamblea instalada: suspenda la entidad cuando se cierre".into(),
+        ));
+    }
     tx.guardar_estado_entidad(nuevo).await?;
     let detalle = DetalleAuditoria::vacio()
         .con("desde", desde.as_str())?

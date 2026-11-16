@@ -1,0 +1,248 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, suscripcion_id, liquidacion_id, periodo_desde, periodo_hasta, lineas,\n                    total, huella, estado, motivo, aprobado_por, aprobado_en, factura_venta_id,\n                    factura_externa, facturado_en, vencimiento, pagado_en, ultimo_aviso_en,\n                    creado_en\n             FROM cortes_facturacion\n             WHERE ($1::uuid IS NULL OR id = $1) AND ($2::text IS NULL OR estado = $2)\n               AND ($3::uuid IS NULL OR suscripcion_id = $3)\n               AND ($4::uuid IS NULL OR id < $4)\n             ORDER BY id DESC LIMIT $5",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "suscripcion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "suscripcion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "liquidacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "liquidacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "periodo_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "periodo_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "periodo_hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "periodo_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "lineas",
+        "type_info": "Jsonb",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "lineas"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "total",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "total"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "huella",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "huella"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "motivo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "aprobado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "aprobado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "aprobado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "aprobado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "factura_venta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "factura_venta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "factura_externa",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "factura_externa"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "facturado_en",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "facturado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "vencimiento",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "vencimiento"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "pagado_en",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "pagado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "ultimo_aviso_en",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "ultimo_aviso_en"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "1f4bef8353bdd5e0206279c4edf5fa4b24ad3d41a5f038b4e49b3840f60c6a8f"
+}

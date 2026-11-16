@@ -1,0 +1,31 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT cantidad FROM mediciones_consumo\n             WHERE tenant_id = $1 AND metrica = $2 AND periodo_desde = $3 AND periodo_hasta = $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cantidad",
+        "type_info": "Int8",
+        "origin": {
+          "Table": {
+            "table": "mediciones_consumo",
+            "name": "cantidad"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ff4a815d73bc4420f1bb7ac8b5b76c9791cf26d11e7553791153a9a8e759d543"
+}

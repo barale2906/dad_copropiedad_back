@@ -1,0 +1,136 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, producto_id, modelo, valor, incluidas, valor_excedente, metrica,\n                    vigente_desde, creada_por, creada_en\n             FROM tarifas_producto WHERE producto_id = $1 ORDER BY vigente_desde DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "producto_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "producto_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "modelo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "modelo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "incluidas",
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "incluidas"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "valor_excedente",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "valor_excedente"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "metrica",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "metrica"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tarifas_producto",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "8b8d07e0daa3f718ae28692136092f34268bbe6e8db689658a02181787cd9250"
+}

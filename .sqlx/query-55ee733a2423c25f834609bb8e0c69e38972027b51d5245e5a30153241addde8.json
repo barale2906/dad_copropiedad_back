@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM cortes_facturacion\n             WHERE estado <> 'descartado'\n               AND (($1::uuid IS NOT NULL AND suscripcion_id = $1 AND periodo_desde = $3)\n                    OR ($2::uuid IS NOT NULL AND liquidacion_id = $2))\n             FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "55ee733a2423c25f834609bb8e0c69e38972027b51d5245e5a30153241addde8"
+}

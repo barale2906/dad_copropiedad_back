@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM cortes_facturacion\n             WHERE suscripcion_id = $1 AND estado <> 'descartado'\n             ORDER BY periodo_desde DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "cortes_facturacion",
+            "name": "id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b446a5c15ba5653d596fdcc3f24df6adaa72f4021bd84bc0057ac88176c27034"
+}

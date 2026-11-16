@@ -22,6 +22,7 @@ pub mod asistente;
 pub mod bien_privado;
 pub mod calendario;
 pub mod censo;
+pub mod cobro_plataforma;
 pub mod coeficiente;
 pub mod comunicado;
 pub mod contabilidad;
@@ -101,23 +102,24 @@ pub use ids::{
     CampanaCensoId, CampanaId, CargoId, CategoriaTicketId, CausacionMoraId, CentroCostoId,
     CertificadoCarteraId, CertificadoFirmaId, ComprobanteId, ComunicadoId, ConceptoCobroId,
     ConceptoRetencionId, ConciliacionId, ConfiguracionContableId, ConsentimientoBiometricoId,
-    ContratoServicioId, ConversacionId, CorrespondenciaId, CreativoId, CredencialId,
-    CuadroCoeficientesId, CuentaCobroId, CuentaContableId, CuentaId, CuentaTesoreriaId,
-    CuotaExtraordinariaId, DispositivoAccesoId, DispositivoPushId, DocumentoElectronicoId,
-    EgresoId, EnvioSetPruebasId, EventoAccesoId, EventoPasarelaId, ExtractoBancarioId,
-    FacturaProveedorId, FacturaRecibidaId, FacturaVentaId, FormatoExogenaId, FotoQuorumId,
-    GeneracionExogenaId, ImportacionId, ItemFacturacionId, LiquidacionExpensasId, LiquidacionId,
-    MascotaId, MensajeTicketId, ModuloContribucionId, MovimientoExtractoId, MovimientoInventarioId,
-    NotaEstadosId, NovedadMinutaId, ObligacionCobroId, ObligacionId, OpcionId, OrdenTrabajoId,
-    OrganizacionId, ParticipacionId, PerfilTributarioId, PeriodoContableId, PersonaId,
-    PlanMantenimientoId, PlantillaContableId, PoderId, PoliticaCarteraId, PoliticaPublicidadId,
-    PoliticaTratamientoId, PreguntaFrecuenteId, PreguntaId, PresenciaId, PresupuestoId, PuenteId,
-    PuntoAccesoId, PuntoAtencionId, PuntoOrdenId, ReaperturaPeriodoId, ReciboCajaId, ReclamacionId,
-    RecursoId, ReglaContabilizacionId, ReportePublicidadId, ResenaId, ReservaId, ResidenciaId,
+    ContratoServicioId, ConversacionId, CorrespondenciaId, CorteFacturacionId, CreativoId,
+    CredencialId, CuadroCoeficientesId, CuentaCobroId, CuentaContableId, CuentaId,
+    CuentaTesoreriaId, CuotaExtraordinariaId, DispositivoAccesoId, DispositivoPushId,
+    DocumentoElectronicoId, EgresoId, EnvioSetPruebasId, EventoAccesoId, EventoPasarelaId,
+    ExtractoBancarioId, FacturaProveedorId, FacturaRecibidaId, FacturaVentaId, FormatoExogenaId,
+    FotoQuorumId, GeneracionExogenaId, ImportacionId, ItemFacturacionId, LineaSuscripcionId,
+    LiquidacionExpensasId, LiquidacionId, MascotaId, MensajeTicketId, ModuloContribucionId,
+    MovimientoExtractoId, MovimientoInventarioId, NotaEstadosId, NovedadMinutaId,
+    ObligacionCobroId, ObligacionId, OpcionId, OrdenTrabajoId, OrganizacionId, ParticipacionId,
+    PerfilTributarioId, PeriodoContableId, PersonaId, PlanMantenimientoId, PlantillaContableId,
+    PoderId, PoliticaCarteraId, PoliticaPublicidadId, PoliticaTratamientoId, PreguntaFrecuenteId,
+    PreguntaId, PresenciaId, PresupuestoId, ProductoPlataformaId, PuenteId, PuntoAccesoId,
+    PuntoAtencionId, PuntoOrdenId, ReaperturaPeriodoId, ReciboCajaId, ReclamacionId, RecursoId,
+    ReglaContabilizacionId, ReportePublicidadId, ResenaId, ReservaId, ResidenciaId,
     ResolucionNumeracionId, RestriccionId, ReunionId, RolId, RotuloId, RubroEstadoFinancieroId,
-    RubroPresupuestoId, SesionId, SolicitudProveedorId, SolicitudTitularId, SorteoId, TarifaIcaId,
-    TarifaIvaId, TasaReferenciaId, TenantId, TicketId, TipoComprobanteId, TitularidadId,
-    UsoExclusivoId, VehiculoId, VisitaId, VotoId,
+    RubroPresupuestoId, SesionId, SolicitudProveedorId, SolicitudTitularId, SorteoId,
+    SuscripcionId, TarifaIcaId, TarifaIvaId, TasaReferenciaId, TenantId, TicketId,
+    TipoComprobanteId, TitularidadId, UsoExclusivoId, VehiculoId, VisitaId, VotoId,
 };
 pub use importacion::{Documento, EstadoImportacion, TipoImportacion};
 pub use mantenimiento::{

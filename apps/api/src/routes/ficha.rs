@@ -322,16 +322,21 @@ pub struct CapacidadesRespuesta {
     /// La cuenta entra como **soporte** de la plataforma: solo lectura (toda escritura responde
     /// 403). Muestre un aviso permanente.
     pub modo_soporte: bool,
+    /// La entidad está **suspendida** por la plataforma (p. ej. por mora): `permisos` ya trae
+    /// solo las lecturas, la portería y la atención a titulares. Muestre un aviso con el motivo
+    /// y cómo reactivarla.
+    pub entidad_suspendida: bool,
 }
 
 impl CapacidadesRespuesta {
     /// Respuesta con el modo de la sesión en la entidad.
-    pub fn con_modo(c: Capacidades, modo_soporte: bool) -> Self {
+    pub fn con_modo(c: Capacidades, modo_soporte: bool, entidad_suspendida: bool) -> Self {
         Self {
             tipo: c.tipo,
             permisos: c.permisos.iter().collect(),
             modulos: c.modulos,
             modo_soporte,
+            entidad_suspendida,
         }
     }
 }
@@ -355,7 +360,11 @@ pub async fn ver_capacidades(
     en: EnCopropiedad,
 ) -> ApiResult<Json<CapacidadesRespuesta>> {
     let c = uc_capacidades(&state.unidad, &RelojSistema, &en.ctx).await?;
-    Ok(Json(CapacidadesRespuesta::con_modo(c, en.modo_soporte)))
+    Ok(Json(CapacidadesRespuesta::con_modo(
+        c,
+        en.modo_soporte,
+        en.suspendida,
+    )))
 }
 
 /// Franja semanal de atención.

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tarifas_producto (id, producto_id, modelo, valor, incluidas,\n                                           valor_excedente, metrica, vigente_desde, creada_por,\n                                           creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Int4",
+        "Numeric",
+        "Text",
+        "Date",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6d7b7e0db01a617df3b4af43c18c4762f2652d85cfeb135910fb08e921631804"
+}

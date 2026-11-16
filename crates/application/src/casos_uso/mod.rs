@@ -11,6 +11,7 @@ pub mod busqueda_proveedores;
 pub mod campanas_censo;
 pub mod censo;
 pub mod chat;
+pub mod cobros;
 pub mod coeficientes;
 pub mod comunicados;
 pub mod contabilidad;

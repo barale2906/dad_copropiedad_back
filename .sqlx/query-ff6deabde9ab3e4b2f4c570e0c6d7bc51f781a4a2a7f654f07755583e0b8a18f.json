@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cortes_facturacion SET lineas = $2, total = $3, huella = $4, estado = $5,\n                 motivo = $6, aprobado_por = $7, aprobado_en = $8, factura_venta_id = $9,\n                 factura_externa = $10, facturado_en = $11, vencimiento = $12, pagado_en = $13,\n                 ultimo_aviso_en = $14\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Jsonb",
+        "Numeric",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Text",
+        "Date",
+        "Date",
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ff6deabde9ab3e4b2f4c570e0c6d7bc51f781a4a2a7f654f07755583e0b8a18f"
+}

@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE productos_plataforma SET nombre = $2, descripcion_factura = $3, modulo = $4,\n                 item_facturacion_id = $5, activo = $6\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ff79e2bfac4ddf2e82a292e0bbb7ddc09a360cb6ffe345dbe10164dcc8dc81e1"
+}
