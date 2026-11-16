@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO lineas_suscripcion (id, suscripcion_id, producto_id, precio_pactado,\n                                             motivo_precio, desde, hasta, creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Numeric",
+        "Text",
+        "Date",
+        "Date",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1143bc99eb67def88f1e8df1d13ded1e0d8d8e86007a5aea5829420752c071e2"
+}

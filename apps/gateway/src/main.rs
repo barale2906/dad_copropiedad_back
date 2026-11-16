@@ -21,6 +21,8 @@
 //! - Cartera de la PH ([`worker_cartera`]): recordatorios de pago y avisos de mora.
 //! - Facturación electrónica ([`worker_facturacion`]): retransmite los documentos en contingencia
 //!   y sincroniza a diario los correos de recepción de la DIAN.
+//! - Cobro de la plataforma ([`worker_cobros`]): cortes de las suscripciones y calendario de mora
+//!   (avisos y suspensión en solo lectura).
 
 mod mensajeria;
 mod routes;
@@ -28,6 +30,7 @@ mod state;
 mod worker_acceso;
 mod worker_asambleas;
 mod worker_cartera;
+mod worker_cobros;
 mod worker_facturacion;
 mod worker_gestion;
 mod worker_publicidad;
@@ -155,6 +158,13 @@ async fn main() -> anyhow::Result<()> {
         esperar_apagado(apagado.clone()),
     ));
 
+    let cobros = tokio::spawn(worker_cobros::ejecutar(
+        infra_postgres::UnidadDeTrabajoPlataformaPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        Arc::clone(&hay_salida),
+        esperar_apagado(apagado.clone()),
+    ));
+
     let facturacion = shared::config::FacturacionConfig::from_env()
         .context("configuración de facturación inválida")?;
     let motor_dian = infra_facturacion::MotorPropio::new(
@@ -243,6 +253,10 @@ async fn main() -> anyhow::Result<()> {
 
     if let Err(e) = cartera.await {
         tracing::error!(error = %e, "el worker de avisos de cartera terminó con error");
+    }
+
+    if let Err(e) = cobros.await {
+        tracing::error!(error = %e, "el worker de cobros de la plataforma terminó con error");
     }
 
     if let Err(e) = contingencias.await {

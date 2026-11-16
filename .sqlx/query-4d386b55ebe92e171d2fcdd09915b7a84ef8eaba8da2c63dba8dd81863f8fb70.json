@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE lineas_suscripcion SET hasta = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4d386b55ebe92e171d2fcdd09915b7a84ef8eaba8da2c63dba8dd81863f8fb70"
+}

@@ -189,6 +189,12 @@ esquema_enum! {
         "Resultado de un documento del set de pruebas.";
     MedioPagoManual = domain::facturacion::MedioPagoManual,
         "Medio de un pago marcado a mano (sin tesorería).";
+    ModeloTarifa = domain::cobro_plataforma::ModeloTarifa,
+        "Cómo cobra un producto de la plataforma: tarifa `plana`, `por_unidad` medida, `por_paquete` (base con unidades incluidas y excedente), `por_consumo` o `unica` (una vez).";
+    EstadoCorte = domain::cobro_plataforma::EstadoCorte,
+        "Estado de un corte de cobro de la plataforma: `borrador` → `aprobado` (por facturar) → `facturado` → `pagado`, o `descartado`.";
+    EstadoSuscripcion = domain::cobro_plataforma::EstadoSuscripcion,
+        "Estado de la suscripción de una entidad con la plataforma.";
     EstadoCopropiedad = domain::copropiedad::EstadoCopropiedad,
         "Estado de la entidad (copropiedad o empresa) en la plataforma.";
     EstadoCorrespondencia = domain::acceso::EstadoCorrespondencia,

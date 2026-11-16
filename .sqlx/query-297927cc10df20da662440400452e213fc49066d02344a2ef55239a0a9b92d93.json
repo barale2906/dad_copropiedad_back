@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT nombre, razon_social, nit, correo FROM entidades WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "razon_social",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "razon_social"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "nit",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "nit"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "correo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "correo"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "297927cc10df20da662440400452e213fc49066d02344a2ef55239a0a9b92d93"
+}

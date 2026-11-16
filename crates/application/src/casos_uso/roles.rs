@@ -412,6 +412,48 @@ where
         .await
 }
 
+/// Permisos de la cuenta en la entidad y si la entidad está **suspendida** (plan 19). En una
+/// entidad suspendida la cuenta queda en solo lectura, salvo la portería y la atención a los
+/// titulares de datos ([`domain::permisos::permisos_en_suspension`]); el superusuario conserva
+/// todo. Una sola transacción.
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si falla la base de datos.
+pub async fn permisos_y_suspension<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    tenant: TenantId,
+    cuenta: CuentaId,
+    es_superusuario: bool,
+) -> AppResult<(ConjuntoPermisos, bool)>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioRoles + crate::puertos::RepositorioEntidad,
+{
+    use crate::puertos::RepositorioEntidad as _;
+    let mut tx = unidad
+        .iniciar(&Contexto::de_cuenta(
+            tenant,
+            cuenta,
+            ConjuntoPermisos::vacio(),
+        ))
+        .await?;
+    let suspendida = tx
+        .estado_entidad()
+        .await?
+        .is_some_and(|e| e == domain::EstadoCopropiedad::Suspendida);
+    if es_superusuario {
+        return Ok((ConjuntoPermisos::todos(Ambito::Copropiedad), suspendida));
+    }
+    let permisos = tx.permisos_de_cuenta(cuenta, reloj.ahora()).await?;
+    if suspendida {
+        Ok((domain::permisos::permisos_en_suspension(&permisos), true))
+    } else {
+        Ok((permisos, false))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;

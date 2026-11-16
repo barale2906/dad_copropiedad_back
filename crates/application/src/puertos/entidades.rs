@@ -35,6 +35,14 @@ pub trait RepositorioEntidad: Send {
     /// Ficha de la entidad de la transacción.
     fn ficha_entidad(&mut self) -> impl Future<Output = AppResult<Option<FichaEntidad>>> + Send;
 
+    /// Solo el estado de la entidad (se consulta en cada petición para el modo suspendido): no
+    /// valida el resto de la ficha.
+    fn estado_entidad(
+        &mut self,
+    ) -> impl Future<Output = AppResult<Option<EstadoCopropiedad>>> + Send {
+        async move { Ok(self.ficha_entidad().await?.map(|f| f.estado)) }
+    }
+
     /// Reemplaza los datos generales (no el estado).
     ///
     /// # Errors

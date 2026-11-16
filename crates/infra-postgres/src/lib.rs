@@ -31,6 +31,7 @@ mod campanas_censo;
 mod cartera;
 mod censo;
 mod chat;
+mod cobros;
 mod coeficientes;
 mod cola_salida;
 mod comunicados;

@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO suscripciones (id, tenant_id, pagador_entidad_id, pagador_organizacion_id,\n                 ciclo_meses, inicio, dias_prueba, plazo_pago_dias, correo_facturacion, estado,\n                 suspendida_por_mora, terminada_en, creada_por, creada_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Date",
+        "Int2",
+        "Int2",
+        "Text",
+        "Text",
+        "Bool",
+        "Date",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "52c1326f998b407930bbdef6d3e68854b40a585a622f39bb8b43624cf9cd48eb"
+}

@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-621 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+641 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -34,7 +34,7 @@ sesión de persona.
 - [proteccion_datos](#proteccion-datos) (13): Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
 - [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
-- [plataforma](#plataforma) (49): Operación de la plataforma (exige segundo factor)
+- [plataforma](#plataforma) (69): Operación de la plataforma (exige segundo factor)
 - [contabilidad](#contabilidad) (50): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
 - [tesoreria](#tesoreria) (39): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
@@ -613,6 +613,26 @@ Operación de la plataforma (exige segundo factor)
 | POST | `/plataforma/tributario/formatos-exogena` | Agrega un formato de exógena (versión siguiente del año y código) con su mapeo de cuentas. | `plataforma.normativa.gestionar` | `NuevoFormatoExogenaPeticion` | 201 `FormatoExogenaRespuesta` | 403, 422 |
 | GET | `/plataforma/tasas-referencia` | Tasas de referencia (interés bancario corriente) por vigencia. | `plataforma.normativa.gestionar` |  | 200 `[TasaReferenciaRespuesta]` | 403 |
 | POST | `/plataforma/tasas-referencia` | Registra el interés bancario corriente certificado de un periodo. | `plataforma.normativa.gestionar` | `NuevaTasaPeticion` | 201 `TasaReferenciaRespuesta` | 403, 409, 422 |
+| GET | `/plataforma/cobros/productos` | Catálogo comercial con las tarifas de cada producto. | `plataforma.comercial.gestionar` `plataforma.cobros.aprobar` |  | 200 `[ProductoRespuesta]` | 403 |
+| POST | `/plataforma/cobros/productos` | Crea un producto del catálogo comercial. | `plataforma.comercial.gestionar` | `ProductoPeticion` | 201 `ProductoRespuesta` | 403, 409, 422 |
+| PUT | `/plataforma/cobros/productos/{producto_id}` | Edita un producto (el código no cambia). | `plataforma.comercial.gestionar` | `ProductoPeticion` | 200 `ProductoRespuesta` | 403 |
+| POST | `/plataforma/cobros/productos/{producto_id}/tarifas` | Fija la tarifa del producto desde una fecha (versionada: nunca se edita). | `plataforma.comercial.gestionar` | `TarifaDto` | 201 `TarifaDto` | 403, 409, 422 |
+| GET | `/plataforma/cobros/suscripciones` | Suscripciones vigentes. | `plataforma.comercial.gestionar` `plataforma.cobros.aprobar` |  | 200 `[SuscripcionRespuesta]` | 403 |
+| POST | `/plataforma/cobros/suscripciones` | Crea la suscripción de una entidad (una vigente por entidad). | `plataforma.comercial.gestionar` | `SuscripcionPeticion` | 201 `SuscripcionRespuesta` | 403, 409, 422 |
+| GET | `/plataforma/cobros/suscripciones/{suscripcion_id}` | Suscripción con sus líneas y los módulos habilitados sin cobro. | `plataforma.comercial.gestionar` `plataforma.cobros.aprobar` |  | 200 `DetalleSuscripcionRespuesta` | 403 |
+| PATCH | `/plataforma/cobros/suscripciones/{suscripcion_id}` | Cambia el correo o el plazo de pago, o termina la suscripción. | `plataforma.comercial.gestionar` | `CambiosSuscripcionPeticion` | 200 `SuscripcionRespuesta` | 403, 422 |
+| POST | `/plataforma/cobros/suscripciones/{suscripcion_id}/lineas` | Agrega un producto a la suscripción. | `plataforma.comercial.gestionar` | `LineaPeticion` | 201 `LineaRespuesta` | 403, 422 |
+| POST | `/plataforma/cobros/lineas/{linea_id}/fin` | Termina una línea (deja de cobrarse desde `hasta`). | `plataforma.comercial.gestionar` | `FinLineaPeticion` | 204  | 403, 422 |
+| GET | `/plataforma/cobros/cortes` | Cortes (los más recientes primero), con filtro por estado o suscripción. | `plataforma.cobros.aprobar` `plataforma.cobros.facturar` |  | 200 `PaginaRespuesta_CorteRespuesta` | 403 |
+| POST | `/plataforma/cobros/cortes` | Calcula (o recalcula, si sigue en borrador) el corte de un periodo. Si cobra lo mismo que el anterior queda aprobado solo. | `plataforma.cobros.aprobar` | `CalcularPeticion` | 200 `CorteRespuesta` | 403, 422 |
+| GET | `/plataforma/cobros/cortes/{corte_id}` | Un corte. | `plataforma.cobros.aprobar` `plataforma.cobros.facturar` |  | 200 `CorteRespuesta` | 403 |
+| POST | `/plataforma/cobros/cortes/{corte_id}/aprobar` | Aprueba un corte en borrador (queda «por facturar»). | `plataforma.cobros.aprobar` |  | 200 `CorteRespuesta` | 403, 409 |
+| POST | `/plataforma/cobros/cortes/{corte_id}/descartar` | Descarta un corte en borrador o aprobado (con motivo). | `plataforma.cobros.aprobar` | `MotivoCortePeticion` | 200 `CorteRespuesta` | 403, 409 |
+| POST | `/plataforma/cobros/cortes/{corte_id}/facturar` | Factura un corte aprobado en la entidad de la plataforma (factura de venta emitida; el documento electrónico se transmite desde su facturación) y avisa al correo de facturación. | `plataforma.cobros.facturar` |  | 200 `CorteRespuesta` | 403, 409, 422 |
+| POST | `/plataforma/cobros/cortes/{corte_id}/factura-externa` | Marca un corte aprobado como facturado por fuera del sistema (mientras la plataforma no factura en él). | `plataforma.cobros.facturar` | `FacturaExternaPeticion` | 200 `CorteRespuesta` | 403, 409 |
+| POST | `/plataforma/cobros/cortes/{corte_id}/pago` | Registra el pago de un corte facturado; si la entidad estaba suspendida por mora y no le queda otro vencido, se reactiva. | `plataforma.cobros.facturar` | `PagoCortePeticion` | 200 `CorteRespuesta` | 403, 409 |
+| POST | `/plataforma/cobros/liquidaciones/{liquidacion_id}/corte` | Crea el corte (en borrador) de una liquidación de publicidad de un anunciante. | `plataforma.cobros.aprobar` |  | 200 `CorteRespuesta` | 403, 422 |
+| GET | `/entidades/{entidad_id}/suscripcion` | El plan de la entidad con la plataforma, su consumo del periodo en curso y sus facturas. | `suscripcion.ver` |  | 200 `MiSuscripcionRespuesta` | 403 |
 
 ## contabilidad
 

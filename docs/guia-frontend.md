@@ -341,6 +341,7 @@ aparece con candado y lleva a activarlo (las rutas responden 403 `segundo_factor
 | WhatsApp | Líneas y tarifas (`plataforma.whatsapp.gestionar`) | `/plataforma/whatsapp/…` |
 | Directorio y publicidad | Anunciantes y categorías (`plataforma.directorio.gestionar`) · Moderación (`plataforma.publicidad.moderar`) · Tarifas y liquidaciones (`plataforma.publicidad.liquidar`) · Pantallas de lobby (`plataforma.modulos.gestionar`) | `/plataforma/publicidad/…` |
 | Consumo | Documentos electrónicos por entidad (`plataforma.facturacion.ver`) | `/plataforma/facturacion/consumo` |
+| Cobros | Catálogo, tarifas y suscripciones (`plataforma.comercial.gestionar`) · Cortes: calcular, aprobar, descartar (`plataforma.cobros.aprobar`) · Facturar, factura externa y pago (`plataforma.cobros.facturar`) | `/plataforma/cobros/…` |
 
 ### Acciones personales (propietarios y residentes)
 
@@ -584,6 +585,26 @@ facturación electrónica, moderación del directorio y la publicidad.
   **Otra cuenta** modera (quien cargó o editó recibe 409 `conflicto`). El token de la pantalla del
   lobby también se vuelve a consultar con `GET /plataforma/publicidad/pantallas/{id}`.
 
+- **Cobros** (ADR 0024, `/plataforma/cobros/…`): catálogo de productos con tarifas versionadas
+  (`ModeloTarifa`; una tarifa nueva desde una fecha, nunca se edita), suscripción de cada entidad
+  (una vigente; ciclo en meses o por evento, prueba, plazo y pagador) con sus líneas, y la bandeja
+  de **cortes** (`?estado=borrador` para revisar). Un corte igual al anterior llega `aprobado` con
+  `aprobado_por: null`. `…/facturar` emite la factura en la entidad de la plataforma; mientras no
+  facture en el sistema use `…/factura-externa`. `…/pago` registra el pago y, si la entidad estaba
+  suspendida por mora, la reactiva. Las liquidaciones de publicidad se cobran con
+  `POST …/liquidaciones/{id}/corte`. La suspensión (manual o por mora) responde 409 con una
+  asamblea instalada.
+
+### Mi suscripción (la entidad)
+`GET /entidades/{id}/suscripcion` (`suscripcion.ver`, administrador): plan contratado, consumo del
+periodo en curso y facturas (cortes aprobados, facturados y pagados). 404 si no tiene suscripción.
+
+### Entidad suspendida
+Si `capacidades.entidad_suspendida` es `true`, `permisos` ya viene recortado: solo lecturas, la
+portería (`acceso.*`) y la atención a titulares (`proteccion_datos.*`). Muestre un aviso
+permanente («La cuenta está suspendida; comuníquese con la plataforma») y oculte las acciones que
+no estén en `permisos`; si aun así llega un 403 `sin_permiso`, es por la suspensión.
+
 ## 6. Estados de los recursos
 
 Cada recurso con ciclo de vida trae `estado` con un enum con nombre en el contrato. Las acciones
@@ -619,7 +640,9 @@ si aun así llega el 409, recargue el recurso. Los principales:
 | Acuerdo de pago (cartera) | `EstadoAcuerdo`: propuesto, vigente, cumplido, incumplido, anulado | Lo aprueba otra cuenta. |
 | Solicitud del titular | `EstadoSolicitudTitular`: radicada → en_tramite → respondida | |
 | Campaña publicitaria | `EstadoCampana`: borrador, en_revision, aprobada, rechazada, activa, pausada, finalizada | Editar una aprobada la devuelve a revisión. |
-| Entidad / copropiedad | `EstadoCopropiedad`: en_configuracion, activa, suspendida, retirada | Avise si la entidad no está activa. |
+| Entidad / copropiedad | `EstadoCopropiedad`: en_configuracion, activa, suspendida, retirada | Avise si la entidad no está activa; suspendida = solo lectura. |
+| Corte de cobro | `EstadoCorte`: borrador → aprobado → facturado → pagado; o descartado | Descartar solo antes de facturar. |
+| Suscripción | `EstadoSuscripcion`: activa, suspendida, terminada | `suspendida_por_mora` dice si el pago la reactiva. |
 
 ## 7. Sesión
 

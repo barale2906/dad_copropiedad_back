@@ -664,6 +664,27 @@ id_entidad!(
     Uuid::now_v7
 );
 
+id_entidad!(
+    /// Producto del catálogo comercial de la plataforma (plan 19).
+    ProductoPlataformaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Suscripción de una entidad a la plataforma.
+    SuscripcionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Línea (producto contratado) de una suscripción.
+    LineaSuscripcionId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Corte de cobro de una suscripción o de una liquidación de publicidad.
+    CorteFacturacionId,
+    Uuid::now_v7
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;

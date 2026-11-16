@@ -40,6 +40,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(super::publicidad::rutas_entidad())
         .merge(super::archivos::rutas_entidad())
         .merge(super::auditoria::rutas())
+        .merge(super::cobros::rutas_entidad())
         .merge(super::contabilidad::rutas_terceros())
         .nest(
             "/tributario",
@@ -66,7 +67,11 @@ pub async fn capacidades_entidad(
     en: EnEntidad,
 ) -> ApiResult<Json<CapacidadesRespuesta>> {
     let c = uc_capacidades(&state.unidad, &RelojSistema, &en.ctx).await?;
-    Ok(Json(CapacidadesRespuesta::con_modo(c, en.modo_soporte)))
+    Ok(Json(CapacidadesRespuesta::con_modo(
+        c,
+        en.modo_soporte,
+        en.suspendida,
+    )))
 }
 
 /// Datos generales de la entidad.

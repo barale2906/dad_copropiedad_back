@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT razon_social, nit, correo_contacto FROM organizaciones WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "razon_social",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "organizaciones",
+            "name": "razon_social"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nit",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "organizaciones",
+            "name": "nit"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "correo_contacto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "organizaciones",
+            "name": "correo_contacto"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "f24c1265ec9fb7f374a6912c855f087c6e06bff7c2a7ee0227710a1db0771ed3"
+}
