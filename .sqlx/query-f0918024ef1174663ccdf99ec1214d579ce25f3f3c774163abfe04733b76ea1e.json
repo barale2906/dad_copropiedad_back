@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT token_cifrado FROM enlaces_comercio WHERE anunciante_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token_cifrado",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "enlaces_comercio",
+            "name": "token_cifrado"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "f0918024ef1174663ccdf99ec1214d579ce25f3f3c774163abfe04733b76ea1e"
+}

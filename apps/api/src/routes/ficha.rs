@@ -319,14 +319,19 @@ pub struct CapacidadesRespuesta {
     /// Módulos contratados y vigentes hoy; los demás responden `modulo_no_habilitado`.
     #[schema(value_type = Vec<crate::esquemas::Modulo>)]
     pub modulos: Vec<Modulo>,
+    /// La cuenta entra como **soporte** de la plataforma: solo lectura (toda escritura responde
+    /// 403). Muestre un aviso permanente.
+    pub modo_soporte: bool,
 }
 
-impl From<Capacidades> for CapacidadesRespuesta {
-    fn from(c: Capacidades) -> Self {
+impl CapacidadesRespuesta {
+    /// Respuesta con el modo de la sesión en la entidad.
+    pub fn con_modo(c: Capacidades, modo_soporte: bool) -> Self {
         Self {
             tipo: c.tipo,
             permisos: c.permisos.iter().collect(),
             modulos: c.modulos,
+            modo_soporte,
         }
     }
 }
@@ -350,7 +355,7 @@ pub async fn ver_capacidades(
     en: EnCopropiedad,
 ) -> ApiResult<Json<CapacidadesRespuesta>> {
     let c = uc_capacidades(&state.unidad, &RelojSistema, &en.ctx).await?;
-    Ok(Json(c.into()))
+    Ok(Json(CapacidadesRespuesta::con_modo(c, en.modo_soporte)))
 }
 
 /// Franja semanal de atención.

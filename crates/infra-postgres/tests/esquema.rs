@@ -346,6 +346,9 @@ const TENANT_CON_POLITICA_PROPIA: &[&str] = &[
     // Publicidad: datos de la plataforma por copropiedad (ADR 0015); ninguna PH los lee.
     "campana_copropiedades",
     "entregas_publicidad",
+    // Plan 20: tablas de plataforma con política `solo_plataforma` (la entidad no las lee).
+    "accesos_soporte",
+    "exclusiones_publicidad",
 ];
 
 /// Multi-tenant (§8): toda tabla de negocio con `tenant_id` tiene RLS activa y la política

@@ -621,12 +621,9 @@ mod habilitacion {
     use application::{
         AppResult,
         casos_uso::facturacion::habilitacion::{self as hab, DatosSoftware},
-        puertos::{
-            cofre::Cofre,
-            tributario::{
-                CertificadoLeido, CredencialesFacturador, DocumentoAEmitir, HabilitacionDian,
-                LectorCertificados, RangoAutorizado, RespuestaProveedor,
-            },
+        puertos::tributario::{
+            CertificadoLeido, CredencialesFacturador, DocumentoAEmitir, HabilitacionDian,
+            LectorCertificados, RangoAutorizado, RespuestaProveedor,
         },
     };
     use domain::{
@@ -637,24 +634,7 @@ mod habilitacion {
     use super::*;
 
     /// Cofre de prueba: antepone el contexto (así se nota si se descifra con otro).
-    struct CofrePrueba;
-
-    impl Cofre for CofrePrueba {
-        fn cifrar(&self, contexto: &str, datos: &[u8]) -> AppResult<Vec<u8>> {
-            let mut v = contexto.as_bytes().to_vec();
-            v.push(0);
-            v.extend_from_slice(datos);
-            Ok(v)
-        }
-
-        fn descifrar(&self, contexto: &str, cifrado: &[u8]) -> AppResult<Vec<u8>> {
-            let prefijo = [contexto.as_bytes(), &[0]].concat();
-            cifrado
-                .strip_prefix(prefijo.as_slice())
-                .map(<[u8]>::to_vec)
-                .ok_or_else(|| AppError::Validacion("otro contexto".into()))
-        }
-    }
+    use crate::comun::CofrePrueba;
 
     struct LectorPrueba;
 

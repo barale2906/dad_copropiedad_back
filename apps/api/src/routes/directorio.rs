@@ -1,7 +1,9 @@
 //! Directorio de comercios y servicios (plan 08, fase 1; ADR 0013).
 //!
-//! - En una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/directorio/…` (fichas que la
-//!   alcanzan, destacadas, categorías, reseñas y reportes).
+//! - En cualquier entidad (PH o empresa, plan 20): `/api/v1/entidades/{entidad_id}/directorio/…`
+//!   (fichas que la alcanzan, destacadas, categorías y la ficha de un comercio).
+//! - Solo en una copropiedad: `/api/v1/copropiedades/{copropiedad_id}/directorio/…` (reseñas y
+//!   sus reportes: las hacen propietarios y residentes).
 //! - En la plataforma: `/api/v1/plataforma/publicidad/…` (catálogo de categorías, anunciantes,
 //!   fichas, verificación y moderación de reseñas).
 //!
@@ -36,20 +38,25 @@ use crate::{
     openapi::ETIQUETA_DIRECTORIO,
     paginacion::{PaginaRespuesta, ParametrosPagina},
     routes::organizaciones::NuevaOrganizacionPeticion,
-    sesion::{EnCopropiedad, OperadorPlataforma},
+    sesion::{EnCopropiedad, EnEntidad, OperadorPlataforma},
     state::AppState,
 };
 
 /// Rutas dentro de una copropiedad.
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
+        .routes(routes!(resenas))
+        .routes(routes!(resenar))
+        .routes(routes!(reportar))
+}
+
+/// Directorio en cualquier entidad, PH o empresa (se monta en `/api/v1/entidades/{entidad_id}`).
+pub fn rutas_entidad() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
         .routes(routes!(consultar))
         .routes(routes!(destacadas))
         .routes(routes!(categorias))
         .routes(routes!(ficha))
-        .routes(routes!(resenas))
-        .routes(routes!(resenar))
-        .routes(routes!(reportar))
 }
 
 /// Rutas de la plataforma (se montan en `/api/v1/plataforma`).
@@ -203,7 +210,7 @@ pub(super) fn categoria(v: Option<&str>) -> Result<Option<CodigoCategoria>, ApiE
     path = "/directorio",
     tag = ETIQUETA_DIRECTORIO,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), FiltroDirectorioQuery, ParametrosPagina),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)"), FiltroDirectorioQuery, ParametrosPagina),
     responses(
         (status = OK, description = "Fichas", body = PaginaRespuesta<FichaDirectorioRespuesta>),
         (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
@@ -211,7 +218,7 @@ pub(super) fn categoria(v: Option<&str>) -> Result<Option<CodigoCategoria>, ApiE
 )]
 pub async fn consultar(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Query(f): Query<FiltroDirectorioQuery>,
     Query(p): Query<ParametrosPagina>,
 ) -> ApiResult<Json<PaginaRespuesta<FichaDirectorioRespuesta>>> {
@@ -241,7 +248,7 @@ pub struct CategoriaQuery {
     path = "/directorio/destacadas",
     tag = ETIQUETA_DIRECTORIO,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), CategoriaQuery),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)"), CategoriaQuery),
     responses(
         (status = OK, description = "Destacadas", body = Vec<FichaDirectorioRespuesta>),
         (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
@@ -249,7 +256,7 @@ pub struct CategoriaQuery {
 )]
 pub async fn destacadas(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Query(q): Query<CategoriaQuery>,
 ) -> ApiResult<Json<Vec<FichaDirectorioRespuesta>>> {
     let v = uc::destacadas(
@@ -268,7 +275,7 @@ pub async fn destacadas(
     path = "/directorio/categorias",
     tag = ETIQUETA_DIRECTORIO,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)")),
     responses(
         (status = OK, description = "Categorías", body = Vec<CategoriaDirectorioRespuesta>),
         (status = FORBIDDEN, description = "Sin `directorio.ver` (`sin_permiso`)", body = ErrorRespuesta),
@@ -276,7 +283,7 @@ pub async fn destacadas(
 )]
 pub async fn categorias(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
 ) -> ApiResult<Json<Vec<CategoriaDirectorioRespuesta>>> {
     let v = uc::categorias_directorio(&state.unidad, &en.ctx).await?;
     Ok(Json(v.into_iter().map(Into::into).collect()))
@@ -289,7 +296,7 @@ pub async fn categorias(
     tag = ETIQUETA_DIRECTORIO,
     security(("bearer" = [])),
     params(
-        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)"),
         ("anunciante_id" = Uuid, Path, description = "Anunciante"),
     ),
     responses(
@@ -300,7 +307,7 @@ pub async fn categorias(
 )]
 pub async fn ficha(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Path(ruta): Path<(Uuid, Uuid)>,
 ) -> ApiResult<Json<FichaDirectorioRespuesta>> {
     let f = uc::ficha_directorio(

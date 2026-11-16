@@ -43,6 +43,7 @@ use crate::{
 };
 
 const ACCION_IMPORTAR: AccionAuditoria = AccionAuditoria::new("tesoreria.extracto.importar");
+const ACCION_MAPEO: AccionAuditoria = AccionAuditoria::new("tesoreria.extracto.guardar_mapeo");
 const ACCION_CONCILIAR: AccionAuditoria = AccionAuditoria::new("tesoreria.conciliacion.crear");
 const ACCION_DESHACER: AccionAuditoria = AccionAuditoria::new("tesoreria.conciliacion.deshacer");
 const ACCION_PARTIDA: AccionAuditoria =
@@ -132,6 +133,62 @@ where
 {
     abrir(unidad, reloj, ctx, Permiso::TesoreriaConciliar).await?;
     Ok(leer(lector, contenido, formato)?.0)
+}
+
+/// Último mapeo de columnas con que la cuenta importó un extracto en planilla (para no
+/// configurarlo cada mes); `None` si nunca se ha guardado.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `tesoreria.conciliar`; [`AppError::NoEncontrado`] si la cuenta
+/// no existe.
+pub async fn mapeo_extracto<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    cuenta: CuentaTesoreriaId,
+) -> AppResult<Option<MapeoColumnas>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxTesoreria,
+{
+    let mut tx = abrir(unidad, reloj, ctx, Permiso::TesoreriaConciliar).await?;
+    tx.cuenta_tesoreria(cuenta)
+        .await?
+        .ok_or(AppError::NoEncontrado("cuenta de tesorería"))?;
+    tx.mapeo_extracto(cuenta).await
+}
+
+/// Guarda el mapeo de columnas de la cuenta (también se guarda solo al importar).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `tesoreria.conciliar`; [`AppError::NoEncontrado`] si la cuenta
+/// no existe.
+pub async fn guardar_mapeo_extracto<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    cuenta: CuentaTesoreriaId,
+    mapeo: MapeoColumnas,
+) -> AppResult<MapeoColumnas>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxTesoreria,
+{
+    let mut tx = abrir(unidad, reloj, ctx, Permiso::TesoreriaConciliar).await?;
+    tx.cuenta_tesoreria(cuenta)
+        .await?
+        .ok_or(AppError::NoEncontrado("cuenta de tesorería"))?;
+    tx.guardar_mapeo_extracto(cuenta, &mapeo).await?;
+    tx.registrar(EventoAuditoria::ok(
+        ACCION_MAPEO,
+        "cuenta_tesoreria",
+        cuenta.as_uuid(),
+    ))
+    .await?;
+    tx.confirmar().await?;
+    Ok(mapeo)
 }
 
 /// Extracto a importar.
@@ -240,6 +297,11 @@ where
             })
             .collect();
         tx.insertar_extracto(&extracto, &movimientos).await?;
+        // La próxima carga del mismo banco parte de este mapeo.
+        if let FormatoEntrada::Planilla(mapeo) = &imp.formato {
+            tx.guardar_mapeo_extracto(imp.cuenta_tesoreria, mapeo)
+                .await?;
+        }
         let detalle = DetalleAuditoria::vacio()
             .con("formato", extracto.formato.as_str())?
             .con("movimientos", extracto.movimientos)?;

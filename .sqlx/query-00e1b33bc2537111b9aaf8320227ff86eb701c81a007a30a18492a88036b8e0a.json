@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT token_hash, creado_por, creado_en FROM enlaces_directorio\n             WHERE tenant_id = $1",
+  "query": "SELECT token_hash, token_cifrado, creado_por, creado_en FROM enlaces_directorio\n             WHERE tenant_id = $1",
   "describe": {
     "columns": [
       {
@@ -16,6 +16,17 @@
       },
       {
         "ordinal": 1,
+        "name": "token_cifrado",
+        "type_info": "Bytea",
+        "origin": {
+          "Table": {
+            "table": "enlaces_directorio",
+            "name": "token_cifrado"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
         "name": "creado_por",
         "type_info": "Uuid",
         "origin": {
@@ -26,7 +37,7 @@
         }
       },
       {
-        "ordinal": 2,
+        "ordinal": 3,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -45,8 +56,9 @@
     "nullable": [
       false,
       true,
+      true,
       false
     ]
   },
-  "hash": "367ca1a5782817af88d86af1703a9a1a0c0a34b980d4572e96e74d2bb9f0ec74"
+  "hash": "00e1b33bc2537111b9aaf8320227ff86eb701c81a007a30a18492a88036b8e0a"
 }

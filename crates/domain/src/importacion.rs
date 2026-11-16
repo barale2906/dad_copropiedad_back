@@ -27,6 +27,8 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
+pub mod usuarios;
+
 use crate::{
     Coeficiente, DireccionCorreo, DominioError,
     bien_privado::{CodigoAgrupacion, CodigoBienPrivado, NumeroBienPrivado, TipoBienPrivado},
@@ -39,10 +41,13 @@ use crate::{
 #[serde(rename_all = "snake_case")]
 pub enum TipoImportacion {
     BienesPrivados,
+    /// Usuarios de la entidad con su rol (plan 20).
+    Usuarios,
 }
 
 enum_texto!(TipoImportacion {
     BienesPrivados => "bienes_privados",
+    Usuarios => "usuarios",
 });
 
 /// Estado de una importación.
@@ -135,7 +140,7 @@ impl Columna {
 }
 
 /// Normaliza un encabezado: minúsculas, sin tildes, espacios y guiones como `_`.
-fn normalizar_encabezado(texto: &str) -> String {
+pub(crate) fn normalizar_encabezado(texto: &str) -> String {
     texto
         .trim()
         .trim_start_matches('\u{feff}')

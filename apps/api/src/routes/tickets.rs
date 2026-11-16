@@ -747,11 +747,20 @@ pub struct DetalleRespuesta {
     pub mensajes: Vec<MensajeRespuesta>,
     pub adjuntos: Vec<AdjuntoRespuesta>,
     pub eventos: Vec<EventoRespuesta>,
+    /// Estados a los que **quien consulta** puede llevar el ticket ahora (cada uno se acepta en
+    /// `POST …/transiciones`; la asignación va aparte). Muestre solo estos botones.
+    #[schema(value_type = Vec<crate::esquemas::EstadoTicket>)]
+    pub transiciones_permitidas: Vec<String>,
 }
 
 impl From<DetalleTicket> for DetalleRespuesta {
     fn from(d: DetalleTicket) -> Self {
         Self {
+            transiciones_permitidas: d
+                .transiciones_permitidas
+                .iter()
+                .map(|e| e.as_str().to_owned())
+                .collect(),
             ticket: d.ticket.into(),
             mensajes: d.mensajes.into_iter().map(Into::into).collect(),
             adjuntos: d.adjuntos.into_iter().map(Into::into).collect(),

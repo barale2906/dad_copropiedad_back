@@ -53,6 +53,10 @@ async fn main() -> anyhow::Result<()> {
         seguridad.plataforma_exige_segundo_factor,
         firma_qr,
     );
+    state.registro_abierto = seguridad.registro_abierto;
+    if seguridad.registro_abierto {
+        tracing::warn!("REGISTRO_ABIERTO=true: cualquiera puede crear una cuenta");
+    }
     state.limitador = std::sync::Arc::new(api::limite::Limitador::new(api::limite::Limites {
         auth_por_minuto: limites.auth_por_minuto,
         publico_por_minuto: limites.publico_por_minuto,

@@ -221,11 +221,18 @@ pub struct SolicitudTitularRespuesta {
     pub respuesta: Option<String>,
     pub respuesta_archivo_id: Option<Uuid>,
     pub respondida_en: Option<DateTime<Utc>>,
+    /// Días hábiles que quedan para responder (calendario de festivos de Colombia, desde hoy):
+    /// 0 = vence hoy o ya venció; `null` si ya se respondió.
+    pub dias_habiles_restantes: Option<u32>,
 }
 
 impl From<SolicitudTitular> for SolicitudTitularRespuesta {
     fn from(s: SolicitudTitular) -> Self {
+        let hoy = domain::proteccion_datos::fecha_en_colombia(application::puertos::Reloj::ahora(
+            &application::puertos::RelojSistema,
+        ));
         Self {
+            dias_habiles_restantes: s.dias_habiles_restantes(hoy),
             id: s.id.as_uuid(),
             persona_id: s.persona_id.as_uuid(),
             tipo: s.tipo.as_str().into(),

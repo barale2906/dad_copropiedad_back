@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,\n                    condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                    plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en\n             FROM creativos WHERE id = $1",
+  "query": "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,\n                    condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,\n                    actualizado_en\n             FROM creativos WHERE campana_id = $1 ORDER BY id",
   "describe": {
     "columns": [
       {
@@ -181,6 +181,28 @@
       },
       {
         "ordinal": 16,
+        "name": "cargado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "cargado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "revisado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "revisado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -191,7 +213,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 19,
         "name": "actualizado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -224,9 +246,11 @@
       true,
       false,
       true,
+      true,
+      true,
       false,
       false
     ]
   },
-  "hash": "8cd3a1ab3274a084fc3bc3aed9eae2eb2137735c6d5a4681dbba3d52af38c2f5"
+  "hash": "f72b8eadb84116b4b3f4332fabac7da1aac7a7faa6f541051885ce5ce3576cdc"
 }

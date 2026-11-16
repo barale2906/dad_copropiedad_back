@@ -20,14 +20,14 @@ use rust_decimal::{Decimal, prelude::ToPrimitive};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CampanaId, CodigoDane, CreativoId, DominioError, RolOrganizacion, TenantId, TipoCopropiedad,
+    CampanaId, CodigoDane, CreativoId, DominioError, TenantId, TipoCopropiedad, TipoEntidad,
     directorio::{Cobertura, RADIO_MAXIMO_KM, Ubicacion, cubre},
 };
 
 /// Días mínimos entre dos mensajes masivos de publicidad a la misma persona por canal.
 pub const FRECUENCIA_MASIVA_DIAS: i64 = 7;
-/// Máximo de copropiedades elegidas una por una en una segmentación.
-pub const MAXIMO_COPROPIEDADES: usize = 500;
+/// Máximo de entidades (PH o empresas) elegidas una por una en una segmentación.
+pub const MAXIMO_ENTIDADES: usize = 500;
 
 fn transicion(entidad: &'static str, desde: &'static str, hacia: &'static str) -> DominioError {
     DominioError::TransicionInvalida {
@@ -274,49 +274,50 @@ impl FormatoCreativo {
     }
 }
 
-/// Qué puede hacer un miembro de la organización anunciante en su portal.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum AccionAnunciante {
-    /// Ficha, campañas y creativos.
-    Gestionar,
-    /// Métricas agregadas de sus campañas.
-    VerMetricas,
-    /// Contactos autorizados por los residentes.
-    VerLeads,
-    /// Redimir cupones en el mostrador.
-    RedimirCupones,
-}
-
-/// Permisos del portal según el papel en la organización: dueño y gestor hacen todo; el
-/// operario solo redime cupones.
-pub const fn permite(rol: RolOrganizacion, accion: AccionAnunciante) -> bool {
-    match rol {
-        RolOrganizacion::Dueno | RolOrganizacion::Gestor => true,
-        RolOrganizacion::Operario => matches!(accion, AccionAnunciante::RedimirCupones),
-    }
-}
-
 // ---------------------------------------------------------------------------------------------
-// Segmentación (solo atributos de la copropiedad)
+// Segmentación (solo atributos de la entidad)
 // ---------------------------------------------------------------------------------------------
 
-/// Perfil de una copropiedad para segmentar.
+/// Lo propio de una PH para segmentar (una empresa no lo tiene).
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PerfilCopropiedad {
-    pub id: TenantId,
-    pub ubicacion: Ubicacion,
+pub struct PerfilPh {
     pub tipo: TipoCopropiedad,
     /// Bienes privados activos.
     pub bienes: u32,
     pub estrato: Option<u8>,
 }
 
-/// A qué copropiedades llega una campaña. Cada criterio vacío no restringe; todos se cumplen a
-/// la vez. **Nunca** atributos de personas.
+/// Perfil de una entidad (PH o empresa) para segmentar (plan 20: la publicidad llega también a
+/// las empresas).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PerfilEntidad {
+    pub id: TenantId,
+    pub ubicacion: Ubicacion,
+    /// `None` = una empresa.
+    pub ph: Option<PerfilPh>,
+}
+
+impl PerfilEntidad {
+    /// Tipo de la entidad para la segmentación.
+    pub fn tipo(&self) -> TipoEntidad {
+        if self.ph.is_some() {
+            TipoEntidad::PropiedadHorizontal
+        } else {
+            TipoEntidad::Empresa
+        }
+    }
+}
+
+/// A qué entidades llega una campaña. Cada criterio vacío no restringe; todos se cumplen a la
+/// vez. **Nunca** atributos de personas. Los criterios propios de la PH (tipo, número de bienes y
+/// estrato) solo los cumple una PH.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Segmentacion {
-    /// Copropiedades elegidas una por una (vacío = todas las que cumplan lo demás).
-    pub copropiedades: Vec<TenantId>,
+    /// Entidades elegidas una por una (vacío = todas las que cumplan lo demás).
+    pub entidades: Vec<TenantId>,
+    /// `propiedad_horizontal` y/o `empresa` (vacío = las dos).
+    #[serde(default)]
+    pub tipos_entidad: Vec<TipoEntidad>,
     /// Radio en km desde el anunciante (sin coordenadas, el mismo municipio).
     pub radio_km: Option<u16>,
     pub municipios: Vec<CodigoDane>,
@@ -327,8 +328,8 @@ pub struct Segmentacion {
 }
 
 impl Segmentacion {
-    /// Radio de 1 a [`RADIO_MAXIMO_KM`], estratos de 1 a 6, rango de bienes coherente y hasta
-    /// [`MAXIMO_COPROPIEDADES`] copropiedades. Quita repetidos.
+    /// Radio de 1 a [`RADIO_MAXIMO_KM`], estratos de 1 a 6, rango de bienes coherente, tipos de
+    /// entidad PH o empresa y hasta [`MAXIMO_ENTIDADES`] entidades. Quita repetidos.
     ///
     /// # Errors
     ///
@@ -348,11 +349,19 @@ impl Segmentacion {
         {
             return Err(invalido("bienes", "el mínimo supera al máximo"));
         }
-        self.copropiedades.sort();
-        self.copropiedades.dedup();
-        if self.copropiedades.len() > MAXIMO_COPROPIEDADES {
-            return Err(invalido("copropiedades", "hasta 500 copropiedades"));
+        self.entidades.sort();
+        self.entidades.dedup();
+        if self.entidades.len() > MAXIMO_ENTIDADES {
+            return Err(invalido("entidades", "hasta 500 entidades"));
         }
+        if self.tipos_entidad.contains(&TipoEntidad::Plataforma) {
+            return Err(invalido(
+                "tipos_entidad",
+                "solo propiedad_horizontal o empresa",
+            ));
+        }
+        self.tipos_entidad.sort_by_key(|t| t.as_str());
+        self.tipos_entidad.dedup();
         self.municipios.sort_by(|a, b| a.as_str().cmp(b.as_str()));
         self.municipios.dedup();
         self.tipos.sort_by_key(|t| t.as_str());
@@ -362,23 +371,32 @@ impl Segmentacion {
         Ok(self)
     }
 
-    /// ¿La campaña de un anunciante ubicado en `anunciante` llega a la copropiedad? (La misma
-    /// regla aplica la función SQL `campana_alcanza`.)
-    pub fn alcanza(&self, anunciante: &Ubicacion, ph: &PerfilCopropiedad) -> bool {
-        (self.copropiedades.is_empty() || self.copropiedades.contains(&ph.id))
+    /// ¿La campaña de un anunciante ubicado en `anunciante` llega a la entidad? (La misma regla
+    /// aplica la función SQL `campana_alcanza`.)
+    pub fn alcanza(&self, anunciante: &Ubicacion, entidad: &PerfilEntidad) -> bool {
+        let ph = entidad.ph.as_ref();
+        (self.entidades.is_empty() || self.entidades.contains(&entidad.id))
+            && (self.tipos_entidad.is_empty() || self.tipos_entidad.contains(&entidad.tipo()))
             && self
                 .radio_km
-                .is_none_or(|r| cubre(Cobertura::Radio(r), anunciante, &ph.ubicacion))
+                .is_none_or(|r| cubre(Cobertura::Radio(r), anunciante, &entidad.ubicacion))
             && (self.municipios.is_empty()
-                || ph
+                || entidad
                     .ubicacion
                     .municipio
                     .as_ref()
                     .is_some_and(|m| self.municipios.contains(m)))
-            && (self.tipos.is_empty() || self.tipos.contains(&ph.tipo))
-            && self.bienes_min.is_none_or(|m| ph.bienes >= m)
-            && self.bienes_max.is_none_or(|m| ph.bienes <= m)
-            && (self.estratos.is_empty() || ph.estrato.is_some_and(|e| self.estratos.contains(&e)))
+            && (self.tipos.is_empty() || ph.is_some_and(|p| self.tipos.contains(&p.tipo)))
+            && self
+                .bienes_min
+                .is_none_or(|m| ph.is_some_and(|p| p.bienes >= m))
+            && self
+                .bienes_max
+                .is_none_or(|m| ph.is_some_and(|p| p.bienes <= m))
+            && (self.estratos.is_empty()
+                || ph
+                    .and_then(|p| p.estrato)
+                    .is_some_and(|e| self.estratos.contains(&e)))
     }
 }
 
@@ -809,27 +827,56 @@ mod tests {
         assert!(L::Pagada.transicionar(L::Calculada).is_err());
     }
 
-    #[test]
-    fn el_operario_solo_redime_cupones() {
-        use AccionAnunciante::*;
-        assert!(permite(RolOrganizacion::Gestor, VerLeads));
-        assert!(permite(RolOrganizacion::Dueno, Gestionar));
-        assert!(permite(RolOrganizacion::Operario, RedimirCupones));
-        assert!(!permite(RolOrganizacion::Operario, Gestionar));
-        assert!(!permite(RolOrganizacion::Operario, VerLeads));
-    }
-
-    fn ph(estrato: Option<u8>, bienes: u32) -> PerfilCopropiedad {
-        PerfilCopropiedad {
+    fn ph(estrato: Option<u8>, bienes: u32) -> PerfilEntidad {
+        PerfilEntidad {
             id: TenantId::nuevo(),
             ubicacion: Ubicacion {
                 coordenadas: Some(Coordenadas::new(dec!(4.66), dec!(-74.06)).expect("válidas")),
                 municipio: Some(CodigoDane::new("11001").expect("válido")),
             },
-            tipo: TipoCopropiedad::Residencial,
-            bienes,
-            estrato,
+            ph: Some(PerfilPh {
+                tipo: TipoCopropiedad::Residencial,
+                bienes,
+                estrato,
+            }),
         }
+    }
+
+    #[test]
+    fn una_empresa_solo_la_alcanzan_criterios_que_no_son_de_la_ph() {
+        let empresa = PerfilEntidad {
+            ph: None,
+            ..ph(None, 0)
+        };
+        assert!(Segmentacion::default().alcanza(&tienda(), &empresa));
+        let solo_ph = Segmentacion {
+            tipos_entidad: vec![TipoEntidad::PropiedadHorizontal],
+            ..Segmentacion::default()
+        };
+        assert!(!solo_ph.alcanza(&tienda(), &empresa));
+        let estrato = Segmentacion {
+            estratos: vec![3],
+            ..Segmentacion::default()
+        };
+        assert!(
+            !estrato.alcanza(&tienda(), &empresa),
+            "el estrato es de la PH"
+        );
+        let solo_empresas = Segmentacion {
+            tipos_entidad: vec![TipoEntidad::Empresa],
+            radio_km: Some(2),
+            ..Segmentacion::default()
+        };
+        assert!(solo_empresas.alcanza(&tienda(), &empresa));
+        assert!(!solo_empresas.alcanza(&tienda(), &ph(Some(3), 10)));
+        assert!(
+            Segmentacion {
+                tipos_entidad: vec![TipoEntidad::Plataforma],
+                ..Segmentacion::default()
+            }
+            .validada()
+            .is_err()
+        );
     }
 
     fn tienda() -> Ubicacion {
@@ -860,7 +907,7 @@ mod tests {
         };
         assert!(!lejos.alcanza(&tienda(), &p), "≈1,1 km");
         let una = Segmentacion {
-            copropiedades: vec![p.id],
+            entidades: vec![p.id],
             ..Segmentacion::default()
         };
         assert!(una.alcanza(&tienda(), &p));

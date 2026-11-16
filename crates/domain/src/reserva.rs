@@ -14,7 +14,7 @@ pub use chrono_tz::Tz;
 use rust_decimal::{Decimal, RoundingStrategy};
 use serde::{Deserialize, Serialize};
 
-use crate::{CalidadResidencia, DominioError, Horario, calendario};
+use crate::{CalidadResidencia, DominioError, Horario, ItemFacturacionId, calendario};
 
 /// Clase de recurso reservable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -613,12 +613,70 @@ enum_texto!(TipoEntrega {
 pub enum ConceptoCargo {
     Danos,
     PenalidadCancelacion,
+    /// Valor de la reserva de un recurso que se cobra en la cartera (plan 20).
+    ValorReserva,
 }
 
 enum_texto!(ConceptoCargo {
     Danos => "danos",
     PenalidadCancelacion => "penalidad_cancelacion",
+    ValorReserva => "valor_reserva",
 });
+
+/// Cómo se cobra el valor de las reservas de un recurso (lo decide el contador, plan 20).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DestinoCobro {
+    /// La administración registra a mano si se pagó o se exoneró.
+    #[default]
+    Manual,
+    /// Al aprobarse, el valor queda como cargo pendiente del bien privado y sale en su cuenta de
+    /// cobro (concepto `uso_bien_comun` de la cartera).
+    Cartera,
+    /// Se factura con una factura de venta en borrador con el ítem del recurso.
+    Factura,
+}
+
+enum_texto!(DestinoCobro {
+    Manual => "manual",
+    Cartera => "cartera",
+    Factura => "factura",
+});
+
+/// Configuración de cobro de un recurso: el destino y, para facturar, el ítem de facturación.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct CobroReserva {
+    destino: DestinoCobro,
+    item: Option<ItemFacturacionId>,
+}
+
+impl CobroReserva {
+    /// # Errors
+    ///
+    /// [`DominioError::DatoInvalido`] si se factura sin ítem o se da un ítem a otro destino.
+    pub fn new(
+        destino: DestinoCobro,
+        item: Option<ItemFacturacionId>,
+    ) -> Result<Self, DominioError> {
+        if (destino == DestinoCobro::Factura) != item.is_some() {
+            return Err(DominioError::DatoInvalido {
+                campo: "item_facturacion_id",
+                regla: "obligatorio para facturar y solo para facturar",
+            });
+        }
+        Ok(Self { destino, item })
+    }
+
+    /// Destino del cobro.
+    pub const fn destino(&self) -> DestinoCobro {
+        self.destino
+    }
+
+    /// Ítem de facturación (solo con [`DestinoCobro::Factura`]).
+    pub const fn item(&self) -> Option<ItemFacturacionId> {
+        self.item
+    }
+}
 
 /// Franjas en que las reservas activas (franja y personas) llenan el `aforo`: lo que la
 /// disponibilidad debe descontar en un recurso con cupo.
@@ -986,5 +1044,14 @@ mod tests {
     fn zona_horaria_iana() {
         assert!(zona_horaria("America/Bogota").is_ok());
         assert!(zona_horaria("Bogota").is_err());
+    }
+
+    #[test]
+    fn facturar_exige_item_y_los_demas_destinos_no_lo_llevan() {
+        let item = Some(ItemFacturacionId::nuevo());
+        assert!(CobroReserva::new(DestinoCobro::Factura, item).is_ok());
+        assert!(CobroReserva::new(DestinoCobro::Factura, None).is_err());
+        assert!(CobroReserva::new(DestinoCobro::Cartera, item).is_err());
+        assert_eq!(CobroReserva::default().destino(), DestinoCobro::Manual);
     }
 }

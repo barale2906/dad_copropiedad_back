@@ -6,8 +6,8 @@
 use chrono::{DateTime, Duration, TimeZone, Utc};
 use domain::{
     CampanaId, CanalPublicidad, ConjuntoPermisos, CreativoId, CuentaId, EstadoCampana,
-    FormatoCreativo, MedioAutorizacion, ModeloCobro, Modulo, Permiso, PersonaId,
-    PoliticaPublicidadId, TenantId, TipoPersona,
+    FormatoCreativo, MedioAutorizacion, ModeloCobro, Permiso, PersonaId, PoliticaPublicidadId,
+    TenantId, TipoPersona,
     publicidad::{CodigoCupon, ContenidoCreativo, Cupon, PiezaCandidata, Presupuesto},
 };
 use rust_decimal::{Decimal, dec};
@@ -87,7 +87,6 @@ struct Entorno {
 
 fn entorno(piezas: Vec<PiezaPublicidad>) -> Entorno {
     let unidad = UnidadEnMemoria::default();
-    unidad.habilitar(Modulo::Publicidad);
     let (cuenta, persona) = (CuentaId::nuevo(), PersonaId::nuevo());
     unidad.con_datos(|d| {
         let mut p = Persona::basica(persona, TipoPersona::Natural, "Ana".into(), None);
@@ -163,7 +162,7 @@ async fn sin_autorizacion_de_publicidad_no_hay_piezas() {
 }
 
 #[tokio::test]
-async fn sin_el_modulo_no_hay_piezas_aunque_haya_autorizado() {
+async fn una_entidad_excluida_no_recibe_piezas_aunque_haya_autorizado() {
     let e = entorno(vec![pieza(
         FormatoCreativo::Banner,
         ModeloCobro::Cpm,
@@ -171,7 +170,7 @@ async fn sin_el_modulo_no_hay_piezas_aunque_haya_autorizado() {
         dec!(100000),
     )]);
     e.autorizar().await;
-    e.unidad.con_datos(|d| d.modulos.clear());
+    e.unidad.con_datos(|d| d.directorio.excluida = true);
 
     assert!(e.piezas().await.is_empty());
 }
@@ -447,6 +446,7 @@ async fn la_pantalla_exige_su_token_y_cuenta_impresiones() {
     e.unidad.con_datos(|d| {
         d.publicidad.pantalla = Some(crate::puertos::publicidad::PantallaPublicidad {
             token_hash: hex::decode(crate::seguridad::hash_secreto(&token)).expect("hex"),
+            token_cifrado: None,
             creado_por: None,
             creado_en: ahora(),
         });

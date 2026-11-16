@@ -42,6 +42,15 @@ pub async fn api(pool: PgPool) -> Api {
 
 /// API con límites de peticiones (las pruebas del limitador).
 pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api {
+    api_con(pool, limites, true).await
+}
+
+/// API con `REGISTRO_ABIERTO=false`, como en producción.
+pub async fn api_sin_registro(pool: PgPool) -> Api {
+    api_con(pool, api::limite::Limites::ninguno(), false).await
+}
+
+async fn api_con(pool: PgPool, limites: api::limite::Limites, registro_abierto: bool) -> Api {
     let app = PgPoolOptions::new()
         .max_connections(4)
         .after_connect(|c, _| {
@@ -79,6 +88,9 @@ pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api
                     FirmaQrEd25519::new(&[5; 32]).expect("secreto de prueba"),
                 );
                 state.limitador = std::sync::Arc::new(api::limite::Limitador::new(limites));
+                state.registro_abierto = registro_abierto;
+                // Clave de prueba: los enlaces estables y los secretos de facturación se cifran.
+                state.cofre = std::sync::Arc::new(infra_seguridad::CofreAesGcm::new(Some([7; 32])));
                 state
             },
             &config,
@@ -91,6 +103,38 @@ pub async fn api_con_limites(pool: PgPool, limites: api::limite::Limites) -> Api
 }
 
 impl Api {
+    /// Código de 6 dígitos del último correo encolado a `correo` (los códigos solo se guardan
+    /// como hash: el texto del correo es la única copia en claro).
+    pub async fn codigo_en_correo(&self, correo: &str) -> String {
+        let texto: String = sqlx::query_scalar(
+            "SELECT payload->>'texto' FROM outbox
+             WHERE canal = 'correo' AND destino = $1 ORDER BY id DESC LIMIT 1",
+        )
+        .bind(correo)
+        .fetch_one(&self.duenio)
+        .await
+        .expect("correo encolado");
+        texto
+            .split(|c: char| !c.is_ascii_digit())
+            .find(|t| t.len() == 6)
+            .expect("código en el correo")
+            .to_owned()
+    }
+
+    /// Define la contraseña de una cuenta creada por otro con el código de su correo.
+    pub async fn definir_contrasena(&self, correo: &str) {
+        let codigo = self.codigo_en_correo(correo).await;
+        let (s, v) = self
+            .pedir(
+                Method::POST,
+                "/api/v1/auth/contrasena/restablecer",
+                None,
+                Some(json!({ "correo": correo, "codigo": codigo, "contrasena_nueva": CONTRASENA })),
+            )
+            .await;
+        assert_eq!(s, StatusCode::NO_CONTENT, "{v}");
+    }
+
     pub async fn pedir(
         &self,
         metodo: Method,
@@ -139,6 +183,44 @@ impl Api {
             status,
             serde_json::from_slice(&bytes).unwrap_or(Value::Null),
         )
+    }
+
+    /// POST JSON sin sesión con una cabecera de credencial (p. ej. `X-Comercio`).
+    pub async fn publicar_con_cabecera(
+        &self,
+        uri: &str,
+        cabecera: &str,
+        valor: &str,
+        cuerpo: Value,
+    ) -> (StatusCode, Value) {
+        let req = Request::post(uri)
+            .header(cabecera, valor)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(cuerpo.to_string()))
+            .expect("petición");
+        let res = self.router.clone().oneshot(req).await.expect("router");
+        let status = res.status();
+        let bytes = to_bytes(res.into_body(), usize::MAX).await.expect("cuerpo");
+        (
+            status,
+            serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+        )
+    }
+
+    /// Cuenta de la plataforma con un rol plantilla de plataforma y una sesión con segundo
+    /// factor.
+    pub async fn operador_con_rol(&self, usuario: &str, rol: &str) -> String {
+        let id = self.registrar(usuario).await;
+        sqlx::query(
+            "INSERT INTO asignaciones_plataforma (id, cuenta_id, rol_id, vigente_desde)
+             VALUES (gen_random_uuid(), $1::uuid, uuid_rol_plantilla($2), now())",
+        )
+        .bind(&id)
+        .bind(rol)
+        .execute(&self.duenio)
+        .await
+        .expect("rol de plataforma");
+        self.token_con_segundo_factor(usuario).await
     }
 
     /// GET que devuelve texto (CSV): estado, `Content-Type` y cuerpo.

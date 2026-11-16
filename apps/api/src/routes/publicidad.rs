@@ -1,20 +1,22 @@
 //! Publicidad de la plataforma (plan 08, fases 3 a 6; ADR 0015).
 //!
-//! - Portal del anunciante, `/api/v1/anunciantes/…` (cuenta autenticada miembro de la
-//!   organización): registro, ficha, campañas, creativos, métricas, leads y cupones.
-//! - Plataforma, `/api/v1/plataforma/publicidad/…`: moderación, reportes, tarifas, política
-//!   de publicidad, liquidaciones y pantallas del lobby.
-//! - Copropiedad, `/api/v1/copropiedades/{copropiedad_id}/publicidad/…`: autorización del
-//!   titular, piezas, eventos, cupones y reportes (solo para quien autorizó), y la pantalla del
+//! - Plataforma, `/api/v1/plataforma/publicidad/…`: el personal carga las campañas y piezas de
+//!   cualquier comercio (`plataforma.publicidad.gestionar`; los comercios no usan la plataforma,
+//!   plan 20), sus métricas y leads, el enlace de cupones del comercio y las exclusiones; la
+//!   moderación (otra cuenta), reportes, tarifas, política, liquidaciones y pantallas.
+//! - Comercio, `/api/v1/publicidad/cupones/redimir` (sin sesión, `X-Comercio`): redime cupones.
+//! - Entidad, `/api/v1/entidades/{entidad_id}/publicidad/…`: autorización del titular, piezas,
+//!   eventos, cupones y reportes (solo para quien autorizó), en PH y empresas.
+//! - Copropiedad, `/api/v1/copropiedades/{copropiedad_id}/publicidad/pantalla`: la pantalla del
 //!   lobby (sin sesión, `X-Pantalla`).
 
 use application::{
-    AppError,
+    AppError, ContextoPlataforma,
     casos_uso::publicidad::{
         entrega::{self, EventoPieza},
+        gestion::{self as portal, AccionCampana, DatosCampana},
         liquidacion, moderacion,
         moderacion::Decision,
-        portal::{self, AccionCampana, DatosCampana},
     },
     puertos::{
         RelojSistema,
@@ -29,7 +31,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     AnuncianteId, CampanaId, CodigoCategoria, CodigoDane, CreativoId, EstadoLiquidacion,
     FormatoCreativo, MedioAutorizacion, ModeloCobro, ObjetivoCampana, Segmentacion, TenantId,
-    TipoCopropiedad,
+    TipoCopropiedad, TipoEntidad,
     publicidad::{CodigoCupon, ContenidoCreativo, Cupon},
 };
 use rust_decimal::Decimal;
@@ -38,27 +40,24 @@ use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
-use super::directorio::{
-    AnuncianteRespuesta, DatosAnunciantePeticion, FichaAnuncianteRespuesta, FichaPeticion,
-    anunciante_respuesta,
-};
 use crate::{
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::{Json, Path, Query},
     limite::LimitePublico,
     openapi::ETIQUETA_PUBLICIDAD,
     paginacion::{PaginaRespuesta, ParametrosPagina},
-    routes::organizaciones::NuevaOrganizacionPeticion,
-    sesion::{CuentaAutenticada, EnCopropiedad, OperadorPlataforma, PantallaLobby},
+    sesion::{EnEntidad, EnlaceComercio, OperadorPlataforma, PantallaLobby},
     state::AppState,
 };
 
-/// Portal del anunciante (se monta en `/api/v1/anunciantes`).
-pub fn rutas_portal() -> OpenApiRouter<AppState> {
+/// Redención de cupones por el comercio (se monta en `/api/v1/publicidad`).
+pub fn rutas_comercio() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(redimir))
+}
+
+/// Plataforma (se monta en `/api/v1/plataforma`).
+pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
-        .routes(routes!(mis_anunciantes, registrarse))
-        .routes(routes!(mi_anunciante))
-        .routes(routes!(editar_ficha))
         .routes(routes!(listar_campanas, crear_campana))
         .routes(routes!(ver_campana, editar_campana))
         .routes(routes!(cambiar_estado_campana))
@@ -66,12 +65,13 @@ pub fn rutas_portal() -> OpenApiRouter<AppState> {
         .routes(routes!(editar_creativo))
         .routes(routes!(metricas))
         .routes(routes!(leads))
-        .routes(routes!(redimir))
-}
-
-/// Plataforma (se monta en `/api/v1/plataforma`).
-pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new()
+        .routes(routes!(
+            ver_enlace_comercio,
+            generar_enlace_comercio,
+            revocar_enlace_comercio
+        ))
+        .routes(routes!(exclusiones, excluir))
+        .routes(routes!(incluir))
         .routes(routes!(creativos_pendientes))
         .routes(routes!(moderar_creativo))
         .routes(routes!(campanas_en_revision))
@@ -82,18 +82,22 @@ pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
         .routes(routes!(publicar_politica))
         .routes(routes!(liquidaciones, liquidar))
         .routes(routes!(estado_liquidacion))
-        .routes(routes!(generar_pantalla))
+        .routes(routes!(ver_pantalla, generar_pantalla))
 }
 
-/// Copropiedad (se monta en `/api/v1/copropiedades/{copropiedad_id}`).
-pub fn rutas_copropiedad() -> OpenApiRouter<AppState> {
+/// Cualquier entidad, PH o empresa (se monta en `/api/v1/entidades/{entidad_id}`).
+pub fn rutas_entidad() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(estado_autorizacion, autorizar, revocar))
         .routes(routes!(piezas))
         .routes(routes!(eventos))
         .routes(routes!(cupon))
         .routes(routes!(reportar))
-        .routes(routes!(pantalla))
+}
+
+/// Copropiedad (se monta en `/api/v1/copropiedades/{copropiedad_id}`): la pantalla del lobby.
+pub fn rutas_copropiedad() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new().routes(routes!(pantalla))
 }
 
 fn invalido(campo: &str) -> ApiError {
@@ -104,13 +108,17 @@ fn invalido(campo: &str) -> ApiError {
 // DTOs
 // ---------------------------------------------------------------------------------------------
 
-/// A qué copropiedades llega la campaña: solo atributos de la PH, nunca de personas. Cada
-/// criterio vacío no restringe.
+/// A qué entidades (PH y empresas) llega la campaña: solo atributos de la entidad, nunca de
+/// personas. Cada criterio vacío no restringe. `tipos`, `bienes_*` y `estratos` son de la PH:
+/// una empresa no los cumple.
 #[derive(Debug, Default, Serialize, Deserialize, ToSchema)]
 #[serde(default)]
 pub struct SegmentacionDto {
-    /// Copropiedades elegidas una por una (vacío = todas las que cumplan lo demás).
-    pub copropiedades: Vec<Uuid>,
+    /// Entidades elegidas una por una (vacío = todas las que cumplan lo demás).
+    pub entidades: Vec<Uuid>,
+    /// `propiedad_horizontal` y/o `empresa` (vacío = las dos).
+    #[schema(value_type = Vec<crate::esquemas::TipoEntidad>)]
+    pub tipos_entidad: Vec<String>,
     /// Radio en km desde el anunciante (1 a 100).
     pub radio_km: Option<u16>,
     /// Códigos DANE de municipios.
@@ -130,11 +138,12 @@ impl TryFrom<SegmentacionDto> for Segmentacion {
 
     fn try_from(d: SegmentacionDto) -> Result<Self, ApiError> {
         Ok(Self {
-            copropiedades: d
-                .copropiedades
-                .into_iter()
-                .map(TenantId::from_uuid)
-                .collect(),
+            entidades: d.entidades.into_iter().map(TenantId::from_uuid).collect(),
+            tipos_entidad: d
+                .tipos_entidad
+                .iter()
+                .map(|t| TipoEntidad::try_from(t.as_str()))
+                .collect::<Result<_, _>>()?,
             radio_km: d.radio_km,
             municipios: d
                 .municipios
@@ -156,7 +165,12 @@ impl TryFrom<SegmentacionDto> for Segmentacion {
 impl From<Segmentacion> for SegmentacionDto {
     fn from(s: Segmentacion) -> Self {
         Self {
-            copropiedades: s.copropiedades.iter().map(|t| t.as_uuid()).collect(),
+            entidades: s.entidades.iter().map(|t| t.as_uuid()).collect(),
+            tipos_entidad: s
+                .tipos_entidad
+                .iter()
+                .map(|t| t.as_str().to_owned())
+                .collect(),
             radio_km: s.radio_km,
             municipios: s.municipios.iter().map(|m| m.as_str().to_owned()).collect(),
             tipos: s.tipos.iter().map(|t| t.as_str().to_owned()).collect(),
@@ -370,23 +384,6 @@ pub struct CampanaDetalleRespuesta {
     pub creativos: Vec<CreativoRespuesta>,
 }
 
-/// Anunciante de la cuenta con su papel en la organización.
-#[derive(Debug, Serialize, ToSchema)]
-pub struct MiAnuncianteRespuesta {
-    pub anunciante: AnuncianteRespuesta,
-    /// `dueno`, `gestor` u `operario` (solo redime cupones).
-    pub rol: String,
-}
-
-/// Registro de un anunciante por su cuenta.
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct RegistroAnunciantePeticion {
-    /// Si el NIT ya existe, la cuenta debe administrarla (o reclamarla antes).
-    pub organizacion: NuevaOrganizacionPeticion,
-    #[serde(flatten)]
-    pub datos: DatosAnunciantePeticion,
-}
-
 /// Cambio de estado de una campaña.
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct AccionCampanaPeticion {
@@ -462,130 +459,27 @@ pub struct RedencionRespuesta {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Portal del anunciante
+// Campañas de un comercio (personal de la plataforma)
 // ---------------------------------------------------------------------------------------------
 
-/// Anunciantes de la cuenta.
-#[utoipa::path(
-    get,
-    path = "",
-    tag = ETIQUETA_PUBLICIDAD,
-    security(("bearer" = [])),
-    responses((status = OK, description = "Anunciantes", body = Vec<MiAnuncianteRespuesta>))
-)]
-pub async fn mis_anunciantes(
-    State(state): State<AppState>,
-    c: CuentaAutenticada,
-) -> ApiResult<Json<Vec<MiAnuncianteRespuesta>>> {
-    let v = portal::mis_anunciantes(&state.plataforma, &c.ctx).await?;
-    Ok(Json(
-        v.into_iter()
-            .map(|(a, rol)| MiAnuncianteRespuesta {
-                anunciante: anunciante_respuesta(a, None),
-                rol: rol.as_str().to_owned(),
-            })
-            .collect(),
-    ))
-}
-
-/// Registra la cuenta como anunciante (queda `pendiente` hasta que la moderación lo verifique).
-#[utoipa::path(
-    post,
-    path = "",
-    tag = ETIQUETA_PUBLICIDAD,
-    security(("bearer" = [])),
-    request_body = RegistroAnunciantePeticion,
-    responses(
-        (status = CREATED, description = "Anunciante registrado", body = AnuncianteRespuesta),
-        (status = CONFLICT, description = "La organización ya existe y no la administra, o ya tiene anunciante (`conflicto`)", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos (`validacion`)", body = ErrorRespuesta),
-    )
-)]
-pub async fn registrarse(
-    State(state): State<AppState>,
-    c: CuentaAutenticada,
-    Json(p): Json<RegistroAnunciantePeticion>,
-) -> ApiResult<(StatusCode, Json<AnuncianteRespuesta>)> {
-    let a = portal::registrarse(
-        &state.plataforma,
-        &RelojSistema,
-        &c.ctx,
-        p.organizacion.try_into()?,
-        p.datos.try_into()?,
-    )
-    .await?;
-    Ok((StatusCode::CREATED, Json(anunciante_respuesta(a, None))))
-}
-
-/// El anunciante con su ficha.
-#[utoipa::path(
-    get,
-    path = "/{anunciante_id}",
-    tag = ETIQUETA_PUBLICIDAD,
-    security(("bearer" = [])),
-    params(("anunciante_id" = Uuid, Path, description = "Anunciante")),
-    responses(
-        (status = OK, description = "Anunciante", body = AnuncianteRespuesta),
-        (status = NOT_FOUND, description = "No existe o no es miembro", body = ErrorRespuesta),
-    )
-)]
-pub async fn mi_anunciante(
-    State(state): State<AppState>,
-    c: CuentaAutenticada,
-    Path(id): Path<Uuid>,
-) -> ApiResult<Json<AnuncianteRespuesta>> {
-    let (a, f) =
-        portal::mi_anunciante(&state.plataforma, &c.ctx, AnuncianteId::from_uuid(id)).await?;
-    Ok(Json(anunciante_respuesta(a, f)))
-}
-
-/// El anunciante edita su ficha del directorio (la fecha de destacada la gestiona la
-/// plataforma y se ignora).
-#[utoipa::path(
-    put,
-    path = "/{anunciante_id}/ficha",
-    tag = ETIQUETA_PUBLICIDAD,
-    security(("bearer" = [])),
-    params(("anunciante_id" = Uuid, Path, description = "Anunciante")),
-    request_body = FichaPeticion,
-    responses(
-        (status = OK, description = "Ficha guardada", body = FichaAnuncianteRespuesta),
-        (status = NOT_FOUND, description = "No existe o no la administra", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Categoría restringida o datos inválidos", body = ErrorRespuesta),
-    )
-)]
-pub async fn editar_ficha(
-    State(state): State<AppState>,
-    c: CuentaAutenticada,
-    Path(id): Path<Uuid>,
-    Json(p): Json<FichaPeticion>,
-) -> ApiResult<Json<FichaAnuncianteRespuesta>> {
-    let f = portal::editar_ficha(
-        &state.plataforma,
-        &RelojSistema,
-        &c.ctx,
-        AnuncianteId::from_uuid(id),
-        p.try_into()?,
-    )
-    .await?;
-    Ok(Json(f.into()))
-}
+const PROHIBIDO_GESTION: &str = "Sin `plataforma.publicidad.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)";
 
 /// Campañas del anunciante.
 #[utoipa::path(
     get,
-    path = "/{anunciante_id}/campanas",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("anunciante_id" = Uuid, Path, description = "Anunciante"), ParametrosPagina),
+    params(("anunciante_id" = Uuid, Path, description = "Comercio"), ParametrosPagina),
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Campañas", body = PaginaRespuesta<CampanaRespuesta>),
-        (status = NOT_FOUND, description = "No existe o no es miembro", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "El comercio no existe", body = ErrorRespuesta),
     )
 )]
 pub async fn listar_campanas(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(id): Path<Uuid>,
     Query(p): Query<ParametrosPagina>,
 ) -> ApiResult<Json<PaginaRespuesta<CampanaRespuesta>>> {
@@ -602,20 +496,21 @@ pub async fn listar_campanas(
 /// Crea una campaña en borrador.
 #[utoipa::path(
     post,
-    path = "/{anunciante_id}/campanas",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("anunciante_id" = Uuid, Path, description = "Anunciante")),
+    params(("anunciante_id" = Uuid, Path, description = "Comercio")),
     request_body = CampanaPeticion,
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = CREATED, description = "Campaña creada", body = CampanaRespuesta),
-        (status = NOT_FOUND, description = "No existe o no la administra", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "El comercio no existe", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_campana(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(id): Path<Uuid>,
     Json(p): Json<CampanaPeticion>,
 ) -> ApiResult<(StatusCode, Json<CampanaRespuesta>)> {
@@ -633,21 +528,22 @@ pub async fn crear_campana(
 /// Campaña con sus creativos.
 #[utoipa::path(
     get,
-    path = "/{anunciante_id}/campanas/{campana_id}",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("anunciante_id" = Uuid, Path, description = "Anunciante"),
+        ("anunciante_id" = Uuid, Path, description = "Comercio"),
         ("campana_id" = Uuid, Path, description = "Campaña"),
     ),
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Campaña", body = CampanaDetalleRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
     )
 )]
 pub async fn ver_campana(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(ruta): Path<(Uuid, Uuid)>,
 ) -> ApiResult<Json<CampanaDetalleRespuesta>> {
     let (x, creativos) = portal::campana(
@@ -666,15 +562,16 @@ pub async fn ver_campana(
 /// Edita la campaña (una aprobada o pausada vuelve a borrador y a moderación).
 #[utoipa::path(
     put,
-    path = "/{anunciante_id}/campanas/{campana_id}",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("anunciante_id" = Uuid, Path, description = "Anunciante"),
+        ("anunciante_id" = Uuid, Path, description = "Comercio"),
         ("campana_id" = Uuid, Path, description = "Campaña"),
     ),
     request_body = CampanaPeticion,
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Campaña editada", body = CampanaRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos o estado que no lo permite", body = ErrorRespuesta),
@@ -682,7 +579,7 @@ pub async fn ver_campana(
 )]
 pub async fn editar_campana(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(ruta): Path<(Uuid, Uuid)>,
     Json(p): Json<CampanaPeticion>,
 ) -> ApiResult<Json<CampanaRespuesta>> {
@@ -701,15 +598,16 @@ pub async fn editar_campana(
 /// Envía a revisión, activa, pausa o finaliza la campaña.
 #[utoipa::path(
     post,
-    path = "/{anunciante_id}/campanas/{campana_id}/estado",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/estado",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("anunciante_id" = Uuid, Path, description = "Anunciante"),
+        ("anunciante_id" = Uuid, Path, description = "Comercio"),
         ("campana_id" = Uuid, Path, description = "Campaña"),
     ),
     request_body = AccionCampanaPeticion,
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Estado cambiado", body = CampanaRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Transición no permitida (`dominio`) o falta algo (`validacion`)", body = ErrorRespuesta),
@@ -717,7 +615,7 @@ pub async fn editar_campana(
 )]
 pub async fn cambiar_estado_campana(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(ruta): Path<(Uuid, Uuid)>,
     Json(p): Json<AccionCampanaPeticion>,
 ) -> ApiResult<Json<CampanaRespuesta>> {
@@ -743,15 +641,16 @@ pub async fn cambiar_estado_campana(
 /// Agrega un creativo (queda pendiente de moderación).
 #[utoipa::path(
     post,
-    path = "/{anunciante_id}/campanas/{campana_id}/creativos",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("anunciante_id" = Uuid, Path, description = "Anunciante"),
+        ("anunciante_id" = Uuid, Path, description = "Comercio"),
         ("campana_id" = Uuid, Path, description = "Campaña"),
     ),
     request_body = CreativoPeticion,
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = CREATED, description = "Creativo creado", body = CreativoRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
         (status = CONFLICT, description = "Campaña no editable o cupón repetido (`conflicto`)", body = ErrorRespuesta),
@@ -760,7 +659,7 @@ pub async fn cambiar_estado_campana(
 )]
 pub async fn crear_creativo(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(ruta): Path<(Uuid, Uuid)>,
     Json(p): Json<CreativoPeticion>,
 ) -> ApiResult<(StatusCode, Json<CreativoRespuesta>)> {
@@ -780,16 +679,17 @@ pub async fn crear_creativo(
 /// Edita un creativo (si cambia, vuelve a moderación).
 #[utoipa::path(
     put,
-    path = "/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("anunciante_id" = Uuid, Path, description = "Anunciante"),
+        ("anunciante_id" = Uuid, Path, description = "Comercio"),
         ("campana_id" = Uuid, Path, description = "Campaña"),
         ("creativo_id" = Uuid, Path, description = "Creativo"),
     ),
     request_body = CreativoPeticion,
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Creativo guardado", body = CreativoRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
         (status = CONFLICT, description = "Campaña no editable (`conflicto`)", body = ErrorRespuesta),
@@ -797,7 +697,7 @@ pub async fn crear_creativo(
 )]
 pub async fn editar_creativo(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(ruta): Path<(Uuid, Uuid, Uuid)>,
     Json(p): Json<CreativoPeticion>,
 ) -> ApiResult<Json<CreativoRespuesta>> {
@@ -817,21 +717,22 @@ pub async fn editar_creativo(
 /// Métricas agregadas de la campaña.
 #[utoipa::path(
     get,
-    path = "/{anunciante_id}/campanas/{campana_id}/metricas",
+    path = "/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/metricas",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("anunciante_id" = Uuid, Path, description = "Anunciante"),
+        ("anunciante_id" = Uuid, Path, description = "Comercio"),
         ("campana_id" = Uuid, Path, description = "Campaña"),
     ),
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Métricas", body = MetricasRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
     )
 )]
 pub async fn metricas(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(ruta): Path<(Uuid, Uuid)>,
 ) -> ApiResult<Json<MetricasRespuesta>> {
     let m = portal::metricas(
@@ -862,22 +763,23 @@ pub async fn metricas(
     }))
 }
 
-/// Contactos que los residentes autorizaron compartirle (nombre y celular, para esa
-/// solicitud). El operario no los ve.
+/// Contactos que los residentes autorizaron compartirle al comercio (nombre y celular, para esa
+/// solicitud).
 #[utoipa::path(
     get,
-    path = "/{anunciante_id}/leads",
+    path = "/publicidad/anunciantes/{anunciante_id}/leads",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("anunciante_id" = Uuid, Path, description = "Anunciante"), ParametrosPagina),
+    params(("anunciante_id" = Uuid, Path, description = "Comercio"), ParametrosPagina),
     responses(
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Contactos", body = PaginaRespuesta<LeadRespuesta>),
-        (status = NOT_FOUND, description = "No existe o no puede verlos", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "El comercio no existe", body = ErrorRespuesta),
     )
 )]
 pub async fn leads(
     State(state): State<AppState>,
-    c: CuentaAutenticada,
+    OperadorPlataforma(c): OperadorPlataforma,
     Path(id): Path<Uuid>,
     Query(p): Query<ParametrosPagina>,
 ) -> ApiResult<Json<PaginaRespuesta<LeadRespuesta>>> {
@@ -891,31 +793,33 @@ pub async fn leads(
     Ok(Json(v.mapear(Into::into).into()))
 }
 
-/// Redime un cupón en el mostrador (también el operario).
+/// Redime un cupón en el mostrador del comercio, con el token de **su enlace** en `X-Comercio`
+/// (sin sesión: los comercios no tienen cuenta en la plataforma).
 #[utoipa::path(
     post,
-    path = "/{anunciante_id}/cupones/redimir",
+    path = "/cupones/redimir",
     tag = ETIQUETA_PUBLICIDAD,
-    security(("bearer" = [])),
-    params(("anunciante_id" = Uuid, Path, description = "Anunciante")),
+    params(("X-Comercio" = String, Header, description = "Token del enlace de redención del comercio")),
     request_body = RedimirPeticion,
     responses(
         (status = OK, description = "Redimido", body = RedencionRespuesta),
+        (status = UNAUTHORIZED, description = "Sin enlace o enlace revocado (`no_autenticado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "Código desconocido", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Oferta vencida o sin usos (`dominio`)", body = ErrorRespuesta),
+        (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]
 pub async fn redimir(
+    _limite: LimitePublico,
     State(state): State<AppState>,
-    c: CuentaAutenticada,
-    Path(id): Path<Uuid>,
+    comercio: EnlaceComercio,
     Json(p): Json<RedimirPeticion>,
 ) -> ApiResult<Json<RedencionRespuesta>> {
     let r = portal::redimir_cupon(
         &state.plataforma,
         &RelojSistema,
-        &c.ctx,
-        AnuncianteId::from_uuid(id),
+        &ContextoPlataforma::anonimo(None),
+        &comercio.token,
         &p.codigo,
     )
     .await?;
@@ -925,6 +829,199 @@ pub async fn redimir(
         usos: r.usos,
         restantes: r.restantes,
     }))
+}
+
+/// Token de un enlace (el frontend arma la URL; ver la guía del frontend).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct EnlaceTokenRespuesta {
+    /// `null` = no hay enlace vigente (o es anterior a que se guardaran cifrados: genere otro).
+    pub token: Option<String>,
+}
+
+/// El enlace de redención del comercio, sin cambiarlo.
+#[utoipa::path(
+    get,
+    path = "/publicidad/anunciantes/{anunciante_id}/enlace-cupones",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    params(("anunciante_id" = Uuid, Path, description = "Comercio")),
+    responses(
+        (status = OK, description = "Token vigente o `null`", body = EnlaceTokenRespuesta),
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "El comercio no existe", body = ErrorRespuesta),
+    )
+)]
+pub async fn ver_enlace_comercio(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+    Path(id): Path<Uuid>,
+) -> ApiResult<Json<EnlaceTokenRespuesta>> {
+    let token = portal::enlace_comercio(
+        &state.plataforma,
+        state.cofre.as_ref(),
+        &c.ctx,
+        AnuncianteId::from_uuid(id),
+    )
+    .await?;
+    Ok(Json(EnlaceTokenRespuesta { token }))
+}
+
+/// Genera (o reemplaza, el anterior deja de servir) el enlace con que el comercio redime cupones.
+#[utoipa::path(
+    post,
+    path = "/publicidad/anunciantes/{anunciante_id}/enlace-cupones",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    params(("anunciante_id" = Uuid, Path, description = "Comercio")),
+    responses(
+        (status = CREATED, description = "Token nuevo", body = EnlaceTokenRespuesta),
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "El comercio no existe", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "El servidor no tiene clave del Cofre (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn generar_enlace_comercio(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+    Path(id): Path<Uuid>,
+) -> ApiResult<(StatusCode, Json<EnlaceTokenRespuesta>)> {
+    let token = portal::generar_enlace_comercio(
+        &state.plataforma,
+        state.cofre.as_ref(),
+        &RelojSistema,
+        &c.ctx,
+        AnuncianteId::from_uuid(id),
+    )
+    .await?;
+    Ok((
+        StatusCode::CREATED,
+        Json(EnlaceTokenRespuesta { token: Some(token) }),
+    ))
+}
+
+/// Revoca el enlace del comercio.
+#[utoipa::path(
+    delete,
+    path = "/publicidad/anunciantes/{anunciante_id}/enlace-cupones",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    params(("anunciante_id" = Uuid, Path, description = "Comercio")),
+    responses(
+        (status = NO_CONTENT, description = "Revocado"),
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "El comercio no existe o no tenía enlace", body = ErrorRespuesta),
+    )
+)]
+pub async fn revocar_enlace_comercio(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+    Path(id): Path<Uuid>,
+) -> ApiResult<StatusCode> {
+    portal::revocar_enlace_comercio(&state.plataforma, &c.ctx, AnuncianteId::from_uuid(id)).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Entidad excluida de la publicidad.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ExclusionRespuesta {
+    pub entidad_id: Uuid,
+    pub motivo: String,
+    pub creada_en: DateTime<Utc>,
+}
+
+/// Exclusión de una entidad.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ExclusionPeticion {
+    pub entidad_id: Uuid,
+    #[schema(example = "El contrato con la PH no permite publicidad")]
+    pub motivo: String,
+}
+
+/// Entidades excluidas de la publicidad (no reciben piezas ni destacadas).
+#[utoipa::path(
+    get,
+    path = "/publicidad/exclusiones",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    responses(
+        (status = OK, description = "Exclusiones", body = Vec<ExclusionRespuesta>),
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
+    )
+)]
+pub async fn exclusiones(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+) -> ApiResult<Json<Vec<ExclusionRespuesta>>> {
+    let v = portal::exclusiones(&state.plataforma, &c.ctx).await?;
+    Ok(Json(
+        v.into_iter()
+            .map(|x| ExclusionRespuesta {
+                entidad_id: x.tenant_id.as_uuid(),
+                motivo: x.motivo,
+                creada_en: x.creada_en,
+            })
+            .collect(),
+    ))
+}
+
+/// Excluye una entidad de la publicidad. Solo la plataforma lo decide: la entidad no
+/// controla la publicidad. Su directorio sigue funcionando.
+#[utoipa::path(
+    post,
+    path = "/publicidad/exclusiones",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    request_body = ExclusionPeticion,
+    responses(
+        (status = CREATED, description = "Excluida", body = ExclusionRespuesta),
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "La entidad no existe", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Sin motivo (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn excluir(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+    Json(p): Json<ExclusionPeticion>,
+) -> ApiResult<(StatusCode, Json<ExclusionRespuesta>)> {
+    let x = portal::excluir_entidad(
+        &state.plataforma,
+        &RelojSistema,
+        &c.ctx,
+        TenantId::from_uuid(p.entidad_id),
+        &p.motivo,
+    )
+    .await?;
+    Ok((
+        StatusCode::CREATED,
+        Json(ExclusionRespuesta {
+            entidad_id: x.tenant_id.as_uuid(),
+            motivo: x.motivo,
+            creada_en: x.creada_en,
+        }),
+    ))
+}
+
+/// Vuelve a incluir una entidad en la publicidad.
+#[utoipa::path(
+    delete,
+    path = "/publicidad/exclusiones/{entidad_id}",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad")),
+    responses(
+        (status = NO_CONTENT, description = "Incluida"),
+        (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "No estaba excluida", body = ErrorRespuesta),
+    )
+)]
+pub async fn incluir(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+    Path(id): Path<Uuid>,
+) -> ApiResult<StatusCode> {
+    portal::incluir_entidad(&state.plataforma, &c.ctx, TenantId::from_uuid(id)).await?;
+    Ok(StatusCode::NO_CONTENT)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1407,10 +1504,37 @@ pub async fn estado_liquidacion(
     Ok(Json(l.into()))
 }
 
-/// Token de una pantalla (se entrega una sola vez).
+/// Token de una pantalla.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PantallaRespuesta {
     pub token: String,
+}
+
+/// El token vigente de la pantalla del lobby, sin cambiarlo.
+#[utoipa::path(
+    get,
+    path = "/publicidad/pantallas/{copropiedad_id}",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    responses(
+        (status = OK, description = "Token vigente o `null` (genere uno)", body = EnlaceTokenRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.modulos.gestionar`", body = ErrorRespuesta),
+    )
+)]
+pub async fn ver_pantalla(
+    State(state): State<AppState>,
+    op: OperadorPlataforma,
+    Path(id): Path<Uuid>,
+) -> ApiResult<Json<EnlaceTokenRespuesta>> {
+    let token = moderacion::token_pantalla(
+        &state.unidad,
+        state.cofre.as_ref(),
+        &op.0.ctx,
+        TenantId::from_uuid(id),
+    )
+    .await?;
+    Ok(Json(EnlaceTokenRespuesta { token }))
 }
 
 /// Genera el token de la pantalla del lobby de una copropiedad (reemplaza el anterior).
@@ -1432,6 +1556,7 @@ pub async fn generar_pantalla(
 ) -> ApiResult<(StatusCode, Json<PantallaRespuesta>)> {
     let token = moderacion::generar_pantalla(
         &state.unidad,
+        state.cofre.as_ref(),
         &RelojSistema,
         &op.0.ctx,
         TenantId::from_uuid(id),
@@ -1441,7 +1566,7 @@ pub async fn generar_pantalla(
 }
 
 // ---------------------------------------------------------------------------------------------
-// Copropiedad
+// Entidad (PH o empresa)
 // ---------------------------------------------------------------------------------------------
 
 /// Autorización de publicidad de la cuenta.
@@ -1468,7 +1593,7 @@ pub struct AutorizarPublicidadPeticion {
     path = "/publicidad/autorizacion",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)")),
     responses(
         (status = OK, description = "Estado", body = AutorizacionPublicidadRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "La cuenta no está en el censo", body = ErrorRespuesta),
@@ -1477,7 +1602,7 @@ pub struct AutorizarPublicidadPeticion {
 )]
 pub async fn estado_autorizacion(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
 ) -> ApiResult<Json<AutorizacionPublicidadRespuesta>> {
     let e = entrega::autorizacion_publicidad(&state.unidad, &RelojSistema, &en.ctx).await?;
     Ok(Json(AutorizacionPublicidadRespuesta {
@@ -1492,7 +1617,7 @@ pub async fn estado_autorizacion(
     path = "/publicidad/autorizacion",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)")),
     request_body = AutorizarPublicidadPeticion,
     responses(
         (status = NO_CONTENT, description = "Autorizada"),
@@ -1502,7 +1627,7 @@ pub async fn estado_autorizacion(
 )]
 pub async fn autorizar(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Json(p): Json<AutorizarPublicidadPeticion>,
 ) -> ApiResult<StatusCode> {
     let medio = match p.medio.as_deref() {
@@ -1519,14 +1644,14 @@ pub async fn autorizar(
     path = "/publicidad/autorizacion",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)")),
     responses(
         (status = NO_CONTENT, description = "Revocada (o no había)"),
         (status = UNPROCESSABLE_ENTITY, description = "La cuenta no está en el censo", body = ErrorRespuesta),
         (status = FORBIDDEN, description = "No exige permisos: solo el titular retira su autorización", body = ErrorRespuesta),
     )
 )]
-pub async fn revocar(State(state): State<AppState>, en: EnCopropiedad) -> ApiResult<StatusCode> {
+pub async fn revocar(State(state): State<AppState>, en: EnEntidad) -> ApiResult<StatusCode> {
     entrega::revocar_publicidad(&state.unidad, &RelojSistema, &en.ctx, None).await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -1576,7 +1701,7 @@ impl From<PiezaPublicidad> for PiezaRespuesta {
     path = "/publicidad/piezas",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)")),
     responses(
         (status = OK, description = "Piezas", body = Vec<PiezaRespuesta>),
         (status = FORBIDDEN, description = "Sin `directorio.ver`", body = ErrorRespuesta),
@@ -1584,7 +1709,7 @@ impl From<PiezaPublicidad> for PiezaRespuesta {
 )]
 pub async fn piezas(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
 ) -> ApiResult<Json<Vec<PiezaRespuesta>>> {
     let v = entrega::piezas_para_residente(&state.unidad, &RelojSistema, &en.ctx).await?;
     Ok(Json(v.into_iter().map(Into::into).collect()))
@@ -1620,7 +1745,7 @@ pub struct EventosRespuesta {
     path = "/publicidad/eventos",
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
-    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)")),
     request_body = EventosPeticion,
     responses(
         (status = OK, description = "Aceptados", body = EventosRespuesta),
@@ -1630,7 +1755,7 @@ pub struct EventosRespuesta {
 )]
 pub async fn eventos(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Json(p): Json<EventosPeticion>,
 ) -> ApiResult<Json<EventosRespuesta>> {
     let eventos: Vec<EventoPieza> = p
@@ -1666,7 +1791,7 @@ pub struct CuponRespuesta {
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)"),
         ("creativo_id" = Uuid, Path, description = "Oferta"),
     ),
     responses(
@@ -1677,7 +1802,7 @@ pub struct CuponRespuesta {
 )]
 pub async fn cupon(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Path(ruta): Path<(Uuid, Uuid)>,
 ) -> ApiResult<Json<CuponRespuesta>> {
     let c = entrega::obtener_cupon(
@@ -1716,7 +1841,7 @@ pub struct ReporteAnuncioRespuesta {
     tag = ETIQUETA_PUBLICIDAD,
     security(("bearer" = [])),
     params(
-        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("entidad_id" = Uuid, Path, description = "Entidad (PH o empresa)"),
         ("creativo_id" = Uuid, Path, description = "Anuncio"),
     ),
     request_body = ReporteAnuncioPeticion,
@@ -1729,7 +1854,7 @@ pub struct ReporteAnuncioRespuesta {
 )]
 pub async fn reportar(
     State(state): State<AppState>,
-    en: EnCopropiedad,
+    en: EnEntidad,
     Path(ruta): Path<(Uuid, Uuid)>,
     Json(p): Json<ReporteAnuncioPeticion>,
 ) -> ApiResult<Json<ReporteAnuncioRespuesta>> {

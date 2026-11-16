@@ -21,7 +21,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
-    error::{ApiResult, ErrorRespuesta},
+    error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::Json,
     limite::LimiteAuth,
     openapi::ETIQUETA_AUTH,
@@ -69,7 +69,9 @@ pub struct CuentaCreada {
     pub id: Uuid,
 }
 
-/// Crea una cuenta. Si trae correo, envía un código para verificarlo.
+/// Crea una cuenta. Si trae correo, envía un código para verificarlo. Solo con
+/// `REGISTRO_ABIERTO=true` (desarrollo): en producción los usuarios los crean la plataforma
+/// (`POST /plataforma/cuentas`) o la entidad (`POST /entidades/{entidad_id}/usuarios`).
 #[utoipa::path(
     post,
     path = "/registro",
@@ -77,6 +79,7 @@ pub struct CuentaCreada {
     request_body = RegistroPeticion,
     responses(
         (status = CREATED, description = "Cuenta creada", body = CuentaCreada),
+        (status = NOT_FOUND, description = "Registro cerrado (`REGISTRO_ABIERTO=false`, `no_encontrado`)", body = ErrorRespuesta),
         (status = CONFLICT, description = "Usuario o correo ya registrados (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Datos inválidos (`validacion`)", body = ErrorRespuesta),
         (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
@@ -88,6 +91,11 @@ pub async fn registrar(
     headers: HeaderMap,
     Json(p): Json<RegistroPeticion>,
 ) -> ApiResult<(StatusCode, Json<CuentaCreada>)> {
+    if !state.registro_abierto {
+        return Err(ApiError::App(application::AppError::NoEncontrado(
+            "registro",
+        )));
+    }
     let registro = Registro {
         nombre_mostrar: p.nombre,
         usuario: p.usuario.as_deref().map(NombreUsuario::new).transpose()?,

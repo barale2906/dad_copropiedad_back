@@ -55,6 +55,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(recibo))
         .routes(routes!(no_asistio))
         .routes(routes!(pago))
+        .routes(routes!(ver_cobro, configurar_cobro))
+        .routes(routes!(facturar))
         .routes(routes!(listar_restricciones, restringir))
         .routes(routes!(levantar))
         .routes(routes!(autorizar_tenedor))
@@ -1066,7 +1068,7 @@ pub struct PagoPeticion {
     request_body = PagoPeticion,
     responses(
         (status = OK, description = "Pago registrado", body = ReservaRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "No tiene valor que pagar (`validacion`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "No tiene valor que pagar, o el recurso se cobra en la cartera o con factura (`validacion`)", body = ErrorRespuesta),
         (status = FORBIDDEN, description = "Sin `reservas.aprobar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
@@ -1085,6 +1087,135 @@ pub async fn pago(
     )
     .await?;
     Ok(Json(r.into()))
+}
+
+/// Cómo se cobra el valor de las reservas de un recurso.
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct CobroRecursoDto {
+    /// `manual` (se registra en `…/pago`), `cartera` (al aprobarse queda como cargo pendiente
+    /// del bien y sale en su cuenta de cobro) o `factura` (se factura con `…/factura`).
+    #[schema(value_type = crate::esquemas::DestinoCobro)]
+    pub destino: String,
+    /// Ítem de facturación: obligatorio con `factura` y solo con `factura`.
+    pub item_facturacion_id: Option<Uuid>,
+}
+
+impl From<domain::CobroReserva> for CobroRecursoDto {
+    fn from(c: domain::CobroReserva) -> Self {
+        Self {
+            destino: c.destino().as_str().to_owned(),
+            item_facturacion_id: c.item().map(|i| i.as_uuid()),
+        }
+    }
+}
+
+/// Cómo se cobran las reservas del recurso.
+#[utoipa::path(
+    get,
+    path = "/recursos/{recurso_id}/cobro",
+    tag = ETIQUETA_RESERVAS,
+    security(("bearer" = [])),
+    params(
+        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("recurso_id" = Uuid, Path, description = "Recurso"),
+    ),
+    responses(
+        (status = OK, description = "Configuración de cobro", body = CobroRecursoDto),
+        (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `bienes_comunes.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn ver_cobro(
+    State(state): State<AppState>,
+    en: EnCopropiedad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<Json<CobroRecursoDto>> {
+    let c = uc::cobro_de_recurso(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        domain::RecursoId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(Json(c.into()))
+}
+
+/// El contador decide cómo se cobra el valor de las reservas del recurso (rige para las que se
+/// aprueben desde ahora).
+#[utoipa::path(
+    put,
+    path = "/recursos/{recurso_id}/cobro",
+    tag = ETIQUETA_RESERVAS,
+    security(("bearer" = [])),
+    params(
+        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("recurso_id" = Uuid, Path, description = "Recurso"),
+    ),
+    request_body = CobroRecursoDto,
+    responses(
+        (status = OK, description = "Configuración guardada", body = CobroRecursoDto),
+        (status = NOT_FOUND, description = "El recurso o el ítem no existen", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Factura sin ítem o ítem en otro destino (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `cartera.configurar` ni `contabilidad.configurar` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn configurar_cobro(
+    State(state): State<AppState>,
+    en: EnCopropiedad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+    Json(p): Json<CobroRecursoDto>,
+) -> ApiResult<Json<CobroRecursoDto>> {
+    let cobro = domain::CobroReserva::new(
+        domain::DestinoCobro::try_from(p.destino.as_str())?,
+        p.item_facturacion_id
+            .map(domain::ItemFacturacionId::from_uuid),
+    )?;
+    let c = uc::configurar_cobro(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        domain::RecursoId::from_uuid(ruta.1),
+        cobro,
+    )
+    .await?;
+    Ok(Json(c.into()))
+}
+
+/// Factura en borrador por el valor de una reserva de un recurso que se cobra con factura
+/// (luego se emite y se cobra como cualquier factura de venta).
+#[utoipa::path(
+    post,
+    path = "/reservas/{reserva_id}/factura",
+    tag = ETIQUETA_RESERVAS,
+    security(("bearer" = [])),
+    params(
+        ("copropiedad_id" = Uuid, Path, description = "Copropiedad"),
+        ("reserva_id" = Uuid, Path, description = "Reserva"),
+    ),
+    responses(
+        (status = CREATED, description = "Factura en borrador", body = crate::routes::contabilidad::dto_tesoreria::FacturaVentaRespuesta),
+        (status = NOT_FOUND, description = "La reserva no existe", body = ErrorRespuesta),
+        (status = CONFLICT, description = "La reserva ya tiene factura (`conflicto`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "El recurso no se cobra con factura, sin valor, no aprobada o sin solicitante (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `facturacion.facturas.gestionar` (`sin_permiso`) o sin facturación ni contabilidad (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn facturar(
+    State(state): State<AppState>,
+    en: EnCopropiedad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<(
+    StatusCode,
+    Json<crate::routes::contabilidad::dto_tesoreria::FacturaVentaRespuesta>,
+)> {
+    let f = application::casos_uso::facturacion::ventas::facturar_reserva(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        id_reserva(ruta),
+    )
+    .await?;
+    Ok((StatusCode::CREATED, Json(f.into())))
 }
 
 // ---------------------------------------------------------------------------------------------

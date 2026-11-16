@@ -957,7 +957,69 @@ impl RepositorioReservas for TransaccionPg {
         )
         .execute(&mut *self.tx)
         .await
+        .map_err(|e| {
+            crate::copropiedades::error_escritura(
+                e,
+                "la reserva ya tiene su cargo por el valor",
+                "bien privado",
+            )
+        })?;
+        Ok(())
+    }
+
+    async fn anular_cargo_valor_reserva(&mut self, reserva: ReservaId) -> AppResult<bool> {
+        Ok(sqlx::query!(
+            "UPDATE cargos_pendientes SET estado = 'anulado'
+             WHERE reserva_id = $1 AND concepto = 'valor_reserva' AND estado = 'pendiente'",
+            reserva.as_uuid()
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .rows_affected()
+            > 0)
+    }
+
+    async fn cobro_recurso(&mut self, recurso: RecursoId) -> AppResult<domain::CobroReserva> {
+        let fila = sqlx::query!(
+            "SELECT destino_cobro, item_facturacion_id FROM recursos WHERE id = $1",
+            recurso.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
         .map_err(AppError::infra)?;
+        match fila {
+            None => Ok(domain::CobroReserva::default()),
+            Some(f) => Ok(domain::CobroReserva::new(
+                domain::DestinoCobro::try_from(f.destino_cobro.as_str())?,
+                f.item_facturacion_id
+                    .map(domain::ItemFacturacionId::from_uuid),
+            )?),
+        }
+    }
+
+    async fn guardar_cobro_recurso(
+        &mut self,
+        recurso: RecursoId,
+        cobro: &domain::CobroReserva,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE recursos SET destino_cobro = $2, item_facturacion_id = $3,
+                                 actualizado_en = now()
+             WHERE id = $1",
+            recurso.as_uuid(),
+            cobro.destino().as_str(),
+            cobro.item().map(domain::ItemFacturacionId::as_uuid),
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| {
+            crate::copropiedades::error_escritura(
+                e,
+                "configuración repetida",
+                "ítem de facturación",
+            )
+        })?;
         Ok(())
     }
 

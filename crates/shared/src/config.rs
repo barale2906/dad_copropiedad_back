@@ -557,16 +557,20 @@ pub struct SeguridadConfig {
     /// Operar en el ámbito de plataforma exige una sesión con segundo factor (TOTP)
     /// (`PLATAFORMA_EXIGE_SEGUNDO_FACTOR`, `true` por defecto). Solo se apaga en desarrollo.
     pub plataforma_exige_segundo_factor: bool,
+    /// `POST /auth/registro` disponible (`REGISTRO_ABIERTO`, `false` por defecto): en
+    /// producción los usuarios los crean la plataforma o cada entidad (plan 20).
+    pub registro_abierto: bool,
 }
 
 impl SeguridadConfig {
     /// # Errors
     ///
-    /// [`ConfigError::Invalid`] si el valor no es un booleano.
+    /// [`ConfigError::Invalid`] si un valor no es un booleano.
     pub fn from_env() -> Result<Self, ConfigError> {
         let _ = dotenvy::dotenv();
         Ok(Self {
             plataforma_exige_segundo_factor: parse_or("PLATAFORMA_EXIGE_SEGUNDO_FACTOR", true)?,
+            registro_abierto: parse_or("REGISTRO_ABIERTO", false)?,
         })
     }
 }

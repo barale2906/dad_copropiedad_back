@@ -13,7 +13,7 @@
 
 use domain::{
     AnuncianteId, Calificacion, Cobertura, CodigoCategoria, ConjuntoPermisos, CuentaId,
-    EstadoResena, EstadoVerificacion, Modulo, Permiso, ResenaId, TenantId, Ubicacion,
+    EstadoResena, EstadoVerificacion, Permiso, ResenaId, TenantId, Ubicacion,
     copropiedad::{texto_obligatorio, texto_opcional},
     directorio::{texto_resena, validar_categorias, validar_cobertura},
 };
@@ -586,7 +586,7 @@ where
         ..filtro
     };
     let mut tx = unidad.iniciar(ctx).await?;
-    let con_pauta = tx.modulo_habilitado(Modulo::Publicidad, ahora).await?;
+    let con_pauta = tx.publicidad_permitida(ahora).await?;
     let pagina = tx.fichas_directorio(&filtro, ahora, pagina).await?;
     Ok(pagina.mapear(|f| sin_pauta_si(con_pauta, f)))
 }
@@ -617,7 +617,7 @@ where
     ctx.exigir(Permiso::DirectorioVer)?;
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar(ctx).await?;
-    if !tx.modulo_habilitado(Modulo::Publicidad, ahora).await? {
+    if !tx.publicidad_permitida(ahora).await? {
         return Ok(Vec::new());
     }
     let filtro = FiltroDirectorio {
@@ -647,7 +647,7 @@ where
     ctx.exigir(Permiso::DirectorioVer)?;
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar(ctx).await?;
-    let con_pauta = tx.modulo_habilitado(Modulo::Publicidad, ahora).await?;
+    let con_pauta = tx.publicidad_permitida(ahora).await?;
     let ficha = ficha_visible(&mut tx, id, ahora).await?;
     Ok(sin_pauta_si(con_pauta, ficha))
 }

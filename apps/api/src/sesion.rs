@@ -10,6 +10,10 @@
 //!   Después exige que la entidad sea una copropiedad (404 si no lo es; ADR 0016).
 //! - [`EnEntidad`]: toma `{entidad_id}` de la ruta, como [`EnCopropiedad`] pero para cualquier
 //!   entidad (contabilidad de cualquier empresa); 404 si la cuenta no tiene roles allí.
+//! - **Modo soporte** (plan 20): una cuenta de la plataforma sin roles en la entidad pero con
+//!   `plataforma.soporte.ver`, segundo factor y un acceso de soporte vigente entra con los
+//!   permisos de solo lectura (`domain::permisos::permisos_soporte`); toda petición que no sea
+//!   `GET` responde 403.
 //! - [`EnCopropiedadWs`]: igual, para abrir un WebSocket desde el navegador (que no puede
 //!   enviar `Authorization`): el token va en `Sec-WebSocket-Protocol: dad.v1, <token>`.
 //! - [`PapeletaVirtual`]: la papeleta del asistente (cabecera `X-Papeleta`): el token es la
@@ -17,21 +21,23 @@
 //! - [`EnlaceDirectorioPublico`]: el directorio público de la PH para los grupos de WhatsApp
 //!   (cabecera `X-Enlace-Directorio`); tampoco hay sesión.
 //! - [`PantallaLobby`]: la pantalla de publicidad del lobby de la PH (cabecera `X-Pantalla`).
+//! - [`EnlaceComercio`]: el comercio que redime cupones con su enlace (cabecera `X-Comercio`).
 
 use application::{
     AppError, Contexto, ContextoPlataforma,
     casos_uso::{
         autenticacion::{SesionAutenticada, autenticar},
         modulos::exigir_copropiedad,
+        plataforma::permisos_de_soporte,
         roles::permisos_en_copropiedad,
     },
     puertos::RelojSistema,
 };
 use axum::{
     extract::{FromRequestParts, RawPathParams},
-    http::{header, request::Parts},
+    http::{Method, header, request::Parts},
 };
-use domain::TenantId;
+use domain::{Permiso, TenantId};
 use uuid::Uuid;
 
 use crate::{error::ApiError, routes::PARAMETRO_COPROPIEDAD, state::AppState};
@@ -98,6 +104,8 @@ impl FromRequestParts<AppState> for OperadorPlataforma {
 pub struct EnCopropiedad {
     pub sesion: SesionAutenticada,
     pub ctx: Contexto,
+    /// Entra como soporte de la plataforma (solo lectura).
+    pub modo_soporte: bool,
 }
 
 async fn tenant_de_parametro(
@@ -130,14 +138,15 @@ impl FromRequestParts<AppState> for EnCopropiedad {
     }
 }
 
-/// Permisos de la cuenta en la entidad y su contexto; 404 si no tiene ningún rol allí.
+/// Permisos de la cuenta en la entidad y su contexto; 404 si no tiene ningún rol allí (ni un
+/// acceso de soporte vigente). El `bool` dice si entra en modo soporte.
 async fn contexto_en_entidad(
     parts: &Parts,
     state: &AppState,
     tenant: TenantId,
     cuenta: &CuentaAutenticada,
-) -> Result<Contexto, ApiError> {
-    let permisos = permisos_en_copropiedad(
+) -> Result<(Contexto, bool), ApiError> {
+    let mut permisos = permisos_en_copropiedad(
         &state.unidad,
         &RelojSistema,
         tenant,
@@ -145,14 +154,33 @@ async fn contexto_en_entidad(
         cuenta.sesion.es_superusuario,
     )
     .await?;
+    let mut modo_soporte = false;
+    if permisos.es_vacio() {
+        let con_segundo_factor =
+            !state.plataforma_exige_segundo_factor || cuenta.sesion.segundo_factor_verificado;
+        if con_segundo_factor
+            && let Some(soporte) =
+                permisos_de_soporte(&state.plataforma, &RelojSistema, &cuenta.ctx, tenant).await?
+        {
+            permisos = soporte;
+            modo_soporte = true;
+        }
+    }
     if permisos.es_vacio() {
         // Sin vínculo con la entidad: para esa cuenta "no existe" (invariante 1).
         return Err(ApiError::App(AppError::NoEncontrado("entidad")));
     }
-    Ok(
+    if modo_soporte && !matches!(parts.method, Method::GET | Method::HEAD) {
+        // El soporte solo lee: ninguna escritura, aunque el caso de uso no exigiera permisos.
+        return Err(ApiError::App(AppError::SinPermiso(
+            Permiso::PlataformaSoporteVer,
+        )));
+    }
+    Ok((
         Contexto::de_cuenta(tenant, cuenta.sesion.cuenta_id, permisos)
             .con_request_id(request_id(parts)),
-    )
+        modo_soporte,
+    ))
 }
 
 async fn en_copropiedad(
@@ -161,7 +189,7 @@ async fn en_copropiedad(
     tenant: TenantId,
     cuenta: CuentaAutenticada,
 ) -> Result<EnCopropiedad, ApiError> {
-    let ctx = contexto_en_entidad(parts, state, tenant, &cuenta)
+    let (ctx, modo_soporte) = contexto_en_entidad(parts, state, tenant, &cuenta)
         .await
         .map_err(|e| match e {
             ApiError::App(AppError::NoEncontrado(_)) => {
@@ -174,6 +202,7 @@ async fn en_copropiedad(
     Ok(EnCopropiedad {
         sesion: cuenta.sesion,
         ctx,
+        modo_soporte,
     })
 }
 
@@ -187,6 +216,8 @@ pub const PARAMETRO_ENTIDAD: &str = "entidad_id";
 pub struct EnEntidad {
     pub sesion: SesionAutenticada,
     pub ctx: Contexto,
+    /// Entra como soporte de la plataforma (solo lectura).
+    pub modo_soporte: bool,
 }
 
 impl FromRequestParts<AppState> for EnEntidad {
@@ -195,10 +226,11 @@ impl FromRequestParts<AppState> for EnEntidad {
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
         let tenant = tenant_de_parametro(parts, state, PARAMETRO_ENTIDAD).await?;
         let cuenta = CuentaAutenticada::from_request_parts(parts, state).await?;
-        let ctx = contexto_en_entidad(parts, state, tenant, &cuenta).await?;
+        let (ctx, modo_soporte) = contexto_en_entidad(parts, state, tenant, &cuenta).await?;
         Ok(Self {
             sesion: cuenta.sesion,
             ctx,
+            modo_soporte,
         })
     }
 }
@@ -295,6 +327,25 @@ impl FromRequestParts<AppState> for EnlaceDirectorioPublico {
         Ok(Self {
             tenant: tenant_de_ruta(parts, state).await?,
             token: token_de_cabecera(parts, CABECERA_ENLACE_DIRECTORIO)?,
+        })
+    }
+}
+
+/// Cabecera con el token del enlace de redención de cupones de un comercio.
+pub const CABECERA_COMERCIO: &str = "x-comercio";
+
+/// Comercio que redime cupones con su enlace (sin cuenta, plan 20): el token es la credencial.
+#[derive(Debug, Clone)]
+pub struct EnlaceComercio {
+    pub token: String,
+}
+
+impl FromRequestParts<AppState> for EnlaceComercio {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, _state: &AppState) -> Result<Self, ApiError> {
+        Ok(Self {
+            token: token_de_cabecera(parts, CABECERA_COMERCIO)?,
         })
     }
 }

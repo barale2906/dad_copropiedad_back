@@ -876,7 +876,7 @@ impl From<FilaCartera> for FilaCarteraRespuesta {
 // ---------------------------------------------------------------------------------------------
 
 /// Cómo leer la planilla de un banco.
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct MapeoColumnasDto {
     /// Fila (desde 1) con los encabezados.
     #[serde(default = "uno")]
@@ -901,6 +901,28 @@ pub struct MapeoColumnasDto {
 
 fn uno() -> usize {
     1
+}
+
+impl From<MapeoColumnas> for MapeoColumnasDto {
+    fn from(m: MapeoColumnas) -> Self {
+        Self {
+            fila_encabezado: m.fila_encabezado,
+            fecha: m.fecha,
+            formato_fecha: m.formato_fecha,
+            descripcion: m.descripcion,
+            referencia: m.referencia,
+            valor: m.valor,
+            debito: m.debito,
+            credito: m.credito,
+            separador_decimal: m.separador_decimal,
+        }
+    }
+}
+
+/// Mapeo guardado de la cuenta (`null` si nunca se guardó).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MapeoExtractoRespuesta {
+    pub mapeo: Option<MapeoColumnasDto>,
 }
 
 impl From<MapeoColumnasDto> for MapeoColumnas {

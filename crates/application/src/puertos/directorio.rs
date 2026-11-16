@@ -278,6 +278,13 @@ pub trait RepositorioDirectorio: Send {
     /// Categorías activas y no restringidas.
     fn categorias_directorio(&mut self) -> impl Future<Output = AppResult<Vec<Categoria>>> + Send;
 
+    /// ¿Hay pauta (fichas destacadas y piezas) en la entidad de la transacción? Sí, salvo que la
+    /// plataforma la haya excluido (la publicidad no es un módulo, plan 20).
+    fn publicidad_permitida(
+        &mut self,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
     /// ¿La cuenta es propietaria o residente vigente de la copropiedad (rol derivado de la
     /// titularidad o de la residencia)?
     fn es_residente_vigente(
@@ -345,8 +352,11 @@ pub struct SolicitudProveedor {
 /// Enlace público del directorio de la copropiedad (uno vigente).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EnlaceDirectorio {
-    /// SHA-256 del token: el token solo se entrega al generarlo.
+    /// SHA-256 del token: con él se reconoce el enlace.
     pub token_hash: Vec<u8>,
+    /// El token cifrado con el Cofre, para volver a entregarlo sin cambiarlo (plan 20; `None`
+    /// en los enlaces anteriores: hay que generar otro).
+    pub token_cifrado: Option<Vec<u8>>,
     pub creado_por: Option<CuentaId>,
     pub creado_en: DateTime<Utc>,
 }

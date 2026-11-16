@@ -1,15 +1,17 @@
 //! Publicidad de la plataforma (plan 08, fases 3 a 6; ADR 0015).
 //!
 //! La publicidad es un negocio **de la plataforma**: la venden y la cobran sus dueños. Las
-//! copropiedades no venden, no cobran ni configuran nada: son el canal para llegar a los
-//! residentes que **autorizaron** recibir publicidad frente a la plataforma (finalidad
+//! entidades (PH y empresas) no venden, no cobran ni configuran nada: son el canal para llegar a
+//! las personas que **autorizaron** recibir publicidad frente a la plataforma (finalidad
 //! `publicidad`, con la política de la plataforma). Sin esa autorización no se muestra ninguna
 //! pieza en la app ni se envía ningún mensaje.
 //!
-//! - [`portal`]: el anunciante se registra (queda `pendiente`), edita su ficha, crea campañas y
-//!   creativos, ve métricas agregadas y sus contactos autorizados, y redime cupones.
-//! - [`moderacion`]: verificación, aprobación de creativos y campañas (siempre; el conflicto de
-//!   interés queda marcado), reportes de los residentes y pantallas del lobby.
+//! - [`gestion`]: el personal de la plataforma carga campañas y piezas de cualquier comercio, ve
+//!   métricas y contactos autorizados, administra el enlace de cupones del comercio y excluye
+//!   entidades de la publicidad (plan 20: los comercios no usan la plataforma).
+//! - [`moderacion`]: verificación, aprobación de creativos y campañas (siempre y por **otra
+//!   cuenta** que la que los cargó; el conflicto de interés queda marcado), reportes y pantallas
+//!   del lobby.
 //! - [`entrega`]: piezas para el residente autorizado, eventos agregados con topes de
 //!   presupuesto, cupones, reportes, autorización y revocación, pantalla del lobby y envíos
 //!   masivos con tope de frecuencia (worker).
@@ -26,9 +28,9 @@ use crate::{
 };
 
 pub mod entrega;
+pub mod gestion;
 pub mod liquidacion;
 pub mod moderacion;
-pub mod portal;
 
 /// Puertos de la transacción de plataforma que usa la publicidad.
 pub trait TxPublicidadPlataforma:

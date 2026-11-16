@@ -61,6 +61,26 @@ fn patron(texto: &str) -> String {
 }
 
 impl TransaccionPg {
+    /// Persona del tenant vinculada a la cuenta.
+    pub(crate) async fn persona_de_cuenta_pg(
+        &mut self,
+        cuenta: CuentaId,
+    ) -> AppResult<Option<Persona>> {
+        sqlx::query_as!(
+            FilaPersona,
+            "SELECT id, tipo, nombre, documento, telefono, correo, cuenta_id, tipo_documento,
+                    fecha_nacimiento, contacto_emergencia_nombre, contacto_emergencia_telefono,
+                    movilidad_reducida
+             FROM personas WHERE cuenta_id = $1",
+            cuenta.as_uuid(),
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(Persona::try_from)
+        .transpose()
+    }
+
     async fn personas_donde(
         &mut self,
         id: Option<Uuid>,

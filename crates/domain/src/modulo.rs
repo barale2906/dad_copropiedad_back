@@ -4,6 +4,9 @@
 //! están en toda entidad, y lo básico de la PH (copropiedad, bienes privados, censo) viene con
 //! la copropiedad (una entidad es PH porque tiene fila en `copropiedades`). Los módulos propios
 //! de la PH ([`Modulo::exige_copropiedad`]) solo se habilitan en una copropiedad.
+//!
+//! La publicidad **no** es un módulo (plan 20, ADR 0023): la opera solo la plataforma y llega a
+//! toda entidad activa que la plataforma no haya excluido.
 
 use serde::{Deserialize, Serialize};
 
@@ -28,8 +31,6 @@ pub enum Modulo {
     Asambleas,
     /// Tickets, chat de WhatsApp, mantenimiento e inventario (plan 07).
     GestionAdministrativa,
-    /// Publicidad de comercios locales (plan 08).
-    Publicidad,
 }
 
 enum_texto!(Modulo {
@@ -40,7 +41,6 @@ enum_texto!(Modulo {
     ControlAcceso => "control_acceso",
     Asambleas => "asambleas",
     GestionAdministrativa => "gestion_administrativa",
-    Publicidad => "publicidad",
 });
 
 impl Modulo {
@@ -52,8 +52,7 @@ impl Modulo {
             | Modulo::BienesComunes
             | Modulo::ControlAcceso
             | Modulo::Asambleas
-            | Modulo::GestionAdministrativa
-            | Modulo::Publicidad => true,
+            | Modulo::GestionAdministrativa => true,
         }
     }
 }

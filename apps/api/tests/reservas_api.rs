@@ -312,3 +312,88 @@ async fn los_recursos_se_filtran_por_la_categoria_de_la_zona(pool: PgPool) {
         (StatusCode::BAD_REQUEST, &json!("peticion_invalida"))
     );
 }
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn un_recurso_que_se_cobra_con_factura_factura_una_vez_la_reserva_aprobada(pool: PgPool) {
+    let ph = ph(pool).await;
+    ph.habilitar("bienes_comunes").await;
+    ph.habilitar("facturacion_electronica").await;
+    let (bien, _) = ph.bien_con_dueno().await;
+    let salon = salon(&ph).await;
+    let (s, item) = ph
+        .pedir_entidad(
+            Method::POST,
+            "/facturacion/items",
+            Some(
+                json!({ "codigo": "SALON", "descripcion": "Alquiler del salón social",
+                         "clasificacion": "alquiler_servicio" }),
+            ),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{item}");
+    let (s, v) = ph
+        .pedir(
+            Method::PUT,
+            &format!("/recursos/{salon}/cobro"),
+            Some(json!({ "destino": "factura" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::UNPROCESSABLE_ENTITY, "factura sin ítem: {v}");
+    let (s, v) = ph
+        .pedir(
+            Method::PUT,
+            &format!("/recursos/{salon}/cobro"),
+            Some(json!({ "destino": "factura", "item_facturacion_id": item["id"] })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    let dueno = ph.api.token("dueno").await;
+    let (inicio, fin) = franja(5, 14, 18);
+    let (s, r) = ph
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{}/reservas", ph.base),
+            Some(&dueno),
+            Some(
+                json!({ "recurso_id": salon, "bien_privado_id": bien, "inicio": inicio,
+                         "fin": fin, "invitados": 10, "idempotency_key": "fac-1" }),
+            ),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{r}");
+    let id = r["id"].as_str().expect("id");
+    let (s, _) = ph
+        .pedir(Method::POST, &format!("/reservas/{id}/factura"), None)
+        .await;
+    assert_eq!(
+        s,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "sin aprobar no se factura"
+    );
+    ph.pedir(Method::POST, &format!("/reservas/{id}/aprobar"), None)
+        .await;
+
+    let (s, factura) = ph
+        .pedir(Method::POST, &format!("/reservas/{id}/factura"), None)
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{factura}");
+    assert_eq!(factura["estado"], "borrador");
+    assert_eq!(factura["total"], "150000.00");
+    let (s, _) = ph
+        .pedir(Method::POST, &format!("/reservas/{id}/factura"), None)
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "una reserva se factura una vez");
+    let (s, v) = ph
+        .pedir(
+            Method::POST,
+            &format!("/reservas/{id}/pago"),
+            Some(json!({ "estado_pago": "pagado" })),
+        )
+        .await;
+    assert_eq!(
+        s,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "se paga en la factura: {v}"
+    );
+}

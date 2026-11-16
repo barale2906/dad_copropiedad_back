@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-594 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+621 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -16,13 +16,13 @@ sesión de persona.
 - [archivos](#archivos) (3): Archivos y adjuntos: descarga con enlaces firmados de vida corta
 - [autenticacion](#autenticacion) (7): Registro, inicio y cierre de sesión
 - [cuenta](#cuenta) (12): La cuenta autenticada
-- [roles](#roles) (8): Roles, permisos y asignaciones
+- [roles](#roles) (14): Roles, permisos y asignaciones
 - [organizaciones](#organizaciones) (9): Organizaciones compartidas y contratos de servicio
 - [copropiedad](#copropiedad) (7): Ficha de la copropiedad: datos legales, cargos vigentes, advertencias y puntos de atención
 - [bienes_privados](#bienes-privados) (15): Agrupaciones, bienes privados, anexos, usos exclusivos y titulares
 - [coeficientes](#coeficientes) (6): Cuadros de coeficientes versionados (suma exacta = 1)
 - [censo](#censo) (23): Censo: residentes, vehículos, mascotas, personas, autoservicio con aprobación y libros (art. 51)
-- [reservas](#reservas) (28): Bienes comunes, reservas, citas con la administración, parqueaderos y sorteos (módulo `bienes_comunes`)
+- [reservas](#reservas) (31): Bienes comunes, reservas, citas con la administración, parqueaderos y sorteos (módulo `bienes_comunes`)
 - [tickets](#tickets) (14): Tickets: peticiones, quejas, reclamos y solicitudes con plazos en días u horas hábiles, notas internas, reportes de convivencia confidenciales y encuesta (módulo `gestion_administrativa`)
 - [conversaciones](#conversaciones) (7): Chat de WhatsApp: preguntas frecuentes y bandeja de conversaciones escaladas a la administración (módulo `gestion_administrativa`)
 - [comunicados](#comunicados) (10): Comunicados de la administración: audiencia (toda la PH, propietarios, residentes, torres, bienes o roles), finalidad (Ley 1581), envío inmediato o programado por push, correo y WhatsApp (solo los importantes y a quien no tiene la app), cartelera con lectura y «Enterado» (módulo `gestion_administrativa`)
@@ -33,10 +33,10 @@ sesión de persona.
 - [acceso](#acceso) (50): Control de acceso (plan 05): visitas con aviso al primer respondiente y escalamiento (2 min a todos los residentes, 5 min llamada), pre-autorizaciones con QR firmado, correspondencia con avisos cada 24 h y entrega con firma o foto, minuta, bitácora, credenciales, autorizaciones, biometría con consentimiento y la API de los puentes (`/api/v1/puentes`)
 - [proteccion_datos](#proteccion-datos) (13): Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
-- [publicidad](#publicidad) (35): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
-- [plataforma](#plataforma) (36): Operación de la plataforma (exige segundo factor)
+- [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
+- [plataforma](#plataforma) (49): Operación de la plataforma (exige segundo factor)
 - [contabilidad](#contabilidad) (50): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
-- [tesoreria](#tesoreria) (37): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
+- [tesoreria](#tesoreria) (39): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
 - [tributario](#tributario) (15): Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario
 - [facturacion](#facturacion) (42): Facturación de cualquier entidad, con o sin contabilidad (plan 18): catálogo de productos y servicios, facturas de venta con número interno, pago manual sin tesorería, documentos electrónicos, compras para el documento soporte, facturas recibidas, libros de ventas y compras y paquete de XML y PDF para el contador. Con contabilidad cada documento se contabiliza solo
@@ -66,7 +66,7 @@ Registro, inicio y cierre de sesión
 
 | Método | Ruta | Qué hace | Permiso | Cuerpo | Respuesta | Errores propios |
 |---|---|---|---|---|---|---|
-| POST | 🔓 `/auth/registro` | Crea una cuenta. Si trae correo, envía un código para verificarlo. |  | `RegistroPeticion` | 201 `CuentaCreada` | 409, 422, 429 |
+| POST | 🔓 `/auth/registro` | Crea una cuenta. Si trae correo, envía un código para verificarlo. Solo con `REGISTRO_ABIERTO=true` (desarrollo): en producción los usuarios los crean la plataforma (`POST /plataforma/cuentas`) o la entidad (`POST /entidades/{entidad_id}/usuarios`). |  | `RegistroPeticion` | 201 `CuentaCreada` | 409, 422, 429 |
 | POST | 🔓 `/auth/sesion` | Inicia sesión con usuario o correo y contraseña. Tras 5 fallos seguidos la cuenta se bloquea 15 minutos. |  | `InicioPeticion` | 200 `InicioRespuesta` | 429 |
 | DELETE | `/auth/sesion` | Cierra la sesión actual. |  |  | 204  |  |
 | POST | 🔓 `/auth/sesion/segundo-factor` | Completa el inicio de sesión con el código de la app autenticadora. |  | `SegundoFactorPeticion` | 200 `SesionRespuesta` | 429 |
@@ -107,6 +107,12 @@ Roles, permisos y asignaciones
 | POST | `/entidades/{entidad_id}/asignaciones` | Asigna un rol a una cuenta. Nunca un rol con permisos que quien asigna no tiene. | `roles.asignar` | `AsignacionPeticion` | 201 `AsignacionRespuesta` | 403 |
 | DELETE | `/entidades/{entidad_id}/asignaciones/{asignacion_id}` | Termina una asignación desde ahora. La copropiedad no se queda sin administrador. |  |  | 204  | 409 |
 | GET | `/entidades/{entidad_id}/cuentas` | Busca una cuenta por usuario o correo exactos para asignarle un rol (nunca listados). |  |  | 200 `CuentaEncontrada` |  |
+| POST | `/entidades/{entidad_id}/usuarios/importaciones` | Sube y valida una planilla de usuarios (CSV o XLSX): columnas `nombre`, `correo` y `rol` (código), y opcionales `usuario`, `telefono` y `documento`. No crea nada: devuelve la vista previa con los errores por fila; se aplica con `…/usuarios/importaciones/{id}/confirmar`. | `importaciones.ejecutar` `roles.asignar` | `application/octet-stream` | 201 `VistaPreviaUsuariosRespuesta` | 403, 422 |
+| GET | `/entidades/{entidad_id}/usuarios` | Usuarios de la entidad con sus roles y si la contraseña está pendiente. | `roles.ver` |  | 200 `PaginaRespuesta_UsuarioRespuesta` | 403 |
+| POST | `/entidades/{entidad_id}/usuarios` | Crea un usuario de la entidad con su rol (o asigna el rol a la cuenta que ya tiene ese correo) y le envía el código para definir su contraseña (o un aviso del acceso nuevo). | `roles.asignar` | `NuevoUsuarioPeticion` | 201 `UsuarioCreadoRespuesta` | 403, 409, 422 |
+| POST | `/entidades/{entidad_id}/usuarios/{cuenta_id}/codigo-contrasena` | Reenvía el código para definir la contraseña a un usuario que aún no la define. | `roles.asignar` |  | 204  | 403, 422 |
+| GET | `/entidades/{entidad_id}/usuarios/importaciones/plantilla` | Plantilla CSV de usuarios con ejemplos. | _No exige permisos: basta un rol en la entidad_ |  | 200 `text/csv` | 403 |
+| POST | `/entidades/{entidad_id}/usuarios/importaciones/{importacion_id}/confirmar` | Crea los usuarios de una importación validada en una sola transacción (si una fila choca con otra cuenta, no se crea ninguno y el mensaje dice la fila). | `importaciones.ejecutar` `roles.asignar` |  | 200 `ImportacionRespuesta` | 403, 409 |
 
 ## organizaciones
 
@@ -225,6 +231,9 @@ Bienes comunes, reservas, citas con la administración, parqueaderos y sorteos (
 | POST | `/copropiedades/{copropiedad_id}/reservas/{reserva_id}/recibo` | Registra el recibo (en curso → finalizada, o con novedad si hay novedad o daños). | `reservas.entregas.registrar` | `EntregaPeticion` | 200 `ReservaRespuesta` | 403, 409 |
 | POST | `/copropiedades/{copropiedad_id}/reservas/{reserva_id}/no-asistio` | Marca que el solicitante no asistió. | `reservas.entregas.registrar` |  | 200 `ReservaRespuesta` | 403, 409 |
 | POST | `/copropiedades/{copropiedad_id}/reservas/{reserva_id}/pago` | Registra a mano el pago de una reserva (pagado o exonerado). | `reservas.aprobar` | `PagoPeticion` | 200 `ReservaRespuesta` | 403, 422 |
+| GET | `/copropiedades/{copropiedad_id}/recursos/{recurso_id}/cobro` | Cómo se cobran las reservas del recurso. | `bienes_comunes.ver` |  | 200 `CobroRecursoDto` | 403 |
+| PUT | `/copropiedades/{copropiedad_id}/recursos/{recurso_id}/cobro` | El contador decide cómo se cobra el valor de las reservas del recurso (rige para las que se aprueben desde ahora). | `cartera.configurar` `contabilidad.configurar` | `CobroRecursoDto` | 200 `CobroRecursoDto` | 403, 422 |
+| POST | `/copropiedades/{copropiedad_id}/reservas/{reserva_id}/factura` | Factura en borrador por el valor de una reserva de un recurso que se cobra con factura (luego se emite y se cobra como cualquier factura de venta). | `facturacion.facturas.gestionar` |  | 201 `FacturaVentaRespuesta` | 403, 409, 422 |
 | GET | `/copropiedades/{copropiedad_id}/restricciones-reserva` | Restricciones de reserva (mora o sanción). | `reservas.restringir` |  | 200 `[RestriccionRespuesta]` | 403 |
 | POST | `/copropiedades/{copropiedad_id}/restricciones-reserva` | Restringe las reservas de un bien privado (marca manual de mora o sanción; no aplica a los bienes comunes esenciales, art. 59). | `reservas.restringir` | `RestriccionPeticion` | 201 `RestriccionRespuesta` | 403 |
 | POST | `/copropiedades/{copropiedad_id}/restricciones-reserva/{restriccion_id}/levantar` | Levanta una restricción desde ahora. | `reservas.restringir` |  | 204  | 403 |
@@ -306,19 +315,19 @@ Directorio de comercios y servicios que alcanzan a la copropiedad (por cercanía
 | POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/estado` | Verifica, rechaza, suspende o reactiva un anunciante. | `plataforma.publicidad.moderar` | `EstadoAnunciantePeticion` | 200 `AnuncianteRespuesta` | 403, 409, 422 |
 | GET | `/plataforma/publicidad/moderacion/resenas` | Cola de moderación: reseñas publicadas con reportes sin atender, de todas las copropiedades. | `plataforma.publicidad.moderar` |  | 200 `PaginaRespuesta_ResenaReportadaRespuesta` | 403 |
 | POST | `/plataforma/publicidad/moderacion/resenas/{resena_id}` | Atiende los reportes de una reseña: la oculta con motivo o la mantiene. | `plataforma.publicidad.moderar` | `ModeracionPeticion` | 204  | 403, 422 |
-| GET | `/copropiedades/{copropiedad_id}/directorio` | Directorio de comercios y servicios que alcanzan a la copropiedad, paginado. | `directorio.ver` |  | 200 `PaginaRespuesta_FichaDirectorioRespuesta` | 403 |
-| GET | `/copropiedades/{copropiedad_id}/directorio/destacadas` | Fichas destacadas vigentes (hasta 10). Vacío si la copropiedad no tiene el módulo `publicidad`. | `directorio.ver` |  | 200 `[FichaDirectorioRespuesta]` | 403 |
-| GET | `/copropiedades/{copropiedad_id}/directorio/categorias` | Categorías para filtrar el directorio (activas y no restringidas). | `directorio.ver` |  | 200 `[CategoriaDirectorioRespuesta]` | 403 |
-| GET | `/copropiedades/{copropiedad_id}/directorio/anunciantes/{anunciante_id}` | Ficha de un anunciante que alcanza a la copropiedad. | `directorio.ver` |  | 200 `FichaDirectorioRespuesta` | 403 |
 | GET | `/copropiedades/{copropiedad_id}/directorio/anunciantes/{anunciante_id}/resenas` | Reseñas publicadas del anunciante en esta copropiedad, de la más reciente a la más antigua. | `directorio.ver` |  | 200 `PaginaRespuesta_ResenaRespuesta` | 403 |
 | PUT | `/copropiedades/{copropiedad_id}/directorio/anunciantes/{anunciante_id}/resena` | Califica (o vuelve a calificar) a un anunciante. Solo propietarios y residentes vigentes; una reseña por cuenta y anunciante en la copropiedad. | `directorio.resenar` | `ResenaPeticion` | 200 `ResenaRespuesta` | 403, 409, 422 |
 | POST | `/copropiedades/{copropiedad_id}/directorio/resenas/{resena_id}/reportes` | Reporta una reseña publicada para que la modere la plataforma. | `directorio.ver` | `ReporteResenaPeticion` | 200 `ReporteResenaRespuesta` | 403, 422 |
 | POST | `/copropiedades/{copropiedad_id}/directorio/busquedas` | Busca proveedores que alcanzan a la copropiedad y registra la búsqueda (el texto se borra a los 90 días). No comparte nada con los proveedores. | `directorio.ver` | `BusquedaPeticion` | 201 `BusquedaRespuesta` | 403, 422 |
 | POST | `/copropiedades/{copropiedad_id}/directorio/busquedas/{solicitud_id}/contacto` | Autoriza expresamente que los proveedores sugeridos en la búsqueda lo contacten: solo a ellos y solo para esta solicitud se les comparte su nombre y su celular del censo (Ley 1581). Repetirlo no vuelve a enviar nada. | `directorio.ver` |  | 200 `ContactoAutorizadoRespuesta` | 403, 422 |
-| GET | `/copropiedades/{copropiedad_id}/directorio/enlace-publico` | Estado del enlace público del directorio y el enlace `wa.me` para los grupos. | `directorio.compartir` |  | 200 `EstadoEnlaceRespuesta` | 403 |
-| POST | `/copropiedades/{copropiedad_id}/directorio/enlace-publico` | Genera el enlace público del directorio para fijarlo en los grupos de WhatsApp de la PH. Si ya había uno, el anterior deja de funcionar. | `directorio.compartir` |  | 201 `EnlaceGeneradoRespuesta` | 403 |
+| GET | `/copropiedades/{copropiedad_id}/directorio/enlace-publico` | El enlace público vigente del directorio (con su token, sin cambiarlo) y el enlace `wa.me` para los grupos. | `directorio.compartir` |  | 200 `EstadoEnlaceRespuesta` | 403 |
+| POST | `/copropiedades/{copropiedad_id}/directorio/enlace-publico` | Genera el enlace público del directorio para fijarlo en los grupos de WhatsApp de la PH. Si ya había uno, el anterior deja de funcionar. | `directorio.compartir` |  | 201 `EnlaceGeneradoRespuesta` | 403, 422 |
 | DELETE | `/copropiedades/{copropiedad_id}/directorio/enlace-publico` | Revoca el enlace público del directorio. | `directorio.compartir` |  | 204  | 403 |
 | GET | 🔓 `/copropiedades/{copropiedad_id}/directorio/publico` | Directorio de comercios y servicios de la copropiedad para los grupos de WhatsApp (sin sesión: el token del enlace en `X-Enlace-Directorio` es la credencial). Sin reseñas: solo el promedio. |  |  | 200 `DirectorioPublicoRespuesta` | 429 |
+| GET | `/entidades/{entidad_id}/directorio` | Directorio de comercios y servicios que alcanzan a la copropiedad, paginado. | `directorio.ver` |  | 200 `PaginaRespuesta_FichaDirectorioRespuesta` | 403 |
+| GET | `/entidades/{entidad_id}/directorio/destacadas` | Fichas destacadas vigentes (hasta 10). Vacío si la copropiedad no tiene el módulo `publicidad`. | `directorio.ver` |  | 200 `[FichaDirectorioRespuesta]` | 403 |
+| GET | `/entidades/{entidad_id}/directorio/categorias` | Categorías para filtrar el directorio (activas y no restringidas). | `directorio.ver` |  | 200 `[CategoriaDirectorioRespuesta]` | 403 |
+| GET | `/entidades/{entidad_id}/directorio/anunciantes/{anunciante_id}` | Ficha de un anunciante que alcanza a la copropiedad. | `directorio.ver` |  | 200 `FichaDirectorioRespuesta` | 403 |
 
 ## mantenimiento
 
@@ -510,6 +519,21 @@ Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, 
 
 | Método | Ruta | Qué hace | Permiso | Cuerpo | Respuesta | Errores propios |
 |---|---|---|---|---|---|---|
+| GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas` | Campañas del anunciante. | `plataforma.publicidad.gestionar` |  | 200 `PaginaRespuesta_CampanaRespuesta` | 403 |
+| POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas` | Crea una campaña en borrador. | `plataforma.publicidad.gestionar` | `CampanaPeticion` | 201 `CampanaRespuesta` | 403, 422 |
+| GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}` | Campaña con sus creativos. | `plataforma.publicidad.gestionar` |  | 200 `CampanaDetalleRespuesta` | 403 |
+| PUT | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}` | Edita la campaña (una aprobada o pausada vuelve a borrador y a moderación). | `plataforma.publicidad.gestionar` | `CampanaPeticion` | 200 `CampanaRespuesta` | 403, 422 |
+| POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/estado` | Envía a revisión, activa, pausa o finaliza la campaña. | `plataforma.publicidad.gestionar` | `AccionCampanaPeticion` | 200 `CampanaRespuesta` | 403, 422 |
+| POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos` | Agrega un creativo (queda pendiente de moderación). | `plataforma.publicidad.gestionar` | `CreativoPeticion` | 201 `CreativoRespuesta` | 403, 409, 422 |
+| PUT | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}` | Edita un creativo (si cambia, vuelve a moderación). | `plataforma.publicidad.gestionar` | `CreativoPeticion` | 200 `CreativoRespuesta` | 403, 409 |
+| GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/metricas` | Métricas agregadas de la campaña. | `plataforma.publicidad.gestionar` |  | 200 `MetricasRespuesta` | 403 |
+| GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/leads` | Contactos que los residentes autorizaron compartirle al comercio (nombre y celular, para esa solicitud). | `plataforma.publicidad.gestionar` |  | 200 `PaginaRespuesta_LeadRespuesta` | 403 |
+| GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/enlace-cupones` | El enlace de redención del comercio, sin cambiarlo. | `plataforma.publicidad.gestionar` |  | 200 `EnlaceTokenRespuesta` | 403 |
+| POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/enlace-cupones` | Genera (o reemplaza, el anterior deja de servir) el enlace con que el comercio redime cupones. | `plataforma.publicidad.gestionar` |  | 201 `EnlaceTokenRespuesta` | 403, 422 |
+| DELETE | `/plataforma/publicidad/anunciantes/{anunciante_id}/enlace-cupones` | Revoca el enlace del comercio. | `plataforma.publicidad.gestionar` |  | 204  | 403 |
+| GET | `/plataforma/publicidad/exclusiones` | Entidades excluidas de la publicidad (no reciben piezas ni destacadas). | `plataforma.publicidad.gestionar` |  | 200 `[ExclusionRespuesta]` | 403 |
+| POST | `/plataforma/publicidad/exclusiones` | Excluye una entidad de la publicidad. Solo la plataforma lo decide: la entidad no controla la publicidad. Su directorio sigue funcionando. | `plataforma.publicidad.gestionar` | `ExclusionPeticion` | 201 `ExclusionRespuesta` | 403, 422 |
+| DELETE | `/plataforma/publicidad/exclusiones/{entidad_id}` | Vuelve a incluir una entidad en la publicidad. | `plataforma.publicidad.gestionar` |  | 204  | 403 |
 | GET | `/plataforma/publicidad/moderacion/creativos` | Creativos pendientes de moderación. | `plataforma.publicidad.moderar` |  | 200 `PaginaRespuesta_CreativoRespuesta` | 403 |
 | POST | `/plataforma/publicidad/moderacion/creativos/{creativo_id}` | Aprueba o rechaza un creativo. | `plataforma.publicidad.moderar` | `DecisionPeticion` | 200 `CreativoRespuesta` | 403, 409 |
 | GET | `/plataforma/publicidad/moderacion/campanas` | Campañas en revisión (con el conflicto de interés marcado). | `plataforma.publicidad.moderar` |  | 200 `PaginaRespuesta_CampanaRespuesta` | 403 |
@@ -522,29 +546,17 @@ Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, 
 | GET | `/plataforma/publicidad/liquidaciones` | Liquidaciones de un mes. | `plataforma.publicidad.liquidar` |  | 200 `[LiquidacionRespuesta]` | 403 |
 | POST | `/plataforma/publicidad/liquidaciones` | Calcula o recalcula las liquidaciones de un mes ya cerrado. | `plataforma.publicidad.liquidar` | `MesQuery` | 200 `[LiquidacionRespuesta]` | 403, 422 |
 | POST | `/plataforma/publicidad/liquidaciones/{anunciante_id}/estado` | Marca la liquidación del anunciante facturada o pagada. | `plataforma.publicidad.liquidar` | `EstadoLiquidacionPeticion` | 200 `LiquidacionRespuesta` | 403 |
+| GET | `/plataforma/publicidad/pantallas/{copropiedad_id}` | El token vigente de la pantalla del lobby, sin cambiarlo. | `plataforma.modulos.gestionar` |  | 200 `EnlaceTokenRespuesta` | 403 |
 | POST | `/plataforma/publicidad/pantallas/{copropiedad_id}` | Genera el token de la pantalla del lobby de una copropiedad (reemplaza el anterior). | `plataforma.modulos.gestionar` |  | 201 `PantallaRespuesta` | 403 |
-| GET | `/anunciantes` | Anunciantes de la cuenta. |  |  | 200 `[MiAnuncianteRespuesta]` |  |
-| POST | `/anunciantes` | Registra la cuenta como anunciante (queda `pendiente` hasta que la moderación lo verifique). |  | `RegistroAnunciantePeticion` | 201 `AnuncianteRespuesta` | 409, 422 |
-| GET | `/anunciantes/{anunciante_id}` | El anunciante con su ficha. |  |  | 200 `AnuncianteRespuesta` |  |
-| PUT | `/anunciantes/{anunciante_id}/ficha` | El anunciante edita su ficha del directorio (la fecha de destacada la gestiona la plataforma y se ignora). |  | `FichaPeticion` | 200 `FichaAnuncianteRespuesta` | 422 |
-| GET | `/anunciantes/{anunciante_id}/campanas` | Campañas del anunciante. |  |  | 200 `PaginaRespuesta_CampanaRespuesta` |  |
-| POST | `/anunciantes/{anunciante_id}/campanas` | Crea una campaña en borrador. |  | `CampanaPeticion` | 201 `CampanaRespuesta` | 422 |
-| GET | `/anunciantes/{anunciante_id}/campanas/{campana_id}` | Campaña con sus creativos. |  |  | 200 `CampanaDetalleRespuesta` |  |
-| PUT | `/anunciantes/{anunciante_id}/campanas/{campana_id}` | Edita la campaña (una aprobada o pausada vuelve a borrador y a moderación). |  | `CampanaPeticion` | 200 `CampanaRespuesta` | 422 |
-| POST | `/anunciantes/{anunciante_id}/campanas/{campana_id}/estado` | Envía a revisión, activa, pausa o finaliza la campaña. |  | `AccionCampanaPeticion` | 200 `CampanaRespuesta` | 422 |
-| POST | `/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos` | Agrega un creativo (queda pendiente de moderación). |  | `CreativoPeticion` | 201 `CreativoRespuesta` | 409, 422 |
-| PUT | `/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}` | Edita un creativo (si cambia, vuelve a moderación). |  | `CreativoPeticion` | 200 `CreativoRespuesta` | 409 |
-| GET | `/anunciantes/{anunciante_id}/campanas/{campana_id}/metricas` | Métricas agregadas de la campaña. |  |  | 200 `MetricasRespuesta` |  |
-| GET | `/anunciantes/{anunciante_id}/leads` | Contactos que los residentes autorizaron compartirle (nombre y celular, para esa solicitud). El operario no los ve. |  |  | 200 `PaginaRespuesta_LeadRespuesta` |  |
-| POST | `/anunciantes/{anunciante_id}/cupones/redimir` | Redime un cupón en el mostrador (también el operario). |  | `RedimirPeticion` | 200 `RedencionRespuesta` | 422 |
-| GET | `/copropiedades/{copropiedad_id}/publicidad/autorizacion` | ¿La cuenta autorizó recibir publicidad de la plataforma? Con la política vigente. | _No exige permisos: basta un rol en la copropiedad (sin persona en la copropiedad, 422)_ |  | 200 `AutorizacionPublicidadRespuesta` | 403, 422 |
-| POST | `/copropiedades/{copropiedad_id}/publicidad/autorizacion` | El titular autoriza recibir publicidad de la plataforma (solo él; la PH no puede). | _No exige permisos: solo el titular autoriza (sin persona en la copropiedad, 422)_ | `AutorizarPublicidadPeticion` | 204  | 403, 422 |
-| DELETE | `/copropiedades/{copropiedad_id}/publicidad/autorizacion` | Retira la autorización de publicidad. | _No exige permisos: solo el titular retira su autorización_ |  | 204  | 403, 422 |
-| GET | `/copropiedades/{copropiedad_id}/publicidad/piezas` | Piezas para el residente (vacío si no autorizó la publicidad o la PH no tiene el módulo). | `directorio.ver` |  | 200 `[PiezaRespuesta]` | 403 |
-| POST | `/copropiedades/{copropiedad_id}/publicidad/eventos` | Registra impresiones y clics de las piezas (solo de quien autorizó; hasta 100 por contador). | `directorio.ver` | `EventosPeticion` | 200 `EventosRespuesta` | 403, 422 |
-| POST | `/copropiedades/{copropiedad_id}/publicidad/creativos/{creativo_id}/cupon` | El residente obtiene el código de una oferta para presentarlo en el comercio. | `directorio.ver` |  | 200 `CuponRespuesta` | 403 |
-| POST | `/copropiedades/{copropiedad_id}/publicidad/creativos/{creativo_id}/reporte` | Reporta un anuncio para la moderación de la plataforma. | `directorio.ver` | `ReporteAnuncioPeticion` | 200 `ReporteAnuncioRespuesta` | 403, 422 |
+| POST | 🔓 `/publicidad/cupones/redimir` | Redime un cupón en el mostrador del comercio, con el token de **su enlace** en `X-Comercio` (sin sesión: los comercios no tienen cuenta en la plataforma). |  | `RedimirPeticion` | 200 `RedencionRespuesta` | 422, 429 |
 | GET | 🔓 `/copropiedades/{copropiedad_id}/publicidad/pantalla` | Cartelera de la pantalla del lobby (sin sesión: el token de la pantalla en `X-Pantalla`). |  |  | 200 `[PiezaRespuesta]` | 429 |
+| GET | `/entidades/{entidad_id}/publicidad/autorizacion` | ¿La cuenta autorizó recibir publicidad de la plataforma? Con la política vigente. | _No exige permisos: basta un rol en la copropiedad (sin persona en la copropiedad, 422)_ |  | 200 `AutorizacionPublicidadRespuesta` | 403, 422 |
+| POST | `/entidades/{entidad_id}/publicidad/autorizacion` | El titular autoriza recibir publicidad de la plataforma (solo él; la PH no puede). | _No exige permisos: solo el titular autoriza (sin persona en la copropiedad, 422)_ | `AutorizarPublicidadPeticion` | 204  | 403, 422 |
+| DELETE | `/entidades/{entidad_id}/publicidad/autorizacion` | Retira la autorización de publicidad. | _No exige permisos: solo el titular retira su autorización_ |  | 204  | 403, 422 |
+| GET | `/entidades/{entidad_id}/publicidad/piezas` | Piezas para el residente (vacío si no autorizó la publicidad o la PH no tiene el módulo). | `directorio.ver` |  | 200 `[PiezaRespuesta]` | 403 |
+| POST | `/entidades/{entidad_id}/publicidad/eventos` | Registra impresiones y clics de las piezas (solo de quien autorizó; hasta 100 por contador). | `directorio.ver` | `EventosPeticion` | 200 `EventosRespuesta` | 403, 422 |
+| POST | `/entidades/{entidad_id}/publicidad/creativos/{creativo_id}/cupon` | El residente obtiene el código de una oferta para presentarlo en el comercio. | `directorio.ver` |  | 200 `CuponRespuesta` | 403 |
+| POST | `/entidades/{entidad_id}/publicidad/creativos/{creativo_id}/reporte` | Reporta un anuncio para la moderación de la plataforma. | `directorio.ver` | `ReporteAnuncioPeticion` | 200 `ReporteAnuncioRespuesta` | 403, 422 |
 
 ## plataforma
 
@@ -553,8 +565,8 @@ Operación de la plataforma (exige segundo factor)
 | Método | Ruta | Qué hace | Permiso | Cuerpo | Respuesta | Errores propios |
 |---|---|---|---|---|---|---|
 | GET | `/plataforma/copropiedades` | Todas las copropiedades de la plataforma. | `plataforma.copropiedades.ver` |  | 200 `[CopropiedadRespuesta]` | 403 |
-| POST | `/plataforma/copropiedades` | Da de alta una copropiedad (en configuración) y le asigna su primer administrador. | `plataforma.copropiedades.crear` | `NuevaCopropiedadPeticion` | 201 `CopropiedadRespuesta` | 403, 409 |
-| POST | `/plataforma/copropiedades/{copropiedad_id}/estado` | Activa, suspende, reactiva o retira una copropiedad. | `plataforma.copropiedades.crear` | `EstadoCopropiedadPeticion` | 200 `EstadoCopropiedadRespuesta` | 403, 409 |
+| POST | `/plataforma/copropiedades` | Da de alta una copropiedad (en configuración) y le asigna su primer administrador. | `plataforma.copropiedades.crear` | `NuevaCopropiedadPeticion` | 201 `CopropiedadRespuesta` | 403, 409, 422 |
+| POST | `/plataforma/copropiedades/{copropiedad_id}/estado` | Activa, suspende, reactiva o retira una copropiedad (alias de `POST /plataforma/entidades/{entidad_id}/estado`). | `plataforma.copropiedades.crear` | `EstadoCopropiedadPeticion` | 200 `EstadoCopropiedadRespuesta` | 403, 409 |
 | POST | `/plataforma/copropiedades/{copropiedad_id}/modulos` | Habilita un módulo en una copropiedad (venta por módulo). Los endpoints del módulo dejan de responder `modulo_no_habilitado` desde `desde`. | `plataforma.modulos.gestionar` | `HabilitarModuloPeticion` | 201 `PeriodoModuloRespuesta` | 403, 422 |
 | DELETE | `/plataforma/copropiedades/{copropiedad_id}/modulos/{modulo}` | Termina un módulo en una copropiedad desde ahora; el historial de periodos se conserva. | `plataforma.modulos.gestionar` |  | 200 `ModuloTerminadoRespuesta` | 403, 422 |
 | GET | `/plataforma/roles` | Roles de plataforma (plantillas y propios). | `plataforma.roles.asignar` `plataforma.roles.gestionar` |  | 200 `[RolRespuesta]` | 403 |
@@ -563,6 +575,20 @@ Operación de la plataforma (exige segundo factor)
 | POST | `/plataforma/asignaciones` | Asigna un rol de plataforma (soporte, comercial, superusuario…). | `plataforma.roles.asignar` | `AsignacionPlataformaPeticion` | 201 `AsignacionPlataformaRespuesta` | 403 |
 | DELETE | `/plataforma/asignaciones/{asignacion_id}` | Termina una asignación de plataforma (nunca el último superusuario). | `plataforma.roles.asignar` |  | 204  | 403, 409 |
 | POST | `/plataforma/cuentas/{cuenta_id}/bloquear` | Bloquea una cuenta y cierra sus sesiones. | `plataforma.cuentas.bloquear` |  | 204  | 403 |
+| GET | `/plataforma/cuentas` | Busca una cuenta por usuario o correo exactos: estado, contraseña pendiente y segundo factor. | `plataforma.cuentas.ver` |  | 200 `CuentaPlataformaRespuesta` | 403 |
+| POST | `/plataforma/cuentas` | Crea un usuario de la plataforma (o reconoce la cuenta de ese correo) y, si se pide, le asigna un rol de plataforma. Recibe por correo el código para definir su contraseña. | `plataforma.cuentas.crear` `plataforma.roles.asignar` | `NuevoUsuarioPlataformaPeticion` | 201 `UsuarioPlataformaRespuesta` | 403, 409, 422 |
+| POST | `/plataforma/cuentas/{cuenta_id}/desbloquear` | Desbloquea una cuenta bloqueada por la plataforma (y su bloqueo temporal por intentos). | `plataforma.cuentas.bloquear` | `MotivoPeticion` | 204  | 403, 422 |
+| GET | `/plataforma/entidades` | PH, empresas y la plataforma en una sola tabla, con tipo, estado y módulos. | `plataforma.copropiedades.ver` |  | 200 `PaginaRespuesta_EntidadPlataformaRespuesta` | 403 |
+| POST | `/plataforma/entidades` | Da de alta una entidad sin vertical (cualquier empresa de la contabilidad base); sus módulos se habilitan después, uno a uno. | `plataforma.entidades.crear` | `NuevaEntidadPeticion` | 201 `EntidadRespuesta` | 403, 409, 422 |
+| POST | `/plataforma/entidades/{entidad_id}/estado` | Activa, suspende, reactiva o retira una entidad (PH o empresa). | `plataforma.copropiedades.crear` `plataforma.entidades.crear` | `EstadoCopropiedadPeticion` | 200 `EstadoCopropiedadRespuesta` | 403, 409 |
+| POST | `/plataforma/entidades/{entidad_id}/soporte` | Abre un acceso de soporte de solo lectura a la entidad por 2 horas. Después la cuenta entra por las rutas normales de la entidad: ve lo que se lee (nunca datos sensibles, votos reservados ni convivencia) y toda escritura responde 403. | `plataforma.soporte.ver` | `SoportePeticion` | 201 `SoporteRespuesta` | 403, 422 |
+| GET | `/plataforma/entidades/{entidad_id}/roles` | Roles de la entidad (plantillas y propios). | `plataforma.entidades.usuarios` |  | 200 `[RolRespuesta]` | 403 |
+| GET | `/plataforma/entidades/{entidad_id}/asignaciones` | Historial de asignaciones de la entidad. | `plataforma.entidades.usuarios` |  | 200 `[AsignacionRespuesta]` | 403 |
+| POST | `/plataforma/entidades/{entidad_id}/asignaciones` | Asigna un rol de la entidad a una cuenta existente. | `plataforma.entidades.usuarios` | `AsignacionPeticion` | 201 `AsignacionRespuesta` | 403 |
+| DELETE | `/plataforma/entidades/{entidad_id}/asignaciones/{asignacion_id}` | Termina una asignación (la entidad no se queda sin administrador). | `plataforma.entidades.usuarios` |  | 204  | 403, 409 |
+| GET | `/plataforma/entidades/{entidad_id}/usuarios` | Usuarios de la entidad con sus roles. | `plataforma.entidades.usuarios` |  | 200 `PaginaRespuesta_UsuarioRespuesta` | 403 |
+| POST | `/plataforma/entidades/{entidad_id}/usuarios` | Crea un usuario en la entidad con su rol (o asigna el rol a la cuenta de ese correo). | `plataforma.entidades.usuarios` | `NuevoUsuarioPeticion` | 201 `UsuarioCreadoRespuesta` | 403, 409, 422 |
+| POST | `/plataforma/entidades/{entidad_id}/usuarios/{cuenta_id}/codigo-contrasena` | Reenvía el código para definir la contraseña a un usuario de la entidad. | `plataforma.entidades.usuarios` |  | 204  | 403, 422 |
 | GET | `/plataforma/reclamaciones` | Reclamaciones de organizaciones pendientes de revisión. | `plataforma.organizaciones.revisar` |  | 200 `[ReclamacionRespuesta]` | 403 |
 | POST | `/plataforma/reclamaciones/{reclamacion_id}/resolver` | Aprueba (la cuenta queda como dueña de la ficha) o rechaza una reclamación. | `plataforma.organizaciones.revisar` | `ResolucionPeticion` | 204  | 403, 409 |
 | GET | `/plataforma/whatsapp/lineas` | Líneas de la plataforma (cualquiera atiende cualquier copropiedad). | `plataforma.whatsapp.gestionar` |  | 200 `[LineaRespuesta]` | 403 |
@@ -570,7 +596,6 @@ Operación de la plataforma (exige segundo factor)
 | PATCH | `/plataforma/whatsapp/lineas/{linea_id}` | Cambia el estado, el ritmo o la franquicia de una línea. | `plataforma.whatsapp.gestionar` | `ActualizarLineaPeticion` | 204  | 403 |
 | GET | `/plataforma/whatsapp/tarifas` | Tarifas registradas (la vigente es la más reciente por país, categoría y moneda). | `plataforma.whatsapp.gestionar` |  | 200 `[TarifaDto]` | 403 |
 | POST | `/plataforma/whatsapp/tarifas` | Registra la tarifa vigente desde una fecha (Meta publica tablas nuevas cada trimestre). | `plataforma.whatsapp.gestionar` | `TarifaDto` | 201 `TarifaDto` | 403, 422 |
-| POST | `/plataforma/entidades` | Da de alta una entidad sin vertical (cualquier empresa de la contabilidad base); sus módulos se habilitan después, uno a uno. | `plataforma.entidades.crear` | `NuevaEntidadPeticion` | 201 `EntidadRespuesta` | 403, 409 |
 | PUT | `/plataforma/entidad-plataforma` | Designa la entidad que opera la plataforma (la empresa de GISLA SAS). Quien tiene roles de plataforma la recibe como `plataforma` al iniciar sesión. Solo hay una: designar otra le quita la marca a la anterior. | `plataforma.entidad_propia.designar` | `EntidadPlataformaPeticion` | 204  | 403, 409 |
 | GET | `/plataforma/facturacion/consumo` | Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y tipo en el periodo: la base para cobrar el módulo de facturación (plan 19). Solo conteos. | `plataforma.facturacion.ver` |  | 200 `[ConsumoDocumentosRespuesta]` | 403, 422 |
 | PUT | `/plataforma/puc` | Carga (inserta o actualiza) cuentas del catálogo PUC. | `plataforma.normativa.gestionar` | `CargaPucPeticion` | 200 `CargaPucRespuesta` | 403, 422 |
@@ -678,6 +703,8 @@ Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos
 | POST | `/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/certificados/{persona_id}/envio` | Envía el certificado por correo al correo de facturación del tercero (o a su correo). | `tesoreria.facturas_proveedor.gestionar` |  | 202 `EnvioCertificadoRespuesta` | 403, 422 |
 | GET | `/entidades/{entidad_id}/contabilidad/cuentas-por-cobrar/edades` | Cartera de clientes por edades a la fecha de corte (saldo actual de cada factura en el tramo de sus días vencidos). | `contabilidad.ver` |  | 200 `[FilaCarteraRespuesta]` | 403 |
 | POST | `/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/extractos/vista-previa` | Lee el extracto y muestra lo que se importaría, con los problemas por fila (no guarda nada). | `tesoreria.conciliar` | `ExtractoPeticion` | 200 `VistaPreviaExtractoRespuesta` | 403, 422 |
+| GET | `/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/mapeo-extracto` | Último mapeo de columnas de la cuenta (se guarda solo al importar un extracto en planilla): prellene con él el formulario de carga. | `tesoreria.conciliar` |  | 200 `MapeoExtractoRespuesta` | 403 |
+| PUT | `/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/mapeo-extracto` | Guarda el mapeo de columnas de la cuenta (el del banco de esa cuenta). | `tesoreria.conciliar` | `MapeoColumnasDto` | 200 `MapeoExtractoRespuesta` | 403 |
 | GET | `/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/extractos` | Extractos importados en la cuenta, más recientes primero. | `contabilidad.ver` |  | 200 `[ExtractoRespuesta]` | 403 |
 | POST | `/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/extractos` | Importa el extracto (el archivo queda como soporte). El mismo archivo no se importa dos veces; un extracto con filas inválidas se rechaza (revíselo con la vista previa). | `tesoreria.conciliar` | `ExtractoPeticion` | 201 `ExtractoRespuesta` | 403, 409, 422 |
 | GET | `/entidades/{entidad_id}/contabilidad/tesoreria/cuentas/{cuenta_id}/movimientos` | Movimientos del extracto de la cuenta entre dos fechas. | `contabilidad.ver` |  | 200 `[MovimientoExtractoRespuesta]` | 403 |

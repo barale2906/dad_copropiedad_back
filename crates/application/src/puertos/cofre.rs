@@ -22,3 +22,28 @@ pub trait Cofre: Send + Sync {
     /// el contenido fue alterado o se cifró con otra clave u otro contexto.
     fn descifrar(&self, contexto: &str, cifrado: &[u8]) -> AppResult<Vec<u8>>;
 }
+
+#[cfg(test)]
+pub(crate) mod memoria {
+    //! Cofre de pruebas: "cifra" anteponiendo el contexto (descifrar con otro contexto falla).
+
+    use super::Cofre;
+    use crate::{AppError, AppResult};
+
+    /// Cofre sin criptografía para las pruebas de los casos de uso.
+    pub struct CofrePrueba;
+
+    impl Cofre for CofrePrueba {
+        fn cifrar(&self, contexto: &str, datos: &[u8]) -> AppResult<Vec<u8>> {
+            Ok([contexto.as_bytes(), b"|", datos].concat())
+        }
+
+        fn descifrar(&self, contexto: &str, cifrado: &[u8]) -> AppResult<Vec<u8>> {
+            let prefijo = [contexto.as_bytes(), b"|"].concat();
+            cifrado
+                .strip_prefix(prefijo.as_slice())
+                .map(<[u8]>::to_vec)
+                .ok_or_else(|| AppError::infra(std::io::Error::other("otro contexto")))
+        }
+    }
+}

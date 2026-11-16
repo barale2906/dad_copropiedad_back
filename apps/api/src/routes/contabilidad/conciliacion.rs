@@ -31,6 +31,7 @@ use crate::{
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(previsualizar_extracto))
+        .routes(routes!(ver_mapeo, guardar_mapeo))
         .routes(routes!(listar_extractos, importar_extracto))
         .routes(routes!(listar_movimientos))
         .routes(routes!(listar_libros))
@@ -61,6 +62,70 @@ fn archivo_y_formato(p: &mut ExtractoPeticion) -> ApiResult<(Vec<u8>, FormatoEnt
         FormatoExtracto::Asobancaria2001 => FormatoEntrada::Asobancaria2001,
     };
     Ok((contenido, formato))
+}
+
+/// Último mapeo de columnas de la cuenta (se guarda solo al importar un extracto en planilla):
+/// prellene con él el formulario de carga.
+#[utoipa::path(
+    get,
+    path = "/tesoreria/cuentas/{cuenta_id}/mapeo-extracto",
+    tag = ETIQUETA_TESORERIA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("cuenta_id" = Uuid, Path, description = "Cuenta de tesorería")),
+    responses(
+        (status = OK, description = "Mapeo guardado o `null`", body = MapeoExtractoRespuesta),
+        (status = FORBIDDEN, description = "Sin `tesoreria.conciliar` o sin el módulo", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "La cuenta no existe", body = ErrorRespuesta),
+    )
+)]
+pub async fn ver_mapeo(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<Json<MapeoExtractoRespuesta>> {
+    let mapeo = uc::mapeo_extracto(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        CuentaTesoreriaId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(Json(MapeoExtractoRespuesta {
+        mapeo: mapeo.map(Into::into),
+    }))
+}
+
+/// Guarda el mapeo de columnas de la cuenta (el del banco de esa cuenta).
+#[utoipa::path(
+    put,
+    path = "/tesoreria/cuentas/{cuenta_id}/mapeo-extracto",
+    tag = ETIQUETA_TESORERIA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("cuenta_id" = Uuid, Path, description = "Cuenta de tesorería")),
+    request_body = MapeoColumnasDto,
+    responses(
+        (status = OK, description = "Mapeo guardado", body = MapeoExtractoRespuesta),
+        (status = FORBIDDEN, description = "Sin `tesoreria.conciliar` o sin el módulo", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "La cuenta no existe", body = ErrorRespuesta),
+    )
+)]
+pub async fn guardar_mapeo(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+    Json(p): Json<MapeoColumnasDto>,
+) -> ApiResult<Json<MapeoExtractoRespuesta>> {
+    let mapeo = uc::guardar_mapeo_extracto(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        CuentaTesoreriaId::from_uuid(ruta.1),
+        p.into(),
+    )
+    .await?;
+    Ok(Json(MapeoExtractoRespuesta {
+        mapeo: Some(mapeo.into()),
+    }))
 }
 
 /// Lee el extracto y muestra lo que se importaría, con los problemas por fila (no guarda nada).

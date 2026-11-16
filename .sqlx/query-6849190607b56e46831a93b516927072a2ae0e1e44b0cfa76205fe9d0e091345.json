@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT emitir_codigo_definir_contrasena($1, $2, $3, $4, $5) AS \"emitido!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "emitido!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "6849190607b56e46831a93b516927072a2ae0e1e44b0cfa76205fe9d0e091345"
+}

@@ -60,6 +60,8 @@ catalogo_permisos! {
     PlataformaCopropiedadesVer => "plataforma.copropiedades.ver", Plataforma;
     PlataformaCuentasVer => "plataforma.cuentas.ver", Plataforma;
     PlataformaCuentasBloquear => "plataforma.cuentas.bloquear", Plataforma;
+    /// Crear usuarios de la plataforma (la persona define su contraseña con un código).
+    PlataformaCuentasCrear => "plataforma.cuentas.crear", Plataforma;
     /// Crear y editar roles de plataforma propios.
     PlataformaRolesGestionar => "plataforma.roles.gestionar", Plataforma;
     PlataformaRolesAsignar => "plataforma.roles.asignar", Plataforma;
@@ -68,6 +70,10 @@ catalogo_permisos! {
     PlataformaModulosGestionar => "plataforma.modulos.gestionar", Plataforma;
     /// Dar de alta una entidad sin vertical (cualquier empresa de la contabilidad base).
     PlataformaEntidadesCrear => "plataforma.entidades.crear", Plataforma;
+    /// Ver y gestionar los usuarios y roles de cualquier entidad (plan 20).
+    PlataformaEntidadesUsuarios => "plataforma.entidades.usuarios", Plataforma;
+    /// Entrar a una entidad cliente como soporte, en solo lectura y con motivo (plan 20).
+    PlataformaSoporteVer => "plataforma.soporte.ver", Plataforma;
     /// Designar la entidad que opera la plataforma (la empresa de GISLA): solo el superusuario.
     PlataformaEntidadPropiaDesignar => "plataforma.entidad_propia.designar", Plataforma;
     /// Crear, publicar y retirar las plantillas contables estándar de la plataforma.
@@ -76,6 +82,9 @@ catalogo_permisos! {
     PlataformaNormativaGestionar => "plataforma.normativa.gestionar", Plataforma;
     PlataformaAuditoriaVer => "plataforma.auditoria.ver", Plataforma;
     PlataformaPublicidadModerar => "plataforma.publicidad.moderar", Plataforma;
+    /// Cargar campañas y piezas de cualquier comercio, ver sus métricas y leads, su enlace de
+    /// cupones y excluir entidades de la publicidad (plan 20). Quien carga no modera.
+    PlataformaPublicidadGestionar => "plataforma.publicidad.gestionar", Plataforma;
     /// Tarifas de la pauta, política de publicidad de la plataforma y liquidaciones.
     PlataformaPublicidadLiquidar => "plataforma.publicidad.liquidar", Plataforma;
     /// Dar de alta anunciantes del directorio, editar sus fichas y el catálogo de categorías.
@@ -396,6 +405,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::PlataformaCuentasBloquear,
             P::PlataformaOrganizacionesRevisar,
             P::PlataformaAuditoriaVer,
+            P::PlataformaSoporteVer,
         ]),
     },
     RolPlantilla {
@@ -409,6 +419,7 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::PlataformaModulosGestionar,
             P::PlataformaDirectorioGestionar,
             P::PlataformaPublicidadLiquidar,
+            P::PlataformaPublicidadGestionar,
         ]),
     },
     RolPlantilla {
@@ -724,8 +735,45 @@ enum_texto!(OrigenAsignacion {
     Asamblea => "asamblea",
 });
 
+/// Lecturas que **nunca** da un acceso de soporte: datos sensibles, archivos personales, el
+/// detalle de los votos reservados y la identidad en convivencia. Solo el superusuario lo ve todo.
+const VEDADOS_A_SOPORTE: &[Permiso] = &[
+    P::PersonasDatosSensiblesVer,
+    P::ArchivosPersonalesVer,
+    P::AsambleasVotosVerDetalle,
+    P::TicketsConvivenciaVer,
+];
+
+/// Permisos de un acceso de soporte de la plataforma a una entidad (plan 20): todas las
+/// lecturas de la entidad (`….ver`, `….ver_*`) salvo datos sensibles, archivos personales, el
+/// detalle de los votos reservados y la identidad en convivencia; ninguna
+/// escritura.
+pub fn permisos_soporte() -> ConjuntoPermisos {
+    Permiso::TODOS
+        .iter()
+        .copied()
+        .filter(|p| p.ambito() == Ambito::Copropiedad && !VEDADOS_A_SOPORTE.contains(p))
+        .filter(|p| {
+            let ultimo = p.as_str().rsplit('.').next().unwrap_or_default();
+            ultimo == "ver" || ultimo.starts_with("ver_")
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn soporte_solo_lee_y_nunca_lo_sensible() {
+        let soporte = super::permisos_soporte();
+        assert!(soporte.contiene(super::Permiso::PersonasVer));
+        assert!(soporte.contiene(super::Permiso::TicketsVerTodos));
+        for vedado in super::VEDADOS_A_SOPORTE {
+            assert!(!soporte.contiene(*vedado));
+        }
+        assert!(!soporte.contiene(super::Permiso::RolesAsignar));
+        assert!(soporte.iter().all(|p| p.as_str().contains(".ver")));
+    }
+
     use std::collections::HashSet;
 
     use super::*;

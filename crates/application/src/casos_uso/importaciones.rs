@@ -313,7 +313,7 @@ fn resumen_previo(a: &Analisis) -> ResumenImportacion {
         titulares: contar(a.bienes.iter().map(|b| b.titulares.len()).sum()),
         personas_nuevas: 0,
         coeficientes: contar(a.bienes.iter().filter(|b| b.coeficiente.is_some()).count()),
-        cuadro_borrador_id: None,
+        ..ResumenImportacion::default()
     }
 }
 
@@ -466,6 +466,9 @@ where
         .importacion(id)
         .await?
         .ok_or(AppError::NoEncontrado("importación"))?;
+    if importacion.tipo != TipoImportacion::BienesPrivados {
+        return Err(AppError::NoEncontrado("importación"));
+    }
     match importacion.estado {
         EstadoImportacion::Validada => {}
         EstadoImportacion::Aplicada => {

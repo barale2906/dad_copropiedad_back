@@ -151,6 +151,38 @@ impl TryFrom<FilaExtracto> for ExtractoBancario {
 }
 
 impl RepositorioConciliacion for TransaccionPg {
+    async fn mapeo_extracto(
+        &mut self,
+        cuenta: CuentaTesoreriaId,
+    ) -> AppResult<Option<domain::contabilidad::extracto::MapeoColumnas>> {
+        sqlx::query_scalar!(
+            "SELECT mapeo_extracto FROM cuentas_tesoreria WHERE id = $1",
+            cuenta.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .flatten()
+        .map(|v| serde_json::from_value(v).map_err(AppError::infra))
+        .transpose()
+    }
+
+    async fn guardar_mapeo_extracto(
+        &mut self,
+        cuenta: CuentaTesoreriaId,
+        mapeo: &domain::contabilidad::extracto::MapeoColumnas,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE cuentas_tesoreria SET mapeo_extracto = $2 WHERE id = $1",
+            cuenta.as_uuid(),
+            serde_json::to_value(mapeo).map_err(AppError::infra)?,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
     async fn extracto_por_hash(
         &mut self,
         cuenta: CuentaTesoreriaId,

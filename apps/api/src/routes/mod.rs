@@ -40,11 +40,13 @@ mod mantenimiento;
 mod organizaciones;
 mod parqueaderos;
 mod plataforma;
+mod plataforma_entidades;
 mod proteccion_datos;
 mod publicidad;
 mod reservas;
 mod roles;
 mod tickets;
+mod usuarios;
 mod yo;
 
 use axum::{
@@ -152,7 +154,7 @@ fn api_v1() -> OpenApiRouter<AppState> {
         .nest("/archivos", archivos::rutas())
         .nest("/auth", auth::rutas())
         .nest("/organizaciones", organizaciones::rutas_cuenta())
-        .nest("/anunciantes", publicidad::rutas_portal())
+        .nest("/publicidad", publicidad::rutas_comercio())
         .nest("/permisos", roles::rutas_catalogo())
         .nest(
             &format!("/copropiedades/{{{PARAMETRO_COPROPIEDAD}}}"),
@@ -194,6 +196,7 @@ fn cors(origenes: &[String]) -> Option<CorsLayer> {
                 HeaderName::from_static("x-papeleta"),
                 HeaderName::from_static("x-enlace-directorio"),
                 HeaderName::from_static("x-pantalla"),
+                HeaderName::from_static("x-comercio"),
             ])
             .expose_headers([
                 REQUEST_ID,

@@ -36,6 +36,7 @@ pub mod tesoreria;
 pub mod tickets;
 pub mod tributario;
 pub mod unidad_trabajo;
+pub mod usuarios;
 
 pub use acceso::{
     DirectorioAcceso, EnvioPush, FirmaQr, GeneradorImagenQr, RepositorioAcceso,
@@ -79,3 +80,4 @@ pub use reservas::{DirectorioRecordatorios, RepositorioReservas};
 pub use sesiones::SesionesConversacion;
 pub use tickets::{DirectorioGestion, RepositorioTickets};
 pub use unidad_trabajo::{RegistroAuditoria, RegistroOutbox, Transaccion, UnidadDeTrabajo};
+pub use usuarios::RepositorioUsuarios;

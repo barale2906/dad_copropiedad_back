@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE cargos_pendientes SET estado = 'anulado'\n             WHERE reserva_id = $1 AND concepto = 'valor_reserva' AND estado = 'pendiente'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4bdd8fe1a0239eae3db073f34796726795aaa95e003e156867aa903ae47f441f"
+}

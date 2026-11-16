@@ -34,6 +34,7 @@ pub mod roles;
 pub mod tickets;
 pub mod titulares;
 pub mod tributario;
+pub mod usuarios;
 
 pub use archivos::{ArchivoSubido, ResumenMigracion, enlace_descarga, migrar_lote, subir_archivo};
 pub use despachar_salida::{Despachadores, ResumenDespacho, despachar_lote};

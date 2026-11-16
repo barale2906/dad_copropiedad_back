@@ -110,6 +110,33 @@ pub fn sumar_dias_habiles(desde: NaiveDate, n: u32) -> Option<NaiveDate> {
     Some(dia)
 }
 
+/// Días hábiles **posteriores** a `desde` hasta `hasta` inclusive (0 si `hasta` no es
+/// posterior). Sirve para mostrar «quedan N días hábiles» de un plazo legal.
+///
+/// ```
+/// use chrono::NaiveDate;
+/// use domain::calendario::dias_habiles_entre;
+///
+/// let jueves_santo = NaiveDate::from_ymd_opt(2026, 4, 2).expect("fecha válida");
+/// let miercoles = NaiveDate::from_ymd_opt(2026, 4, 8).expect("fecha válida");
+/// assert_eq!(dias_habiles_entre(jueves_santo, miercoles), 3);
+/// assert_eq!(dias_habiles_entre(miercoles, jueves_santo), 0);
+/// ```
+pub fn dias_habiles_entre(desde: NaiveDate, hasta: NaiveDate) -> u32 {
+    let mut dia = desde;
+    let mut n = 0;
+    while dia < hasta {
+        match dia.succ_opt() {
+            Some(siguiente) => dia = siguiente,
+            None => break,
+        }
+        if es_dia_habil(dia) {
+            n += 1;
+        }
+    }
+    n
+}
+
 /// Domingo de Pascua (calendario gregoriano, algoritmo de Meeus/Jones/Butcher).
 pub fn domingo_de_pascua(anio: i32) -> Option<NaiveDate> {
     let a = anio % 19;

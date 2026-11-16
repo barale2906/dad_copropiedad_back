@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM enlaces_comercio WHERE anunciante_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8a1c1dcf88af8d951400ed80619d262ca470c9bc7f21f765d39520d7b435186a"
+}

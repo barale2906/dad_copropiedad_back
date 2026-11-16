@@ -379,10 +379,11 @@ async fn calcular<T: TxCartera>(tx: &mut T, periodo: NaiveDate) -> AppResult<Cal
     }
     let mut sin_concepto = BTreeMap::<&str, usize>::new();
     for cargo in tx.cargos_pendientes().await? {
-        let tipo = if cargo.concepto == "danos" {
-            TipoConceptoCobro::Dano
-        } else {
-            TipoConceptoCobro::Multa
+        let tipo = match cargo.concepto.as_str() {
+            "danos" => TipoConceptoCobro::Dano,
+            // El valor de una reserva que se cobra en la cartera (plan 20).
+            "valor_reserva" => TipoConceptoCobro::UsoBienComun,
+            _ => TipoConceptoCobro::Multa,
         };
         match conceptos.iter().find(|c| c.tipo == tipo) {
             Some(c) => cobros.push((

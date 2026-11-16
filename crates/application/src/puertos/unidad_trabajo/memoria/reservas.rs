@@ -233,6 +233,34 @@ impl RepositorioReservas for TransaccionEnMemoria {
         Ok(())
     }
 
+    async fn anular_cargo_valor_reserva(&mut self, reserva: ReservaId) -> AppResult<bool> {
+        let antes = self.datos.cargos.len();
+        self.datos.cargos.retain(|c| {
+            !(c.reserva_id == Some(reserva) && c.concepto == domain::ConceptoCargo::ValorReserva)
+        });
+        Ok(self.datos.cargos.len() < antes)
+    }
+
+    async fn cobro_recurso(&mut self, recurso: RecursoId) -> AppResult<domain::CobroReserva> {
+        Ok(self
+            .datos
+            .cobros_recurso
+            .iter()
+            .find(|(r, _)| *r == recurso)
+            .map(|(_, c)| *c)
+            .unwrap_or_default())
+    }
+
+    async fn guardar_cobro_recurso(
+        &mut self,
+        recurso: RecursoId,
+        cobro: &domain::CobroReserva,
+    ) -> AppResult<()> {
+        self.datos.cobros_recurso.retain(|(r, _)| *r != recurso);
+        self.datos.cobros_recurso.push((recurso, *cobro));
+        Ok(())
+    }
+
     async fn autorizar_reservas(
         &mut self,
         residencia: ResidenciaId,

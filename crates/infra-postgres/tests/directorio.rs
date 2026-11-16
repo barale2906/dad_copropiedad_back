@@ -620,7 +620,7 @@ async fn destacadas(e: &Entorno, tenant: TenantId) -> Vec<AnuncianteId> {
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
-async fn las_destacadas_solo_salen_con_el_modulo_de_publicidad(pool: PgPool) {
+async fn las_destacadas_salen_sin_habilitar_nada_salvo_en_una_entidad_excluida(pool: PgPool) {
     let e = Entorno::new(&pool).await;
     let mut datos = ficha(&["restaurante"], Cobertura::Nacional);
     datos.destacada_hasta = Some(chrono::Utc::now() + chrono::Duration::days(30));
@@ -632,23 +632,24 @@ async fn las_destacadas_solo_salen_con_el_modulo_de_publicidad(pool: PgPool) {
             datos,
         )
         .await;
-    let sin_modulo = ph(&pool, None, None).await;
-    let con_modulo = ph(&pool, None, None).await;
+    let excluida = ph(&pool, None, None).await;
+    let normal = ph(&pool, None, None).await;
     sqlx::query(
-        "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
-         VALUES (gen_random_uuid(), $1, 'publicidad', now() - interval '1 day')",
+        "INSERT INTO exclusiones_publicidad (tenant_id, motivo, creada_en)
+         VALUES ($1, 'Contrato sin publicidad', now())",
     )
-    .bind(con_modulo.as_uuid())
+    .bind(excluida.as_uuid())
     .execute(&pool)
     .await
-    .expect("módulo");
+    .expect("exclusión");
 
-    assert!(destacadas(&e, sin_modulo).await.is_empty());
-    assert_eq!(destacadas(&e, con_modulo).await, vec![id]);
-    let ficha_sin = uc::ficha_directorio(&e.unidad, &RelojSistema, &Contexto::new(sin_modulo), id)
-        .await
-        .expect("ficha");
-    assert!(!ficha_sin.destacada, "sin el módulo no hay pauta");
+    assert!(destacadas(&e, excluida).await.is_empty());
+    assert_eq!(destacadas(&e, normal).await, vec![id]);
+    let ficha_excluida =
+        uc::ficha_directorio(&e.unidad, &RelojSistema, &Contexto::new(excluida), id)
+            .await
+            .expect("ficha");
+    assert!(!ficha_excluida.destacada, "excluida: sin pauta");
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]

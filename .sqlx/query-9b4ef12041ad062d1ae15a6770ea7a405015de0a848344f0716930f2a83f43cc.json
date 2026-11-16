@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT c.id, c.anunciante_id, c.nombre, c.objetivo, c.categoria, c.inicio, c.fin,\n                      c.modelo, c.presupuesto_total, c.presupuesto_diario, c.tarifa, c.consumido,\n                      c.seg_radio_km, c.seg_municipios, c.seg_tipos, c.seg_bienes_min,\n                      c.seg_bienes_max, c.seg_estratos,\n                      ARRAY(SELECT x.tenant_id FROM campana_copropiedades x\n                            WHERE x.campana_id = c.id ORDER BY 1) AS \"copropiedades!\",\n                      c.conflicto_interes, c.estado, c.motivo_estado, c.revisada_por,\n                      c.revisada_en, c.creada_por, c.creada_en, c.actualizada_en\n               FROM campanas c\n               WHERE c.estado = 'en_revision' AND ($1::uuid IS NULL OR c.id > $1)\n               ORDER BY c.id LIMIT $2",
+  "query": "SELECT c.id, c.anunciante_id, c.nombre, c.objetivo, c.categoria, c.inicio, c.fin,\n                      c.modelo, c.presupuesto_total, c.presupuesto_diario, c.tarifa, c.consumido,\n                      c.seg_radio_km, c.seg_municipios, c.seg_tipos, c.seg_bienes_min,\n                      c.seg_bienes_max, c.seg_estratos, c.seg_tipos_entidad,\n                      ARRAY(SELECT x.tenant_id FROM campana_copropiedades x\n                            WHERE x.campana_id = c.id ORDER BY 1) AS \"entidades!\",\n                      c.conflicto_interes, c.estado, c.motivo_estado, c.revisada_por,\n                      c.revisada_en, c.creada_por, c.editada_por, c.creada_en, c.actualizada_en\n               FROM campanas c\n               WHERE c.anunciante_id = $1 AND ($2::uuid IS NULL OR c.id > $2)\n               ORDER BY c.id LIMIT $3",
   "describe": {
     "columns": [
       {
@@ -203,12 +203,23 @@
       },
       {
         "ordinal": 18,
-        "name": "copropiedades!",
+        "name": "seg_tipos_entidad",
+        "type_info": "TextArray",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "seg_tipos_entidad"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "entidades!",
         "type_info": "UuidArray",
         "origin": "Expression"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "conflicto_interes",
         "type_info": "Bool",
         "origin": {
@@ -219,7 +230,7 @@
         }
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "estado",
         "type_info": "Text",
         "origin": {
@@ -230,7 +241,7 @@
         }
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "motivo_estado",
         "type_info": "Text",
         "origin": {
@@ -241,7 +252,7 @@
         }
       },
       {
-        "ordinal": 22,
+        "ordinal": 23,
         "name": "revisada_por",
         "type_info": "Uuid",
         "origin": {
@@ -252,7 +263,7 @@
         }
       },
       {
-        "ordinal": 23,
+        "ordinal": 24,
         "name": "revisada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -263,7 +274,7 @@
         }
       },
       {
-        "ordinal": 24,
+        "ordinal": 25,
         "name": "creada_por",
         "type_info": "Uuid",
         "origin": {
@@ -274,7 +285,18 @@
         }
       },
       {
-        "ordinal": 25,
+        "ordinal": 26,
+        "name": "editada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "campanas",
+            "name": "editada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 27,
         "name": "creada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -285,7 +307,7 @@
         }
       },
       {
-        "ordinal": 26,
+        "ordinal": 28,
         "name": "actualizada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -298,6 +320,7 @@
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid",
         "Int8"
       ]
@@ -321,9 +344,11 @@
       true,
       true,
       false,
+      false,
       null,
       false,
       false,
+      true,
       true,
       true,
       true,
@@ -332,5 +357,5 @@
       false
     ]
   },
-  "hash": "fe7557b695025bd84e6c7a37d2c5066f3690df8c51b1232f0d72652fe962d73f"
+  "hash": "9b4ef12041ad062d1ae15a6770ea7a405015de0a848344f0716930f2a83f43cc"
 }

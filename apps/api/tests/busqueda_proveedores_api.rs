@@ -196,6 +196,14 @@ async fn el_enlace_publico_muestra_el_directorio_sin_sesion(pool: PgPool) {
     );
     let token = v["token"].as_str().expect("token").to_owned();
     let publico = format!("{}/directorio/publico", p.base);
+    // El enlace se fija una vez en los grupos: se vuelve a consultar sin cambiarlo.
+    for _ in 0..2 {
+        let (s, v) = p
+            .pedir(Method::GET, "/directorio/enlace-publico", None)
+            .await;
+        assert_eq!(s, StatusCode::OK, "{v}");
+        assert_eq!(v["token"], token.as_str());
+    }
 
     let (s, v) = p.api.pedir_con_cabecera(&publico, CABECERA, &token).await;
     assert_eq!(s, StatusCode::OK, "{v}");
@@ -222,6 +230,7 @@ async fn el_enlace_publico_muestra_el_directorio_sin_sesion(pool: PgPool) {
         .await;
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v["activo"], false);
+    assert!(v["token"].is_null());
     let (s, _) = p
         .pedir(Method::DELETE, "/directorio/enlace-publico", None)
         .await;

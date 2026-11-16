@@ -1,5 +1,6 @@
-//! Integración de la publicidad de la plataforma (plan 08, fases 3 a 6) sobre PostgreSQL como
-//! `dad_app`: portal del anunciante → moderación → piezas solo para quien autorizó, topes de
+//! Integración de la publicidad de la plataforma (plan 08, fases 3 a 6; plan 20) sobre PostgreSQL
+//! como `dad_app`: la plataforma carga la pauta → otra cuenta la modera → piezas solo para quien
+//! autorizó, topes de
 //! presupuesto, alcance por perfil de la PH, conflicto de interés, envíos masivos con prioridad
 //! 9 y tope de frecuencia, cupones, reportes, leads y liquidación sin reparto a las PH.
 
@@ -11,25 +12,25 @@ use application::{
         directorio::{self as dir, DatosAnunciante, DatosFicha},
         publicidad::{
             entrega::{self, EventoPieza},
+            gestion::{self as portal, AccionCampana, DatosCampana},
             liquidacion, moderacion,
             moderacion::Decision,
-            portal::{self, AccionCampana, DatosCampana},
         },
     },
     puertos::{
         RelojSistema,
-        directorio::Contacto,
+        directorio::{Contacto, OrganizacionAnunciante},
         identidad::NuevaOrganizacion,
         publicidad::{Campana, TarifaPublicidad},
     },
 };
 use chrono::{Datelike, Duration, Months, Utc};
-use comun::{MIGRACIONES, crear_copropiedad, pool_como_app};
+use comun::{CofrePrueba, MIGRACIONES, crear_copropiedad, pool_como_app};
 use domain::{
     AnuncianteId, Cobertura, CodigoCategoria, CodigoDane, Coordenadas, CuentaId, EstadoCampana,
     EstadoLiquidacion, EstadoVerificacion, FormatoCreativo, MedioAutorizacion, ModeloCobro,
-    NaturalezaOrganizacion, Nit, ObjetivoCampana, Permiso, PersonaId, RolOrganizacion,
-    Segmentacion, Telefono, TenantId, TipoOrganizacion, Ubicacion,
+    NaturalezaOrganizacion, Nit, ObjetivoCampana, Permiso, PersonaId, Segmentacion, Telefono,
+    TenantId, TipoOrganizacion, Ubicacion,
     publicidad::{CodigoCupon, ContenidoCreativo, Cupon},
 };
 use infra_postgres::{DirectorioPublicidadPg, UnidadDeTrabajoPg, UnidadDeTrabajoPlataformaPg};
@@ -66,7 +67,8 @@ struct Entorno {
 }
 
 impl Entorno {
-    /// PH activa en Chapinero (estrato 4) con el módulo `publicidad`; Ana (con cuenta) y Bruno
+    /// PH activa en Chapinero (estrato 4), sin habilitar nada (la publicidad no es un módulo); Ana
+    /// (con cuenta) y Bruno
     /// son propietarios con celular; una línea de WhatsApp, la tarifa CPC y la política.
     async fn new(pool: &PgPool) -> Self {
         let app = pool_como_app(pool).await;
@@ -79,8 +81,6 @@ impl Entorno {
             "UPDATE entidades SET estado = 'activa', latitud = 4.650000, longitud = -74.060000,
                     municipio_dane = '11001' WHERE id = $1",
             "UPDATE copropiedades SET estrato = 4 WHERE id = $1",
-            "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
-             VALUES (gen_random_uuid(), $1, 'publicidad', now() - interval '1 day')",
             "INSERT INTO bienes_privados (id, tenant_id, codigo) VALUES ($2, $1, '101'), ($3, $1, '102')",
             "INSERT INTO personas (id, tenant_id, nombre, telefono, cuenta_id) VALUES
                 ($4, $1, 'Ana', '573001110001', $6), ($5, $1, 'Bruno', '573001110002', NULL)",
@@ -143,8 +143,19 @@ impl Entorno {
         e
     }
 
+    /// Personal de la plataforma que carga la pauta (no la modera).
     fn ctx_dueno(&self) -> ContextoPlataforma {
-        ContextoPlataforma::de_cuenta(self.dueno, domain::ConjuntoPermisos::vacio(), None)
+        ContextoPlataforma::de_cuenta(
+            self.dueno,
+            [
+                Permiso::PlataformaPublicidadGestionar,
+                Permiso::PlataformaDirectorioGestionar,
+                Permiso::PlataformaPublicidadModerar,
+            ]
+            .into_iter()
+            .collect(),
+            None,
+        )
     }
 
     fn ctx_ana(&self) -> Contexto {
@@ -155,20 +166,20 @@ impl Entorno {
         )
     }
 
-    /// El dueño se registra, la moderación lo verifica y él publica su ficha.
+    /// La plataforma da de alta el comercio, lo verifica y publica su ficha.
     async fn anunciante(&self) -> AnuncianteId {
-        let a = portal::registrarse(
+        let a = dir::dar_de_alta_anunciante(
             &self.plataforma,
             &RelojSistema,
             &self.ctx_dueno(),
-            NuevaOrganizacion {
+            OrganizacionAnunciante::Nueva(NuevaOrganizacion {
                 nit: Nit::new("900123456-8").expect("NIT"),
                 razon_social: "Rosa Pérez".into(),
                 naturaleza: NaturalezaOrganizacion::NaturalConRut,
                 tipos: vec![TipoOrganizacion::Otro],
                 correo_contacto: None,
                 telefono_contacto: None,
-            },
+            }),
             DatosAnunciante {
                 nombre_comercial: "Modistería Rosa".into(),
                 direccion: None,
@@ -181,19 +192,9 @@ impl Entorno {
             },
         )
         .await
-        .expect("registro");
-        assert_eq!(a.estado, EstadoVerificacion::Pendiente);
-        dir::cambiar_verificacion(
-            &self.plataforma,
-            &RelojSistema,
-            &ContextoPlataforma::sistema(),
-            a.id,
-            EstadoVerificacion::Verificado,
-            None,
-        )
-        .await
-        .expect("verifica");
-        portal::editar_ficha(
+        .expect("alta");
+        assert_eq!(a.estado, EstadoVerificacion::Verificado);
+        dir::guardar_ficha(
             &self.plataforma,
             &RelojSistema,
             &self.ctx_dueno(),
@@ -478,8 +479,8 @@ async fn sin_moderacion_ni_creativos_aprobados_no_se_activa(pool: PgPool) {
     )
     .await;
     assert!(
-        matches!(otro, Err(AppError::NoEncontrado(_))),
-        "no es miembro"
+        matches!(otro, Err(AppError::SinPermiso(_))),
+        "sin plataforma.publicidad.gestionar"
     );
 }
 
@@ -619,42 +620,193 @@ async fn el_cupon_se_redime_hasta_su_limite_y_solo_por_miembros(pool: PgPool) {
         .expect("cupón");
     assert_eq!(cupon.codigo, "ROSA10");
 
-    let extrano =
-        ContextoPlataforma::de_cuenta(cuenta(&pool).await, domain::ConjuntoPermisos::vacio(), None);
+    let anonimo = ContextoPlataforma::anonimo(None);
     assert!(matches!(
-        portal::redimir_cupon(&e.plataforma, &RelojSistema, &extrano, a, "rosa10").await,
-        Err(AppError::NoEncontrado(_))
+        portal::redimir_cupon(
+            &e.plataforma,
+            &RelojSistema,
+            &anonimo,
+            "sin-enlace",
+            "rosa10"
+        )
+        .await,
+        Err(AppError::NoAutenticado)
     ));
-    let operario = cuenta(&pool).await;
-    sqlx::query(
-        "INSERT INTO organizaciones_miembros (organizacion_id, cuenta_id, rol)
-         SELECT organizacion_id, $2, 'operario' FROM anunciantes WHERE id = $1",
+    let token = portal::generar_enlace_comercio(
+        &e.plataforma,
+        &CofrePrueba,
+        &RelojSistema,
+        &e.ctx_dueno(),
+        a,
     )
-    .bind(a.as_uuid())
-    .bind(operario.as_uuid())
-    .execute(&e.owner)
     .await
-    .expect("operario");
-    let ctx_op = ContextoPlataforma::de_cuenta(operario, domain::ConjuntoPermisos::vacio(), None);
-    let r = portal::redimir_cupon(&e.plataforma, &RelojSistema, &ctx_op, a, "rosa10")
+    .expect("enlace");
+    let vigente = portal::enlace_comercio(&e.plataforma, &CofrePrueba, &e.ctx_dueno(), a)
+        .await
+        .expect("consulta");
+    assert_eq!(
+        vigente.as_deref(),
+        Some(token.as_str()),
+        "el mismo token, sin cambiarlo"
+    );
+    let r = portal::redimir_cupon(&e.plataforma, &RelojSistema, &anonimo, &token, "rosa10")
         .await
         .expect("redime");
     assert_eq!((r.usos, r.restantes), (1, Some(0)));
     assert!(matches!(
-        portal::redimir_cupon(&e.plataforma, &RelojSistema, &ctx_op, a, "ROSA10").await,
+        portal::redimir_cupon(&e.plataforma, &RelojSistema, &anonimo, &token, "ROSA10").await,
         Err(AppError::Dominio(_))
     ));
-    let mis = portal::mis_anunciantes(&e.plataforma, &ctx_op)
+    portal::revocar_enlace_comercio(&e.plataforma, &e.ctx_dueno(), a)
         .await
-        .expect("anunciantes");
-    assert_eq!(mis[0].1, RolOrganizacion::Operario);
-    assert!(
-        matches!(
-            portal::leads(&e.plataforma, &ctx_op, a, SolicitudPagina::primera()).await,
-            Err(AppError::NoEncontrado(_))
-        ),
-        "el operario no ve los contactos"
+        .expect("revoca");
+    assert!(matches!(
+        portal::redimir_cupon(&e.plataforma, &RelojSistema, &anonimo, &token, "ROSA10").await,
+        Err(AppError::NoAutenticado)
+    ));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn quien_carga_la_pauta_no_la_modera(pool: PgPool) {
+    let e = Entorno::new(&pool).await;
+    let a = e.anunciante().await;
+    let c = portal::crear_campana(
+        &e.plataforma,
+        &RelojSistema,
+        &e.ctx_dueno(),
+        a,
+        DatosCampana {
+            nombre: "Cuatro ojos".into(),
+            objetivo: ObjetivoCampana::Visibilidad,
+            categoria: CodigoCategoria::new("costura").expect("válido"),
+            inicio: Utc::now(),
+            fin: Utc::now() + Duration::days(5),
+            modelo: ModeloCobro::Cpc,
+            presupuesto_total: dec!(10000),
+            presupuesto_diario: None,
+            segmentacion: Segmentacion::default(),
+        },
+    )
+    .await
+    .expect("campaña");
+    let cr = portal::guardar_creativo(
+        &e.plataforma,
+        &RelojSistema,
+        &e.ctx_dueno(),
+        a,
+        c.id,
+        None,
+        banner(),
+    )
+    .await
+    .expect("creativo");
+    e.cambiar(a, c.id, AccionCampana::EnviarARevision)
+        .await
+        .expect("envía");
+
+    let creativo_propio = moderacion::moderar_creativo(
+        &e.plataforma,
+        &RelojSistema,
+        &e.ctx_dueno(),
+        cr.id,
+        Decision::Aprobar,
+    )
+    .await;
+    let campana_propia = moderacion::moderar_campana(
+        &e.plataforma,
+        &RelojSistema,
+        &e.ctx_dueno(),
+        c.id,
+        Decision::Aprobar,
+    )
+    .await;
+    let revisor = ContextoPlataforma::de_cuenta(
+        cuenta(&pool).await,
+        [Permiso::PlataformaPublicidadModerar].into_iter().collect(),
+        None,
     );
+    let por_otra = moderacion::moderar_creativo(
+        &e.plataforma,
+        &RelojSistema,
+        &revisor,
+        cr.id,
+        Decision::Aprobar,
+    )
+    .await
+    .expect("otra cuenta modera");
+
+    assert!(matches!(creativo_propio, Err(AppError::Conflicto(_))));
+    assert!(matches!(campana_propia, Err(AppError::Conflicto(_))));
+    assert_eq!(por_otra.revisado_por, revisor.actor_id);
+    // La BD también lo exige.
+    let r = sqlx::query("UPDATE creativos SET revisado_por = cargado_por WHERE id = $1")
+        .bind(cr.id.as_uuid())
+        .execute(&e.owner)
+        .await;
+    assert!(r.is_err());
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn una_entidad_excluida_no_recibe_piezas_y_una_empresa_si(pool: PgPool) {
+    let e = Entorno::new(&pool).await;
+    e.autorizar_ana().await;
+    let a = e.anunciante().await;
+    e.campana_activa(
+        a,
+        ModeloCobro::Cpc,
+        dec!(9000),
+        Segmentacion::default(),
+        banner(),
+    )
+    .await;
+    assert_eq!(e.piezas_ana().await, 1);
+
+    portal::excluir_entidad(
+        &e.plataforma,
+        &RelojSistema,
+        &e.ctx_dueno(),
+        e.tenant,
+        "El contrato no permite publicidad",
+    )
+    .await
+    .expect("excluye");
+    assert_eq!(e.piezas_ana().await, 0);
+    portal::incluir_entidad(&e.plataforma, &e.ctx_dueno(), e.tenant)
+        .await
+        .expect("incluye");
+    assert_eq!(e.piezas_ana().await, 1);
+
+    // Una empresa en el mismo sector: la campaña sin criterios de PH la alcanza; una que exige
+    // estrato, no.
+    let empresa = comun::insertar_entidad(&e.owner, "Oficina").await;
+    sqlx::query(
+        "UPDATE entidades SET estado = 'activa', latitud = 4.651, longitud = -74.06,
+                municipio_dane = '11001' WHERE id = $1",
+    )
+    .bind(empresa.as_uuid())
+    .execute(&e.owner)
+    .await
+    .expect("empresa");
+    let alcanza: bool =
+        sqlx::query_scalar("SELECT campana_alcanza(c.id, $1) FROM campanas c LIMIT 1")
+            .bind(empresa.as_uuid())
+            .fetch_one(&e.owner)
+            .await
+            .expect("alcance");
+    assert!(alcanza);
+    sqlx::query("UPDATE campanas SET seg_estratos = '{4}'")
+        .execute(&e.owner)
+        .await
+        .expect("estrato");
+    let (ph, emp): (bool, bool) = sqlx::query_as(
+        "SELECT campana_alcanza(c.id, $1), campana_alcanza(c.id, $2) FROM campanas c LIMIT 1",
+    )
+    .bind(e.tenant.as_uuid())
+    .bind(empresa.as_uuid())
+    .fetch_one(&e.owner)
+    .await
+    .expect("alcance");
+    assert!(ph && !emp, "el estrato solo lo cumple una PH");
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]

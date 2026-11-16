@@ -1,7 +1,8 @@
-//! Pruebas funcionales de la publicidad de la plataforma (plan 08, fases 3 a 6): un comercio
-//! se registra en el portal, la moderación lo verifica y aprueba su campaña, y solo el
-//! propietario que autorizó la publicidad (frente a la plataforma) ve la pieza, la reporta y
-//! obtiene el cupón; la administración de la PH no puede autorizar por él.
+//! Pruebas funcionales de la publicidad de la plataforma (plan 08, fases 3 a 6; plan 20): el
+//! personal de la plataforma da de alta el comercio y carga su campaña, **otra cuenta** la
+//! modera, y solo el propietario que autorizó la publicidad (frente a la plataforma) ve la pieza,
+//! la reporta y obtiene el cupón, que el comercio redime con su enlace (sin cuenta). La
+//! administración de la PH no puede autorizar por él ni controla la publicidad.
 
 mod comun;
 
@@ -11,16 +12,19 @@ use comun::{MIGRACIONES, Ph, ph};
 use serde_json::{Value, json};
 use sqlx::PgPool;
 
-/// Registra a «rosa» como anunciante, la verifica y publica su ficha. Devuelve (token, id).
-async fn anunciante(p: &Ph) -> (String, String) {
-    p.api.registrar("rosa").await;
-    let rosa = p.api.token("rosa").await;
+/// Personal comercial de la plataforma: carga la pauta (no la modera).
+async fn gestora(p: &Ph) -> String {
+    p.api.operador_con_rol("gestora", "comercial").await
+}
+
+/// La gestora da de alta a «Modistería Rosa» (queda verificada) y publica su ficha.
+async fn comercio(p: &Ph, gestora: &str) -> String {
     let (s, v) = p
         .api
         .pedir(
             Method::POST,
-            "/api/v1/anunciantes",
-            Some(&rosa),
+            "/api/v1/plataforma/publicidad/anunciantes",
+            Some(gestora),
             Some(json!({
                 "organizacion": {
                     "nit": "900123456-8", "razon_social": "Rosa Pérez",
@@ -32,31 +36,21 @@ async fn anunciante(p: &Ph) -> (String, String) {
         )
         .await;
     assert_eq!(s, StatusCode::CREATED, "{v}");
-    assert_eq!(v["estado"], "pendiente");
     let id = v["id"].as_str().expect("id").to_owned();
     let (s, v) = p
         .api
         .pedir(
-            Method::POST,
-            &format!("/api/v1/plataforma/publicidad/anunciantes/{id}/estado"),
-            Some(&p.root),
-            Some(json!({ "estado": "verificado" })),
-        )
-        .await;
-    assert_eq!(s, StatusCode::OK, "{v}");
-    let (s, v) = p
-        .api
-        .pedir(
             Method::PUT,
-            &format!("/api/v1/anunciantes/{id}/ficha"),
-            Some(&rosa),
+            &format!("/api/v1/plataforma/publicidad/anunciantes/{id}/ficha"),
+            Some(gestora),
             Some(json!({ "categorias": ["costura"], "cobertura": "nacional" })),
         )
         .await;
     assert_eq!(s, StatusCode::OK, "{v}");
-    (rosa, id)
+    id
 }
 
+/// Petición a `/plataforma/publicidad…` como el superusuario (modera).
 async fn plataforma(p: &Ph, metodo: Method, ruta: &str, cuerpo: Option<Value>) -> Value {
     let (s, v) = p
         .api
@@ -71,8 +65,9 @@ async fn plataforma(p: &Ph, metodo: Method, ruta: &str, cuerpo: Option<Value>) -
     v
 }
 
-/// Tarifa CPC, política v1, campaña con una oferta con cupón, moderada y activa.
-async fn campana_activa(p: &Ph, rosa: &str, id: &str) -> (String, String) {
+/// Tarifa CPC, campaña con una oferta con cupón cargada por la gestora, moderada por el
+/// superusuario y activa.
+async fn campana_activa(p: &Ph, gestora: &str, id: &str) -> (String, String) {
     let hoy = Utc::now().date_naive();
     plataforma(
         p,
@@ -81,13 +76,13 @@ async fn campana_activa(p: &Ph, rosa: &str, id: &str) -> (String, String) {
         Some(json!({ "modelo": "cpc", "valor": "500", "vigente_desde": hoy })),
     )
     .await;
-    let base = format!("/api/v1/anunciantes/{id}/campanas");
+    let base = format!("/api/v1/plataforma/publicidad/anunciantes/{id}/campanas");
     let (s, c) = p
         .api
         .pedir(
             Method::POST,
             &base,
-            Some(rosa),
+            Some(gestora),
             Some(json!({
                 "nombre": "Noviembre", "objetivo": "cupones", "categoria": "costura",
                 "inicio": Utc::now() - Duration::hours(1), "fin": Utc::now() + Duration::days(20),
@@ -103,7 +98,7 @@ async fn campana_activa(p: &Ph, rosa: &str, id: &str) -> (String, String) {
         .pedir(
             Method::POST,
             &format!("{base}/{campana}/creativos"),
-            Some(rosa),
+            Some(gestora),
             Some(json!({
                 "formato": "oferta_cupon", "titulo": "10 % en arreglos",
                 "texto": "Presente el código en el local",
@@ -118,7 +113,7 @@ async fn campana_activa(p: &Ph, rosa: &str, id: &str) -> (String, String) {
         .pedir(
             Method::POST,
             &format!("{base}/{campana}/estado"),
-            Some(rosa),
+            Some(gestora),
             Some(json!({ "accion": "enviar_a_revision" })),
         )
         .await;
@@ -145,7 +140,7 @@ async fn campana_activa(p: &Ph, rosa: &str, id: &str) -> (String, String) {
         .pedir(
             Method::POST,
             &format!("{base}/{campana}/estado"),
-            Some(rosa),
+            Some(gestora),
             Some(json!({ "accion": "activar" })),
         )
         .await;
@@ -154,12 +149,25 @@ async fn campana_activa(p: &Ph, rosa: &str, id: &str) -> (String, String) {
     (campana, creativo)
 }
 
+async fn autorizar(p: &Ph, token: &str) {
+    let (s, v) = p
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{}/publicidad/autorizacion", p.entidad),
+            Some(token),
+            Some(json!({ "version": 1 })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::NO_CONTENT, "{v}");
+}
+
 #[sqlx::test(migrator = "MIGRACIONES")]
-async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: PgPool) {
+async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_el_comercio_la_redime(pool: PgPool) {
     let p = ph(pool).await;
-    p.habilitar("publicidad").await;
-    let (rosa, id) = anunciante(&p).await;
-    let (campana, creativo) = campana_activa(&p, &rosa, &id).await;
+    let gestora = gestora(&p).await;
+    let id = comercio(&p, &gestora).await;
+    let (campana, creativo) = campana_activa(&p, &gestora, &id).await;
     plataforma(
         &p,
         Method::POST,
@@ -169,7 +177,7 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
     .await;
     p.bien_con_dueno().await;
     let dueno = p.api.token("dueno").await;
-    let piezas = format!("{}/publicidad/piezas", p.base);
+    let piezas = format!("{}/publicidad/piezas", p.entidad);
 
     let (s, v) = p.api.pedir(Method::GET, &piezas, Some(&dueno), None).await;
     assert_eq!(s, StatusCode::OK, "{v}");
@@ -179,7 +187,7 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
         .api
         .pedir(
             Method::GET,
-            &format!("{}/publicidad/autorizacion", p.base),
+            &format!("{}/publicidad/autorizacion", p.entidad),
             Some(&dueno),
             None,
         )
@@ -187,17 +195,7 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v["autorizada"], false);
     assert_eq!(v["politica"]["version"], 1);
-    let (s, v) = p
-        .api
-        .pedir(
-            Method::POST,
-            &format!("{}/publicidad/autorizacion", p.base),
-            Some(&dueno),
-            Some(json!({ "version": 1 })),
-        )
-        .await;
-    assert_eq!(s, StatusCode::NO_CONTENT, "{v}");
-
+    autorizar(&p, &dueno).await;
     let (_, v) = p.api.pedir(Method::GET, &piezas, Some(&dueno), None).await;
     assert_eq!(v[0]["creativo_id"], creativo.as_str());
     assert_eq!(v[0]["tiene_cupon"], true);
@@ -210,7 +208,7 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
         .api
         .pedir(
             Method::POST,
-            &format!("{}/publicidad/creativos/{creativo}/cupon", p.base),
+            &format!("{}/publicidad/creativos/{creativo}/cupon", p.entidad),
             Some(&dueno),
             None,
         )
@@ -218,14 +216,28 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v["codigo"], "ROSA10");
 
+    // El comercio redime con su enlace (sin cuenta); el token se vuelve a consultar igual.
+    let enlace = format!("/api/v1/plataforma/publicidad/anunciantes/{id}/enlace-cupones");
+    let (s, generado) = p
+        .api
+        .pedir(Method::POST, &enlace, Some(&gestora), None)
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{generado}");
+    let (_, vigente) = p
+        .api
+        .pedir(Method::GET, &enlace, Some(&gestora), None)
+        .await;
+    assert_eq!(vigente["token"], generado["token"]);
+    let token = generado["token"].as_str().expect("token");
+    let redimir = "/api/v1/publicidad/cupones/redimir";
+    let (s, _) = p
+        .api
+        .publicar_con_cabecera(redimir, "X-Comercio", "otro", json!({ "codigo": "ROSA10" }))
+        .await;
+    assert_eq!(s, StatusCode::UNAUTHORIZED);
     let (s, v) = p
         .api
-        .pedir(
-            Method::POST,
-            &format!("/api/v1/anunciantes/{id}/cupones/redimir"),
-            Some(&rosa),
-            Some(json!({ "codigo": "ROSA10" })),
-        )
+        .publicar_con_cabecera(redimir, "X-Comercio", token, json!({ "codigo": "ROSA10" }))
         .await;
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v["usos"], 1);
@@ -234,8 +246,8 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
         .api
         .pedir(
             Method::GET,
-            &format!("/api/v1/anunciantes/{id}/campanas/{campana}/metricas"),
-            Some(&rosa),
+            &format!("/api/v1/plataforma/publicidad/anunciantes/{id}/campanas/{campana}/metricas"),
+            Some(&gestora),
             None,
         )
         .await;
@@ -254,7 +266,7 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
         .api
         .pedir(
             Method::POST,
-            &format!("{}/publicidad/creativos/{creativo}/reporte", p.base),
+            &format!("{}/publicidad/creativos/{creativo}/reporte", p.entidad),
             Some(&dueno),
             Some(json!({ "motivo": "No respetaron el descuento" })),
         )
@@ -267,7 +279,7 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_obtiene_el_cupon(pool: 
         .api
         .pedir(
             Method::DELETE,
-            &format!("{}/publicidad/autorizacion", p.base),
+            &format!("{}/publicidad/autorizacion", p.entidad),
             Some(&dueno),
             None,
         )
@@ -303,10 +315,11 @@ async fn la_administracion_de_la_ph_no_autoriza_publicidad_por_el_residente(pool
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
-async fn sin_el_modulo_la_ph_no_muestra_publicidad(pool: PgPool) {
+async fn una_entidad_excluida_por_la_plataforma_no_muestra_publicidad(pool: PgPool) {
     let p = ph(pool).await;
-    let (rosa, id) = anunciante(&p).await;
-    campana_activa(&p, &rosa, &id).await;
+    let gestora = gestora(&p).await;
+    let id = comercio(&p, &gestora).await;
+    campana_activa(&p, &gestora, &id).await;
     plataforma(
         &p,
         Method::POST,
@@ -316,50 +329,160 @@ async fn sin_el_modulo_la_ph_no_muestra_publicidad(pool: PgPool) {
     .await;
     p.bien_con_dueno().await;
     let dueno = p.api.token("dueno").await;
-    p.api
-        .pedir(
-            Method::POST,
-            &format!("{}/publicidad/autorizacion", p.base),
-            Some(&dueno),
-            Some(json!({ "version": 1 })),
-        )
-        .await;
+    autorizar(&p, &dueno).await;
+    let piezas = format!("{}/publicidad/piezas", p.entidad);
+    let (_, v) = p.api.pedir(Method::GET, &piezas, Some(&dueno), None).await;
+    assert_eq!(
+        v.as_array().map(Vec::len),
+        Some(1),
+        "sin habilitar nada: {v}"
+    );
 
     let (s, v) = p
         .api
         .pedir(
+            Method::POST,
+            "/api/v1/plataforma/publicidad/exclusiones",
+            Some(&gestora),
+            Some(json!({ "entidad_id": p.id, "motivo": "El contrato no permite publicidad" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+
+    let (s, v) = p.api.pedir(Method::GET, &piezas, Some(&dueno), None).await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v, json!([]));
+    let (_, capacidades) = p
+        .api
+        .pedir(
             Method::GET,
-            &format!("{}/publicidad/piezas", p.base),
-            Some(&dueno),
+            &format!("{}/capacidades", p.entidad),
+            Some(&p.admin),
             None,
         )
         .await;
-
-    assert_eq!(s, StatusCode::OK, "{v}");
-    assert_eq!(v, json!([]));
+    assert!(
+        !capacidades["modulos"]
+            .as_array()
+            .expect("módulos")
+            .iter()
+            .any(|m| m == "publicidad"),
+        "la publicidad no es un módulo"
+    );
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
-async fn otra_cuenta_no_ve_el_portal_de_un_anunciante(pool: PgPool) {
+async fn sin_permiso_de_gestion_no_se_ven_las_campanas_de_un_comercio(pool: PgPool) {
     let p = ph(pool).await;
-    let (_, id) = anunciante(&p).await;
-    p.api.registrar("curioso").await;
-    let curioso = p.api.token("curioso").await;
+    let gestora = gestora(&p).await;
+    let id = comercio(&p, &gestora).await;
+    let soporte = p.api.operador_con_rol("curioso", "soporte").await;
 
     let (s, v) = p
         .api
         .pedir(
             Method::GET,
-            &format!("/api/v1/anunciantes/{id}/leads"),
-            Some(&curioso),
+            &format!("/api/v1/plataforma/publicidad/anunciantes/{id}/leads"),
+            Some(&soporte),
             None,
         )
         .await;
 
-    assert_eq!(s, StatusCode::NOT_FOUND, "{v}");
+    assert_eq!(s, StatusCode::FORBIDDEN, "{v}");
+    let (s, _) = p
+        .api
+        .pedir(Method::GET, "/api/v1/anunciantes", Some(&gestora), None)
+        .await;
+    assert_eq!(
+        s,
+        StatusCode::NOT_FOUND,
+        "el portal del anunciante ya no existe"
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_empleado_de_una_empresa_que_autorizo_ve_el_directorio_y_las_piezas(pool: PgPool) {
+    let p = ph(pool).await;
+    let gestora = gestora(&p).await;
+    let id = comercio(&p, &gestora).await;
+    campana_activa(&p, &gestora, &id).await;
+    plataforma(
+        &p,
+        Method::POST,
+        "/politica",
+        Some(json!({ "texto": "Política de publicidad" })),
+    )
+    .await;
+    // Empresa con su administrador nuevo; él crea a su empleada.
     let (s, v) = p
         .api
-        .pedir(Method::GET, "/api/v1/anunciantes", Some(&curioso), None)
+        .pedir(
+            Method::POST,
+            "/api/v1/plataforma/entidades",
+            Some(&p.root),
+            Some(json!({ "nombre": "Oficina Central",
+                         "administrador": { "nombre": "Gerente", "correo": "gerente@oficina.co" } })),
+        )
         .await;
-    assert_eq!((s, v), (StatusCode::OK, json!([])));
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    let empresa = format!("/api/v1/entidades/{}", v["id"].as_str().expect("id"));
+    p.api.definir_contrasena("gerente@oficina.co").await;
+    let gerente = p.api.token("gerente@oficina.co").await;
+    let (_, roles) = p
+        .api
+        .pedir(
+            Method::GET,
+            &format!("{empresa}/roles"),
+            Some(&gerente),
+            None,
+        )
+        .await;
+    let asistente = roles
+        .as_array()
+        .expect("roles")
+        .iter()
+        .find(|r| r["codigo"] == "asistente_administrativo")
+        .and_then(|r| r["id"].as_str())
+        .expect("rol")
+        .to_owned();
+    let (s, v) = p
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{empresa}/usuarios"),
+            Some(&gerente),
+            Some(json!({ "nombre": "Eva", "correo": "eva@oficina.co", "rol_id": asistente })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    p.api.definir_contrasena("eva@oficina.co").await;
+    let eva = p.api.token("eva@oficina.co").await;
+
+    let (s, directorio) = p
+        .api
+        .pedir(
+            Method::GET,
+            &format!("{empresa}/directorio"),
+            Some(&eva),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{directorio}");
+    assert_eq!(directorio["datos"][0]["anunciante_id"], id.as_str());
+    let piezas = format!("{empresa}/publicidad/piezas");
+    let (_, v) = p.api.pedir(Method::GET, &piezas, Some(&eva), None).await;
+    assert_eq!(v, json!([]), "sin autorización no hay piezas");
+    let (s, v) = p
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{empresa}/publicidad/autorizacion"),
+            Some(&eva),
+            Some(json!({ "version": 1 })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::NO_CONTENT, "{v}");
+    let (s, v) = p.api.pedir(Method::GET, &piezas, Some(&eva), None).await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v.as_array().map(Vec::len), Some(1), "{v}");
 }

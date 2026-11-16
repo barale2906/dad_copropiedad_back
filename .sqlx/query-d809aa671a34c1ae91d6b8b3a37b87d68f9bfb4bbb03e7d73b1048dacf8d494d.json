@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE campanas SET nombre = $2, objetivo = $3, categoria = $4, inicio = $5,\n                 fin = $6, modelo = $7, presupuesto_total = $8, presupuesto_diario = $9,\n                 tarifa = $10, seg_radio_km = $11, seg_municipios = $12, seg_tipos = $13,\n                 seg_bienes_min = $14, seg_bienes_max = $15, seg_estratos = $16,\n                 conflicto_interes = $17, estado = $18, motivo_estado = $19, revisada_por = $20,\n                 revisada_en = $21, actualizada_en = $22, seg_tipos_entidad = $23,\n                 editada_por = $24\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Int2",
+        "TextArray",
+        "TextArray",
+        "Int4",
+        "Int4",
+        "Int2Array",
+        "Bool",
+        "Text",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "TextArray",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d809aa671a34c1ae91d6b8b3a37b87d68f9bfb4bbb03e7d73b1048dacf8d494d"
+}

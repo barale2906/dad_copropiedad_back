@@ -6,7 +6,8 @@
 //! Las copropiedades se llaman `Carga NNN` y sus administradores `carga_admin_NNN`. Las personas
 //! no tienen teléfono ni correo: la siembra no envía mensajes a nadie. Se ejecuta **solo en un
 //! entorno de prueba** (ver `docs/despliegue.md` §9): los datos no se pueden borrar después
-//! (auditoría y votos son append-only).
+//! (auditoría y votos son append-only). Ese entorno lleva `REGISTRO_ABIERTO=true`: los
+//! administradores de prueba se crean con `/auth/registro` (cerrado en producción).
 
 use std::{sync::Arc, time::Duration};
 

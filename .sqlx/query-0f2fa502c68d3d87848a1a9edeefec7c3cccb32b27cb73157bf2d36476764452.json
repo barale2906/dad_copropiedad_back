@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT destino_cobro, item_facturacion_id FROM recursos WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "destino_cobro",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "destino_cobro"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "item_facturacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "item_facturacion_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true
+    ]
+  },
+  "hash": "0f2fa502c68d3d87848a1a9edeefec7c3cccb32b27cb73157bf2d36476764452"
+}
