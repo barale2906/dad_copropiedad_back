@@ -1091,11 +1091,36 @@ impl CargaQr {
     }
 }
 
+/// Documento de identidad para la portería: solo sus cuatro últimos caracteres (`****5678`).
+/// Basta para distinguir homónimos sin exponer el número completo a quien no tiene
+/// `personas.ver` (Ley 1581: minimizar el dato). Con cuatro caracteres o menos no muestra nada.
+pub fn documento_enmascarado(documento: &str) -> String {
+    let caracteres: Vec<char> = documento.chars().filter(|c| !c.is_whitespace()).collect();
+    if caracteres.len() <= 4 {
+        return "****".into();
+    }
+    let ultimos: String = caracteres[caracteres.len() - 4..].iter().collect();
+    format!("****{ultimos}")
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
 
     use super::*;
+
+    #[test]
+    fn el_documento_de_la_porteria_solo_muestra_los_cuatro_ultimos() {
+        assert_eq!(documento_enmascarado("52123456"), "****3456");
+        assert_eq!(documento_enmascarado("1 020 304 050"), "****4050");
+        assert_eq!(documento_enmascarado("PA-12345X"), "****345X");
+    }
+
+    #[test]
+    fn un_documento_corto_no_se_muestra() {
+        assert_eq!(documento_enmascarado("1234"), "****");
+        assert_eq!(documento_enmascarado(""), "****");
+    }
 
     fn p(n: u128) -> PersonaId {
         PersonaId::from_uuid(uuid::Uuid::from_u128(n))

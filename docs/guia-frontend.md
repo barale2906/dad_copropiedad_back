@@ -536,6 +536,12 @@ confirmación clara del voto registrado.
 - Minuta (append-only), bitácora de eventos, puntos de acceso, puentes y dispositivos,
   credenciales (`TipoCredencial`, nunca vuelve el valor en claro), autorizaciones manuales y
   consentimiento biométrico (facultativo, siempre con método alterno).
+- **Elegir el bien o la persona desde la portería**: `GET …/acceso/bienes?q=` (con
+  `acceso.registrar`; solo `id` y `codigo` de los bienes activos) para anunciar y recibir, y
+  `GET …/acceso/personas?q=` (con `acceso.credenciales.gestionar` o `acceso.biometria.enrolar`;
+  `nombre` y `documento` enmascarado `****3456`, mínimo 2 caracteres) para credenciales y
+  biometría. Las plantillas `vigilante` y `supervisor_seguridad` no traen `bienes_privados.ver`
+  ni `personas.ver`: use estas rutas en la portería, no `…/bienes-privados` ni `…/personas`.
 
 ### Protección de datos (`proteccion_datos`)
 Política versionada; la persona autoriza por **finalidad** bajo la política vigente y puede

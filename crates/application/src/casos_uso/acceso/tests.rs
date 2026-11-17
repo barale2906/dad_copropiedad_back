@@ -14,6 +14,7 @@ use domain::{
 use rust_decimal::dec;
 
 use super::{
+    busquedas,
     correspondencia::{self as corr, NuevaCorrespondencia, NuevaEntrega, QuienRecogeEntrada},
     credenciales::{self as cred, NuevaCredencial, NuevoConsentimiento},
     porteria, puentes,
@@ -1683,4 +1684,138 @@ async fn la_porteria_recibe_push_cuando_un_residente_decide() {
     assert_eq!(p.len(), 1);
     assert_eq!(p[0].datos["estado"], "rechazada");
     assert!(p[0].titulo.starts_with("Visita rechazada"));
+}
+
+// ---------------------------------------------------------------------------------------------
+// Búsquedas de la portería
+// ---------------------------------------------------------------------------------------------
+
+impl Entorno {
+    fn supervisor(&self, permiso: Permiso) -> Contexto {
+        Contexto::de_cuenta(
+            self.tenant,
+            CuentaId::nuevo(),
+            [permiso].into_iter().collect(),
+        )
+    }
+}
+
+#[tokio::test]
+async fn la_porteria_busca_bienes_por_codigo_sin_ver_su_ficha() {
+    let e = entorno();
+    let inactivo = BienPrivadoId::nuevo();
+    e.unidad.con_datos(|d| {
+        let mut b = d.bienes.get(&e.bien).cloned().expect("bien");
+        b.id = inactivo;
+        b.codigo = CodigoBienPrivado::new("T1-102").expect("código");
+        b.activo = false;
+        d.bienes.insert(inactivo, b);
+    });
+
+    let r = busquedas::buscar_bienes(
+        &e.unidad,
+        &RelojFijo(t0()),
+        &e.porteria(),
+        Some(" t1-1 ".into()),
+        SolicitudPagina::default(),
+    )
+    .await
+    .expect("buscar");
+
+    assert_eq!(
+        r.datos,
+        vec![busquedas::BienPorteria {
+            id: e.bien,
+            codigo: "T1-101".into()
+        }],
+        "solo los activos y solo id y código"
+    );
+}
+
+#[tokio::test]
+async fn buscar_bienes_exige_registrar_en_la_porteria_y_el_modulo() {
+    let e = entorno();
+    let sin = busquedas::buscar_bienes(
+        &e.unidad,
+        &RelojFijo(t0()),
+        &e.residente(e.cuenta_responsable),
+        None,
+        SolicitudPagina::default(),
+    )
+    .await;
+    assert!(matches!(sin, Err(AppError::SinPermiso(_))));
+
+    e.unidad.con_datos(|d| d.modulos.clear());
+    let sin_modulo = busquedas::buscar_bienes(
+        &e.unidad,
+        &RelojFijo(t0()),
+        &e.porteria(),
+        None,
+        SolicitudPagina::default(),
+    )
+    .await;
+    assert!(matches!(
+        sin_modulo,
+        Err(AppError::ModuloNoHabilitado(Modulo::ControlAcceso))
+    ));
+}
+
+#[tokio::test]
+async fn el_supervisor_busca_personas_con_el_documento_enmascarado() {
+    let e = entorno();
+    e.unidad.con_datos(|d| {
+        let rita = d
+            .personas
+            .iter_mut()
+            .find(|p| p.id == e.responsable)
+            .expect("rita");
+        rita.documento = Some(domain::Documento::new("52123456").expect("documento"));
+    });
+
+    for permiso in [
+        Permiso::AccesoCredencialesGestionar,
+        Permiso::AccesoBiometriaEnrolar,
+    ] {
+        let r = busquedas::buscar_personas(
+            &e.unidad,
+            &RelojFijo(t0()),
+            &e.supervisor(permiso),
+            "rita",
+            SolicitudPagina::default(),
+        )
+        .await
+        .expect("buscar");
+        assert_eq!(
+            r.datos,
+            vec![busquedas::PersonaPorteria {
+                id: e.responsable,
+                nombre: "Rita Responsable".into(),
+                documento: Some("****3456".into()),
+            }]
+        );
+    }
+}
+
+#[tokio::test]
+async fn buscar_personas_exige_permiso_y_al_menos_dos_caracteres() {
+    let e = entorno();
+    let vigilante = busquedas::buscar_personas(
+        &e.unidad,
+        &RelojFijo(t0()),
+        &e.porteria(),
+        "rita",
+        SolicitudPagina::default(),
+    )
+    .await;
+    assert!(matches!(vigilante, Err(AppError::SinPermiso(_))));
+
+    let corto = busquedas::buscar_personas(
+        &e.unidad,
+        &RelojFijo(t0()),
+        &e.supervisor(Permiso::AccesoCredencialesGestionar),
+        " r ",
+        SolicitudPagina::default(),
+    )
+    .await;
+    assert!(matches!(corto, Err(AppError::Validacion(_))));
 }

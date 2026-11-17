@@ -3,6 +3,8 @@
 //!
 //! - `/visitas`: anunciar, pre-autorizar (QR), decidir, llamar, ingreso y salida ([`visitas`]).
 //! - `/correspondencia`: recibir, entregar con firma o foto, devolver ([`correspondencia`]).
+//! - `/acceso/bienes`, `/acceso/personas`: lo mínimo para elegir el bien o la persona sin
+//!   `bienes_privados.ver` ni `personas.ver` ([`busquedas`]).
 //! - `/acceso/configuracion`, `/acceso/alertas`, `/acceso/costo-avisos`, `/minuta`,
 //!   `/eventos-acceso` ([`porteria`]).
 //! - `/puntos-acceso`, `/puentes`, `/dispositivos-acceso` ([`infraestructura`]).
@@ -15,6 +17,7 @@
 //! Los archivos (firma, fotos, adjuntos) viajan en Base64 dentro del JSON: la portería los toma
 //! con la cámara de la tablet y la cuenta del vigilante no necesita `archivos.subir`.
 
+mod busquedas;
 mod correspondencia;
 mod credenciales;
 mod dto;
@@ -38,6 +41,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(visitas::rutas())
         .merge(correspondencia::rutas())
         .merge(porteria::rutas())
+        .merge(busquedas::rutas())
         .merge(infraestructura::rutas())
         .merge(credenciales::rutas())
         .layer(DefaultBodyLimit::max(LIMITE_CUERPO))

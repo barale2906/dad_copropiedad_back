@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-641 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+643 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -30,7 +30,7 @@ sesión de persona.
 - [mantenimiento](#mantenimiento) (22): Inventario de activos con hoja de vida, planes preventivos, órdenes de trabajo y obligaciones periódicas (módulo `gestion_administrativa`)
 - [importaciones](#importaciones) (4): Importación masiva desde CSV/XLSX con vista previa
 - [asambleas](#asambleas) (52): Asambleas y votaciones (Ley 675, arts. 37–49): convocatoria con padrón y constancias, mesa de registro asistido, poderes, morosos, quórum en vivo, preguntas (sí/no, selección, elección por cociente), voto del asistente por todos sus bienes, acta en PDF, reportes y papeleta virtual
-- [acceso](#acceso) (50): Control de acceso (plan 05): visitas con aviso al primer respondiente y escalamiento (2 min a todos los residentes, 5 min llamada), pre-autorizaciones con QR firmado, correspondencia con avisos cada 24 h y entrega con firma o foto, minuta, bitácora, credenciales, autorizaciones, biometría con consentimiento y la API de los puentes (`/api/v1/puentes`)
+- [acceso](#acceso) (52): Control de acceso (plan 05): visitas con aviso al primer respondiente y escalamiento (2 min a todos los residentes, 5 min llamada), pre-autorizaciones con QR firmado, correspondencia con avisos cada 24 h y entrega con firma o foto, minuta, bitácora, credenciales, autorizaciones, biometría con consentimiento y la API de los puentes (`/api/v1/puentes`)
 - [proteccion_datos](#proteccion-datos) (13): Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
 - [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
@@ -463,6 +463,8 @@ Control de acceso (plan 05): visitas con aviso al primer respondiente y escalami
 | POST | `/copropiedades/{copropiedad_id}/minuta` | Registra una novedad (append-only) con sus adjuntos. | `acceso.minuta.registrar` | `NovedadPeticion` | 201 `NovedadRespuesta` | 403, 422 |
 | GET | `/copropiedades/{copropiedad_id}/eventos-acceso` | Bitácora de eventos de acceso (portería y puentes), más recientes primero. | `acceso.bitacora.ver` |  | 200 `PaginaRespuesta_EventoAccesoRespuesta` | 403 |
 | POST | `/copropiedades/{copropiedad_id}/eventos-acceso` | Registra un evento manual en la bitácora (apertura del vigilante, novedad en un punto). | `acceso.registrar` | `EventoManualPeticion` | 201 `EventoAccesoRespuesta` | 403 |
+| GET | `/copropiedades/{copropiedad_id}/acceso/bienes` | Bienes privados activos por código, para anunciar visitas y recibir correspondencia. | `acceso.registrar` |  | 200 `PaginaRespuesta_BienPorteriaRespuesta` | 403 |
+| GET | `/copropiedades/{copropiedad_id}/acceso/personas` | Personas por nombre o documento, para emitir credenciales o registrar el consentimiento biométrico. Exige al menos 2 caracteres. | `acceso.credenciales.gestionar` `acceso.biometria.enrolar` |  | 200 `PaginaRespuesta_PersonaPorteriaRespuesta` | 403, 422 |
 | GET | `/copropiedades/{copropiedad_id}/puntos-acceso` | Puntos de acceso de la copropiedad. | `acceso.registrar` `acceso.configurar` |  | 200 `[PuntoDto]` | 403 |
 | POST | `/copropiedades/{copropiedad_id}/puntos-acceso` | Crea un punto de acceso. | `acceso.configurar` | `PuntoDto` | 201 `PuntoDto` | 403, 409 |
 | PUT | `/copropiedades/{copropiedad_id}/puntos-acceso/{punto_id}` | Edita un punto de acceso. | `acceso.configurar` | `PuntoDto` | 200 `PuntoDto` | 403 |
