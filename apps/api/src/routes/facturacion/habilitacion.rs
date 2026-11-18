@@ -42,6 +42,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 
 /// Certificado de firma activo (sin secretos).
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = CertificadoFirmaRespuesta)]
 pub struct CertificadoRespuesta {
     pub id: Uuid,
     /// Titular (RFC 2253).

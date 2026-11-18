@@ -119,6 +119,7 @@ impl TryFrom<ProductoPeticion> for DatosProducto {
 
 /// Tarifa de un producto desde una fecha.
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[schema(as = TarifaCobroDto)]
 pub struct TarifaDto {
     #[schema(value_type = crate::esquemas::ModeloTarifa)]
     pub modelo: String,
@@ -197,6 +198,7 @@ pub struct SuscripcionPeticion {
 
 /// Línea (producto contratado).
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = LineaSuscripcionRespuesta)]
 pub struct LineaRespuesta {
     pub id: Uuid,
     pub producto_id: Uuid,
@@ -305,6 +307,7 @@ pub struct CambiosSuscripcionPeticion {
 
 /// Línea nueva.
 #[derive(Debug, Deserialize, ToSchema)]
+#[schema(as = LineaSuscripcionPeticion)]
 pub struct LineaPeticion {
     pub producto_id: Uuid,
     pub desde: NaiveDate,

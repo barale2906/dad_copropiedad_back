@@ -175,6 +175,7 @@ pub struct VerificarPeticion {
 
 /// Resultado de la verificación.
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = VerificacionCredencialRespuesta)]
 pub struct VerificacionRespuesta {
     /// `permitido` o `denegado`.
     #[schema(example = "permitido")]

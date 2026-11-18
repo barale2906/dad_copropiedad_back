@@ -215,8 +215,27 @@ async fn reportar_dano_orden_correctiva_verificada_resuelve_y_se_califica(pool: 
         (StatusCode::OK, &json!("ejecutada")),
         "{v}"
     );
-    let (s, v) = avance(json!({ "accion": "verificar", "aprobada": true,
-                                 "observacion": "Sin ruido", "resolver_ticket": true }))
+    assert!(
+        v["ejecutada_por"].is_string(),
+        "se guarda quién ejecutó: {v}"
+    );
+    let verificar = json!({ "accion": "verificar", "aprobada": true,
+                            "observacion": "Sin ruido", "resolver_ticket": true });
+    // Cuatro ojos: quien ejecutó no verifica, aunque tenga el permiso.
+    let (s, v) = avance(verificar.clone()).await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::CONFLICT, &json!("conflicto")),
+        "{v}"
+    );
+    let revisor = con_rol(&ph, "revisor", "asistente_administrativo").await;
+    let (s, v) = como(
+        &ph,
+        &revisor,
+        Method::POST,
+        &format!("/ordenes-trabajo/{id_orden}/avance"),
+        Some(verificar),
+    )
     .await;
     assert_eq!(
         (s, &v["estado"]),

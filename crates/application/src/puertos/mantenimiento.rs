@@ -98,6 +98,8 @@ pub struct OrdenTrabajo {
     pub firma_archivo_id: Option<ArchivoId>,
     pub iniciada_en: Option<DateTime<Utc>>,
     pub ejecutada_en: Option<DateTime<Utc>>,
+    /// Cuenta que registró la ejecución: no puede verificarla (cuatro ojos).
+    pub ejecutada_por: Option<CuentaId>,
     pub verificada_en: Option<DateTime<Utc>>,
     pub verificada_por: Option<CuentaId>,
     pub creado_en: DateTime<Utc>,

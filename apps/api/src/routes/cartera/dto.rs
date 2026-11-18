@@ -87,6 +87,7 @@ impl From<ModuloContribucion> for ModuloContribucionRespuesta {
 
 /// Valor mensual de un concepto para un tipo de bien.
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[schema(as = TarifaCarteraDto)]
 pub struct TarifaDto {
     #[schema(value_type = crate::esquemas::TipoBienPrivado)]
     pub tipo_bien: TipoBienPrivado,
@@ -525,6 +526,7 @@ pub struct PeriodoPeticion {
 
 /// Anulación con motivo.
 #[derive(Debug, Deserialize, ToSchema)]
+#[schema(as = MotivoCarteraPeticion)]
 pub struct MotivoPeticion {
     #[schema(example = "Se liquidó con el presupuesto equivocado")]
     pub motivo: String,
@@ -613,6 +615,7 @@ impl From<VistaLiquidacion> for VistaLiquidacionRespuesta {
 
 /// Liquidación de expensas.
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = LiquidacionCarteraRespuesta)]
 pub struct LiquidacionRespuesta {
     pub id: Uuid,
     pub periodo: NaiveDate,

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, anio, consecutivo, origen, tipo, plan_id, ticket_id, activo_id, ubicacion,\n                    descripcion, asignado_cuenta_id, asignado_organizacion_id, programada_para,\n                    estado, checklist, costo_mano_obra, costo_repuestos, observaciones,\n                    recibido_por, firma_archivo_id, iniciada_en, ejecutada_en, verificada_en,\n                    verificada_por, creado_en, actualizado_en\n             FROM ordenes_trabajo\n             WHERE ($1::text IS NULL OR estado = $1)\n               AND ($2::uuid IS NULL OR activo_id = $2)\n               AND ($3::uuid IS NULL OR ticket_id = $3)\n               AND (NOT $4 OR asignado_cuenta_id = $5 OR asignado_organizacion_id = ANY($6))\n               AND ($7::date IS NULL OR (programada_para < $7\n                                          AND estado IN ('programada', 'en_ejecucion')))\n               AND ($8::uuid IS NULL OR id < $8)\n             ORDER BY id DESC\n             LIMIT $9",
+  "query": "SELECT id, anio, consecutivo, origen, tipo, plan_id, ticket_id, activo_id, ubicacion,\n                    descripcion, asignado_cuenta_id, asignado_organizacion_id, programada_para,\n                    estado, checklist, costo_mano_obra, costo_repuestos, observaciones,\n                    recibido_por, firma_archivo_id, iniciada_en, ejecutada_en, ejecutada_por,\n                    verificada_en, verificada_por, creado_en, actualizado_en\n             FROM ordenes_trabajo\n             WHERE ($1::text IS NULL OR estado = $1)\n               AND ($2::uuid IS NULL OR activo_id = $2)\n               AND ($3::uuid IS NULL OR ticket_id = $3)\n               AND (NOT $4 OR asignado_cuenta_id = $5 OR asignado_organizacion_id = ANY($6))\n               AND ($7::date IS NULL OR (programada_para < $7\n                                          AND estado IN ('programada', 'en_ejecucion')))\n               AND ($8::uuid IS NULL OR id < $8)\n             ORDER BY id DESC\n             LIMIT $9",
   "describe": {
     "columns": [
       {
@@ -247,6 +247,17 @@
       },
       {
         "ordinal": 22,
+        "name": "ejecutada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "ordenes_trabajo",
+            "name": "ejecutada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
         "name": "verificada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -257,7 +268,7 @@
         }
       },
       {
-        "ordinal": 23,
+        "ordinal": 24,
         "name": "verificada_por",
         "type_info": "Uuid",
         "origin": {
@@ -268,7 +279,7 @@
         }
       },
       {
-        "ordinal": 24,
+        "ordinal": 25,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -279,7 +290,7 @@
         }
       },
       {
-        "ordinal": 25,
+        "ordinal": 26,
         "name": "actualizado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -328,9 +339,10 @@
       true,
       true,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "dd292884cc4f60060aad77b390e993fb7a11f36f9372a712061790baf3d55df4"
+  "hash": "1fddd1b4ea1d09f9adb6bae1f4fe91636af749346121ef4b37dfb3810193e2d2"
 }

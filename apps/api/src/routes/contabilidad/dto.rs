@@ -732,6 +732,7 @@ pub struct DecisionReaperturaPeticion {
 
 /// Línea de un asiento.
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = LineaAsientoRespuesta)]
 pub struct LineaRespuesta {
     pub cuenta_id: Uuid,
     pub persona_id: Option<Uuid>,
@@ -761,6 +762,7 @@ impl From<&LineaAsiento> for LineaRespuesta {
 
 /// Línea de entrada (por códigos).
 #[derive(Debug, Deserialize, ToSchema)]
+#[schema(as = LineaAsientoPeticion)]
 pub struct LineaPeticion {
     #[schema(example = "110505")]
     pub cuenta: String,
@@ -894,6 +896,7 @@ pub struct ImportePeticion {
 
 /// Documento origen para previsualizar su asiento con la regla vigente.
 #[derive(Debug, Deserialize, ToSchema)]
+#[schema(as = DocumentoContablePeticion)]
 pub struct DocumentoPeticion {
     #[schema(example = "ventas.factura")]
     pub evento: String,
@@ -964,6 +967,7 @@ impl From<FilaSaldo> for FilaSaldoRespuesta {
 
 /// Movimiento del libro mayor.
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = MovimientoContableRespuesta)]
 pub struct MovimientoRespuesta {
     pub comprobante_id: Uuid,
     pub tipo: String,

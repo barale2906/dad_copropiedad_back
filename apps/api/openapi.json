@@ -6690,7 +6690,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TarifaDto"
+                "$ref": "#/components/schemas/TarifaCobroDto"
               }
             }
           },
@@ -6702,7 +6702,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TarifaDto"
+                  "$ref": "#/components/schemas/TarifaCobroDto"
                 }
               }
             }
@@ -7075,7 +7075,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LineaPeticion"
+                "$ref": "#/components/schemas/LineaSuscripcionPeticion"
               }
             }
           },
@@ -7087,7 +7087,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LineaRespuesta"
+                  "$ref": "#/components/schemas/LineaSuscripcionRespuesta"
                 }
               }
             }
@@ -13798,7 +13798,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/LiquidacionRespuesta"
+                    "$ref": "#/components/schemas/LiquidacionCarteraRespuesta"
                   }
                 }
               }
@@ -14049,7 +14049,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MotivoPeticion"
+                "$ref": "#/components/schemas/MotivoCarteraPeticion"
               }
             }
           },
@@ -14061,7 +14061,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LiquidacionRespuesta"
+                  "$ref": "#/components/schemas/LiquidacionCarteraRespuesta"
                 }
               }
             }
@@ -14573,7 +14573,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MotivoPeticion"
+                "$ref": "#/components/schemas/MotivoCarteraPeticion"
               }
             }
           },
@@ -14870,7 +14870,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MotivoPeticion"
+                "$ref": "#/components/schemas/MotivoCarteraPeticion"
               }
             }
           },
@@ -15801,7 +15801,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MotivoPeticion"
+                "$ref": "#/components/schemas/MotivoCarteraPeticion"
               }
             }
           },
@@ -20419,7 +20419,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MotivoPeticion"
+                "$ref": "#/components/schemas/MotivoReservaPeticion"
               }
             }
           },
@@ -20517,7 +20517,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/MotivoPeticion"
+                "$ref": "#/components/schemas/MotivoReservaPeticion"
               }
             }
           },
@@ -25305,7 +25305,7 @@
             }
           },
           "409": {
-            "description": "Transición no permitida (`conflicto_estado`)",
+            "description": "Transición no permitida (`conflicto_estado`) o quien la ejecutó intenta verificarla (`conflicto`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25530,7 +25530,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ObligacionRespuesta"
+                    "$ref": "#/components/schemas/ObligacionMantenimientoRespuesta"
                   }
                 }
               }
@@ -25607,7 +25607,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ObligacionRespuesta"
+                  "$ref": "#/components/schemas/ObligacionMantenimientoRespuesta"
                 }
               }
             }
@@ -25715,7 +25715,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ObligacionRespuesta"
+                  "$ref": "#/components/schemas/ObligacionMantenimientoRespuesta"
                 }
               }
             }
@@ -25882,7 +25882,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ObligacionRespuesta"
+                  "$ref": "#/components/schemas/ObligacionMantenimientoRespuesta"
                 }
               }
             }
@@ -30487,7 +30487,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MorososRespuesta"
+                  "$ref": "#/components/schemas/MorososAsambleaRespuesta"
                 }
               }
             }
@@ -30591,7 +30591,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MorososRespuesta"
+                  "$ref": "#/components/schemas/MorososAsambleaRespuesta"
                 }
               }
             }
@@ -36289,7 +36289,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VerificacionRespuesta"
+                  "$ref": "#/components/schemas/VerificacionCredencialRespuesta"
                 }
               }
             }
@@ -44845,7 +44845,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DocumentoPeticion"
+                "$ref": "#/components/schemas/DocumentoContablePeticion"
               }
             }
           },
@@ -47230,7 +47230,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CertificadoRespuesta"
+                  "$ref": "#/components/schemas/CertificadoRetencionRespuesta"
                 }
               }
             }
@@ -50624,7 +50624,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NotaCreditoPeticion"
+                "$ref": "#/components/schemas/NotaCreditoVentaPeticion"
               }
             }
           },
@@ -50820,7 +50820,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NotaCreditoPeticion"
+                "$ref": "#/components/schemas/NotaCreditoVentaPeticion"
               }
             }
           },
@@ -51678,7 +51678,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RechazoPeticion"
+                "$ref": "#/components/schemas/RechazoDocumentoPeticion"
               }
             }
           },
@@ -52552,7 +52552,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CertificadoRespuesta"
+                  "$ref": "#/components/schemas/CertificadoFirmaRespuesta"
                 }
               }
             }
@@ -53659,7 +53659,7 @@
           "obligaciones": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ObligacionRespuesta"
+              "$ref": "#/components/schemas/ObligacionMantenimientoRespuesta"
             },
             "description": "Obligaciones vencidas o dentro de su ventana de alerta."
           },
@@ -54098,7 +54098,7 @@
           "lineas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LineaRespuesta"
+              "$ref": "#/components/schemas/LineaAsientoRespuesta"
             }
           }
         }
@@ -55101,7 +55101,7 @@
           "lineas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LineaPeticion"
+              "$ref": "#/components/schemas/LineaAsientoPeticion"
             }
           }
         }
@@ -55253,7 +55253,7 @@
           "tarifas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TarifaDto"
+              "$ref": "#/components/schemas/TarifaCarteraDto"
             }
           },
           "genera_interes": {
@@ -56958,6 +56958,48 @@
           }
         }
       },
+      "CertificadoFirmaRespuesta": {
+        "type": "object",
+        "description": "Certificado de firma activo (sin secretos).",
+        "required": [
+          "id",
+          "sujeto",
+          "emisor",
+          "serial",
+          "vigente_desde",
+          "vigente_hasta",
+          "por_vencer"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sujeto": {
+            "type": "string",
+            "description": "Titular (RFC 2253)."
+          },
+          "emisor": {
+            "type": "string",
+            "description": "Entidad de certificación (RFC 2253)."
+          },
+          "serial": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vigente_hasta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "por_vencer": {
+            "type": "boolean",
+            "description": "Vence en menos de 30 días (o ya venció): cargue uno nuevo."
+          }
+        }
+      },
       "CertificadoPeticion": {
         "type": "object",
         "description": "Certificado de firma (`.p12`) en Base64 con su contraseña.",
@@ -57018,6 +57060,60 @@
           "emitido_en": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "CertificadoRetencionRespuesta": {
+        "type": "object",
+        "description": "Certificado de retenciones de un tercero.",
+        "required": [
+          "entidad",
+          "tercero",
+          "desde",
+          "hasta",
+          "filas",
+          "total_base",
+          "total_retenido"
+        ],
+        "properties": {
+          "entidad": {
+            "type": "string"
+          },
+          "entidad_nit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tercero": {
+            "type": "string"
+          },
+          "tercero_documento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Dato personal si el tercero es persona natural."
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "filas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaCertificadoRespuesta"
+            }
+          },
+          "total_base": {
+            "type": "string"
+          },
+          "total_retenido": {
+            "type": "string"
           }
         }
       },
@@ -57435,7 +57531,7 @@
           "lineas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LineaRespuesta"
+              "$ref": "#/components/schemas/LineaAsientoRespuesta"
             },
             "description": "Vacío en los listados."
           },
@@ -57681,7 +57777,7 @@
           "tarifas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TarifaDto"
+              "$ref": "#/components/schemas/TarifaCarteraDto"
             }
           },
           "genera_interes": {
@@ -60426,7 +60522,7 @@
         ],
         "properties": {
           "liquidacion": {
-            "$ref": "#/components/schemas/LiquidacionRespuesta"
+            "$ref": "#/components/schemas/LiquidacionCarteraRespuesta"
           },
           "obligaciones": {
             "type": "array",
@@ -60556,7 +60652,7 @@
           "lineas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LineaRespuesta"
+              "$ref": "#/components/schemas/LineaSuscripcionRespuesta"
             }
           },
           "modulos_sin_cobro": {
@@ -60736,6 +60832,35 @@
           "registrado_en": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "DocumentoContablePeticion": {
+        "type": "object",
+        "description": "Documento origen para previsualizar su asiento con la regla vigente.",
+        "required": [
+          "evento",
+          "fecha",
+          "descripcion",
+          "importes"
+        ],
+        "properties": {
+          "evento": {
+            "type": "string",
+            "example": "ventas.factura"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "importes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportePeticion"
+            }
           }
         }
       },
@@ -61735,6 +61860,31 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "ErrorFilaImportacionRespuesta": {
+        "type": "object",
+        "description": "Error de una fila (sin el valor de la celda).",
+        "required": [
+          "fila",
+          "mensaje"
+        ],
+        "properties": {
+          "fila": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Fila como se ve en la hoja de cálculo (la 1 es el encabezado).",
+            "minimum": 0
+          },
+          "columna": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mensaje": {
+            "type": "string"
           }
         }
       },
@@ -65131,7 +65281,7 @@
           "certificado": {
             "oneOf": [
               {
-                "$ref": "#/components/schemas/CertificadoRespuesta"
+                "$ref": "#/components/schemas/CertificadoFirmaRespuesta"
               },
               {
                 "type": "null"
@@ -65284,7 +65434,7 @@
           "errores": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ErrorFilaRespuesta"
+              "$ref": "#/components/schemas/ErrorFilaImportacionRespuesta"
             }
           },
           "resumen": {
@@ -65701,6 +65851,102 @@
           }
         }
       },
+      "LineaAsientoPeticion": {
+        "type": "object",
+        "description": "Línea de entrada (por códigos).",
+        "required": [
+          "cuenta"
+        ],
+        "properties": {
+          "cuenta": {
+            "type": "string",
+            "example": "110505"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "centro_costo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Código del centro de costo."
+          },
+          "debito": {
+            "type": "string",
+            "example": "150000"
+          },
+          "credito": {
+            "type": "string",
+            "example": "0"
+          },
+          "base": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "LineaAsientoRespuesta": {
+        "type": "object",
+        "description": "Línea de un asiento.",
+        "required": [
+          "cuenta_id",
+          "debito",
+          "credito"
+        ],
+        "properties": {
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "debito": {
+            "type": "string",
+            "example": "150000.00"
+          },
+          "credito": {
+            "type": "string",
+            "example": "0"
+          },
+          "base": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "LineaCorteDto": {
         "type": "object",
         "description": "Línea de un corte.",
@@ -66088,6 +66334,87 @@
           }
         }
       },
+      "LineaSuscripcionPeticion": {
+        "type": "object",
+        "description": "Línea nueva.",
+        "required": [
+          "producto_id",
+          "desde"
+        ],
+        "properties": {
+          "producto_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "precio_pactado": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Precio pactado que reemplaza la tarifa (exige `motivo_precio`)."
+          },
+          "motivo_precio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "LineaSuscripcionRespuesta": {
+        "type": "object",
+        "description": "Línea (producto contratado).",
+        "required": [
+          "id",
+          "producto_id",
+          "producto",
+          "nombre",
+          "desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "producto_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "producto": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "precio_pactado": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "motivo_precio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        }
+      },
       "LineaVentaPeticion": {
         "type": "object",
         "description": "Línea de una factura de venta nueva.",
@@ -66217,6 +66544,72 @@
           }
         }
       },
+      "LiquidacionCarteraRespuesta": {
+        "type": "object",
+        "description": "Liquidación de expensas.",
+        "required": [
+          "id",
+          "periodo",
+          "estado",
+          "politica_id",
+          "total",
+          "vencimiento",
+          "comprobante_id",
+          "liquidada_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodo": {
+            "type": "string",
+            "format": "date"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoLiquidacionExpensas"
+          },
+          "presupuesto_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "politica_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "total": {
+            "type": "string"
+          },
+          "vencimiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "comprobante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo_anulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "liquidada_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "anulada_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "LiquidacionRespuesta": {
         "type": "object",
         "description": "Liquidación de un anunciante en un mes (sin reparto a las copropiedades).",
@@ -66284,7 +66677,7 @@
         ],
         "properties": {
           "liquidacion": {
-            "$ref": "#/components/schemas/LiquidacionRespuesta"
+            "$ref": "#/components/schemas/LiquidacionCarteraRespuesta"
           },
           "cuentas_cobro": {
             "type": "array",
@@ -66611,7 +67004,7 @@
           "movimientos": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/MovimientoRespuesta"
+              "$ref": "#/components/schemas/MovimientoContableRespuesta"
             }
           },
           "saldo_final": {
@@ -66967,7 +67360,7 @@
           "lineas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LineaRespuesta"
+              "$ref": "#/components/schemas/LineaSuscripcionRespuesta"
             }
           },
           "consumo": {
@@ -67188,6 +67581,28 @@
           "soporte"
         ]
       },
+      "MorososAsambleaRespuesta": {
+        "type": "object",
+        "description": "Resultado de fijar los morosos.",
+        "required": [
+          "marcados",
+          "no_encontrados"
+        ],
+        "properties": {
+          "marcados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "no_encontrados": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Códigos que no están en el padrón."
+          }
+        }
+      },
       "MorososPeticion": {
         "type": "object",
         "description": "Listado de morosos que entrega la copropiedad.",
@@ -67230,6 +67645,19 @@
           }
         }
       },
+      "MotivoCarteraPeticion": {
+        "type": "object",
+        "description": "Anulación con motivo.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "example": "Se liquidó con el presupuesto equivocado"
+          }
+        }
+      },
       "MotivoCortePeticion": {
         "type": "object",
         "description": "Motivo.",
@@ -67255,6 +67683,18 @@
           }
         }
       },
+      "MotivoReservaPeticion": {
+        "type": "object",
+        "description": "Motivo opcional.",
+        "properties": {
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "MotivoSalida": {
         "type": "string",
         "description": "Motivo de salida de un asistente: sus bienes dejan el quórum y las preguntas que se abran después; sus votos ya emitidos se conservan.",
@@ -67264,6 +67704,60 @@
           "problema_tecnico",
           "otro"
         ]
+      },
+      "MovimientoContableRespuesta": {
+        "type": "object",
+        "description": "Movimiento del libro mayor.",
+        "required": [
+          "comprobante_id",
+          "tipo",
+          "numero",
+          "fecha",
+          "descripcion",
+          "debito",
+          "credito"
+        ],
+        "properties": {
+          "comprobante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "persona_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "debito": {
+            "type": "string"
+          },
+          "credito": {
+            "type": "string"
+          }
+        }
       },
       "MovimientoExtractoRespuesta": {
         "type": "object",
@@ -67524,6 +68018,19 @@
             ],
             "format": "date",
             "description": "Fecha contable (por defecto, hoy)."
+          }
+        }
+      },
+      "NotaCreditoVentaPeticion": {
+        "type": "object",
+        "description": "Motivo de una nota crédito.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "example": "Se facturó un valor equivocado"
           }
         }
       },
@@ -68774,7 +69281,7 @@
           "tarifas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TarifaDto"
+              "$ref": "#/components/schemas/TarifaCarteraDto"
             },
             "description": "Solo con el criterio `por_tipo_bien`."
           },
@@ -69556,6 +70063,70 @@
           "leads"
         ]
       },
+      "ObligacionMantenimientoRespuesta": {
+        "type": "object",
+        "description": "Obligación periódica.",
+        "required": [
+          "id",
+          "nombre",
+          "periodicidad_meses",
+          "proxima",
+          "dias_alerta",
+          "activa"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo_sugerido": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "periodicidad_meses": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "proxima": {
+            "type": "string",
+            "format": "date"
+          },
+          "dias_alerta": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "activo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "responsable_organizacion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
       "ObligacionPeticion": {
         "type": "object",
         "description": "Datos de una obligación. Con `codigo_sugerido` los campos omitidos salen del catálogo.",
@@ -69983,6 +70554,14 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "ejecutada_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cuenta que la ejecutó: no puede verificarla (otra cuenta lo hace)."
           },
           "verificada_en": {
             "type": [
@@ -71833,6 +72412,14 @@
                     "null"
                   ],
                   "format": "date-time"
+                },
+                "ejecutada_por": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid",
+                  "description": "Cuenta que la ejecutó: no puede verificarla (otra cuenta lo hace)."
                 },
                 "verificada_en": {
                   "type": [
@@ -75186,7 +75773,7 @@
           "tarifas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TarifaDto"
+              "$ref": "#/components/schemas/TarifaCobroDto"
             },
             "description": "La más reciente primero."
           }
@@ -75874,6 +76461,19 @@
               "null"
             ],
             "description": "Descuento por pronto pago ganado."
+          }
+        }
+      },
+      "RechazoDocumentoPeticion": {
+        "type": "object",
+        "description": "Motivo de un rechazo.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "example": "La factura no corresponde a un servicio prestado"
           }
         }
       },
@@ -78261,7 +78861,7 @@
           "lineas": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/LineaPeticion"
+              "$ref": "#/components/schemas/LineaAsientoPeticion"
             }
           }
         }
@@ -79150,6 +79750,68 @@
             ],
             "format": "double",
             "description": "Promedio de la encuesta (1 a 5)."
+          }
+        }
+      },
+      "TarifaCarteraDto": {
+        "type": "object",
+        "description": "Valor mensual de un concepto para un tipo de bien.",
+        "required": [
+          "tipo_bien",
+          "valor"
+        ],
+        "properties": {
+          "tipo_bien": {
+            "$ref": "#/components/schemas/TipoBienPrivado"
+          },
+          "valor": {
+            "type": "string",
+            "example": "20000.00"
+          }
+        }
+      },
+      "TarifaCobroDto": {
+        "type": "object",
+        "description": "Tarifa de un producto desde una fecha.",
+        "required": [
+          "modelo",
+          "valor",
+          "vigente_desde"
+        ],
+        "properties": {
+          "modelo": {
+            "$ref": "#/components/schemas/ModeloTarifa"
+          },
+          "valor": {
+            "type": "string",
+            "example": "90000"
+          },
+          "incluidas": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Unidades incluidas (solo `por_paquete`).",
+            "minimum": 0
+          },
+          "valor_excedente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Valor de cada unidad de excedente (solo `por_paquete`)."
+          },
+          "metrica": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`ph.bienes_privados`, `facturacion.documentos`, `whatsapp.mensajes` o `usuarios.cuentas`\n(obligatoria en `por_unidad`, `por_paquete` y `por_consumo`)."
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
           }
         }
       },
@@ -80867,6 +81529,42 @@
               "null"
             ],
             "description": "Franjas semanales (hora local de la PH); `null` = a toda hora."
+          }
+        }
+      },
+      "VerificacionCredencialRespuesta": {
+        "type": "object",
+        "description": "Resultado de la verificación.",
+        "required": [
+          "resultado",
+          "motivo"
+        ],
+        "properties": {
+          "resultado": {
+            "type": "string",
+            "description": "`permitido` o `denegado`.",
+            "example": "permitido"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "titular": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/TitularDto"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "visita_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Visita del QR temporal: registrar el ingreso con `/visitas/ingreso-qr`."
           }
         }
       },

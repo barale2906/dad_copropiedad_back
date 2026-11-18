@@ -755,6 +755,7 @@ async fn nueva_orden<T: TxMantenimiento>(
         firma_archivo_id: None,
         iniciada_en: None,
         ejecutada_en: None,
+        ejecutada_por: None,
         verificada_en: None,
         verificada_por: None,
         creado_en: ahora,
@@ -1060,7 +1061,7 @@ pub struct Ejecucion {
 /// Avanza una orden por su diagrama:
 ///
 /// - iniciar y ejecutar: quien la tiene asignada (`mantenimiento.ejecutar`) o quien planifica;
-/// - verificar: `mantenimiento.verificar`;
+/// - verificar: `mantenimiento.verificar` y **otra cuenta** que la que la ejecutó;
 /// - cancelar: `mantenimiento.planificar`.
 ///
 /// # Errors
@@ -1126,6 +1127,7 @@ where
             o.recibido_por = texto_opcional("recibido_por", e.recibido_por.as_deref(), 120)?;
             o.firma_archivo_id = e.firma_archivo_id;
             o.ejecutada_en = Some(ahora);
+            o.ejecutada_por = ctx.actor_id;
         }
         AvanceOrden::Verificar {
             aprobada,
@@ -1133,6 +1135,11 @@ where
             resolver_ticket,
         } => {
             ctx.exigir(Permiso::MantenimientoVerificar)?;
+            if o.ejecutada_por.is_some() && o.ejecutada_por == ctx.actor_id {
+                return Err(AppError::Conflicto(
+                    "quien ejecutó la orden no puede verificarla: debe hacerlo otra cuenta".into(),
+                ));
+            }
             let observacion = texto_opcional("observacion", observacion.as_deref(), 2000)?;
             if aprobada {
                 o.estado = o.estado.transicionar(EstadoOrden::Verificada)?;
@@ -1144,6 +1151,7 @@ where
             } else {
                 o.estado = o.estado.transicionar(EstadoOrden::EnEjecucion)?;
                 o.ejecutada_en = None;
+                o.ejecutada_por = None;
             }
             if let Some(obs) = observacion {
                 o.observaciones = Some(match o.observaciones.take() {
