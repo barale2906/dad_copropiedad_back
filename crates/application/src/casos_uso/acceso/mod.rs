@@ -1,5 +1,7 @@
 //! Control de acceso, visitas y correspondencia (plan 05, módulo vendible `control_acceso`).
 //!
+//! - [`busquedas`]: el bien y la persona que elige la portería, con lo mínimo (sin
+//!   `bienes_privados.ver` ni `personas.ver`).
 //! - [`visitas`]: anunciar, pre-autorizar (QR temporal firmado), decidir (app, web, WhatsApp o
 //!   llamada), ingreso y salida.
 //! - [`correspondencia`]: recibir, avisar cada 24 h, entregar con firma o foto y devolver.
@@ -22,6 +24,7 @@
 //!    residencia o vender el bien las retira en la siguiente sincronización.
 //! 9. Firmas y fotos solo por `AlmacenArchivos`; nombres y teléfonos no van a logs.
 
+pub mod busquedas;
 pub mod correspondencia;
 pub mod credenciales;
 pub mod porteria;

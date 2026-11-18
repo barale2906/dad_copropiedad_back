@@ -35037,6 +35037,216 @@
         ]
       }
     },
+    "/api/v1/copropiedades/{copropiedad_id}/acceso/bienes": {
+      "get": {
+        "tags": [
+          "acceso"
+        ],
+        "summary": "Bienes privados activos por código, para anunciar visitas y recibir correspondencia.",
+        "operationId": "buscar_bienes",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Fragmento del código del bien, o del nombre (sin tildes ni mayúsculas) o el documento de\nla persona.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bienes (id y código)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_BienPorteriaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `acceso.registrar` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/copropiedades/{copropiedad_id}/acceso/personas": {
+      "get": {
+        "tags": [
+          "acceso"
+        ],
+        "summary": "Personas por nombre o documento, para emitir credenciales o registrar el consentimiento\nbiométrico. Exige al menos 2 caracteres.",
+        "operationId": "buscar_personas",
+        "parameters": [
+          {
+            "name": "copropiedad_id",
+            "in": "path",
+            "description": "Copropiedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Fragmento del código del bien, o del nombre (sin tildes ni mayúsculas) o el documento de\nla persona.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "description": "Elementos por página (1–200; 50 si se omite).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1
+            },
+            "example": 50
+          },
+          {
+            "name": "despues",
+            "in": "query",
+            "description": "Cursor: el valor `siguiente` de la página anterior. Se omite para la primera página.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Personas (nombre y documento enmascarado)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginaRespuesta_PersonaPorteriaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `acceso.credenciales.gestionar` ni `acceso.biometria.enrolar` (`sin_permiso`) o sin el módulo (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La copropiedad no existe o la cuenta no tiene roles en ella (`no_encontrado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Menos de 2 caracteres (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/copropiedades/{copropiedad_id}/puntos-acceso": {
       "get": {
         "tags": [
@@ -54761,6 +54971,24 @@
           }
         }
       },
+      "BienPorteriaRespuesta": {
+        "type": "object",
+        "description": "Bien privado para la portería: solo id y código.",
+        "required": [
+          "id",
+          "codigo"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string",
+            "example": "T1-101"
+          }
+        }
+      },
       "BienPrivadoRespuesta": {
         "type": "object",
         "description": "Bien privado en un listado o en el árbol.",
@@ -70147,6 +70375,45 @@
           }
         }
       },
+      "PaginaRespuesta_BienPorteriaRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Bien privado para la portería: solo id y código.",
+              "required": [
+                "id",
+                "codigo"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "codigo": {
+                  "type": "string",
+                  "example": "T1-101"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
       "PaginaRespuesta_BienPrivadoRespuesta": {
         "type": "object",
         "description": "Página de resultados de un listado.",
@@ -71584,6 +71851,53 @@
                 "creado_en": {
                   "type": "string",
                   "format": "date-time"
+                }
+              }
+            },
+            "description": "Elementos de esta página."
+          },
+          "siguiente": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cursor para pedir la página siguiente (`despues=<siguiente>`); `null` si es la última."
+          }
+        }
+      },
+      "PaginaRespuesta_PersonaPorteriaRespuesta": {
+        "type": "object",
+        "description": "Página de resultados de un listado.",
+        "required": [
+          "datos"
+        ],
+        "properties": {
+          "datos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "Persona para la portería: nombre y documento enmascarado.",
+              "required": [
+                "id",
+                "nombre"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "nombre": {
+                  "type": "string",
+                  "example": "Marta Gómez"
+                },
+                "documento": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Últimos cuatro caracteres del documento; `null` si no tiene.",
+                  "example": "****3456"
                 }
               }
             },
@@ -73332,6 +73646,32 @@
             ],
             "format": "uuid",
             "description": "Cuenta de la plataforma de esa persona (búsquela con `GET /cuentas`): recibe el rol\n`propietario`."
+          }
+        }
+      },
+      "PersonaPorteriaRespuesta": {
+        "type": "object",
+        "description": "Persona para la portería: nombre y documento enmascarado.",
+        "required": [
+          "id",
+          "nombre"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Marta Gómez"
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Últimos cuatro caracteres del documento; `null` si no tiene.",
+            "example": "****3456"
           }
         }
       },

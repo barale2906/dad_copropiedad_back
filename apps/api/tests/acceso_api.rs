@@ -725,3 +725,84 @@ async fn una_autorizacion_manual_se_lista_y_al_revocarla_queda_con_fecha(pool: P
         "{lista}"
     );
 }
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_vigilante_busca_el_bien_sin_ver_los_bienes_privados(pool: PgPool) {
+    let e = escenario(pool).await;
+
+    let (s, _) = como(
+        &e.ph,
+        &e.vigilante,
+        Method::GET,
+        "/bienes-privados?q=101",
+        None,
+    )
+    .await;
+    assert_eq!(
+        s,
+        StatusCode::FORBIDDEN,
+        "la plantilla no trae bienes_privados.ver"
+    );
+
+    let (s, v) = como(
+        &e.ph,
+        &e.vigilante,
+        Method::GET,
+        "/acceso/bienes?q=101",
+        None,
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    let datos = v["datos"].as_array().expect("datos");
+    assert_eq!(datos.len(), 1);
+    assert_eq!(datos[0]["id"], json!(e.bien));
+    let campos: Vec<&String> = datos[0].as_object().expect("objeto").keys().collect();
+    assert_eq!(campos, ["codigo", "id"], "solo lo mínimo");
+
+    let (s, v) = como(
+        &e.ph,
+        &e.vigilante,
+        Method::GET,
+        "/acceso/personas?q=ana",
+        None,
+    )
+    .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::FORBIDDEN, &json!("sin_permiso")),
+        "el vigilante no emite credenciales"
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_supervisor_busca_personas_con_el_documento_enmascarado(pool: PgPool) {
+    let e = escenario(pool).await;
+    let supervisor = con_rol(&e.ph, "supervisor1", "supervisor_seguridad").await;
+
+    let (s, v) = como(
+        &e.ph,
+        &supervisor,
+        Method::GET,
+        "/acceso/personas?q=ana",
+        None,
+    )
+    .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(
+        v["datos"],
+        json!([{ "id": e.persona, "nombre": "Ana Dueña", "documento": "****3456" }])
+    );
+
+    let (s, v) = como(
+        &e.ph,
+        &supervisor,
+        Method::GET,
+        "/acceso/personas?q=a",
+        None,
+    )
+    .await;
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::UNPROCESSABLE_ENTITY, &json!("validacion"))
+    );
+}
