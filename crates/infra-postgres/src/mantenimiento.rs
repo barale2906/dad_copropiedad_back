@@ -148,6 +148,7 @@ struct FilaOrden {
     firma_archivo_id: Option<Uuid>,
     iniciada_en: Option<DateTime<Utc>>,
     ejecutada_en: Option<DateTime<Utc>>,
+    ejecutada_por: Option<Uuid>,
     verificada_en: Option<DateTime<Utc>>,
     verificada_por: Option<Uuid>,
     creado_en: DateTime<Utc>,
@@ -186,6 +187,7 @@ impl TryFrom<FilaOrden> for OrdenTrabajo {
             firma_archivo_id: f.firma_archivo_id.map(ArchivoId::from_uuid),
             iniciada_en: f.iniciada_en,
             ejecutada_en: f.ejecutada_en,
+            ejecutada_por: f.ejecutada_por.map(CuentaId::from_uuid),
             verificada_en: f.verificada_en,
             verificada_por: f.verificada_por.map(CuentaId::from_uuid),
             creado_en: f.creado_en,
@@ -533,8 +535,8 @@ impl RepositorioMantenimiento for TransaccionPg {
             "SELECT id, anio, consecutivo, origen, tipo, plan_id, ticket_id, activo_id, ubicacion,
                     descripcion, asignado_cuenta_id, asignado_organizacion_id, programada_para,
                     estado, checklist, costo_mano_obra, costo_repuestos, observaciones,
-                    recibido_por, firma_archivo_id, iniciada_en, ejecutada_en, verificada_en,
-                    verificada_por, creado_en, actualizado_en
+                    recibido_por, firma_archivo_id, iniciada_en, ejecutada_en, ejecutada_por,
+                    verificada_en, verificada_por, creado_en, actualizado_en
              FROM ordenes_trabajo
              WHERE ($1::text IS NULL OR estado = $1)
                AND ($2::uuid IS NULL OR activo_id = $2)
@@ -570,8 +572,8 @@ impl RepositorioMantenimiento for TransaccionPg {
             "SELECT id, anio, consecutivo, origen, tipo, plan_id, ticket_id, activo_id, ubicacion,
                     descripcion, asignado_cuenta_id, asignado_organizacion_id, programada_para,
                     estado, checklist, costo_mano_obra, costo_repuestos, observaciones,
-                    recibido_por, firma_archivo_id, iniciada_en, ejecutada_en, verificada_en,
-                    verificada_por, creado_en, actualizado_en
+                    recibido_por, firma_archivo_id, iniciada_en, ejecutada_en, ejecutada_por,
+                    verificada_en, verificada_por, creado_en, actualizado_en
              FROM ordenes_trabajo WHERE id = $1",
             id.as_uuid(),
         )
@@ -646,7 +648,8 @@ impl RepositorioMantenimiento for TransaccionPg {
                     programada_para = $4, estado = $5, checklist = $6, costo_mano_obra = $7,
                     costo_repuestos = $8, observaciones = $9, recibido_por = $10,
                     firma_archivo_id = $11, iniciada_en = $12, ejecutada_en = $13,
-                    verificada_en = $14, verificada_por = $15, actualizado_en = $16
+                    verificada_en = $14, verificada_por = $15, actualizado_en = $16,
+                    ejecutada_por = $17
              WHERE id = $1",
             o.id.as_uuid(),
             cuenta.map(CuentaId::as_uuid),
@@ -664,6 +667,7 @@ impl RepositorioMantenimiento for TransaccionPg {
             o.verificada_en,
             o.verificada_por.map(CuentaId::as_uuid),
             o.actualizado_en,
+            o.ejecutada_por.map(CuentaId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await

@@ -715,6 +715,8 @@ pub struct OrdenRespuesta {
     pub firma_archivo_id: Option<Uuid>,
     pub iniciada_en: Option<DateTime<Utc>>,
     pub ejecutada_en: Option<DateTime<Utc>>,
+    /// Cuenta que la ejecutó: no puede verificarla (otra cuenta lo hace).
+    pub ejecutada_por: Option<Uuid>,
     pub verificada_en: Option<DateTime<Utc>>,
     pub verificada_por: Option<Uuid>,
     pub creado_en: DateTime<Utc>,
@@ -743,6 +745,7 @@ impl From<OrdenTrabajo> for OrdenRespuesta {
             firma_archivo_id: o.firma_archivo_id.map(ArchivoId::as_uuid),
             iniciada_en: o.iniciada_en,
             ejecutada_en: o.ejecutada_en,
+            ejecutada_por: o.ejecutada_por.map(CuentaId::as_uuid),
             verificada_en: o.verificada_en,
             verificada_por: o.verificada_por.map(CuentaId::as_uuid),
             creado_en: o.creado_en,
@@ -962,7 +965,7 @@ pub enum AvancePeticion {
     responses(
         (status = OK, description = "Orden", body = OrdenRespuesta),
         (status = FORBIDDEN, description = "Iniciar y ejecutar: `mantenimiento.planificar` o la orden asignada con `mantenimiento.ejecutar`; verificar: `mantenimiento.verificar` (nunca quien la ejecutó) (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
-        (status = CONFLICT, description = "Transición no permitida (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Transición no permitida (`conflicto_estado`) o quien la ejecutó intenta verificarla (`conflicto`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Checklist incompleto o costos inválidos (`validacion`)", body = ErrorRespuesta),
     )
 )]

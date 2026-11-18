@@ -25305,7 +25305,7 @@
             }
           },
           "409": {
-            "description": "Transición no permitida (`conflicto_estado`)",
+            "description": "Transición no permitida (`conflicto_estado`) o quien la ejecutó intenta verificarla (`conflicto`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -70555,6 +70555,14 @@
             ],
             "format": "date-time"
           },
+          "ejecutada_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cuenta que la ejecutó: no puede verificarla (otra cuenta lo hace)."
+          },
           "verificada_en": {
             "type": [
               "string",
@@ -72404,6 +72412,14 @@
                     "null"
                   ],
                   "format": "date-time"
+                },
+                "ejecutada_por": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid",
+                  "description": "Cuenta que la ejecutó: no puede verificarla (otra cuenta lo hace)."
                 },
                 "verificada_en": {
                   "type": [

@@ -490,7 +490,8 @@ enlaces de adjuntos de 5 min) y «Enterado».
 ### Mantenimiento (`mantenimiento`, módulo `gestion_administrativa`)
 Activos con hoja de vida (archivos, movimientos, órdenes); la baja es definitiva y exige soporte.
 Planes preventivos que generan órdenes solas; órdenes: programada → en_ejecucion → ejecutada →
-verificada (**quien ejecuta no verifica**: oculte el botón a esa misma cuenta). Obligaciones
+verificada (**quien ejecuta no verifica**: oculte el botón cuando `ejecutada_por` es la cuenta
+que consulta; si lo intenta, 409 `conflicto`). Obligaciones
 periódicas desde un catálogo sugerido y su historial de cumplimientos. Tablero y alertas.
 
 ### Asambleas y votaciones (`asambleas`, módulo `asambleas`)

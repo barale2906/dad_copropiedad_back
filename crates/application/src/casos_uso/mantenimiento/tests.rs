@@ -628,3 +628,101 @@ async fn el_tablero_mide_el_cumplimiento_preventivo() {
     .await;
     assert!(sin_motivo.is_err());
 }
+
+/// Orden preventiva lista para ejecutar, sin checklist.
+async fn orden_simple(e: &Entorno, reloj: &RelojFijo) -> OrdenTrabajo {
+    let a = e.activo("BOM-1").await;
+    crear_orden(
+        &e.unidad,
+        reloj,
+        &e.admin(),
+        NuevaOrden {
+            tipo: TipoOrden::Preventivo,
+            ticket_id: None,
+            activo_id: Some(a.id),
+            ubicacion: None,
+            descripcion: "Revisar la bomba".into(),
+            asignado: None,
+            programada_para: hoy(),
+            checklist: Vec::new(),
+        },
+    )
+    .await
+    .expect("orden")
+}
+
+#[tokio::test]
+async fn quien_ejecuto_la_orden_no_la_verifica_aunque_tenga_el_permiso() {
+    let e = entorno();
+    let reloj = RelojFijo(ahora());
+    let orden = orden_simple(&e, &reloj).await;
+    let todo = [
+        Permiso::MantenimientoPlanificar,
+        Permiso::MantenimientoEjecutar,
+        Permiso::MantenimientoVerificar,
+    ];
+    let supervisor = e.ctx(CuentaId::nuevo(), &todo);
+    for avance in [
+        AvanceOrden::Iniciar,
+        AvanceOrden::Ejecutar(Ejecucion::default()),
+    ] {
+        avanzar_orden(&e.unidad, &reloj, &supervisor, orden.id, avance)
+            .await
+            .expect("avanza");
+    }
+    let verificar = AvanceOrden::Verificar {
+        aprobada: true,
+        observacion: None,
+        resolver_ticket: false,
+    };
+
+    let propia = avanzar_orden(&e.unidad, &reloj, &supervisor, orden.id, verificar.clone()).await;
+    assert!(matches!(propia, Err(AppError::Conflicto(_))), "{propia:?}");
+
+    let otra = e.ctx(CuentaId::nuevo(), &[Permiso::MantenimientoVerificar]);
+    let o = avanzar_orden(&e.unidad, &reloj, &otra, orden.id, verificar)
+        .await
+        .expect("otra cuenta verifica");
+    assert_eq!(o.estado, EstadoOrden::Verificada);
+    assert_eq!(o.ejecutada_por, supervisor.actor_id);
+    assert_eq!(o.verificada_por, otra.actor_id);
+}
+
+#[tokio::test]
+async fn devolver_la_orden_olvida_quien_la_ejecuto() {
+    let e = entorno();
+    let reloj = RelojFijo(ahora());
+    let orden = orden_simple(&e, &reloj).await;
+    let tecnico = e.ctx(
+        CuentaId::nuevo(),
+        &[
+            Permiso::MantenimientoPlanificar,
+            Permiso::MantenimientoVerificar,
+        ],
+    );
+    for avance in [
+        AvanceOrden::Iniciar,
+        AvanceOrden::Ejecutar(Ejecucion::default()),
+    ] {
+        avanzar_orden(&e.unidad, &reloj, &e.admin(), orden.id, avance)
+            .await
+            .expect("avanza");
+    }
+
+    let devuelta = avanzar_orden(
+        &e.unidad,
+        &reloj,
+        &tecnico,
+        orden.id,
+        AvanceOrden::Verificar {
+            aprobada: false,
+            observacion: Some("Falta ajustar".into()),
+            resolver_ticket: false,
+        },
+    )
+    .await
+    .expect("devuelve");
+
+    assert_eq!(devuelta.estado, EstadoOrden::EnEjecucion);
+    assert_eq!(devuelta.ejecutada_por, None);
+}
