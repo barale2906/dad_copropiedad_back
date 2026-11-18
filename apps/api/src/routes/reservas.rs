@@ -792,6 +792,7 @@ pub async fn ver_reserva(
 
 /// Motivo opcional.
 #[derive(Debug, Default, Deserialize, ToSchema)]
+#[schema(as = MotivoReservaPeticion)]
 pub struct MotivoPeticion {
     pub motivo: Option<String>,
 }

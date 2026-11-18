@@ -654,6 +654,7 @@ impl From<FilaCertificado> for FilaCertificadoRespuesta {
 
 /// Certificado de retenciones de un tercero.
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = CertificadoRetencionRespuesta)]
 pub struct CertificadoRespuesta {
     pub entidad: String,
     pub entidad_nit: Option<String>,

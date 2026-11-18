@@ -57,6 +57,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 
 /// Error de una fila (sin el valor de la celda).
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = ErrorFilaImportacionRespuesta)]
 pub struct ErrorFilaRespuesta {
     /// Fila como se ve en la hoja de cálculo (la 1 es el encabezado).
     pub fila: u32,

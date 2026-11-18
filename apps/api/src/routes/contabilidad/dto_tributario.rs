@@ -475,6 +475,7 @@ pub struct DocumentoDetalleRespuesta {
 
 /// Motivo de una nota crédito.
 #[derive(Debug, Deserialize, ToSchema)]
+#[schema(as = NotaCreditoVentaPeticion)]
 pub struct NotaCreditoPeticion {
     #[schema(example = "Se facturó un valor equivocado")]
     pub motivo: String,
@@ -596,6 +597,7 @@ pub struct VincularPeticion {
 
 /// Motivo de un rechazo.
 #[derive(Debug, Deserialize, ToSchema)]
+#[schema(as = RechazoDocumentoPeticion)]
 pub struct RechazoPeticion {
     #[schema(example = "La factura no corresponde a un servicio prestado")]
     pub motivo: String,

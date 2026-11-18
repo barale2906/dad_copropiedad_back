@@ -467,6 +467,7 @@ pub struct MorososPeticion {
 
 /// Resultado de fijar los morosos.
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = MorososAsambleaRespuesta)]
 pub struct MorososRespuesta {
     pub marcados: u32,
     /// Códigos que no están en el padrón.

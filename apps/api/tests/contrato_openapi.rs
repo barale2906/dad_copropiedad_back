@@ -70,3 +70,78 @@ fn cada_prohibido_nombra_su_permiso() {
         sin_nombre.join("\n")
     );
 }
+
+/// Cada esquema del contrato tiene un nombre propio. utoipa registra los esquemas por nombre y,
+/// si dos DTO se llaman igual (`ObligacionRespuesta` de cartera y de mantenimiento), publica
+/// **uno solo** sin avisar: las rutas del otro quedan con tipos equivocados en los clientes
+/// generados. Revisa el código (no el documento, donde la colisión ya no se ve): todo
+/// `derive(ToSchema)` se nombra por su `#[schema(as = …)]` o por su identificador.
+#[test]
+fn cada_esquema_tiene_un_nombre_unico() {
+    use std::collections::BTreeMap;
+
+    fn archivos(dir: &Path, salida: &mut Vec<std::path::PathBuf>) {
+        for entrada in fs::read_dir(dir).expect("se puede leer src") {
+            let ruta = entrada.expect("entrada").path();
+            if ruta.is_dir() {
+                archivos(&ruta, salida);
+            } else if ruta.extension().is_some_and(|e| e == "rs") {
+                salida.push(ruta);
+            }
+        }
+    }
+
+    fn nombre_de_tipo(linea: &str) -> Option<&str> {
+        let resto = [
+            "pub struct ",
+            "pub enum ",
+            "pub(crate) struct ",
+            "pub(crate) enum ",
+            "struct ",
+            "enum ",
+        ]
+        .iter()
+        .find_map(|p| linea.strip_prefix(p))?;
+        resto
+            .split(|c: char| !(c.is_alphanumeric() || c == '_'))
+            .next()
+            .filter(|n| !n.is_empty())
+    }
+
+    let mut rutas = Vec::new();
+    archivos(
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("src"),
+        &mut rutas,
+    );
+    let mut nombres: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for ruta in rutas {
+        let texto = fs::read_to_string(&ruta).expect("archivo legible");
+        let mut esquema = false;
+        let mut alias: Option<String> = None;
+        for linea in texto.lines().map(str::trim) {
+            if linea.starts_with("#[derive(") {
+                esquema = linea.contains("ToSchema");
+                alias = None;
+            } else if esquema && let Some(resto) = linea.strip_prefix("#[schema(as = ") {
+                alias = resto.split(')').next().map(str::to_owned);
+            } else if esquema && let Some(n) = nombre_de_tipo(linea) {
+                let nombre = alias.take().unwrap_or_else(|| n.to_owned());
+                nombres
+                    .entry(nombre)
+                    .or_default()
+                    .push(ruta.display().to_string());
+                esquema = false;
+            }
+        }
+    }
+    let repetidos: Vec<String> = nombres
+        .into_iter()
+        .filter(|(_, rutas)| rutas.len() > 1)
+        .map(|(n, rutas)| format!("{n}: {}", rutas.join(", ")))
+        .collect();
+    assert!(
+        repetidos.is_empty(),
+        "Esquemas con el mismo nombre (agregue `#[schema(as = NombrePropio)]` a uno):\n{}",
+        repetidos.join("\n")
+    );
+}

@@ -1102,6 +1102,7 @@ pub async fn obligaciones_sugeridas(_en: EnCopropiedad) -> Json<Vec<SugeridaResp
 
 /// Obligación periódica.
 #[derive(Debug, Serialize, ToSchema)]
+#[schema(as = ObligacionMantenimientoRespuesta)]
 pub struct ObligacionRespuesta {
     pub id: Uuid,
     pub codigo_sugerido: Option<String>,
