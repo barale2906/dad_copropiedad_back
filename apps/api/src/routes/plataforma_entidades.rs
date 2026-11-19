@@ -280,6 +280,7 @@ pub async fn asignaciones(
 
 /// Asigna un rol de la entidad a una cuenta existente.
 #[utoipa::path(
+    operation_id = "asignar_en_entidad",
     post,
     path = "/entidades/{entidad_id}/asignaciones",
     tag = ETIQUETA_PLATAFORMA,
@@ -318,6 +319,7 @@ pub async fn asignar(
 
 /// Termina una asignación (la entidad no se queda sin administrador).
 #[utoipa::path(
+    operation_id = "revocar_en_entidad",
     delete,
     path = "/entidades/{entidad_id}/asignaciones/{asignacion_id}",
     tag = ETIQUETA_PLATAFORMA,

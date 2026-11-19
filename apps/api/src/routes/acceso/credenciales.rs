@@ -79,6 +79,7 @@ impl From<Credencial> for CredencialRespuesta {
 
 /// Credenciales de una persona o vehículo.
 #[utoipa::path(
+    operation_id = "listar_credenciales",
     get,
     path = "/credenciales",
     tag = ETIQUETA_ACCESO,

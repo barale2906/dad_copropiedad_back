@@ -15,6 +15,7 @@
 
 mod acta;
 mod dto;
+mod escrutinio;
 pub mod lineas;
 mod papeleta;
 mod registro;

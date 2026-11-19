@@ -653,6 +653,22 @@ pub struct ContratoServicio {
     pub valor: Option<rust_decimal::Decimal>,
 }
 
+/// Lo mínimo de una organización contratada que ve la entidad (su ficha es de plataforma).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrganizacionContratada {
+    pub id: OrganizacionId,
+    pub razon_social: String,
+    /// Dato personal si la organización es una persona natural con RUT.
+    pub nit: String,
+}
+
+/// Contrato con la organización a la que se le contrató, para mostrarlo sin otra consulta.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContratoConOrganizacion {
+    pub contrato: ContratoServicio,
+    pub organizacion: OrganizacionContratada,
+}
+
 /// Solicitud para reclamar la ficha de una organización.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reclamacion {
@@ -695,6 +711,11 @@ pub trait RepositorioContratos: Send {
 
     /// Contratos de servicio de la copropiedad.
     fn contratos(&mut self) -> impl Future<Output = AppResult<Vec<ContratoServicio>>> + Send;
+
+    /// Organizaciones con algún contrato en la entidad (lo mínimo: razón social y NIT).
+    fn organizaciones_contratadas(
+        &mut self,
+    ) -> impl Future<Output = AppResult<Vec<OrganizacionContratada>>> + Send;
 
     /// Termina un contrato de servicio.
     fn terminar_contrato(

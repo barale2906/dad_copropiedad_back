@@ -31,9 +31,9 @@ use crate::{
     casos_uso::modulos::exigir_modulo_en,
     outbox::{EventoSaliente, MensajeOutbox, PrioridadSalida},
     puertos::{
-        RegistroAuditoria, RegistroOutbox, Reloj, RepositorioCenso, RepositorioCopropiedad,
-        RepositorioModulos, RepositorioPersonas, RepositorioReservas, RepositorioTitulares,
-        Transaccion, UnidadDeTrabajo,
+        RegistroAuditoria, RegistroOutbox, Reloj, RepositorioBienesPrivados, RepositorioCenso,
+        RepositorioCopropiedad, RepositorioModulos, RepositorioPersonas, RepositorioReservas,
+        RepositorioTitulares, Transaccion, UnidadDeTrabajo,
         correo::CorreoSaliente,
         reservas::{
             CargoPendiente, DetalleBienComun, ElementoChecklist, Entrega, FiltroReservas, Recurso,
@@ -525,6 +525,7 @@ where
         + RepositorioModulos
         + RepositorioCopropiedad
         + RepositorioPersonas
+        + RepositorioBienesPrivados
         + RegistroOutbox
         + RegistroAuditoria,
 {
@@ -640,10 +641,18 @@ where
     } else {
         EstadoReserva::Solicitada
     };
+    let bien_codigo = tx
+        .bien(s.bien_privado_id)
+        .await?
+        .ok_or(AppError::NoEncontrado("bien privado"))?
+        .codigo
+        .into();
     let reserva = Reserva {
         id: ReservaId::nuevo(),
         recurso_id: s.recurso_id,
+        recurso_nombre: recurso.nombre.clone(),
         bien_privado_id: s.bien_privado_id,
+        bien_codigo,
         solicitante_persona_id: solicitante.map(|(p, _)| p),
         solicitada_por: ctx.actor_id,
         franja: s.franja,

@@ -48,6 +48,7 @@ pub struct PapeletaRespuesta {
 
 /// Papeleta: reunión, asistente con sus bienes y preguntas abiertas.
 #[utoipa::path(
+    operation_id = "ver_papeleta",
     get,
     path = "/papeleta",
     tag = ETIQUETA_ASAMBLEAS,
@@ -110,6 +111,7 @@ pub async fn ingreso(
 
 /// «Salir de la asamblea»: sus votos se conservan.
 #[utoipa::path(
+    operation_id = "salida_papeleta",
     post,
     path = "/papeleta/salida",
     tag = ETIQUETA_ASAMBLEAS,
@@ -144,6 +146,7 @@ pub struct VotoPapeletaPeticion {
 
 /// Vota por **todos** sus bienes habilitados (canal web). Exige `Idempotency-Key`.
 #[utoipa::path(
+    operation_id = "votar_papeleta",
     post,
     path = "/papeleta/votos",
     tag = ETIQUETA_ASAMBLEAS,

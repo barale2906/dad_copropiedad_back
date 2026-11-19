@@ -326,6 +326,9 @@ pub struct CapacidadesRespuesta {
     /// solo las lecturas, la portería y la atención a titulares. Muestre un aviso con el motivo
     /// y cómo reactivarla.
     pub entidad_suspendida: bool,
+    /// Zona horaria IANA de la entidad: muestre las fechas en ella, no en la del navegador.
+    #[schema(example = "America/Bogota")]
+    pub zona_horaria: String,
 }
 
 impl CapacidadesRespuesta {
@@ -337,6 +340,7 @@ impl CapacidadesRespuesta {
             modulos: c.modulos,
             modo_soporte,
             entidad_suspendida,
+            zona_horaria: c.zona_horaria,
         }
     }
 }

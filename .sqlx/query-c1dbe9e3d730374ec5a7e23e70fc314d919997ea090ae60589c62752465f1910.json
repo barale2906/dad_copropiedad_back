@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT zona_horaria FROM entidades WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "zona_horaria",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "entidades",
+            "name": "zona_horaria"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "c1dbe9e3d730374ec5a7e23e70fc314d919997ea090ae60589c62752465f1910"
+}

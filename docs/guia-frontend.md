@@ -45,6 +45,11 @@ Los enums tienen esquema con nombre (`EstadoTicket`, `TipoBienPrivado`, …): el
 uniones (`'abierto' | 'en_revision' | …`), no `string`. Cuando el backend agrega un valor, el
 contrato cambia y el compilador del frontend lo señala.
 
+Cada operación tiene un `operationId` **único**: la etiqueta del módulo más el nombre del
+handler (`tickets_listar`, `reservas_cancelar`, `asambleas_votar_papeleta`). Los generadores que
+agrupan tipos por `operationId` ya pueden usarlo. Los campos que solo vienen en las respuestas
+(p. ej. el `id` de `PuntoDto` y `DispositivoDto`) se marcan `readOnly`: no hace falta enviarlos.
+
 ## 2. Convenciones de datos
 
 | Tipo | Formato JSON |
@@ -97,7 +102,8 @@ primero después de iniciar sesión es **elegir en cuál entrar**:
 
 Al entrar a una, pida `GET /api/v1/entidades/{id}/capacidades` (en una PH también
 `/copropiedades/{id}/capacidades`): devuelve el **tipo**, sus **permisos** efectivos allí
-(`Permiso`) y los **módulos** contratados (`Modulo`). Úselos para mostrar u ocultar menús y
+(`Permiso`), los **módulos** contratados (`Modulo`) y la **zona horaria** de la entidad
+(`zona_horaria`, para mostrar las fechas; la reciben todas las cuentas con un rol). Úselos para mostrar u ocultar menús y
 botones; no deduzca permisos de los nombres de los roles, porque cada copropiedad los configura.
 El backend vuelve a exigirlos: 403 `sin_permiso` o `modulo_no_habilitado`. Vuelva a pedir las
 capacidades si recibe uno de esos 403 (pudieron cambiar los roles o el contrato).
@@ -152,7 +158,9 @@ cuenta con su tipo.
   `POST …/cartera/asambleas/{reunion_id}/morosos`; restricción de reservas por mora:
   `POST …/cartera/reservas/restricciones-mora` con el umbral.
 - **Lo común de la entidad**: `/entidades/{id}/terceros` (clientes y proveedores con sus datos
-  fiscales), `/entidades/{id}/tributario/{catalogo,perfiles,resoluciones}`,
+  fiscales; `…/terceros/{persona_id}` da el nombre y el documento del `persona_id` que traen las
+  líneas de un comprobante, los recibos, los egresos y las facturas),
+  `/entidades/{id}/tributario/{catalogo,perfiles,resoluciones}`,
   `/entidades/{id}/roles`, `…/asignaciones`, `…/cuentas` (buscar a quién asignar),
   `…/archivos` y `…/auditoria`. Sirven a la PH, a la empresa y a la plataforma; terceros y
   tributario, con la contabilidad **o** la facturación.
@@ -420,7 +428,9 @@ distintas):
 
 **Rutas del propio usuario** (no exigen permisos de administración, solo el vínculo):
 `/yo/…` (perfil, correo, contraseña, segundo factor, sesiones, dispositivos, `GET /yo/tickets`
-de todas sus PH), y en cada PH `…/mis-bienes-privados`, `…/mi-cartera/…`, `…/mis-comunicados`,
+de todas sus PH), y en cada PH `…/mis-bienes-privados` (donde es titular), `…/mis-residencias`
+(donde reside, también si no es titular: con su calidad y si puede reservar), `…/mi-cartera/…`,
+`…/mis-comunicados`,
 `…/proteccion-datos/mis-datos`, `…/reservas?mias=true`, `…/cambios-censo?mias=true`, visitas y
 correspondencia (un residente solo ve las de su bien).
 
@@ -459,7 +469,9 @@ Fecha de nacimiento y movilidad reducida son **datos sensibles**: llegan ocultos
 Todo lo reservable es un **recurso** (`TipoRecurso`: bien común, parqueadero, agenda de la
 administración, herramienta) con su política. Calendario: `…/recursos/{id}/disponibilidad` da las
 franjas libres (horario − excepciones − reservas − alistamiento), en hora local de la PH.
-`POST …/reservas` responde `aprobada` (confirmación inmediata) o `solicitada`. Ciclo:
+`POST …/reservas` responde `aprobada` (confirmación inmediata) o `solicitada`; el bien a cuyo
+nombre se reserva se elige de `…/mis-bienes-privados` o `…/mis-residencias` (un tenedor o un
+familiar no es titular), y la reserva trae `recurso_nombre` y `bien_codigo` para mostrarla. Ciclo:
 solicitada → aprobada → en_curso (`…/entrega`) → finalizada o con_novedad (`…/recibo`), o
 cancelada, rechazada, no_asistio. Cancelar tarde puede generar penalidad. Un bien en mora o
 sancionado no reserva (`…/restricciones-reserva`). **Cobro**: el contador elige por recurso
@@ -516,7 +528,13 @@ Es el módulo con más reglas legales; siga este orden de pantallas:
    `no_inscrito`. El escrutinio muestra coeficiente **y** unidades. En preguntas
    **reservadas** los resultados públicos son totales; el detalle exige
    `asambleas.votos.ver_detalle` y cada consulta queda auditada (adviértalo en la interfaz).
-6. **Cierre y acta**: `GET …/acta` (revisar) → `POST …/acta` (PDF) → `PUT …/acta/estado`
+   El escrutinio (`Escrutinio` en `…/resultados`, en el tablero y en el WebSocket) trae
+   `habilitados`, `votantes`, `sin_votar` y `total` (`ConteoEscrutinio`: coeficiente y
+   unidades), las `opciones` (`ResultadoOpcion`) y la `decision`, etiquetada por su campo
+   `decision` (`aprobada`, `no_aprobada`, `ganadora`, `sin_ganadora`, `por_opcion` o `reparto`,
+   que lleva el cociente y los `cupos` por plancha). `regla` tiene la misma forma que
+   `regla_mayoria` de la pregunta (`calificada_70`).
+6. **Cierre y acta**: `GET …/acta` (revisar, esquema `DatosActa`) → `POST …/acta` (PDF) → `PUT …/acta/estado`
    (escaneo firmado, aprobada, publicada). Elecciones de consejo o revisor: `…/eleccion` crea los
    roles. Reportes de asistencia, votos, canales y costo de WhatsApp.
 
@@ -548,7 +566,8 @@ confirmación clara del voto registrado.
 Política versionada; la persona autoriza por **finalidad** bajo la política vigente y puede
 revocar. Muestre la política antes de pedir la autorización. Solicitudes del titular (consulta,
 reclamo…) con vencimiento en días hábiles y una prórroga única: muestre «quedan N días hábiles»
-con `dias_habiles_restantes` (0 = vence hoy o venció; `null` si ya se respondió).
+con `dias_habiles_restantes` (0 = vence hoy o venció; `null` si ya se respondió). Cada solicitud
+trae `persona_nombre` del titular (no hace falta `personas.ver`).
 «Mis datos» (`…/proteccion-datos/mis-datos`) para el titular.
 
 ### Directorio y publicidad (`directorio`, `publicidad`)
@@ -566,7 +585,8 @@ con `X-Pantalla`. El enlace del directorio para los grupos es **estable**: `GET
 ### Organizaciones y contratos (`organizaciones`)
 Administradoras, contables, vigilancia… son organizaciones globales que se buscan por **NIT
 exacto** antes de crearlas (para no duplicarlas). Un contrato de servicio vincula la organización
-con la PH y su personal recibe roles **derivados** que vencen con el contrato.
+con la PH y su personal recibe roles **derivados** que vencen con el contrato. Cada contrato
+trae su `organizacion` (id, razón social y NIT).
 
 ### Consola de la plataforma (`plataforma`)
 Exige segundo factor (si falta: 403 `segundo_factor_requerido`, lleve a `/yo/segundo-factor`).
@@ -766,6 +786,10 @@ antes de reintentar y muestre un aviso; no reintente en bucle.
   crudo en el cuerpo (`Content-Type: application/octet-stream`, no `multipart`). El tipo real se
   valida por contenido; un tipo no admitido o muy grande da 422 `validacion`. La respuesta trae
   el `id` del archivo, que luego se adjunta en otras peticiones (tickets, reservas, actas…).
+- **Listar**: `GET /api/v1/entidades/{id}/archivos` (§10, más recientes primero) con
+  `clasificacion`, `q` (fragmento del nombre, sin tildes ni mayúsculas), `desde` y `hasta`. Sin
+  `archivos.personales.ver` no aparecen los personales ni los sensibles (y filtrar por ellos da
+  403).
 - **Descargar**: pida `GET …/archivos/{archivo_id}/enlace` y abra la URL que devuelve: es un enlace
   firmado de **5 minutos** que no necesita sesión. Pídalo justo antes de abrirlo; no lo guarde.
 

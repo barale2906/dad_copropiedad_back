@@ -90,6 +90,7 @@ pub struct FiltroVisitasQuery {
 
 /// Visitas, más recientes primero. La portería ve todas; un residente, las de su bien.
 #[utoipa::path(
+    operation_id = "listar_visitas",
     get,
     path = "/visitas",
     tag = ETIQUETA_ACCESO,
@@ -263,6 +264,7 @@ pub struct DetalleVisitaRespuesta {
 
 /// Visita con su historial (avisos, decisiones, llamadas, ingreso y salida).
 #[utoipa::path(
+    operation_id = "ver_visita",
     get,
     path = "/visitas/{visita_id}",
     tag = ETIQUETA_ACCESO,

@@ -270,6 +270,50 @@ async fn subir_un_archivo_y_descargarlo_con_su_enlace(pool: PgPool) {
     assert_eq!(&bytes[..], b"%PDF-1.7\nreglamento");
 }
 
+/// Solicitud S11 del frontend: el archivo de la entidad se lista, más recientes primero, y se
+/// busca por nombre sin tildes ni mayúsculas.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_archivo_de_la_entidad_se_lista_y_se_busca_por_nombre(pool: PgPool) {
+    let ph = comun::ph(pool).await;
+    for (nombre, clasificacion) in [
+        ("Reglamento.pdf", "interno"),
+        ("Acta Asamblea.pdf", "publico"),
+    ] {
+        let (s, v) = ph
+            .api
+            .subir(
+                &format!(
+                    "{}/archivos?nombre={}&clasificacion={clasificacion}",
+                    ph.entidad,
+                    nombre.replace(' ', "%20")
+                ),
+                &ph.admin,
+                b"%PDF-1.7\ncontenido".to_vec(),
+            )
+            .await;
+        assert_eq!(s, StatusCode::CREATED, "{v}");
+    }
+
+    let (s, todos) = ph.pedir_entidad(Method::GET, "/archivos", None).await;
+    let (_, buscados) = ph
+        .pedir_entidad(Method::GET, "/archivos?q=ACTA%20asamblea", None)
+        .await;
+    let (_, internos) = ph
+        .pedir_entidad(Method::GET, "/archivos?clasificacion=interno", None)
+        .await;
+
+    assert_eq!(s, StatusCode::OK, "{todos}");
+    let nombres: Vec<_> = todos["datos"]
+        .as_array()
+        .expect("datos")
+        .iter()
+        .map(|a| a["nombre"].as_str().expect("nombre"))
+        .collect();
+    assert_eq!(nombres, ["Acta Asamblea.pdf", "Reglamento.pdf"]);
+    assert_eq!(buscados["datos"].as_array().expect("datos").len(), 1);
+    assert_eq!(internos["datos"][0]["nombre"], "Reglamento.pdf");
+}
+
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn al_iniciar_sesion_llegan_las_entidades_para_elegir_en_cual_trabajar(pool: PgPool) {
     // Preparar: una cuenta que administra una PH y una empresa sin vertical.
@@ -320,6 +364,8 @@ async fn al_iniciar_sesion_llegan_las_entidades_para_elegir_en_cual_trabajar(poo
             )
             .await;
         assert_eq!((s, &c["tipo"]), (StatusCode::OK, &json!(tipo)), "{c}");
+        // Toda cuenta con un rol recibe la zona horaria (solicitud S10 del frontend).
+        assert_eq!(c["zona_horaria"], "America/Bogota");
     }
 }
 

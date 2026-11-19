@@ -1,8 +1,11 @@
 //! Repositorio de archivos (`archivos`) sobre la transacción del tenant.
 
 use application::{
-    AppError, AppResult,
-    puertos::{RepositorioArchivos, archivos::Archivo},
+    AppError, AppResult, Pagina, SolicitudPagina,
+    puertos::{
+        RepositorioArchivos,
+        archivos::{Archivo, FiltroArchivos},
+    },
 };
 use chrono::{DateTime, Utc};
 use domain::{
@@ -82,6 +85,45 @@ impl RepositorioArchivos for TransaccionPg {
         .map_err(AppError::infra)?
         .map(Archivo::try_from)
         .transpose()
+    }
+
+    async fn listar(
+        &mut self,
+        f: &FiltroArchivos,
+        p: SolicitudPagina,
+    ) -> AppResult<Pagina<Archivo>> {
+        let filas = sqlx::query_as!(
+            FilaArchivo,
+            "SELECT id, clave, almacen, nombre_original, tipo_mime, tamano_bytes, sha256,
+                    clasificacion, subido_por, creado_en
+             FROM archivos
+             WHERE tenant_id = $1
+               AND ($2::text IS NULL OR clasificacion = $2)
+               AND ($3 OR clasificacion NOT IN ('personal', 'sensible'))
+               AND ($4::text IS NULL
+                    OR normalizar(nombre_original) LIKE '%' || normalizar($4) || '%')
+               AND ($5::timestamptz IS NULL OR creado_en >= $5)
+               AND ($6::timestamptz IS NULL OR creado_en < $6)
+               AND ($7::uuid IS NULL OR id < $7)
+             ORDER BY id DESC
+             LIMIT $8",
+            self.ctx.tenant_id.as_uuid(),
+            f.clasificacion.map(ClasificacionArchivo::as_str),
+            f.incluir_personales,
+            f.texto.as_deref(),
+            f.desde,
+            f.hasta,
+            p.despues(),
+            p.filas_a_consultar(),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        let v = filas
+            .into_iter()
+            .map(Archivo::try_from)
+            .collect::<AppResult<Vec<_>>>()?;
+        Ok(Pagina::desde_filas(v, p, |a| a.id.as_uuid()))
     }
 
     async fn en_almacen(&mut self, almacen: Almacen, limite: u32) -> AppResult<Vec<Archivo>> {

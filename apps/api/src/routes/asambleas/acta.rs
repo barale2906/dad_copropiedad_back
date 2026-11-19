@@ -19,7 +19,7 @@ use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
-use super::dto::ReunionRespuesta;
+use super::{dto::ReunionRespuesta, escrutinio::DatosActaRespuesta};
 use crate::{
     csv::csv,
     error::{ApiError, ApiResult, ErrorRespuesta},
@@ -66,7 +66,7 @@ fn pdf(nombre: &'static str, bytes: Vec<u8>) -> Response {
     security(("bearer" = [])),
     params(("copropiedad_id" = Uuid, Path, description = "Copropiedad"), ("reunion_id" = Uuid, Path, description = "Reunión")),
     responses(
-        (status = OK, description = "Datos del acta", body = Object),
+        (status = OK, description = "Datos del acta", body = DatosActaRespuesta),
         (status = FORBIDDEN, description = "Sin `asambleas.ver` (`sin_permiso`) o módulo no contratado (`modulo_no_habilitado`)", body = ErrorRespuesta),
     )
 )]
@@ -74,7 +74,7 @@ pub async fn vista_previa(
     State(state): State<AppState>,
     en: EnCopropiedad,
     Path(ruta): Path<(Uuid, Uuid)>,
-) -> ApiResult<Json<serde_json::Value>> {
+) -> ApiResult<Json<DatosActaRespuesta>> {
     let id = ruta.1;
     let d = uc::vista_previa_acta(
         &state.unidad,
@@ -83,9 +83,7 @@ pub async fn vista_previa(
         ReunionId::from_uuid(id),
     )
     .await?;
-    Ok(Json(
-        serde_json::to_value(d).map_err(|e| ApiError::Interno(e.into()))?,
-    ))
+    Ok(Json(d.into()))
 }
 
 /// Genera (o regenera mientras no se apruebe) el acta en PDF con Typst y la guarda como

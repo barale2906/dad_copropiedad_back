@@ -188,6 +188,25 @@ impl RepositorioCenso for TransaccionPg {
         .collect()
     }
 
+    async fn residencias_de_cuenta(&mut self, cuenta: CuentaId) -> AppResult<Vec<Residencia>> {
+        sqlx::query_as!(
+            FilaResidencia,
+            "SELECT r.id, r.bien_privado_id, r.persona_id, r.calidad, r.es_responsable,
+                    r.autorizado_por, r.contrato_archivo_id, r.vigente_desde, r.vigente_hasta,
+                    r.reservas_autorizadas
+             FROM residencias r JOIN personas p ON p.tenant_id = r.tenant_id AND p.id = r.persona_id
+             WHERE p.cuenta_id = $1 AND r.vigente_hasta IS NULL
+             ORDER BY r.vigente_desde DESC, r.id",
+            cuenta.as_uuid(),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(Residencia::try_from)
+        .collect()
+    }
+
     async fn residencia(&mut self, id: ResidenciaId) -> AppResult<Option<Residencia>> {
         sqlx::query_as!(
             FilaResidencia,

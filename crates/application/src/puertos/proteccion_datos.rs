@@ -44,6 +44,9 @@ pub struct Autorizacion {
 pub struct SolicitudTitular {
     pub id: SolicitudTitularId,
     pub persona_id: PersonaId,
+    /// Nombre del titular (dato personal), para listar sin consultar la persona. Es de
+    /// lectura: no se guarda en la solicitud.
+    pub persona_nombre: String,
     pub tipo: TipoSolicitudTitular,
     pub radicada_en: DateTime<Utc>,
     /// Último día (hora de Colombia) para responder sin prórroga.

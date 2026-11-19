@@ -145,3 +145,38 @@ fn cada_esquema_tiene_un_nombre_unico() {
         repetidos.join("\n")
     );
 }
+
+/// Cada operación tiene un `operationId` propio: los generadores de clientes agrupan los tipos
+/// por ese nombre y, si se repite, una ruta toma los tipos de otra. `openapi::nombrar_operaciones`
+/// antepone la etiqueta del módulo; si aun así dos se llaman igual, uno lleva
+/// `operation_id = "…"` en su `#[utoipa::path]`.
+#[test]
+fn cada_operacion_tiene_un_id_unico() {
+    use std::collections::BTreeMap;
+
+    let doc: serde_json::Value = serde_json::from_str(
+        &api::routes::openapi()
+            .to_json()
+            .expect("el documento OpenAPI se serializa"),
+    )
+    .expect("JSON válido");
+    let mut ids: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for (ruta, item) in doc["paths"].as_object().expect("paths") {
+        for (metodo, op) in item.as_object().expect("operaciones") {
+            let id = op["operationId"].as_str().unwrap_or_default().to_owned();
+            ids.entry(id)
+                .or_default()
+                .push(format!("{} {ruta}", metodo.to_uppercase()));
+        }
+    }
+    let repetidos: Vec<String> = ids
+        .into_iter()
+        .filter(|(id, rutas)| id.is_empty() || rutas.len() > 1)
+        .map(|(id, rutas)| format!("{id:?}: {}", rutas.join(", ")))
+        .collect();
+    assert!(
+        repetidos.is_empty(),
+        "Operaciones sin `operationId` propio:\n{}",
+        repetidos.join("\n")
+    );
+}

@@ -28,6 +28,9 @@ pub trait RepositorioModulos: Send {
     /// Qué es la entidad de la transacción: propiedad horizontal, empresa o la plataforma.
     fn tipo_entidad(&mut self) -> impl Future<Output = AppResult<TipoEntidad>> + Send;
 
+    /// Zona horaria IANA de la entidad de la transacción (las fechas se muestran en ella).
+    fn zona_horaria_entidad(&mut self) -> impl Future<Output = AppResult<String>> + Send;
+
     /// ¿Algún periodo del módulo cubre `ahora`?
     fn modulo_habilitado(
         &mut self,

@@ -205,6 +205,8 @@ impl From<AutorizacionRegistrada> for AutorizacionTratamientoRespuesta {
 pub struct SolicitudTitularRespuesta {
     pub id: Uuid,
     pub persona_id: Uuid,
+    /// Nombre del titular (dato personal).
+    pub persona_nombre: String,
     /// `consulta`, `actualizacion`, `rectificacion`, `supresion` o `revocatoria`.
     #[schema(value_type = crate::esquemas::TipoSolicitudTitular)]
     pub tipo: String,
@@ -235,6 +237,7 @@ impl From<SolicitudTitular> for SolicitudTitularRespuesta {
             dias_habiles_restantes: s.dias_habiles_restantes(hoy),
             id: s.id.as_uuid(),
             persona_id: s.persona_id.as_uuid(),
+            persona_nombre: s.persona_nombre,
             tipo: s.tipo.as_str().into(),
             estado: s.estado.as_str().into(),
             detalle: s.detalle,

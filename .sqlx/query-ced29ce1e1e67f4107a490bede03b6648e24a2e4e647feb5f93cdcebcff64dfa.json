@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, recurso_id, bien_privado_id, solicitante_persona_id, solicitada_por, franja,\n                    exclusiva, invitados, estado, valor, deposito, penalidad, estado_pago,\n                    idempotency_key, canal, modalidad, motivo, placa_visitante, observacion,\n                    creada_en\n             FROM reservas\n             WHERE estado = 'aprobada' AND recordatorio_enviado_en IS NULL\n               AND lower(franja) > $1 AND lower(franja) <= $2\n             ORDER BY lower(franja)\n             FOR UPDATE SKIP LOCKED",
+  "query": "SELECT r.id, r.recurso_id, rc.nombre AS recurso_nombre, r.bien_privado_id,\n                    b.codigo AS bien_codigo, r.solicitante_persona_id, r.solicitada_por, r.franja,\n                    r.exclusiva, r.invitados, r.estado, r.valor, r.deposito, r.penalidad,\n                    r.estado_pago, r.idempotency_key, r.canal, r.modalidad, r.motivo,\n                    r.placa_visitante, r.observacion, r.creada_en\n             FROM reservas r\n             JOIN recursos rc ON rc.tenant_id = r.tenant_id AND rc.id = r.recurso_id\n             JOIN bienes_privados b ON b.tenant_id = r.tenant_id AND b.id = r.bien_privado_id\n             WHERE r.estado = 'aprobada' AND r.recordatorio_enviado_en IS NULL\n               AND lower(r.franja) > $1 AND lower(r.franja) <= $2\n             ORDER BY lower(r.franja)\n             FOR UPDATE OF r SKIP LOCKED",
   "describe": {
     "columns": [
       {
@@ -27,6 +27,17 @@
       },
       {
         "ordinal": 2,
+        "name": "recurso_nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "recursos",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
         "name": "bien_privado_id",
         "type_info": "Uuid",
         "origin": {
@@ -37,7 +48,18 @@
         }
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
+        "name": "bien_codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "bienes_privados",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
         "name": "solicitante_persona_id",
         "type_info": "Uuid",
         "origin": {
@@ -48,7 +70,7 @@
         }
       },
       {
-        "ordinal": 4,
+        "ordinal": 6,
         "name": "solicitada_por",
         "type_info": "Uuid",
         "origin": {
@@ -59,7 +81,7 @@
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 7,
         "name": "franja",
         "type_info": "TstzRange",
         "origin": {
@@ -70,7 +92,7 @@
         }
       },
       {
-        "ordinal": 6,
+        "ordinal": 8,
         "name": "exclusiva",
         "type_info": "Bool",
         "origin": {
@@ -81,7 +103,7 @@
         }
       },
       {
-        "ordinal": 7,
+        "ordinal": 9,
         "name": "invitados",
         "type_info": "Int4",
         "origin": {
@@ -92,7 +114,7 @@
         }
       },
       {
-        "ordinal": 8,
+        "ordinal": 10,
         "name": "estado",
         "type_info": "Text",
         "origin": {
@@ -103,7 +125,7 @@
         }
       },
       {
-        "ordinal": 9,
+        "ordinal": 11,
         "name": "valor",
         "type_info": "Numeric",
         "origin": {
@@ -114,7 +136,7 @@
         }
       },
       {
-        "ordinal": 10,
+        "ordinal": 12,
         "name": "deposito",
         "type_info": "Numeric",
         "origin": {
@@ -125,7 +147,7 @@
         }
       },
       {
-        "ordinal": 11,
+        "ordinal": 13,
         "name": "penalidad",
         "type_info": "Numeric",
         "origin": {
@@ -136,7 +158,7 @@
         }
       },
       {
-        "ordinal": 12,
+        "ordinal": 14,
         "name": "estado_pago",
         "type_info": "Text",
         "origin": {
@@ -147,7 +169,7 @@
         }
       },
       {
-        "ordinal": 13,
+        "ordinal": 15,
         "name": "idempotency_key",
         "type_info": "Text",
         "origin": {
@@ -158,7 +180,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 16,
         "name": "canal",
         "type_info": "Text",
         "origin": {
@@ -169,7 +191,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 17,
         "name": "modalidad",
         "type_info": "Text",
         "origin": {
@@ -180,7 +202,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 18,
         "name": "motivo",
         "type_info": "Text",
         "origin": {
@@ -191,7 +213,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 19,
         "name": "placa_visitante",
         "type_info": "Text",
         "origin": {
@@ -202,7 +224,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 20,
         "name": "observacion",
         "type_info": "Text",
         "origin": {
@@ -213,7 +235,7 @@
         }
       },
       {
-        "ordinal": 19,
+        "ordinal": 21,
         "name": "creada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -231,6 +253,8 @@
       ]
     },
     "nullable": [
+      false,
+      false,
       false,
       false,
       false,
@@ -253,5 +277,5 @@
       false
     ]
   },
-  "hash": "c69d94a9c835d369af839582699f020880490dde61d7e73ab9e0b76c14eb1a21"
+  "hash": "ced29ce1e1e67f4107a490bede03b6648e24a2e4e647feb5f93cdcebcff64dfa"
 }

@@ -37,6 +37,23 @@ impl RepositorioCenso for TransaccionEnMemoria {
         Ok(self.datos.residencias.iter().find(|r| r.id == id).cloned())
     }
 
+    async fn residencias_de_cuenta(&mut self, cuenta: CuentaId) -> AppResult<Vec<Residencia>> {
+        let personas: Vec<PersonaId> = self
+            .datos
+            .personas
+            .iter()
+            .filter(|p| p.cuenta_id == Some(cuenta))
+            .map(|p| p.id)
+            .collect();
+        Ok(self
+            .datos
+            .residencias
+            .iter()
+            .filter(|r| r.vigente_hasta.is_none() && personas.contains(&r.persona_id))
+            .cloned()
+            .collect())
+    }
+
     async fn insertar_residencia(&mut self, r: &Residencia) -> AppResult<()> {
         self.datos.residencias.push(r.clone());
         Ok(())

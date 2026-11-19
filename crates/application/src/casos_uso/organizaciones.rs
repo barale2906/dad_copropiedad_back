@@ -22,8 +22,8 @@ use crate::{
         RegistroAuditoria, Reloj, RepositorioContratos, RepositorioOrganizaciones,
         RepositorioRoles, Transaccion, UnidadDeTrabajo, UnidadDeTrabajoPlataforma,
         identidad::{
-            Asignacion, CambiosFicha, ContratoServicio, FichaOrganizacion, NuevaOrganizacion,
-            Reclamacion,
+            Asignacion, CambiosFicha, ContratoConOrganizacion, ContratoServicio, FichaOrganizacion,
+            NuevaOrganizacion, OrganizacionContratada, Reclamacion,
         },
     },
 };
@@ -132,7 +132,7 @@ pub async fn vincular_organizacion<U>(
     reloj: &impl Reloj,
     ctx: &Contexto,
     nuevo: NuevoContrato,
-) -> AppResult<ContratoServicio>
+) -> AppResult<ContratoConOrganizacion>
 where
     U: UnidadDeTrabajo,
     U::Transaccion: RepositorioContratos + RegistroAuditoria,
@@ -168,23 +168,58 @@ where
             .con_detalle(detalle),
     )
     .await?;
+    let organizacion = tx
+        .organizaciones_contratadas()
+        .await?
+        .into_iter()
+        .find(|o| o.id == contrato.organizacion_id)
+        .ok_or(AppError::NoEncontrado("organizacion"))?;
     tx.confirmar().await?;
-    Ok(contrato)
+    Ok(ContratoConOrganizacion {
+        contrato,
+        organizacion,
+    })
 }
 
-/// Contratos de la copropiedad.
+/// Contratos de la copropiedad, cada uno con la razón social y el NIT de su organización.
 ///
 /// # Errors
 ///
 /// [`AppError::SinPermiso`] sin `organizaciones.vincular` ni `contratos.gestionar`.
-pub async fn listar_contratos<U>(unidad: &U, ctx: &Contexto) -> AppResult<Vec<ContratoServicio>>
+pub async fn listar_contratos<U>(
+    unidad: &U,
+    ctx: &Contexto,
+) -> AppResult<Vec<ContratoConOrganizacion>>
 where
     U: UnidadDeTrabajo,
     U::Transaccion: RepositorioContratos,
 {
     ctx.exigir(Permiso::ContratosGestionar)
         .or_else(|_| ctx.exigir(Permiso::OrganizacionesVincular))?;
-    unidad.iniciar(ctx).await?.contratos().await
+    let mut tx = unidad.iniciar(ctx).await?;
+    let contratos = tx.contratos().await?;
+    let organizaciones = tx.organizaciones_contratadas().await?;
+    con_organizacion(contratos, &organizaciones)
+}
+
+fn con_organizacion(
+    contratos: Vec<ContratoServicio>,
+    organizaciones: &[OrganizacionContratada],
+) -> AppResult<Vec<ContratoConOrganizacion>> {
+    contratos
+        .into_iter()
+        .map(|contrato| {
+            let organizacion = organizaciones
+                .iter()
+                .find(|o| o.id == contrato.organizacion_id)
+                .cloned()
+                .ok_or(AppError::NoEncontrado("organizacion"))?;
+            Ok(ContratoConOrganizacion {
+                contrato,
+                organizacion,
+            })
+        })
+        .collect()
 }
 
 /// Asigna un rol al personal de la organización, **derivado del contrato**: vence con él.

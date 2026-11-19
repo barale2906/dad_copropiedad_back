@@ -269,16 +269,15 @@ impl From<QuorumReunion> for QuorumRespuesta {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PreguntaEnVivoRespuesta {
     pub pregunta: PreguntaRespuesta,
-    /// Escrutinio por coeficiente y por unidades (ver `ResultadosRespuesta`).
-    #[schema(value_type = Object)]
-    pub escrutinio: serde_json::Value,
+    /// Escrutinio por coeficiente y por unidades.
+    pub escrutinio: super::escrutinio::EscrutinioDto,
 }
 
 impl From<PreguntaEnVivo> for PreguntaEnVivoRespuesta {
     fn from(p: PreguntaEnVivo) -> Self {
         Self {
             pregunta: p.pregunta.into(),
-            escrutinio: serde_json::to_value(p.escrutinio).unwrap_or_default(),
+            escrutinio: p.escrutinio.into(),
         }
     }
 }
