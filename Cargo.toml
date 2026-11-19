@@ -70,7 +70,7 @@ anyhow = "1.0.104"
 dotenvy = "0.15.7"
 
 # Correo saliente por SMTP (sin OpenSSL: rustls + raíces webpki)
-lettre = { version = "0.11.23", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls-tls"] }
+lettre = { version = "0.11.24", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls-tls"] }
 
 # Cliente HTTP saliente (WhatsApp Cloud API). TLS con rustls + ring, igual que SQLx y lettre:
 # sin OpenSSL ni aws-lc (el proveedor de criptografía se fija al construir el cliente).
