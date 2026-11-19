@@ -12,10 +12,10 @@
 
 use chrono::{NaiveDate, Utc};
 use domain::{
-    Ambito, ArchivoId, BienPrivadoId, CalidadResidencia, CambioCensoId, ConjuntoPermisos,
-    DireccionCorreo, Documento, EspecieMascota, EstadoCambioCenso, EstadoMascota, MascotaId,
-    OrigenAsignacion, Permiso, PersonaId, Placa, ResidenciaId, Telefono, TipoCambioCenso,
-    TipoDocumento, TipoVehiculo, VehiculoId,
+    Ambito, ArchivoId, BienPrivadoId, CalidadResidencia, CambioCensoId, CodigoBienPrivado,
+    ConjuntoPermisos, DireccionCorreo, Documento, EspecieMascota, EstadoCambioCenso, EstadoMascota,
+    MascotaId, OrigenAsignacion, Permiso, PersonaId, Placa, ResidenciaId, Telefono,
+    TipoCambioCenso, TipoDocumento, TipoVehiculo, VehiculoId,
     censo::{AlertaMascota, VencimientosMascota, alertas_mascota, es_menor, exigir_placa},
     copropiedad::{texto_obligatorio, texto_opcional},
 };
@@ -264,6 +264,41 @@ where
 pub struct ResidenciaConPersona {
     pub residencia: Residencia,
     pub persona: PersonaVista,
+}
+
+/// Residencia vigente de la cuenta con el código de su bien.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MiResidencia {
+    pub residencia: Residencia,
+    pub bien_codigo: CodigoBienPrivado,
+}
+
+/// Bienes donde reside la cuenta autenticada (propietario, tenedor u otra calidad), para que un
+/// residente que no es titular elija a nombre de qué bien reserva. No exige permisos: cada
+/// cuenta ve solo lo suyo.
+///
+/// # Errors
+///
+/// [`AppError::NoAutenticado`] sin cuenta en el contexto.
+pub async fn mis_residencias<U>(unidad: &U, ctx: &Contexto) -> AppResult<Vec<MiResidencia>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioCenso + RepositorioBienesPrivados,
+{
+    let cuenta = ctx.actor_id.ok_or(AppError::NoAutenticado)?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    let mut lista = Vec::new();
+    for residencia in tx.residencias_de_cuenta(cuenta).await? {
+        let bien = tx
+            .bien(residencia.bien_privado_id)
+            .await?
+            .ok_or(AppError::NoEncontrado("bien privado"))?;
+        lista.push(MiResidencia {
+            residencia,
+            bien_codigo: bien.codigo,
+        });
+    }
+    Ok(lista)
 }
 
 /// Residencias (de un bien o de todos).
@@ -1327,6 +1362,49 @@ mod tests {
             .await
             .expect("termina");
         assert_eq!(roles_vigentes(&e, cuenta), 0);
+    }
+
+    #[tokio::test]
+    async fn el_tenedor_ve_el_bien_donde_reside_y_no_los_terminados() {
+        let e = entorno().await;
+        let cuenta = CuentaId::nuevo();
+        let r = registrar_residencia(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.bien,
+            NuevaResidencia {
+                autorizado_por: Some(e.dueno),
+                ..residencia(nueva("444", Some(cuenta)), CalidadResidencia::Tenedor)
+            },
+        )
+        .await
+        .expect("tenedor");
+        let tenedor = Contexto::de_cuenta(e.ctx.tenant_id, cuenta, ConjuntoPermisos::vacio());
+
+        let mias = mis_residencias(&e.unidad, &tenedor).await.expect("lista");
+
+        assert_eq!(mias.len(), 1);
+        assert_eq!(mias[0].bien_codigo.as_str(), "101");
+        assert_eq!(mias[0].residencia.calidad, CalidadResidencia::Tenedor);
+        terminar_residencia(&e.unidad, &RelojSistema, &e.ctx, r.id)
+            .await
+            .expect("termina");
+        assert!(
+            mis_residencias(&e.unidad, &tenedor)
+                .await
+                .expect("lista")
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn sin_cuenta_no_hay_mis_residencias() {
+        let e = entorno().await;
+
+        let r = mis_residencias(&e.unidad, &e.ctx).await;
+
+        assert!(matches!(r, Err(AppError::NoAutenticado)));
     }
 
     #[tokio::test]

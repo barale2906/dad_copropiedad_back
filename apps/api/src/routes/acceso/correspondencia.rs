@@ -105,6 +105,7 @@ pub struct FiltroCorrespondenciaQuery {
 
 /// Correspondencia, más reciente primero. Un residente ve la de su bien («mis paquetes»).
 #[utoipa::path(
+    operation_id = "listar_correspondencia",
     get,
     path = "/correspondencia",
     tag = ETIQUETA_ACCESO,
@@ -193,6 +194,7 @@ pub struct DetalleCorrespondenciaRespuesta {
 
 /// Correspondencia con su entrega (el documento del tercero solo lo ve la portería).
 #[utoipa::path(
+    operation_id = "ver_correspondencia",
     get,
     path = "/correspondencia/{correspondencia_id}",
     tag = ETIQUETA_ACCESO,

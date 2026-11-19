@@ -8,7 +8,10 @@
 
 use application::{
     casos_uso::archivos::{self as casos_archivos, ArchivoSubido},
-    puertos::{AlmacenArchivos, Reloj, RelojSistema, archivos::Archivo},
+    puertos::{
+        AlmacenArchivos, Reloj, RelojSistema,
+        archivos::{Archivo, FiltroArchivos},
+    },
 };
 use axum::{
     body::Bytes,
@@ -31,6 +34,7 @@ use crate::{
     extractores::{Json, Path, Query},
     limite::LimitePublico,
     openapi::ETIQUETA_ARCHIVOS,
+    paginacion::{PaginaRespuesta, ParametrosPagina},
     sesion::EnEntidad,
     state::AppState,
 };
@@ -45,7 +49,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 pub fn rutas_entidad() -> OpenApiRouter<AppState> {
     let limite = usize::try_from(TipoArchivo::TAMANO_MAXIMO_GLOBAL).unwrap_or(usize::MAX);
     OpenApiRouter::new()
-        .routes(routes!(subir))
+        .routes(routes!(listar, subir))
         .layer(DefaultBodyLimit::max(limite))
         .routes(routes!(enlace))
 }
@@ -89,6 +93,58 @@ impl From<Archivo> for ArchivoRespuesta {
             creado_en: a.creado_en,
         }
     }
+}
+
+/// Filtros del archivo de la entidad.
+#[derive(Debug, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct FiltroArchivosQuery {
+    /// Solo esta clasificación (`personal` y `sensible` exigen `archivos.personales.ver`).
+    #[param(value_type = Option<crate::esquemas::ClasificacionArchivo>)]
+    pub clasificacion: Option<String>,
+    /// Fragmento del nombre (sin tildes ni mayúsculas).
+    #[param(example = "reglamento")]
+    pub q: Option<String>,
+    /// Subidos desde este instante (incluido).
+    pub desde: Option<DateTime<Utc>>,
+    /// Subidos antes de este instante (excluido).
+    pub hasta: Option<DateTime<Utc>>,
+}
+
+/// Archivo de la entidad, más recientes primero. Sin `archivos.personales.ver` no aparecen los
+/// personales ni los sensibles.
+#[utoipa::path(
+    get,
+    path = "/archivos",
+    tag = ETIQUETA_ARCHIVOS,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad (en una PH, el id de la copropiedad)"), FiltroArchivosQuery, ParametrosPagina),
+    responses(
+        (status = OK, description = "Archivos", body = PaginaRespuesta<ArchivoRespuesta>),
+        (status = FORBIDDEN, description = "Sin `archivos.ver`, o sin `archivos.personales.ver` al filtrar por `personal` o `sensible` (`sin_permiso`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Clasificación desconocida (`validacion`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn listar(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Query(f): Query<FiltroArchivosQuery>,
+    Query(p): Query<ParametrosPagina>,
+) -> ApiResult<Json<PaginaRespuesta<ArchivoRespuesta>>> {
+    let filtro = FiltroArchivos {
+        clasificacion: f
+            .clasificacion
+            .as_deref()
+            .map(ClasificacionArchivo::try_from)
+            .transpose()?,
+        incluir_personales: false,
+        texto: f.q,
+        desde: f.desde,
+        hasta: f.hasta,
+    };
+    let pagina =
+        casos_archivos::listar_archivos(&state.unidad, &en.ctx, filtro, p.validar()?).await?;
+    Ok(Json(pagina.mapear(Into::into).into()))
 }
 
 /// Sube un archivo (PDF, JPEG, PNG, WebP o HEIC). El tipo se verifica por el contenido.

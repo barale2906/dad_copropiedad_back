@@ -407,9 +407,17 @@ where
     let vence_el = tipo
         .vencimiento(fecha_en_colombia(radicada_en))
         .ok_or_else(|| AppError::infra(std::io::Error::other("vencimiento fuera de rango")))?;
+    let mut tx = unidad.iniciar(ctx).await?;
+    exigir_titular_o_gestion(&mut tx, ctx, persona_id).await?;
+    let persona_nombre = tx
+        .persona(persona_id)
+        .await?
+        .ok_or(AppError::NoEncontrado("persona"))?
+        .nombre;
     let solicitud = SolicitudTitular {
         id: SolicitudTitularId::nuevo(),
         persona_id,
+        persona_nombre,
         tipo,
         radicada_en,
         vence_el,
@@ -423,9 +431,6 @@ where
         respondida_en: None,
         respondida_por: None,
     };
-
-    let mut tx = unidad.iniciar(ctx).await?;
-    exigir_titular_o_gestion(&mut tx, ctx, persona_id).await?;
     tx.insertar_solicitud(&solicitud).await?;
     let detalle = DetalleAuditoria::vacio()
         .con("tipo", tipo.as_str())?
@@ -884,6 +889,14 @@ mod tests {
         let unidad = UnidadEnMemoria::default();
         let ctx = Contexto::new(TenantId::nuevo());
         let persona = PersonaId::nuevo();
+        unidad.con_datos(|d| {
+            d.personas.push(Persona::basica(
+                persona,
+                domain::TipoPersona::Natural,
+                "Ana".into(),
+                None,
+            ));
+        });
 
         let consulta = radicar_solicitud(
             &unidad,

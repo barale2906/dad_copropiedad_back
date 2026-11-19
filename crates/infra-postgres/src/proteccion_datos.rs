@@ -231,16 +231,18 @@ impl RepositorioProteccionDatos for TransaccionPg {
     ) -> AppResult<Pagina<SolicitudTitular>> {
         let filas = sqlx::query_as!(
             FilaSolicitud,
-            "SELECT id, persona_id, tipo, radicada_en, vence_el, estado, detalle, radicada_por,
-                    prorrogada_hasta, motivo_prorroga, respuesta, respuesta_archivo_id,
-                    respondida_en, respondida_por
-             FROM solicitudes_titular
-             WHERE ($1::text IS NULL OR estado = $1)
-               AND ($2::uuid IS NULL OR persona_id = $2)
-               AND ($3::date IS NULL OR (estado <> 'respondida'
-                                         AND coalesce(prorrogada_hasta, vence_el) <= $3))
-               AND ($4::uuid IS NULL OR id < $4)
-             ORDER BY id DESC LIMIT $5",
+            "SELECT s.id, s.persona_id, p.nombre AS persona_nombre, s.tipo, s.radicada_en,
+                    s.vence_el, s.estado, s.detalle, s.radicada_por, s.prorrogada_hasta,
+                    s.motivo_prorroga, s.respuesta, s.respuesta_archivo_id, s.respondida_en,
+                    s.respondida_por
+             FROM solicitudes_titular s
+             JOIN personas p ON p.tenant_id = s.tenant_id AND p.id = s.persona_id
+             WHERE ($1::text IS NULL OR s.estado = $1)
+               AND ($2::uuid IS NULL OR s.persona_id = $2)
+               AND ($3::date IS NULL OR (s.estado <> 'respondida'
+                                         AND coalesce(s.prorrogada_hasta, s.vence_el) <= $3))
+               AND ($4::uuid IS NULL OR s.id < $4)
+             ORDER BY s.id DESC LIMIT $5",
             f.estado.map(EstadoSolicitudTitular::as_str),
             f.persona_id.map(PersonaId::as_uuid),
             f.vencen_hasta,
@@ -263,10 +265,13 @@ impl RepositorioProteccionDatos for TransaccionPg {
     ) -> AppResult<Option<SolicitudTitular>> {
         sqlx::query_as!(
             FilaSolicitud,
-            "SELECT id, persona_id, tipo, radicada_en, vence_el, estado, detalle, radicada_por,
-                    prorrogada_hasta, motivo_prorroga, respuesta, respuesta_archivo_id,
-                    respondida_en, respondida_por
-             FROM solicitudes_titular WHERE id = $1 FOR UPDATE",
+            "SELECT s.id, s.persona_id, p.nombre AS persona_nombre, s.tipo, s.radicada_en,
+                    s.vence_el, s.estado, s.detalle, s.radicada_por, s.prorrogada_hasta,
+                    s.motivo_prorroga, s.respuesta, s.respuesta_archivo_id, s.respondida_en,
+                    s.respondida_por
+             FROM solicitudes_titular s
+             JOIN personas p ON p.tenant_id = s.tenant_id AND p.id = s.persona_id
+             WHERE s.id = $1 FOR UPDATE OF s",
             id.as_uuid(),
         )
         .fetch_optional(&mut *self.tx)
@@ -300,6 +305,7 @@ impl RepositorioProteccionDatos for TransaccionPg {
 struct FilaSolicitud {
     id: Uuid,
     persona_id: Uuid,
+    persona_nombre: String,
     tipo: String,
     radicada_en: DateTime<Utc>,
     vence_el: NaiveDate,
@@ -321,6 +327,7 @@ impl TryFrom<FilaSolicitud> for SolicitudTitular {
         Ok(Self {
             id: SolicitudTitularId::from_uuid(f.id),
             persona_id: PersonaId::from_uuid(f.persona_id),
+            persona_nombre: f.persona_nombre,
             tipo: TipoSolicitudTitular::try_from(f.tipo.as_str())?,
             radicada_en: f.radicada_en,
             vence_el: f.vence_el,

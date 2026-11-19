@@ -550,7 +550,11 @@ pub async fn disponibilidad(
 pub struct ReservaRespuesta {
     pub id: Uuid,
     pub recurso_id: Uuid,
+    #[schema(example = "Salón social")]
+    pub recurso_nombre: String,
     pub bien_privado_id: Uuid,
+    #[schema(example = "T3-506")]
+    pub bien_codigo: String,
     pub solicitante_persona_id: Option<Uuid>,
     pub inicio: DateTime<Utc>,
     pub fin: DateTime<Utc>,
@@ -583,7 +587,9 @@ impl From<Reserva> for ReservaRespuesta {
         Self {
             id: r.id.as_uuid(),
             recurso_id: r.recurso_id.as_uuid(),
+            recurso_nombre: r.recurso_nombre,
             bien_privado_id: r.bien_privado_id.as_uuid(),
+            bien_codigo: r.bien_codigo,
             solicitante_persona_id: r.solicitante_persona_id.map(domain::PersonaId::as_uuid),
             inicio: r.franja.inicio(),
             fin: r.franja.fin(),

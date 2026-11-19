@@ -52,6 +52,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(transferir))
         .routes(routes!(designar_representante))
         .routes(routes!(mis_bienes))
+        .routes(routes!(mis_residencias))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -985,4 +986,60 @@ pub async fn mis_bienes(
 ) -> ApiResult<Json<Vec<BienPrivadoRespuesta>>> {
     let bienes = uc::mis_bienes_privados(&state.unidad, &en.ctx).await?;
     Ok(Json(bienes.into_iter().map(Into::into).collect()))
+}
+
+/// Bien donde reside la cuenta autenticada.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MiResidenciaRespuesta {
+    pub residencia_id: Uuid,
+    pub bien_privado_id: Uuid,
+    #[schema(example = "T3-506")]
+    pub bien_codigo: String,
+    /// Calidad en que reside (propietario residente, tenedor, familiar…).
+    #[schema(value_type = crate::esquemas::CalidadResidencia)]
+    pub calidad: domain::CalidadResidencia,
+    /// Cabeza del bien privado ante la copropiedad.
+    pub es_responsable: bool,
+    /// El propietario autorizó sus reservas (tenedores, cuando la política del recurso lo
+    /// exige).
+    pub reservas_autorizadas: bool,
+    pub vigente_desde: DateTime<Utc>,
+}
+
+impl From<application::casos_uso::censo::MiResidencia> for MiResidenciaRespuesta {
+    fn from(m: application::casos_uso::censo::MiResidencia) -> Self {
+        let r = m.residencia;
+        Self {
+            residencia_id: r.id.as_uuid(),
+            bien_privado_id: r.bien_privado_id.as_uuid(),
+            bien_codigo: m.bien_codigo.into(),
+            calidad: r.calidad,
+            es_responsable: r.es_responsable,
+            reservas_autorizadas: r.reservas_autorizadas,
+            vigente_desde: r.vigente_desde,
+        }
+    }
+}
+
+/// Bienes privados donde la cuenta autenticada tiene una residencia vigente (también si no es
+/// titular: tenedor, familiar…). Sirve para elegir a nombre de qué bien reservar; los bienes
+/// de los que es titular están en `/mis-bienes-privados`.
+#[utoipa::path(
+    get,
+    path = "/mis-residencias",
+    tag = ETIQUETA_BIENES_PRIVADOS,
+    security(("bearer" = [])),
+    params(("copropiedad_id" = Uuid, Path, description = "Copropiedad")),
+    responses(
+        (status = OK, description = "Mis residencias vigentes", body = Vec<MiResidenciaRespuesta>),
+        (status = NOT_FOUND, description = "La cuenta no tiene roles en la copropiedad", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "No exige permisos: basta un rol en la copropiedad", body = ErrorRespuesta),
+    )
+)]
+pub async fn mis_residencias(
+    State(state): State<AppState>,
+    en: EnCopropiedad,
+) -> ApiResult<Json<Vec<MiResidenciaRespuesta>>> {
+    let lista = application::casos_uso::censo::mis_residencias(&state.unidad, &en.ctx).await?;
+    Ok(Json(lista.into_iter().map(Into::into).collect()))
 }

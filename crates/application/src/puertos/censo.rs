@@ -125,6 +125,12 @@ pub trait RepositorioCenso: Send {
         id: ResidenciaId,
     ) -> impl Future<Output = AppResult<Option<Residencia>>> + Send;
 
+    /// Residencias vigentes de la persona vinculada a la cuenta («mis residencias»).
+    fn residencias_de_cuenta(
+        &mut self,
+        cuenta: CuentaId,
+    ) -> impl Future<Output = AppResult<Vec<Residencia>>> + Send;
+
     /// # Errors
     ///
     /// [`crate::AppError::Conflicto`] si la persona ya reside allí o ya hay otro responsable.

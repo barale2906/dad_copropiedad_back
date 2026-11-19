@@ -293,6 +293,13 @@ async fn la_solicitud_recorre_su_ciclo_en_la_base(pool: PgPool) {
     .expect("listar");
     assert_eq!(todas.datos.len(), 1);
     assert_eq!(todas.datos[0].prorrogada_hasta, p.prorrogada_hasta);
+    assert_eq!(
+        (
+            s.persona_nombre.as_str(),
+            todas.datos[0].persona_nombre.as_str()
+        ),
+        ("Titular", "Titular")
+    );
     let vencidas = listar_solicitudes(
         &unidad,
         &ctx,

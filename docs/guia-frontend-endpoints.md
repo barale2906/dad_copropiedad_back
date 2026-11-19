@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-643 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+646 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -13,13 +13,13 @@ sesión de persona.
 ## Módulos
 
 - [salud](#salud) (2): Sondas de vida y disponibilidad del servicio
-- [archivos](#archivos) (3): Archivos y adjuntos: descarga con enlaces firmados de vida corta
+- [archivos](#archivos) (4): Archivos y adjuntos: descarga con enlaces firmados de vida corta
 - [autenticacion](#autenticacion) (7): Registro, inicio y cierre de sesión
 - [cuenta](#cuenta) (12): La cuenta autenticada
 - [roles](#roles) (14): Roles, permisos y asignaciones
 - [organizaciones](#organizaciones) (9): Organizaciones compartidas y contratos de servicio
 - [copropiedad](#copropiedad) (7): Ficha de la copropiedad: datos legales, cargos vigentes, advertencias y puntos de atención
-- [bienes_privados](#bienes-privados) (15): Agrupaciones, bienes privados, anexos, usos exclusivos y titulares
+- [bienes_privados](#bienes-privados) (16): Agrupaciones, bienes privados, anexos, usos exclusivos y titulares
 - [coeficientes](#coeficientes) (6): Cuadros de coeficientes versionados (suma exacta = 1)
 - [censo](#censo) (23): Censo: residentes, vehículos, mascotas, personas, autoservicio con aprobación y libros (art. 51)
 - [reservas](#reservas) (31): Bienes comunes, reservas, citas con la administración, parqueaderos y sorteos (módulo `bienes_comunes`)
@@ -35,7 +35,7 @@ sesión de persona.
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
 - [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
 - [plataforma](#plataforma) (69): Operación de la plataforma (exige segundo factor)
-- [contabilidad](#contabilidad) (50): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
+- [contabilidad](#contabilidad) (51): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
 - [tesoreria](#tesoreria) (39): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
 - [tributario](#tributario) (15): Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario
@@ -57,6 +57,7 @@ Archivos y adjuntos: descarga con enlaces firmados de vida corta
 | Método | Ruta | Qué hace | Permiso | Cuerpo | Respuesta | Errores propios |
 |---|---|---|---|---|---|---|
 | GET | 🔓 `/archivos/descarga` | Descarga un archivo con un enlace firmado y vigente. | _Enlace con firma inválida o vencido (`enlace_invalido`)_ |  | 200 `application/pdf` | 400, 403, 429 |
+| GET | `/entidades/{entidad_id}/archivos` | Archivo de la entidad, más recientes primero. Sin `archivos.personales.ver` no aparecen los personales ni los sensibles. | `archivos.ver` `archivos.personales.ver` |  | 200 `PaginaRespuesta_ArchivoRespuesta` | 403, 422 |
 | POST | `/entidades/{entidad_id}/archivos` | Sube un archivo (PDF, JPEG, PNG, WebP o HEIC). El tipo se verifica por el contenido. | `archivos.subir` | `application/octet-stream` | 201 `ArchivoRespuesta` | 403, 422 |
 | GET | `/entidades/{entidad_id}/archivos/{archivo_id}/enlace` | Enlace de descarga de un archivo (vence en 5 minutos). Los personales o sensibles exigen además `archivos.personales.ver`. | `archivos.ver` `archivos.personales.ver` |  | 200 `EnlaceRespuesta` | 403 |
 
@@ -165,6 +166,7 @@ Agrupaciones, bienes privados, anexos, usos exclusivos y titulares
 | POST | `/copropiedades/{copropiedad_id}/bienes-privados/{bien_privado_id}/transferencias` | Transfiere el bien privado (venta, sucesión): termina a los titulares vigentes —y su rol `propietario`— y registra a los nuevos en una sola transacción. | `titulares.editar` | `TitularesPeticion` | 201 `[TitularidadRespuesta]` | 403, 409, 422 |
 | PUT | `/copropiedades/{copropiedad_id}/bienes-privados/{bien_privado_id}/representante` | Designa al representante del bien ante la copropiedad entre sus titulares vigentes. | `titulares.editar` | `RepresentantePeticion` | 204  | 403 |
 | GET | `/copropiedades/{copropiedad_id}/mis-bienes-privados` | Bienes privados de los que la cuenta autenticada es titular vigente. | _No exige permisos: basta un rol en la copropiedad_ |  | 200 `[BienPrivadoRespuesta]` | 403 |
+| GET | `/copropiedades/{copropiedad_id}/mis-residencias` | Bienes privados donde la cuenta autenticada tiene una residencia vigente (también si no es titular: tenedor, familiar…). Sirve para elegir a nombre de qué bien reservar; los bienes de los que es titular están en `/mis-bienes-privados`. | _No exige permisos: basta un rol en la copropiedad_ |  | 200 `[MiResidenciaRespuesta]` | 403 |
 
 ## coeficientes
 
@@ -414,7 +416,7 @@ Asambleas y votaciones (Ley 675, arts. 37–49): convocatoria con padrón y cons
 | GET | `/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/resultados` | Resultados (en vivo si está abierta; los guardados si cerró). En reservadas se publican solo los totales. | `asambleas.ver` |  | 200 `ResultadosRespuesta` | 403 |
 | GET | `/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/detalle` | Detalle bien → opción. En reservadas exige `asambleas.votos.ver_detalle` y cada consulta queda auditada. | `asambleas.votos.ver_detalle` |  | 200 `[DetalleVotoRespuesta]` | 403 |
 | POST | `/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/preguntas/{pregunta_id}/eleccion` | Aplica una elección cerrada de consejo, revisor fiscal o comité: crea los roles de los elegidos (origen `asamblea`) y termina los del periodo anterior. | `asambleas.conducir` | `EleccionPeticion` | 200 `[ElegidoRespuesta]` | 403, 409 |
-| GET | `/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/acta` | Datos del acta para revisarla antes de generar el PDF (todo ya calculado). | `asambleas.ver` |  | 200 `object` | 403 |
+| GET | `/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/acta` | Datos del acta para revisarla antes de generar el PDF (todo ya calculado). | `asambleas.ver` |  | 200 `DatosActa` | 403 |
 | POST | `/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/acta` | Genera (o regenera mientras no se apruebe) el acta en PDF con Typst y la guarda como archivo con datos personales (`acta_archivo_id`). | `asambleas.conducir` |  | 200 `ReunionRespuesta` | 403, 409 |
 | PUT | `/copropiedades/{copropiedad_id}/asambleas/{reunion_id}/acta/estado` | Sube el escaneo firmado, aprueba o publica el acta. | `asambleas.conducir` | `PasoActaPeticion` | 200 `ReunionRespuesta` | 403, 409 |
 | GET | `/copropiedades/{copropiedad_id}/asambleas/actas` | Libro de actas: reuniones con el acta publicada. | `asambleas.ver` |  | 200 `[ReunionRespuesta]` | 403 |
@@ -649,6 +651,7 @@ Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), tercer
 | GET | `/entidades/{entidad_id}/capacidades` | Permisos de la cuenta en la entidad y módulos habilitados (para cualquier entidad). |  |  | 200 `CapacidadesRespuesta` |  |
 | GET | `/entidades/{entidad_id}/terceros` | Terceros de la entidad (sus personas) con datos fiscales. | `contabilidad.ver` `facturacion.ver` `terceros.gestionar` |  | 200 `PaginaRespuesta_TerceroRespuesta` | 403 |
 | POST | `/entidades/{entidad_id}/terceros` | Crea un tercero (reutiliza la persona si el documento ya existe). | `terceros.gestionar` | `NuevoTerceroPeticion` | 201 `TerceroRespuesta` | 403, 422 |
+| GET | `/entidades/{entidad_id}/terceros/{persona_id}` | Un tercero por su persona (nombre, documento y datos fiscales): resuelve el `persona_id` de las líneas de un comprobante, de un recibo, de un egreso o de una factura. | `contabilidad.ver` `facturacion.ver` `terceros.gestionar` |  | 200 `TerceroRespuesta` | 403 |
 | PUT | `/entidades/{entidad_id}/terceros/{persona_id}/datos-fiscales` | Reemplaza los datos fiscales de una persona de la entidad. |  | `DatosFiscalesDto` | 200 `DatosFiscalesDto` | 422 |
 | GET | `/entidades/{entidad_id}/contabilidad/configuracion` | Configuración contable vigente (`null` si aún no la tiene). | `contabilidad.ver` |  | 200  | 403 |
 | PUT | `/entidades/{entidad_id}/contabilidad/configuracion` | Guarda una versión nueva de la configuración contable. | `contabilidad.configurar` | `ConfiguracionPeticion` | 200 `ConfiguracionRespuesta` | 403, 422 |

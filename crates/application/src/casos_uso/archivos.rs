@@ -1,7 +1,8 @@
-//! Casos de uso de archivos: subir, generar el enlace de descarga y migrar entre almacenes.
+//! Casos de uso de archivos: subir, listar, generar el enlace de descarga y migrar entre
+//! almacenes.
 //!
-//! Permisos: `archivos.subir` para subir; `archivos.ver` para pedir el enlace de un archivo
-//! público o interno, y además `archivos.personales.ver` si es personal o sensible.
+//! Permisos: `archivos.subir` para subir; `archivos.ver` para listar y pedir el enlace de un
+//! archivo público o interno, y además `archivos.personales.ver` si es personal o sensible.
 
 use std::time::Duration;
 
@@ -9,12 +10,12 @@ use domain::{ArchivoId, ClasificacionArchivo, ClaveArchivo, NombreArchivo, Permi
 use sha2::{Digest, Sha256};
 
 use crate::{
-    AppError, AppResult, Contexto,
+    AppError, AppResult, Contexto, Pagina, SolicitudPagina,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
         AlmacenArchivos, RegistroAuditoria, Reloj, RepositorioArchivos, Transaccion,
         UnidadDeTrabajo,
-        archivos::{Archivo, DescargaArchivo},
+        archivos::{Archivo, DescargaArchivo, FiltroArchivos},
     },
 };
 
@@ -133,6 +134,41 @@ where
         EventoAuditoria::ok(ACCION_SUBIR, "archivo", archivo.id.as_uuid()).con_detalle(detalle),
     )
     .await
+}
+
+/// Archivos de la entidad, más recientes primero. Sin `archivos.personales.ver` no aparecen
+/// los personales ni los sensibles; pedirlos por su clasificación es [`AppError::SinPermiso`].
+/// Solo lectura: no se audita (el nombre original no va a la auditoría).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `archivos.ver`, o sin `archivos.personales.ver` si se filtra
+/// por `personal` o `sensible`.
+pub async fn listar_archivos<U>(
+    unidad: &U,
+    ctx: &Contexto,
+    mut filtro: FiltroArchivos,
+    pagina: SolicitudPagina,
+) -> AppResult<Pagina<Archivo>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: RepositorioArchivos,
+{
+    ctx.exigir(Permiso::ArchivosVer)?;
+    filtro.incluir_personales = ctx.exigir(Permiso::ArchivosPersonalesVer).is_ok();
+    if !filtro.incluir_personales
+        && matches!(
+            filtro.clasificacion,
+            Some(ClasificacionArchivo::Personal | ClasificacionArchivo::Sensible)
+        )
+    {
+        return Err(AppError::SinPermiso(Permiso::ArchivosPersonalesVer));
+    }
+    filtro.texto = filtro
+        .texto
+        .map(|t| t.trim().to_owned())
+        .filter(|t| !t.is_empty());
+    unidad.iniciar(ctx).await?.listar(&filtro, pagina).await
 }
 
 /// URL temporal para descargar el archivo `id` de la copropiedad del contexto, válida por
@@ -490,6 +526,121 @@ mod tests {
                 .await
                 .is_err()
         );
+    }
+
+    /// Sube un archivo público y uno personal como el sistema.
+    async fn publico_y_personal(unidad: &UnidadEnMemoria, tenant: TenantId) {
+        let almacen = AlmacenEnMemoria::new(Almacen::Local);
+        let mut personal = pdf();
+        personal.clasificacion = ClasificacionArchivo::Personal;
+        personal.nombre_original = NombreArchivo::new("Cédula.pdf").expect("válido");
+        for a in [pdf(), personal] {
+            subir_archivo(unidad, &almacen, &RelojFijo, &Contexto::new(tenant), a)
+                .await
+                .expect("sube");
+        }
+    }
+
+    fn con_permisos(tenant: TenantId, permisos: &[Permiso]) -> Contexto {
+        Contexto::de_cuenta(
+            tenant,
+            domain::CuentaId::nuevo(),
+            permisos
+                .iter()
+                .copied()
+                .collect::<domain::ConjuntoPermisos>(),
+        )
+    }
+
+    #[tokio::test]
+    async fn el_listado_oculta_los_personales_sin_su_permiso() {
+        let unidad = UnidadEnMemoria::default();
+        let tenant = TenantId::nuevo();
+        publico_y_personal(&unidad, tenant).await;
+        let solo_ver = con_permisos(tenant, &[Permiso::ArchivosVer]);
+        let todo = con_permisos(
+            tenant,
+            &[Permiso::ArchivosVer, Permiso::ArchivosPersonalesVer],
+        );
+
+        let visibles = listar_archivos(
+            &unidad,
+            &solo_ver,
+            FiltroArchivos::default(),
+            SolicitudPagina::default(),
+        )
+        .await
+        .expect("lista");
+        let con_permiso = listar_archivos(
+            &unidad,
+            &todo,
+            FiltroArchivos::default(),
+            SolicitudPagina::default(),
+        )
+        .await
+        .expect("lista");
+
+        assert_eq!(visibles.datos.len(), 1);
+        assert_eq!(
+            visibles.datos[0].clasificacion,
+            ClasificacionArchivo::Publico
+        );
+        assert_eq!(con_permiso.datos.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn pedir_los_personales_sin_permiso_es_prohibido() {
+        let unidad = UnidadEnMemoria::default();
+        let tenant = TenantId::nuevo();
+        let solo_ver = con_permisos(tenant, &[Permiso::ArchivosVer]);
+
+        let r = listar_archivos(
+            &unidad,
+            &solo_ver,
+            FiltroArchivos {
+                clasificacion: Some(ClasificacionArchivo::Sensible),
+                ..FiltroArchivos::default()
+            },
+            SolicitudPagina::default(),
+        )
+        .await;
+
+        assert!(matches!(
+            r,
+            Err(AppError::SinPermiso(Permiso::ArchivosPersonalesVer))
+        ));
+    }
+
+    #[tokio::test]
+    async fn el_listado_filtra_por_nombre_y_exige_ver_archivos() {
+        let unidad = UnidadEnMemoria::default();
+        let tenant = TenantId::nuevo();
+        publico_y_personal(&unidad, tenant).await;
+
+        let encontrados = listar_archivos(
+            &unidad,
+            &Contexto::new(tenant),
+            FiltroArchivos {
+                texto: Some("  reglamento ".into()),
+                ..FiltroArchivos::default()
+            },
+            SolicitudPagina::default(),
+        )
+        .await
+        .expect("lista");
+        let sin_permiso = listar_archivos(
+            &unidad,
+            &con_permisos(tenant, &[]),
+            FiltroArchivos::default(),
+            SolicitudPagina::default(),
+        )
+        .await;
+
+        assert_eq!(encontrados.datos.len(), 1);
+        assert!(matches!(
+            sin_permiso,
+            Err(AppError::SinPermiso(Permiso::ArchivosVer))
+        ));
     }
 
     #[tokio::test]

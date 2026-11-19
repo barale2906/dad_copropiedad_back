@@ -672,3 +672,43 @@ async fn sin_contabilidad_la_nota_debito_se_cobra_y_se_marca_pagada_a_mano(pool:
     assert_eq!(pagada["nota_debito_de"], json!(f));
     assert_eq!(pagada["total"], json!("8000.00"));
 }
+
+/// Un comprobante, recibo, egreso o factura guardado solo trae `persona_id`: el tercero se
+/// resuelve por su id (solicitud S18 del frontend).
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_tercero_se_consulta_por_su_persona(pool: PgPool) {
+    let t = tienda(pool).await;
+    let cliente = id(&t
+        .crear(
+            "/terceros",
+            json!({ "tipo": "juridica", "nombre": "Cliente SAS", "documento": "800111222",
+                    "fiscal": { "regimen_iva": "responsable", "responsabilidades": [] } }),
+        )
+        .await);
+
+    let (s, v) = t
+        .pedir(Method::GET, &format!("/terceros/{cliente}"), None)
+        .await;
+
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v["nombre"], "Cliente SAS");
+    assert_eq!(v["persona_id"], json!(cliente));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn un_tercero_que_no_existe_responde_no_encontrado(pool: PgPool) {
+    let t = tienda(pool).await;
+
+    let (s, v) = t
+        .pedir(
+            Method::GET,
+            "/terceros/0193a1b2-0000-7000-8000-000000000000",
+            None,
+        )
+        .await;
+
+    assert_eq!(
+        (s, &v["error"]["codigo"]),
+        (StatusCode::NOT_FOUND, &json!("no_encontrado"))
+    );
+}

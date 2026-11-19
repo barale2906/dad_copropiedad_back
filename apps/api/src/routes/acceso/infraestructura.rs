@@ -40,7 +40,9 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 /// Punto de acceso.
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct PuntoDto {
-    #[serde(default, skip_deserializing)]
+    /// Lo asigna el backend: viene en las respuestas y se ignora al crear o editar.
+    #[serde(default)]
+    #[schema(read_only, required = true)]
     pub id: Uuid,
     #[schema(example = "Portería principal")]
     pub nombre: String,
@@ -314,7 +316,9 @@ pub async fn retirar_puente(
 /// Dispositivo de acceso.
 #[derive(Debug, Deserialize, Serialize, ToSchema)]
 pub struct DispositivoDto {
-    #[serde(default, skip_deserializing)]
+    /// Lo asigna el backend: viene en las respuestas y se ignora al crear o editar.
+    #[serde(default)]
+    #[schema(read_only, required = true)]
     pub id: Uuid,
     pub puente_id: Uuid,
     pub punto_acceso_id: Uuid,

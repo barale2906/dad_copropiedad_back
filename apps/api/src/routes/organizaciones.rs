@@ -9,7 +9,7 @@ use application::{
     casos_uso::organizaciones::{self as uc, NuevoContrato},
     puertos::{
         RelojSistema,
-        identidad::{CambiosFicha, ContratoServicio, FichaOrganizacion, NuevaOrganizacion},
+        identidad::{CambiosFicha, ContratoConOrganizacion, FichaOrganizacion, NuevaOrganizacion},
     },
 };
 use axum::{extract::State, http::StatusCode};
@@ -192,6 +192,8 @@ pub async fn crear(
 pub struct ContratoRespuesta {
     pub id: Uuid,
     pub organizacion_id: Uuid,
+    /// La organización contratada (su ficha es de plataforma: aquí va lo mínimo).
+    pub organizacion: OrganizacionContratadaRespuesta,
     #[schema(value_type = crate::esquemas::TipoOrganizacion)]
     pub tipo_servicio: String,
     pub vigente_desde: DateTime<Utc>,
@@ -203,11 +205,31 @@ pub struct ContratoRespuesta {
     pub valor: Option<Decimal>,
 }
 
-impl From<ContratoServicio> for ContratoRespuesta {
-    fn from(c: ContratoServicio) -> Self {
+/// Organización de un contrato.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct OrganizacionContratadaRespuesta {
+    pub id: Uuid,
+    pub razon_social: String,
+    /// Dato personal si es una persona natural con RUT.
+    #[schema(example = "900123456-8")]
+    pub nit: String,
+}
+
+impl From<ContratoConOrganizacion> for ContratoRespuesta {
+    fn from(
+        ContratoConOrganizacion {
+            contrato: c,
+            organizacion: o,
+        }: ContratoConOrganizacion,
+    ) -> Self {
         Self {
             id: c.id.as_uuid(),
             organizacion_id: c.organizacion_id.as_uuid(),
+            organizacion: OrganizacionContratadaRespuesta {
+                id: o.id.as_uuid(),
+                razon_social: o.razon_social,
+                nit: o.nit,
+            },
             tipo_servicio: c.tipo_servicio.as_str().into(),
             vigente_desde: c.vigente_desde,
             vigente_hasta: c.vigente_hasta,

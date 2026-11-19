@@ -58,7 +58,12 @@ pub struct Recurso {
 pub struct Reserva {
     pub id: ReservaId,
     pub recurso_id: RecursoId,
+    /// Nombre del recurso, para mostrar la reserva sin otra consulta (de lectura: no se guarda
+    /// en la reserva).
+    pub recurso_nombre: String,
     pub bien_privado_id: BienPrivadoId,
+    /// Código del bien privado (de lectura, como `recurso_nombre`).
+    pub bien_codigo: String,
     pub solicitante_persona_id: Option<PersonaId>,
     pub solicitada_por: Option<CuentaId>,
     pub franja: Franja,

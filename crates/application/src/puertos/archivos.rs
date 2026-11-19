@@ -17,7 +17,7 @@ use domain::{
     Almacen, ArchivoId, ClasificacionArchivo, ClaveArchivo, CuentaId, NombreArchivo, TipoArchivo,
 };
 
-use crate::AppResult;
+use crate::{AppResult, Pagina, SolicitudPagina};
 
 /// Archivo registrado en una copropiedad.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -91,6 +91,21 @@ pub trait Empaquetador: Send + Sync {
     fn empaquetar(&self, archivos: &[(String, Vec<u8>)]) -> AppResult<Vec<u8>>;
 }
 
+/// Filtros del listado de archivos de la entidad.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FiltroArchivos {
+    /// Solo esta clasificación.
+    pub clasificacion: Option<ClasificacionArchivo>,
+    /// Incluir los personales y sensibles (solo con `archivos.personales.ver`).
+    pub incluir_personales: bool,
+    /// Fragmento del nombre original (sin tildes ni mayúsculas).
+    pub texto: Option<String>,
+    /// Subidos desde este instante (incluido).
+    pub desde: Option<DateTime<Utc>>,
+    /// Subidos antes de este instante (excluido).
+    pub hasta: Option<DateTime<Utc>>,
+}
+
 /// Registro de archivos dentro de una transacción del tenant.
 pub trait RepositorioArchivos: Send {
     /// Registra un archivo nuevo.
@@ -98,6 +113,13 @@ pub trait RepositorioArchivos: Send {
 
     /// El archivo `id` de la copropiedad de la transacción, si existe.
     fn buscar(&mut self, id: ArchivoId) -> impl Future<Output = AppResult<Option<Archivo>>> + Send;
+
+    /// Archivos de la entidad, más recientes primero, paginados por cursor.
+    fn listar(
+        &mut self,
+        filtro: &FiltroArchivos,
+        pagina: SolicitudPagina,
+    ) -> impl Future<Output = AppResult<Pagina<Archivo>>> + Send;
 
     /// Hasta `limite` archivos guardados en `almacen`, bloqueados para la transacción (los
     /// usa la migración entre almacenes; dos migraciones simultáneas no toman el mismo).

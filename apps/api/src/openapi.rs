@@ -266,6 +266,30 @@ pub fn completar_respuestas_comunes(doc: &mut utoipa::openapi::OpenApi) {
     }
 }
 
+/// Antepone a cada `operationId` la etiqueta de su módulo (`tickets_listar`,
+/// `reservas_cancelar`). utoipa usa el nombre del handler, que se repite entre módulos
+/// (`listar`, `crear`, `ver`…), y los generadores de clientes agrupan los tipos por
+/// `operationId`: con nombres repetidos una ruta toma los tipos de otra. La prueba
+/// `cada_operacion_tiene_un_id_unico` exige que el resultado no se repita; si dos handlers de
+/// un mismo módulo se llaman igual, uno lleva `operation_id = "…"` en su `#[utoipa::path]`.
+pub fn nombrar_operaciones(doc: &mut utoipa::openapi::OpenApi) {
+    for item in doc.paths.paths.values_mut() {
+        let operaciones = [
+            &mut item.get,
+            &mut item.post,
+            &mut item.put,
+            &mut item.patch,
+            &mut item.delete,
+        ];
+        for op in operaciones.into_iter().flatten() {
+            let etiqueta = op.tags.as_ref().and_then(|t| t.first()).cloned();
+            if let (Some(etiqueta), Some(id)) = (etiqueta, op.operation_id.as_mut()) {
+                *id = format!("{etiqueta}_{id}");
+            }
+        }
+    }
+}
+
 fn agregar(
     respuestas: &mut std::collections::BTreeMap<
         String,

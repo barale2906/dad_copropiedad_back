@@ -169,7 +169,9 @@ impl FilaRecurso {
 struct FilaReserva {
     id: Uuid,
     recurso_id: Uuid,
+    recurso_nombre: String,
     bien_privado_id: Uuid,
+    bien_codigo: String,
     solicitante_persona_id: Option<Uuid>,
     solicitada_por: Option<Uuid>,
     franja: PgRange<DateTime<Utc>>,
@@ -196,7 +198,9 @@ impl TryFrom<FilaReserva> for Reserva {
         Ok(Self {
             id: ReservaId::from_uuid(f.id),
             recurso_id: RecursoId::from_uuid(f.recurso_id),
+            recurso_nombre: f.recurso_nombre,
             bien_privado_id: BienPrivadoId::from_uuid(f.bien_privado_id),
+            bien_codigo: f.bien_codigo,
             solicitante_persona_id: f.solicitante_persona_id.map(PersonaId::from_uuid),
             solicitada_por: f.solicitada_por.map(CuentaId::from_uuid),
             franja: franja(&f.franja)?,
@@ -502,19 +506,22 @@ impl TransaccionPg {
         let entre = f.entre.map(|x| rango(x.inicio(), Some(x.fin())));
         sqlx::query_as!(
             FilaReserva,
-            "SELECT id, recurso_id, bien_privado_id, solicitante_persona_id, solicitada_por, franja,
-                    exclusiva, invitados, estado, valor, deposito, penalidad, estado_pago,
-                    idempotency_key, canal, modalidad, motivo, placa_visitante, observacion,
-                    creada_en
-             FROM reservas
-             WHERE ($1::uuid IS NULL OR recurso_id = $1)
-               AND ($2::uuid IS NULL OR bien_privado_id = $2)
-               AND ($3::text IS NULL OR estado = $3)
-               AND ($4::uuid IS NULL OR solicitada_por = $4)
-               AND ($5::tstzrange IS NULL OR franja && $5)
-               AND ($6::text IS NULL OR idempotency_key = $6)
-               AND ($7::uuid IS NULL OR id = $7)
-             ORDER BY lower(franja), id",
+            "SELECT r.id, r.recurso_id, rc.nombre AS recurso_nombre, r.bien_privado_id,
+                    b.codigo AS bien_codigo, r.solicitante_persona_id, r.solicitada_por, r.franja,
+                    r.exclusiva, r.invitados, r.estado, r.valor, r.deposito, r.penalidad,
+                    r.estado_pago, r.idempotency_key, r.canal, r.modalidad, r.motivo,
+                    r.placa_visitante, r.observacion, r.creada_en
+             FROM reservas r
+             JOIN recursos rc ON rc.tenant_id = r.tenant_id AND rc.id = r.recurso_id
+             JOIN bienes_privados b ON b.tenant_id = r.tenant_id AND b.id = r.bien_privado_id
+             WHERE ($1::uuid IS NULL OR r.recurso_id = $1)
+               AND ($2::uuid IS NULL OR r.bien_privado_id = $2)
+               AND ($3::text IS NULL OR r.estado = $3)
+               AND ($4::uuid IS NULL OR r.solicitada_por = $4)
+               AND ($5::tstzrange IS NULL OR r.franja && $5)
+               AND ($6::text IS NULL OR r.idempotency_key = $6)
+               AND ($7::uuid IS NULL OR r.id = $7)
+             ORDER BY lower(r.franja), r.id",
             f.recurso_id.map(RecursoId::as_uuid),
             f.bien_privado_id.map(BienPrivadoId::as_uuid),
             f.estado.map(EstadoReserva::as_str),
@@ -1212,15 +1219,18 @@ impl RepositorioReservas for TransaccionPg {
     ) -> AppResult<Vec<Reserva>> {
         sqlx::query_as!(
             FilaReserva,
-            "SELECT id, recurso_id, bien_privado_id, solicitante_persona_id, solicitada_por, franja,
-                    exclusiva, invitados, estado, valor, deposito, penalidad, estado_pago,
-                    idempotency_key, canal, modalidad, motivo, placa_visitante, observacion,
-                    creada_en
-             FROM reservas
-             WHERE estado = 'aprobada' AND recordatorio_enviado_en IS NULL
-               AND lower(franja) > $1 AND lower(franja) <= $2
-             ORDER BY lower(franja)
-             FOR UPDATE SKIP LOCKED",
+            "SELECT r.id, r.recurso_id, rc.nombre AS recurso_nombre, r.bien_privado_id,
+                    b.codigo AS bien_codigo, r.solicitante_persona_id, r.solicitada_por, r.franja,
+                    r.exclusiva, r.invitados, r.estado, r.valor, r.deposito, r.penalidad,
+                    r.estado_pago, r.idempotency_key, r.canal, r.modalidad, r.motivo,
+                    r.placa_visitante, r.observacion, r.creada_en
+             FROM reservas r
+             JOIN recursos rc ON rc.tenant_id = r.tenant_id AND rc.id = r.recurso_id
+             JOIN bienes_privados b ON b.tenant_id = r.tenant_id AND b.id = r.bien_privado_id
+             WHERE r.estado = 'aprobada' AND r.recordatorio_enviado_en IS NULL
+               AND lower(r.franja) > $1 AND lower(r.franja) <= $2
+             ORDER BY lower(r.franja)
+             FOR UPDATE OF r SKIP LOCKED",
             ahora,
             hasta,
         )

@@ -22,6 +22,16 @@ impl RepositorioModulos for TransaccionPg {
         Ok(TipoEntidad::try_from(tipo.as_str())?)
     }
 
+    async fn zona_horaria_entidad(&mut self) -> AppResult<String> {
+        sqlx::query_scalar!(
+            "SELECT zona_horaria FROM entidades WHERE id = $1",
+            self.ctx.tenant_id.as_uuid()
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
     async fn modulo_habilitado(&mut self, modulo: Modulo, ahora: DateTime<Utc>) -> AppResult<bool> {
         sqlx::query_scalar!(
             r#"SELECT EXISTS (

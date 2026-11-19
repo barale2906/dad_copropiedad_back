@@ -6,7 +6,8 @@ use application::{
         RepositorioContratos, RepositorioRoles,
         copropiedades::AltaCopropiedad,
         identidad::{
-            Asignacion, ContratoServicio, CuentaResumen, FichaOrganizacion, NuevaOrganizacion, Rol,
+            Asignacion, ContratoServicio, CuentaResumen, FichaOrganizacion, NuevaOrganizacion,
+            OrganizacionContratada, Rol,
         },
     },
 };
@@ -455,6 +456,23 @@ impl RepositorioContratos for TransaccionPg {
         .into_iter()
         .map(ContratoServicio::try_from)
         .collect()
+    }
+
+    async fn organizaciones_contratadas(&mut self) -> AppResult<Vec<OrganizacionContratada>> {
+        Ok(sqlx::query!(
+            r#"SELECT id AS "id!", razon_social AS "razon_social!", nit AS "nit!"
+               FROM organizaciones_contratadas()"#,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| OrganizacionContratada {
+            id: OrganizacionId::from_uuid(f.id),
+            razon_social: f.razon_social,
+            nit: f.nit,
+        })
+        .collect())
     }
 
     async fn terminar_contrato(

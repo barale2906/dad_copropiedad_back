@@ -70,7 +70,7 @@ pub(crate) mod memoria {
     use crate::{
         AppError,
         puertos::{
-            archivos::{Archivo, RepositorioArchivos},
+            archivos::{Archivo, FiltroArchivos, RepositorioArchivos},
             identidad::{Asignacion, CuentaResumen, RepositorioRoles, Rol},
             modulos::{PeriodoModulo, RepositorioModulos},
             proteccion_datos::{
@@ -334,6 +334,36 @@ pub(crate) mod memoria {
 
         async fn buscar(&mut self, id: ArchivoId) -> AppResult<Option<Archivo>> {
             Ok(self.datos.archivos.get(&id).cloned())
+        }
+
+        async fn listar(
+            &mut self,
+            f: &FiltroArchivos,
+            pagina: crate::SolicitudPagina,
+        ) -> AppResult<crate::Pagina<Archivo>> {
+            use domain::ClasificacionArchivo::{Personal, Sensible};
+            let texto = f.texto.as_deref().map(str::to_lowercase);
+            let mut filas: Vec<Archivo> = self
+                .datos
+                .archivos
+                .values()
+                .filter(|a| f.clasificacion.is_none_or(|c| a.clasificacion == c))
+                .filter(|a| f.incluir_personales || !matches!(a.clasificacion, Personal | Sensible))
+                .filter(|a| {
+                    texto
+                        .as_deref()
+                        .is_none_or(|t| a.nombre_original.as_str().to_lowercase().contains(t))
+                })
+                .filter(|a| f.desde.is_none_or(|d| a.creado_en >= d))
+                .filter(|a| f.hasta.is_none_or(|h| a.creado_en < h))
+                .filter(|a| pagina.despues().is_none_or(|d| a.id.as_uuid() < d))
+                .cloned()
+                .collect();
+            filas.sort_by_key(|a| std::cmp::Reverse(a.id));
+            filas.truncate(usize::try_from(pagina.filas_a_consultar()).unwrap_or(usize::MAX));
+            Ok(crate::Pagina::desde_filas(filas, pagina, |a| {
+                a.id.as_uuid()
+            }))
         }
 
         async fn en_almacen(&mut self, almacen: Almacen, limite: u32) -> AppResult<Vec<Archivo>> {
@@ -675,6 +705,10 @@ pub(crate) mod memoria {
                 .datos
                 .tipo_entidad
                 .unwrap_or(domain::TipoEntidad::Empresa))
+        }
+
+        async fn zona_horaria_entidad(&mut self) -> AppResult<String> {
+            Ok("America/Bogota".into())
         }
 
         async fn modulo_habilitado(

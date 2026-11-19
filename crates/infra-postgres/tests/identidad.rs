@@ -11,8 +11,8 @@ use application::{
             mis_entidades, registrar_cuenta, renovar_sesion,
         },
         organizaciones::{
-            NuevoContrato, asignar_rol_por_contrato, crear_organizacion, terminar_contrato,
-            vincular_organizacion,
+            NuevoContrato, asignar_rol_por_contrato, crear_organizacion, listar_contratos,
+            terminar_contrato, vincular_organizacion,
         },
         plataforma::{AdministradorAlta, asignar_rol_plataforma, crear_copropiedad},
         roles::{NuevoRol, SolicitudAsignacion, asignar_rol, crear_rol, permisos_en_copropiedad},
@@ -430,6 +430,57 @@ async fn catalogo_de_permisos_y_plantillas_coinciden_con_el_codigo(pool: PgPool)
     );
 }
 
+/// La entidad ve la razón social y el NIT solo de las organizaciones que contrató.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn los_contratos_traen_su_organizacion_y_no_las_ajenas(pool: PgPool) {
+    let e = entorno(pool).await;
+    let ph1 = Contexto::new(crear_ph(&e.pool).await);
+    let ph2 = Contexto::new(crear_ph(&e.pool).await);
+    let organizacion = |nit: &str, nombre: &str| NuevaOrganizacion {
+        nit: Nit::new(nit).expect("válido"),
+        razon_social: nombre.into(),
+        naturaleza: NaturalezaOrganizacion::Juridica,
+        tipos: vec![TipoOrganizacion::Aseo],
+        correo_contacto: None,
+        telefono_contacto: None,
+    };
+    let (propia, _) = crear_organizacion(&e.unidad, &ph1, organizacion("900123456", "Aseo Uno"))
+        .await
+        .expect("crea");
+    let (ajena, _) = crear_organizacion(&e.unidad, &ph2, organizacion("800987654", "Aseo Dos"))
+        .await
+        .expect("crea");
+    for (ph, org) in [(&ph1, propia), (&ph2, ajena)] {
+        vincular_organizacion(
+            &e.unidad,
+            &RelojSistema,
+            ph,
+            NuevoContrato {
+                organizacion_id: org,
+                tipo_servicio: TipoOrganizacion::Aseo,
+                vigente_desde: None,
+                vigente_hasta: None,
+                valor: None,
+            },
+        )
+        .await
+        .expect("vincula");
+    }
+
+    let contratos = listar_contratos(&e.unidad, &ph1).await.expect("lista");
+
+    let organizaciones: Vec<_> = contratos
+        .iter()
+        .map(|c| {
+            (
+                c.organizacion.razon_social.as_str(),
+                c.organizacion.nit.as_str(),
+            )
+        })
+        .collect();
+    assert_eq!(organizaciones, [("Aseo Uno", "900123456-8")]);
+}
+
 #[sqlx::test(migrator = "MIGRACIONES")]
 async fn organizacion_unica_por_nit_y_contrato_vence_sus_roles(pool: PgPool) {
     let e = entorno(pool).await;
@@ -468,6 +519,11 @@ async fn organizacion_unica_por_nit_y_contrato_vence_sus_roles(pool: PgPool) {
     )
     .await
     .expect("vincula");
+    assert_eq!(
+        contrato.organizacion.razon_social,
+        "Seguridad Andina S.A.S."
+    );
+    let contrato = contrato.contrato;
     let rol_vigilante = e
         .unidad
         .iniciar(&ph1)

@@ -938,6 +938,42 @@ where
     })
 }
 
+/// Un tercero por su persona: para mostrar a quién se imputó una línea, un recibo, un egreso o
+/// una factura guardados, que solo traen `persona_id`.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `contabilidad.ver`, `facturacion.ver` ni `terceros.gestionar`;
+/// [`AppError::NoEncontrado`] si la persona no es de la entidad.
+pub async fn tercero<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    persona: PersonaId,
+) -> AppResult<Tercero>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxContable,
+{
+    let mut tx = abrir_terceros(
+        unidad,
+        reloj,
+        ctx,
+        &[
+            Permiso::ContabilidadVer,
+            Permiso::FacturacionVer,
+            Permiso::TercerosGestionar,
+        ],
+    )
+    .await?;
+    let persona = tx
+        .persona(persona)
+        .await?
+        .ok_or(AppError::NoEncontrado("persona"))?;
+    let fiscal = tx.datos_fiscales(persona.id).await?.unwrap_or_default();
+    Ok(Tercero { persona, fiscal })
+}
+
 fn validar_fiscales(d: &DatosFiscales) -> AppResult<()> {
     let digitos = |v: &Option<String>, n: usize| {
         v.as_deref()

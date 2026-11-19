@@ -52,6 +52,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
 pub fn rutas_terceros() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(listar_terceros, crear_tercero))
+        .routes(routes!(ver_tercero))
         .routes(routes!(guardar_datos_fiscales))
 }
 
@@ -610,6 +611,35 @@ pub async fn listar_terceros(
     )
     .await?;
     Ok(Json(pagina.mapear(Into::into).into()))
+}
+
+/// Un tercero por su persona (nombre, documento y datos fiscales): resuelve el `persona_id` de
+/// las líneas de un comprobante, de un recibo, de un egreso o de una factura.
+#[utoipa::path(
+    get,
+    path = "/terceros/{persona_id}",
+    tag = ETIQUETA_CONTABILIDAD,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("persona_id" = Uuid, Path, description = "Persona")),
+    responses(
+        (status = OK, description = "Tercero", body = TerceroRespuesta),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver`, `facturacion.ver` ni `terceros.gestionar`, o sin contabilidad ni facturación", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "La persona no es de la entidad (`no_encontrado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn ver_tercero(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<Json<TerceroRespuesta>> {
+    let t = uc::tercero(
+        &state.unidad,
+        &RelojSistema,
+        &en.ctx,
+        PersonaId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(Json(t.into()))
 }
 
 /// Crea un tercero (reutiliza la persona si el documento ya existe).

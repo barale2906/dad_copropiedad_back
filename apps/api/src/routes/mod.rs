@@ -83,6 +83,7 @@ pub const RUTA_DOCS: &str = "/docs";
 pub fn router(state: AppState, config: &AppConfig) -> Router {
     let (rutas, mut api) = rutas().split_for_parts();
     crate::openapi::completar_respuestas_comunes(&mut api);
+    crate::openapi::nombrar_operaciones(&mut api);
 
     let mut app = rutas.fallback(ruta_no_encontrada);
     if config.docs_api_habilitada {
@@ -134,6 +135,7 @@ pub fn router(state: AppState, config: &AppConfig) -> Router {
 pub fn openapi() -> utoipa::openapi::OpenApi {
     let mut api = rutas().split_for_parts().1;
     crate::openapi::completar_respuestas_comunes(&mut api);
+    crate::openapi::nombrar_operaciones(&mut api);
     api
 }
 

@@ -228,6 +228,9 @@ pub struct Capacidades {
     pub permisos: ConjuntoPermisos,
     /// Módulos habilitados ahora, en el orden de [`Modulo::TODOS`].
     pub modulos: Vec<Modulo>,
+    /// Zona horaria IANA de la entidad: toda cuenta con un rol la recibe para mostrar las
+    /// fechas en la hora de la entidad, no en la del navegador.
+    pub zona_horaria: String,
 }
 
 /// Tipo de la entidad, permisos de la cuenta del contexto y módulos habilitados.
@@ -250,8 +253,10 @@ where
     let mut tx = unidad.iniciar(ctx).await?;
     let habilitados = tx.modulos_habilitados(reloj.ahora()).await?;
     let tipo = tx.tipo_entidad().await?;
+    let zona_horaria = tx.zona_horaria_entidad().await?;
     Ok(Capacidades {
         tipo,
+        zona_horaria,
         permisos: ctx.permisos.clone(),
         modulos: Modulo::TODOS
             .iter()

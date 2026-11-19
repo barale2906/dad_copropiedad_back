@@ -123,6 +123,7 @@ impl PreguntaPeticion {
 
 /// Preguntas de la reunión, en orden.
 #[utoipa::path(
+    operation_id = "listar_preguntas",
     get,
     path = "/asambleas/{reunion_id}/preguntas",
     tag = ETIQUETA_ASAMBLEAS,
@@ -151,6 +152,7 @@ pub async fn listar(
 
 /// Crea una pregunta en borrador (antes o durante la reunión).
 #[utoipa::path(
+    operation_id = "crear_pregunta",
     post,
     path = "/asambleas/{reunion_id}/preguntas",
     tag = ETIQUETA_ASAMBLEAS,
@@ -183,6 +185,7 @@ pub async fn crear(
 
 /// Reemplaza la definición de una pregunta en borrador.
 #[utoipa::path(
+    operation_id = "editar_pregunta",
     put,
     path = "/asambleas/{reunion_id}/preguntas/{pregunta_id}",
     tag = ETIQUETA_ASAMBLEAS,
@@ -375,8 +378,7 @@ pub struct ResultadosRespuesta {
     pub pregunta: PreguntaRespuesta,
     /// Totales por opción por coeficiente y por unidades, habilitados, votantes, decisión y
     /// reparto de cupos (elecciones). Decimales como texto.
-    #[schema(value_type = Object)]
-    pub escrutinio: serde_json::Value,
+    pub escrutinio: super::escrutinio::EscrutinioDto,
 }
 
 /// Resultados (en vivo si está abierta; los guardados si cerró). En reservadas se publican
@@ -401,7 +403,7 @@ pub async fn resultados(
     let (p, e) = uc::resultados(&state.unidad, &RelojSistema, &en.ctx, r, q).await?;
     Ok(Json(ResultadosRespuesta {
         pregunta: p.into(),
-        escrutinio: serde_json::to_value(e).map_err(|e| ApiError::Interno(e.into()))?,
+        escrutinio: e.into(),
     }))
 }
 
