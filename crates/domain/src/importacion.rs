@@ -27,6 +27,7 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
+pub mod empleados;
 pub mod usuarios;
 
 use crate::{
@@ -43,11 +44,14 @@ pub enum TipoImportacion {
     BienesPrivados,
     /// Usuarios de la entidad con su rol (plan 20).
     Usuarios,
+    /// Empleados con su primer contrato (plan 16).
+    Empleados,
 }
 
 enum_texto!(TipoImportacion {
     BienesPrivados => "bienes_privados",
     Usuarios => "usuarios",
+    Empleados => "empleados",
 });
 
 /// Estado de una importación.

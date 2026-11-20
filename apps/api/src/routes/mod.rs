@@ -38,6 +38,7 @@ mod ficha;
 mod health;
 mod importaciones;
 mod mantenimiento;
+mod nomina;
 mod organizaciones;
 mod parqueaderos;
 mod plataforma;

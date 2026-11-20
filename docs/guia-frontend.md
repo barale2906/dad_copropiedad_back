@@ -12,7 +12,7 @@ convenciones.
 | Generar el cliente tipado y conocer los formatos | §1 y §2 |
 | **El menú: zonas de la maqueta, módulos que se encienden y acciones por permiso** | **§4** |
 | Qué ve cada tipo de usuario y en qué entidad está | §3 (entrar a una entidad) y §5 (perfiles) |
-| El flujo de un módulo (asambleas, censo, cartera, facturación…) | §3 (entidad, contabilidad, facturación) y §5 (PH) |
+| El flujo de un módulo (asambleas, censo, cartera, facturación, nómina…) | §3 (entidad, contabilidad, facturación, nómina) y §5 (PH) |
 | Qué botones mostrar según el estado de un recurso | §6 |
 | Sesión, errores, reintentos, paginación, archivos, tiempo real | §7 a §15 |
 | Consejos de diseño que aprovechan lo que hace el backend | §16 |
@@ -241,6 +241,35 @@ cuenta con su tipo.
     `.p12` y su contraseña **nunca vuelven** en una respuesta. Sin `FACTURACION_CLAVE_MAESTRA` en el
     servidor, registrar el software responde 422. Para que las facturas salgan por el motor propio,
     el perfil tributario confirmado debe tener `canal_facturacion: "propio"`.
+- **Nómina** (ADR 0025, etiqueta `nomina`, módulo `nomina`): `/entidades/{id}/nomina/…`. Se vende
+  sola: cualquier entidad (PH o empresa) la contrata sin la contabilidad.
+  - Catálogo: `GET …/catalogo?fecha=` da la versión vigente de cada parámetro (con su `unidad`) y
+    las administradoras activas. Úselo para llenar los selectores de EPS, pensiones, cesantías,
+    caja y ARL (`tipo`). Si falta un parámetro vigente, contratar responde 422 nombrándolo: avise
+    que la plataforma aún no cargó el catálogo de esa fecha.
+  - Empleados: `GET …/empleados?q=&estado=` (paginado; `estado` = `activo` | `retirado`, derivado
+    de los contratos) y `GET …/empleados/{id}` (la ficha con todos los contratos y versiones).
+    `POST …/empleados` crea el empleado **con su primer contrato**; mande `persona_id` (alguien que
+    ya está en la entidad) **o** `persona` (sus datos; si el documento ya existe se usa esa
+    persona). 409 si el código se repite o la persona ya es empleada.
+  - Contrato: `tipo` define las fechas (término fijo y aprendizaje llevan `fecha_fin`; obra o
+    labor, `descripcion_obra`). Las `condiciones` son una versión: el aprendiz lleva
+    `tipo_salario: apoyo_sostenimiento` y su `etapa_aprendizaje`; la jornada parcial,
+    `horas_semanales`; la transferencia, la `cuenta`; la ARL, su `clase_riesgo`. Las reglas del
+    salario mínimo y de las afiliaciones responden 422 (`validacion`) con el motivo.
+  - Cambios: `POST …/contratos/{id}/versiones` (desde una fecha posterior a la última versión;
+    muestre el historial de versiones como línea de tiempo), `…/prorroga` (solo término fijo),
+    `…/terminacion` (fecha y `motivo`; no antes de la última versión). Un contrato terminado no
+    acepta cambios (409). Otro contrato del mismo empleado: `POST …/empleados/{id}/contratos` (409
+    si se cruza en fechas).
+  - **Salarios y cuentas** solo llegan con `nomina.salarios.ver`; sin él vienen en `null`: oculte
+    esas columnas en lugar de mostrarlas vacías.
+  - Carga masiva: `GET …/importaciones/plantilla` (CSV), `POST …/importaciones?nombre=` (el archivo
+    en el cuerpo) y `…/importaciones/{id}/confirmar`, como las demás importaciones. Las
+    administradoras van por su **código PILA**.
+  - En la consola de la plataforma (`plataforma.normativa.gestionar`): `GET /plataforma/nomina/
+    catalogo`, `POST /plataforma/nomina/parametros` (versión nueva; nunca se edita) y
+    `POST|PUT /plataforma/nomina/administradoras`.
 
 ## 4. Menú: maqueta 3D, zonas y módulos
 
@@ -326,7 +355,7 @@ no tienen pieza en la maqueta: muéstrelas en la lista de Zonas comunes.
 | Tributario | Tributario | alguno de `contabilidad`, `facturacion_electronica` | Terceros (`terceros.gestionar`; ver con `contabilidad.ver` o `facturacion.ver`) · Perfil tributario (`tributario.configurar`, `tributario.perfil.confirmar`) · Resoluciones de numeración (`tributario.configurar`) · **Solo con `contabilidad`:** retención, IVA, ICA y exógena (`tributario.preparar`) | `/entidades/{id}/{terceros,tributario}`, `…/contabilidad/tributario` |
 | Archivo | Archivo | ninguno | Documentos (`archivos.ver`) | `/entidades/{id}/archivos` |
 | Sala de juntas | Reportes | `contabilidad` | Estados financieros (`contabilidad.ver`) | `…/contabilidad/reportes` |
-| Nómina | Nómina electrónica | próximamente | — | (plan 16) |
+| Nómina | Nómina | `nomina` | Empleados y contratos (`nomina.ver`; crear, modificar, prorrogar y terminar con `nomina.empleados.gestionar`; salarios y cuentas con `nomina.salarios.ver`) · Importar empleados (`importaciones.ejecutar` y `nomina.empleados.gestionar`) · Catálogo laboral vigente (`nomina.ver`) · **Próximamente:** liquidación, desprendibles, PILA y nómina electrónica | `/entidades/{id}/nomina/…` |
 
 En una PH, estas mismas secciones se abren desde la zona Administración, con las rutas de
 `/entidades/{id}` (mismo id que la copropiedad). La **ficha de la empresa** (nombre, razón
@@ -595,8 +624,8 @@ Alta de copropiedades y entidades (con su administrador, nuevo o existente), est
 de cada una, usuarios y roles de plataforma (`POST /plataforma/cuentas`), consulta, bloqueo y
 desbloqueo de cuentas (`GET /plataforma/cuentas?identificador=`, `…/bloquear`, `…/desbloquear`),
 reclamaciones de organizaciones, líneas y tarifas de WhatsApp, catálogos normativos
-(PUC, retenciones y UVT, IVA, ICA, exógena, tasas de referencia), plantillas contables, consumo de
-facturación electrónica, moderación del directorio y la publicidad.
+(PUC, retenciones y UVT, IVA, ICA, exógena, tasas de referencia, catálogo laboral), plantillas
+contables, consumo de facturación electrónica, moderación del directorio y la publicidad.
 
 - **Entidades** (`/plataforma/entidades`): PH, empresas y la plataforma en una tabla (tipo, estado,
   módulos; filtros `q` por nombre o NIT, `tipo` y `estado`, aplicados en todas las páginas);
@@ -674,6 +703,8 @@ si aun así llega el 409, recargue el recurso. Los principales:
 | Entidad / copropiedad | `EstadoCopropiedad`: en_configuracion, activa, suspendida, retirada | Avise si la entidad no está activa; suspendida = solo lectura. |
 | Corte de cobro | `EstadoCorte`: borrador → aprobado → facturado → pagado; o descartado | Descartar solo antes de facturar. |
 | Suscripción | `EstadoSuscripcion`: activa, suspendida, terminada | `suspendida_por_mora` dice si el pago la reactiva. |
+| Empleado | `EstadoEmpleado`: activo, retirado | Derivado de sus contratos. |
+| Contrato laboral | Sin `estado`: `fecha_terminacion` nula = vigente | Terminado no acepta versiones ni prórrogas. |
 
 ## 7. Sesión
 

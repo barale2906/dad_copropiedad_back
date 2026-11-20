@@ -221,7 +221,15 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('cambios_censo', 'motivo'), ('reclamaciones_organizacion', 'motivo'),
                ('ordenes_trabajo', 'observaciones'), ('personas', 'direccion_fiscal'),
                ('personas', 'correo_facturacion'), ('facturas_venta', 'pago_manual_referencia'),
-               ('correos_recepcion_dian', 'correo'), ('suscripciones', 'correo_facturacion'))
+               ('correos_recepcion_dian', 'correo'), ('suscripciones', 'correo_facturacion'),
+               ('versiones_contrato_laboral', 'salario'),
+               ('versiones_contrato_laboral', 'banco'),
+               ('versiones_contrato_laboral', 'tipo_cuenta'),
+               ('versiones_contrato_laboral', 'numero_cuenta'),
+               ('versiones_contrato_laboral', 'eps_id'),
+               ('versiones_contrato_laboral', 'afp_id'),
+               ('versiones_contrato_laboral', 'cesantias_id'),
+               ('versiones_contrato_laboral', 'pensionado'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

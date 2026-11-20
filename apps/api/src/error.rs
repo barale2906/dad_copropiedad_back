@@ -187,7 +187,8 @@ impl ApiError {
                 | DominioError::DatoInvalido { .. }
                 | DominioError::ReservaNoPermitida(_)
                 | DominioError::VotoInvalido(_)
-                | DominioError::ValorDesconocido { .. } => {
+                | DominioError::ValorDesconocido { .. }
+                | DominioError::ReglaLaboral(_) => {
                     (StatusCode::UNPROCESSABLE_ENTITY, C::Validacion)
                 }
                 DominioError::CoeficientesNoSumanUno { .. } => {

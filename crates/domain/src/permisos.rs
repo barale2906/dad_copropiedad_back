@@ -284,6 +284,12 @@ catalogo_permisos! {
     FacturacionEmitir => "facturacion.emitir", Copropiedad;
     /// Cargar facturas recibidas y registrar sus eventos RADIAN.
     FacturacionRecibir => "facturacion.recibir", Copropiedad;
+    /// Consultar empleados y contratos de la nómina (sin salarios ni cuentas bancarias).
+    NominaVer => "nomina.ver", Copropiedad;
+    /// Ver salarios y cuentas bancarias de los empleados (dato personal).
+    NominaSalariosVer => "nomina.salarios.ver", Copropiedad;
+    /// Crear empleados y sus contratos, modificarlos, prorrogarlos, terminarlos e importarlos.
+    NominaEmpleadosGestionar => "nomina.empleados.gestionar", Copropiedad;
     /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
     DirectorioVer => "directorio.ver", Copropiedad;
     /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
@@ -539,6 +545,9 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::FacturacionExportar,
             P::FacturacionEmitir,
             P::FacturacionRecibir,
+            P::NominaVer,
+            P::NominaSalariosVer,
+            P::NominaEmpleadosGestionar,
         ]),
     },
     RolPlantilla {
@@ -764,12 +773,13 @@ pub fn permisos_en_suspension(permisos: &ConjuntoPermisos) -> ConjuntoPermisos {
 }
 
 /// Lecturas que **nunca** da un acceso de soporte: datos sensibles, archivos personales, el
-/// detalle de los votos reservados y la identidad en convivencia. Solo el superusuario lo ve todo.
+/// detalle de los votos reservados, la identidad en convivencia y los salarios. Solo el superusuario lo ve todo.
 const VEDADOS_A_SOPORTE: &[Permiso] = &[
     P::PersonasDatosSensiblesVer,
     P::ArchivosPersonalesVer,
     P::AsambleasVotosVerDetalle,
     P::TicketsConvivenciaVer,
+    P::NominaSalariosVer,
 ];
 
 /// Permisos de un acceso de soporte de la plataforma a una entidad (plan 20): todas las

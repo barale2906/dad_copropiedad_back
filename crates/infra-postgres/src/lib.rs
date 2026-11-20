@@ -46,6 +46,7 @@ mod facturas;
 mod idempotencia;
 mod mantenimiento;
 mod modulos;
+mod nomina;
 mod personas;
 mod plataforma;
 mod pool;

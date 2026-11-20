@@ -4,6 +4,8 @@
 //!   módulos. Si un día lo necesitan, el puente va en la vertical, nunca al revés.
 //! - ADR 0022: la facturación electrónica se vende sola. Puede usar el núcleo contable (solo si la
 //!   entidad lo tiene), pero **la contabilidad no importa la facturación**.
+//! - ADR 0025: la nómina también se vende sola y no conoce a la PH; **la contabilidad no importa
+//!   la nómina**.
 
 use std::{
     fs,
@@ -61,6 +63,8 @@ fn fuentes() -> Vec<PathBuf> {
     v.push(raiz.join("casos_uso/tributario.rs"));
     v.push(raiz.join("puertos/facturacion.rs"));
     v.push(raiz.join("puertos/tributario.rs"));
+    v.extend(de_directorio("casos_uso/nomina"));
+    v.push(raiz.join("puertos/nomina.rs"));
     v
 }
 
@@ -99,10 +103,22 @@ fn la_contabilidad_no_importa_la_facturacion() {
 }
 
 #[test]
+fn la_contabilidad_no_importa_la_nomina() {
+    for ruta in fuentes_contables() {
+        let texto = fs::read_to_string(&ruta).expect("fuente legible");
+        assert!(
+            !segmentos(&texto).iter().any(|s| s == "nomina"),
+            "{} usa la nómina: la contabilidad no puede depender de ella (ADR 0025)",
+            ruta.display()
+        );
+    }
+}
+
+#[test]
 fn el_nucleo_contable_no_importa_la_vertical_ph() {
     let fuentes = fuentes();
     assert!(
-        fuentes.len() >= 16,
+        fuentes.len() >= 20,
         "se revisaron {} fuentes",
         fuentes.len()
     );

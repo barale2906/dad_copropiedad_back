@@ -72,6 +72,14 @@ fn el_nucleo_contable_no_conoce_a_la_ph() {
 }
 
 #[test]
+fn la_nomina_no_conoce_a_la_ph() {
+    let ruta = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/nomina.rs");
+    let mut permitidos = PERMITIDOS.to_vec();
+    permitidos.push("contabilidad");
+    revisar(&ruta, &permitidos);
+}
+
+#[test]
 fn la_lectura_de_rutas_reconoce_grupos_y_rutas_sueltas() {
     let rutas = rutas_de_crate("use crate::{DominioError, ids::X};\nlet a = crate::Nit::new;");
     assert_eq!(rutas, vec!["DominioError", "ids", "Nit"]);

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE administradoras_seguridad_social SET nombre = $2, activa = $3 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f905ef27dd1a16393edf4091646aac09c7775a8e8c29dba0c5929d31192a65fb"
+}

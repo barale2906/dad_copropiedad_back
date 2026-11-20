@@ -104,4 +104,9 @@ pub enum DominioError {
     /// cuentas, conceptos o códigos, nunca datos de terceros.
     #[error("regla contable: {0}")]
     ReglaContable(String),
+
+    /// Regla laboral incumplida (catálogo vigente, contrato, afiliaciones). El texto nombra
+    /// parámetros y tipos, nunca datos del empleado (ni su salario).
+    #[error("regla laboral: {0}")]
+    ReglaLaboral(String),
 }

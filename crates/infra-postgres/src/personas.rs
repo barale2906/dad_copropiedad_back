@@ -52,7 +52,7 @@ impl TryFrom<FilaPersona> for Persona {
 }
 
 /// Escapa los comodines de `LIKE`.
-fn patron(texto: &str) -> String {
+pub(crate) fn patron(texto: &str) -> String {
     let e = texto
         .replace('\\', "\\\\")
         .replace('%', "\\%")

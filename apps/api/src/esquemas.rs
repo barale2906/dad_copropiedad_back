@@ -408,4 +408,29 @@ esquema_enum! {
         "Criterio por el que una persona es beneficiaria final (RUB).";
     LadoExogena = domain::tributario::LadoExogena,
         "Lado del movimiento que suma a una columna de la exógena.";
+    ParametroLaboral = domain::nomina::ParametroLaboral,
+        "Parámetro del catálogo laboral de la plataforma (salario mínimo, recargos, aportes, \
+         prestaciones…); su unidad la da `unidad`.";
+    UnidadParametroLaboral = domain::nomina::Unidad,
+        "Unidad del valor de un parámetro laboral.";
+    TipoAdministradora = domain::nomina::TipoAdministradora,
+        "Tipo de administradora de la seguridad social (EPS, pensiones, cesantías, caja o ARL).";
+    TipoContratoLaboral = domain::nomina::TipoContratoLaboral,
+        "Tipo de contrato laboral.";
+    MotivoTerminacion = domain::nomina::MotivoTerminacion,
+        "Motivo de la terminación de un contrato laboral.";
+    TipoSalario = domain::nomina::TipoSalario,
+        "Tipo de salario (el apoyo de sostenimiento es del contrato de aprendizaje).";
+    EtapaAprendizaje = domain::nomina::EtapaAprendizaje,
+        "Etapa del aprendiz SENA.";
+    Jornada = domain::nomina::Jornada,
+        "Jornada laboral (la parcial lleva las horas semanales).";
+    PeriodicidadPago = domain::nomina::PeriodicidadPago,
+        "Periodicidad de pago de la nómina.";
+    MedioPago = domain::nomina::MedioPago,
+        "Medio de pago del salario (la transferencia lleva la cuenta).";
+    ClaseRiesgo = domain::nomina::ClaseRiesgo,
+        "Clase de riesgo laboral del puesto (1 a 5).";
+    EstadoEmpleado = domain::nomina::EstadoEmpleado,
+        "Estado del empleado según sus contratos.";
 }

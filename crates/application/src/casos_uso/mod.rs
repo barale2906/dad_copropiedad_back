@@ -25,6 +25,7 @@ pub mod facturacion;
 pub mod importaciones;
 pub mod mantenimiento;
 pub mod modulos;
+pub mod nomina;
 pub mod organizaciones;
 pub mod parqueaderos;
 pub mod plataforma;

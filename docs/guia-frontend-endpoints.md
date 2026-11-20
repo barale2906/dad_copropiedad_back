@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-648 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+663 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -34,12 +34,13 @@ sesión de persona.
 - [proteccion_datos](#proteccion-datos) (13): Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
 - [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
-- [plataforma](#plataforma) (71): Operación de la plataforma (exige segundo factor)
+- [plataforma](#plataforma) (75): Operación de la plataforma (exige segundo factor)
 - [contabilidad](#contabilidad) (51): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
 - [tesoreria](#tesoreria) (39): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
 - [tributario](#tributario) (15): Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario
 - [facturacion](#facturacion) (42): Facturación de cualquier entidad, con o sin contabilidad (plan 18): catálogo de productos y servicios, facturas de venta con número interno, pago manual sin tesorería, documentos electrónicos, compras para el documento soporte, facturas recibidas, libros de ventas y compras y paquete de XML y PDF para el contador. Con contabilidad cada documento se contabiliza solo
+- [nomina](#nomina) (11): Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
 
 ## salud
 
@@ -638,6 +639,10 @@ Operación de la plataforma (exige segundo factor)
 | POST | `/plataforma/cobros/cortes/{corte_id}/factura-externa` | Marca un corte aprobado como facturado por fuera del sistema (mientras la plataforma no factura en él). | `plataforma.cobros.facturar` | `FacturaExternaPeticion` | 200 `CorteRespuesta` | 403, 409 |
 | POST | `/plataforma/cobros/cortes/{corte_id}/pago` | Registra el pago de un corte facturado; si la entidad estaba suspendida por mora y no le queda otro vencido, se reactiva. | `plataforma.cobros.facturar` | `PagoCortePeticion` | 200 `CorteRespuesta` | 403, 409 |
 | POST | `/plataforma/cobros/liquidaciones/{liquidacion_id}/corte` | Crea el corte (en borrador) de una liquidación de publicidad de un anunciante. | `plataforma.cobros.aprobar` |  | 200 `CorteRespuesta` | 403, 422 |
+| GET | `/plataforma/nomina/catalogo` | Catálogo laboral completo de la plataforma (todas las versiones y administradoras). | `plataforma.normativa.gestionar` |  | 200 `CatalogoLaboralRespuesta` | 403 |
+| POST | `/plataforma/nomina/parametros` | Agrega una versión de un parámetro laboral. El catálogo es de solo inserción: un error se corrige con otra versión. | `plataforma.normativa.gestionar` | `NuevoParametroLaboralPeticion` | 201 `ParametroLaboralRespuesta` | 403, 409, 422 |
+| POST | `/plataforma/nomina/administradoras` | Agrega una administradora de la seguridad social al catálogo. | `plataforma.normativa.gestionar` | `NuevaAdministradoraPeticion` | 201 `AdministradoraRespuesta` | 403, 409, 422 |
+| PUT | `/plataforma/nomina/administradoras/{administradora_id}` | Cambia el nombre y el estado de una administradora. | `plataforma.normativa.gestionar` | `CambiosAdministradoraPeticion` | 200 `AdministradoraRespuesta` | 403, 422 |
 | GET | `/entidades/{entidad_id}/suscripcion` | El plan de la entidad con la plataforma, su consumo del periodo en curso y sus facturas. | `suscripcion.ver` |  | 200 `MiSuscripcionRespuesta` | 403 |
 
 ## contabilidad
@@ -884,3 +889,21 @@ Facturación de cualquier entidad, con o sin contabilidad (plan 18): catálogo d
 | POST | `/entidades/{entidad_id}/facturacion/habilitacion/produccion` | Pasa la entidad a producción con el motor propio (exige `habilitado`). | `facturacion.configurar` |  | 200 `HabilitacionRespuesta` | 403, 409 |
 | POST | `/entidades/{entidad_id}/facturacion/habilitacion/rangos` | Trae de la DIAN los rangos autorizados al software y registra los que falten como resoluciones de factura (con su clave técnica). Devuelve los nuevos. | `facturacion.configurar` |  | 200 `[RangoSincronizadoRespuesta]` | 403, 422 |
 | POST | `/entidades/{entidad_id}/facturacion/compras` | Registra una compra a un proveedor para emitir su documento soporte. Sin contabilidad va sin cuentas, centros de costo ni retenciones; con contabilidad es la misma factura de proveedor de las cuentas por pagar. | `facturacion.facturas.gestionar` `tesoreria.facturas_proveedor.gestionar` | `NuevaFacturaProveedorPeticion` | 201 `FacturaProveedorRespuesta` | 403, 409, 422 |
+
+## nomina
+
+Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
+
+| Método | Ruta | Qué hace | Permiso | Cuerpo | Respuesta | Errores propios |
+|---|---|---|---|---|---|---|
+| POST | `/entidades/{entidad_id}/nomina/importaciones` | Sube y valida una planilla de empleados (CSV o XLSX; columnas en la plantilla). No crea nada: devuelve la vista previa con los errores por fila; se aplica con `…/nomina/importaciones/{id}/confirmar`. | `importaciones.ejecutar` `nomina.empleados.gestionar` | `application/octet-stream` | 201 `VistaPreviaEmpleadosRespuesta` | 403, 422 |
+| GET | `/entidades/{entidad_id}/nomina/importaciones/plantilla` | Plantilla CSV de empleados (encabezados y una fila de ejemplo, separada por `;`). | _No exige permisos: basta un rol en la entidad_ |  | 200 `text/csv` | 403 |
+| POST | `/entidades/{entidad_id}/nomina/importaciones/{importacion_id}/confirmar` | Crea los empleados de una importación validada en una sola transacción (si una fila choca, no se crea ninguno y el mensaje dice la fila). | `importaciones.ejecutar` `nomina.empleados.gestionar` |  | 200 `ImportacionRespuesta` | 403, 409 |
+| GET | `/entidades/{entidad_id}/nomina/catalogo` | Catálogo laboral vigente en la fecha y administradoras activas (lo que usan los contratos). | `nomina.ver` |  | 200 `CatalogoLaboralRespuesta` | 403 |
+| GET | `/entidades/{entidad_id}/nomina/empleados` | Empleados de la entidad con su estado de hoy. | `nomina.ver` |  | 200 `PaginaRespuesta_EmpleadoResumenRespuesta` | 403 |
+| POST | `/entidades/{entidad_id}/nomina/empleados` | Da de alta un empleado con su primer contrato (crea la persona si no está en la entidad). | `nomina.empleados.gestionar` | `NuevoEmpleadoPeticion` | 201 `FichaEmpleadoRespuesta` | 403, 409, 422 |
+| GET | `/entidades/{entidad_id}/nomina/empleados/{empleado_id}` | Ficha del empleado con todos sus contratos y versiones (salarios y cuentas solo con `nomina.salarios.ver`). | `nomina.ver` |  | 200 `FichaEmpleadoRespuesta` | 403 |
+| POST | `/entidades/{entidad_id}/nomina/empleados/{empleado_id}/contratos` | Agrega un contrato a un empleado (no se cruza en fechas con sus otros contratos). | `nomina.empleados.gestionar` | `NuevoContratoLaboralPeticion` | 201 `ContratoConVersionesRespuesta` | 403, 409, 422 |
+| POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/versiones` | Modifica las condiciones del contrato desde una fecha (una versión nueva; las anteriores no cambian). | `nomina.empleados.gestionar` | `ModificacionContratoPeticion` | 201 `VersionContratoRespuesta` | 403, 409, 422 |
+| POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/prorroga` | Prorroga un contrato a término fijo. | `nomina.empleados.gestionar` | `ProrrogaContratoPeticion` | 200 `ContratoLaboralRespuesta` | 403, 409, 422 |
+| POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/terminacion` | Termina un contrato con su motivo (la liquidación llega en la fase 4). | `nomina.empleados.gestionar` | `TerminacionContratoPeticion` | 200 `ContratoLaboralRespuesta` | 403, 409, 422 |
