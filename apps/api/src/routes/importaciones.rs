@@ -90,6 +90,10 @@ pub struct ResumenRespuesta {
     pub usuarios: u32,
     /// Importación de usuarios: cuántos no tenían cuenta (solo se conoce al aplicar).
     pub cuentas_nuevas: u32,
+    /// Importación de empleados: empleados de la planilla, cada uno con su contrato.
+    pub empleados: u32,
+    /// Importación de novedades de nómina: novedades de la planilla.
+    pub novedades: u32,
 }
 
 impl From<ResumenImportacion> for ResumenRespuesta {
@@ -103,6 +107,8 @@ impl From<ResumenImportacion> for ResumenRespuesta {
             cuadro_borrador_id: r.cuadro_borrador_id.map(CuadroCoeficientesId::as_uuid),
             usuarios: r.usuarios,
             cuentas_nuevas: r.cuentas_nuevas,
+            empleados: r.empleados,
+            novedades: r.novedades,
         }
     }
 }

@@ -150,6 +150,7 @@ pub struct LiquidacionACobrar {
     /// Primer día del mes liquidado.
     pub periodo: NaiveDate,
     pub valor: Decimal,
+    pub estado: domain::publicidad::EstadoLiquidacion,
 }
 
 /// Filtro del listado de cortes.
@@ -333,6 +334,16 @@ pub trait RepositorioCobros: Send {
         &mut self,
         organizacion: OrganizacionId,
     ) -> impl Future<Output = AppResult<Option<ClienteFacturacion>>> + Send;
+
+    /// Pasa la liquidación de publicidad de `desde` a `hacia` (no hace nada si ya no está en
+    /// `desde`).
+    fn avanzar_liquidacion(
+        &mut self,
+        id: LiquidacionId,
+        desde: domain::publicidad::EstadoLiquidacion,
+        hacia: domain::publicidad::EstadoLiquidacion,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
 
     /// Liquidación de publicidad con el anunciante.
     fn liquidacion_a_cobrar(

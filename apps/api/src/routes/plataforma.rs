@@ -55,6 +55,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(super::contabilidad::rutas_plataforma())
         .merge(super::cartera::rutas_plataforma())
         .merge(super::cobros::rutas_plataforma())
+        .merge(super::nomina::rutas_plataforma())
 }
 
 /// Copropiedad registrada.
@@ -225,10 +226,15 @@ pub struct PeriodoModuloRespuesta {
     pub modulo: Modulo,
     pub desde: DateTime<Utc>,
     pub hasta: Option<DateTime<Utc>>,
+    /// Línea de cobro que se agregó a la suscripción de la entidad (si tiene suscripción y hay un
+    /// producto con tarifa para el módulo); `null` si no: el módulo queda en
+    /// `modulos_sin_cobro`.
+    pub linea_suscripcion_id: Option<Uuid>,
 }
 
 /// Habilita un módulo en una copropiedad (venta por módulo). Los endpoints del módulo dejan de
-/// responder `modulo_no_habilitado` desde `desde`.
+/// responder `modulo_no_habilitado` desde `desde`. Si la entidad tiene suscripción y hay un
+/// producto con tarifa para el módulo, agrega su línea de cobro.
 #[utoipa::path(
     post,
     path = "/copropiedades/{copropiedad_id}/modulos",
@@ -249,8 +255,9 @@ pub async fn habilitar_modulo(
     Path(copropiedad_id): Path<Uuid>,
     Json(p): Json<HabilitarModuloPeticion>,
 ) -> ApiResult<(StatusCode, Json<PeriodoModuloRespuesta>)> {
-    let periodo = modulos::habilitar_modulo(
+    let (periodo, linea) = application::casos_uso::cobros::habilitar_modulo_con_cobro(
         &state.unidad,
+        &state.plataforma,
         &RelojSistema,
         &op.ctx,
         TenantId::from_uuid(copropiedad_id),
@@ -265,6 +272,7 @@ pub async fn habilitar_modulo(
             modulo: periodo.modulo,
             desde: periodo.desde,
             hasta: periodo.hasta,
+            linea_suscripcion_id: linea.map(|l| l.id.as_uuid()),
         }),
     ))
 }

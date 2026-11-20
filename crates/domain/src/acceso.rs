@@ -1361,7 +1361,7 @@ mod tests {
     }
 
     fn bogota() -> Tz {
-        chrono_tz::America::Bogota
+        crate::zona::Tz::bogota()
     }
 
     fn local(d: u32, h: u32, m: u32) -> DateTime<Utc> {

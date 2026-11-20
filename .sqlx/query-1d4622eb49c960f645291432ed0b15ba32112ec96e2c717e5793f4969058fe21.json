@@ -1,0 +1,124 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT tabla, vigente_desde, desde, hasta, tarifa, adicional, fuente, creado_por,\n                creado_en\n         FROM tramos_laborales t\n         WHERE $1::date IS NULL\n            OR vigente_desde = (SELECT max(x.vigente_desde) FROM tramos_laborales x\n                                WHERE x.tabla = t.tabla AND x.vigente_desde <= $1)\n         ORDER BY tabla, vigente_desde, desde",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "tabla",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "tabla"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "desde",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "desde"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "hasta",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "tarifa",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "tarifa"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "adicional",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "adicional"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "fuente",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "fuente"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "tramos_laborales",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "1d4622eb49c960f645291432ed0b15ba32112ec96e2c717e5793f4969058fe21"
+}

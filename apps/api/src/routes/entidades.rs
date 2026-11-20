@@ -2,7 +2,8 @@
 //! cualquier empresa —PH, empresa cliente o la plataforma— con el extractor
 //! [`crate::sesion::EnEntidad`]; en una copropiedad, el id es el mismo de
 //! `/copropiedades/{copropiedad_id}`. Lo común: capacidades, roles, archivos, auditoría,
-//! terceros y lo tributario; y los módulos de cualquier entidad: contabilidad y facturación.
+//! terceros y lo tributario; y los módulos de cualquier entidad: contabilidad, facturación y
+//! nómina.
 //! La ficha genérica (nombre, NIT, ubicación, contacto) es `GET/PATCH /entidades/{entidad_id}`;
 //! la PH tiene además su ficha completa en `/copropiedades/{copropiedad_id}`.
 
@@ -48,6 +49,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         )
         .nest("/contabilidad", super::contabilidad::rutas())
         .nest("/facturacion", super::facturacion::rutas())
+        .nest("/nomina", super::nomina::rutas())
 }
 
 /// Permisos de la cuenta en la entidad y módulos habilitados (para cualquier entidad).

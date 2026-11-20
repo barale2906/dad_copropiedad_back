@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM liquidaciones_nomina WHERE periodo_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bdf6d8a192fa486419dcdd9ce4a069c0ce8e8bc149aaa2c990adfc7962a8a842"
+}

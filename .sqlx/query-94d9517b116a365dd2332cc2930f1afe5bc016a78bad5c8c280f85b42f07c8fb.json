@@ -1,0 +1,304 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, contrato_id, vigente_desde, cargo, salario, tipo_salario,\n                    etapa_aprendizaje, jornada, horas_semanales, periodicidad, eps_id, afp_id,\n                    cesantias_id, ccf_id, arl_id, clase_riesgo, pensionado, centro_costo_id,\n                    medio_pago, banco, tipo_cuenta, numero_cuenta, creada_por, creada_en\n             FROM versiones_contrato_laboral WHERE contrato_id = $1\n             ORDER BY vigente_desde",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "contrato_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "contrato_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "cargo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "cargo"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "salario",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "salario"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "tipo_salario",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "tipo_salario"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "etapa_aprendizaje",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "etapa_aprendizaje"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "jornada",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "jornada"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "horas_semanales",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "horas_semanales"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "periodicidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "periodicidad"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "eps_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "eps_id"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "afp_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "afp_id"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "cesantias_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "cesantias_id"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "ccf_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "ccf_id"
+          }
+        }
+      },
+      {
+        "ordinal": 14,
+        "name": "arl_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "arl_id"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
+        "name": "clase_riesgo",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "clase_riesgo"
+          }
+        }
+      },
+      {
+        "ordinal": 16,
+        "name": "pensionado",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "pensionado"
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "centro_costo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
+        "name": "medio_pago",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "medio_pago"
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "banco",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "banco"
+          }
+        }
+      },
+      {
+        "ordinal": 20,
+        "name": "tipo_cuenta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "tipo_cuenta"
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "numero_cuenta",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "numero_cuenta"
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "creada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "creada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "94d9517b116a365dd2332cc2930f1afe5bc016a78bad5c8c280f85b42f07c8fb"
+}

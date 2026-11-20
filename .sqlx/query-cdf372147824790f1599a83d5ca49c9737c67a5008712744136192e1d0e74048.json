@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT l.id, l.periodo, l.valor, l.estado, a.organizacion_id, a.nombre_comercial\n             FROM liquidaciones l JOIN anunciantes a ON a.id = l.anunciante_id\n             WHERE l.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "periodo",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "periodo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "organizacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "organizacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "nombre_comercial",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "nombre_comercial"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cdf372147824790f1599a83d5ca49c9737c67a5008712744136192e1d0e74048"
+}

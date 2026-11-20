@@ -13,6 +13,7 @@ application.workspace = true
 domain.workspace = true
 
 calamine.workspace = true
+chrono.workspace = true
 csv.workspace = true
 
 [lints]

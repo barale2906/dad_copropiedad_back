@@ -786,8 +786,8 @@ impl RepositorioCobros for TransaccionPlataformaPg {
         &mut self,
         id: LiquidacionId,
     ) -> AppResult<Option<LiquidacionACobrar>> {
-        Ok(sqlx::query!(
-            "SELECT l.id, l.periodo, l.valor, a.organizacion_id, a.nombre_comercial
+        sqlx::query!(
+            "SELECT l.id, l.periodo, l.valor, l.estado, a.organizacion_id, a.nombre_comercial
              FROM liquidaciones l JOIN anunciantes a ON a.id = l.anunciante_id
              WHERE l.id = $1",
             id.as_uuid()
@@ -795,12 +795,37 @@ impl RepositorioCobros for TransaccionPlataformaPg {
         .fetch_optional(&mut *self.tx)
         .await
         .map_err(AppError::infra)?
-        .map(|f| LiquidacionACobrar {
-            id: LiquidacionId::from_uuid(f.id),
-            organizacion_id: OrganizacionId::from_uuid(f.organizacion_id),
-            nombre_comercial: f.nombre_comercial,
-            periodo: f.periodo,
-            valor: f.valor,
-        }))
+        .map(|f| {
+            Ok::<_, AppError>(LiquidacionACobrar {
+                id: LiquidacionId::from_uuid(f.id),
+                organizacion_id: OrganizacionId::from_uuid(f.organizacion_id),
+                nombre_comercial: f.nombre_comercial,
+                periodo: f.periodo,
+                valor: f.valor,
+                estado: domain::publicidad::EstadoLiquidacion::try_from(f.estado.as_str())?,
+            })
+        })
+        .transpose()
+    }
+
+    async fn avanzar_liquidacion(
+        &mut self,
+        id: LiquidacionId,
+        desde: domain::publicidad::EstadoLiquidacion,
+        hacia: domain::publicidad::EstadoLiquidacion,
+        ahora: DateTime<Utc>,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE liquidaciones SET estado = $3, actualizada_en = $4
+             WHERE id = $1 AND estado = $2",
+            id.as_uuid(),
+            desde.as_str(),
+            hacia.as_str(),
+            ahora,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
     }
 }

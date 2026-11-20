@@ -4,7 +4,7 @@
 //!   español guarda con `;`), UTF-8 con o sin BOM, comillas estándar.
 //! - **XLSX** (`calamine`, Rust puro): primera hoja del libro. Los números se convierten a texto
 //!   con su representación más corta (`0.00523`, `506`), así el dominio los valida igual que si
-//!   vinieran de un CSV.
+//!   vinieran de un CSV. Las celdas con formato de fecha salen como `AAAA-MM-DD`.
 //!
 //! Solo lectura y sin IO: recibe los bytes ya validados por tipo (`TipoArchivo::validar_planilla`).
 //! Los errores no repiten el contenido del archivo (puede tener datos personales).
@@ -12,7 +12,8 @@
 use std::io::Cursor;
 
 use application::{AppError, AppResult, puertos::LectorPlanillas};
-use calamine::{Data, Reader, Xlsx};
+use calamine::{Data, ExcelDateTime, Reader, Xlsx};
+use chrono::{Days, NaiveDate};
 use domain::TipoArchivo;
 
 /// Lector de CSV y XLSX.
@@ -55,8 +56,24 @@ fn celda(d: &Data) -> String {
         Data::Int(i) => i.to_string(),
         Data::Float(f) => f.to_string(),
         Data::Bool(b) => b.to_string(),
+        Data::DateTime(f) if f.is_datetime() => fecha_excel(f).unwrap_or_else(|| f.to_string()),
         otro => otro.to_string(),
     }
+}
+
+/// Fecha de una celda de Excel (sistema de 1900: el día 0 es el 30 de diciembre de 1899), sin la
+/// hora.
+fn fecha_excel(f: &ExcelDateTime) -> Option<String> {
+    let serial = f.as_f64().floor();
+    if !(0.0..=2_958_465.0).contains(&serial) {
+        return None;
+    }
+    // El rango comprobado arriba cabe en u64 sin pérdida.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let dias = serial as u64;
+    NaiveDate::from_ymd_opt(1899, 12, 30)?
+        .checked_add_days(Days::new(dias))
+        .map(|d| d.format("%Y-%m-%d").to_string())
 }
 
 fn leer_xlsx(contenido: &[u8]) -> AppResult<Vec<Vec<String>>> {
@@ -114,6 +131,15 @@ mod tests {
         assert_eq!(filas[0][0], "agrupacion");
         assert_eq!(filas[1][1], "506");
         assert_eq!(filas[1][3], "0.00523");
+    }
+
+    #[test]
+    fn las_fechas_de_excel_salen_en_iso() {
+        use calamine::ExcelDateTimeType;
+        let f = ExcelDateTime::new(46054.0, ExcelDateTimeType::DateTime, false);
+        assert_eq!(fecha_excel(&f).as_deref(), Some("2026-02-01"));
+        let fuera = ExcelDateTime::new(-1.0, ExcelDateTimeType::DateTime, false);
+        assert_eq!(fecha_excel(&fuera), None);
     }
 
     #[test]

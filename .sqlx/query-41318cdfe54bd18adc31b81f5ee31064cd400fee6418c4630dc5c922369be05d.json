@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE deducciones_retencion SET vigente_hasta = $2 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "41318cdfe54bd18adc31b81f5ee31064cd400fee6418c4630dc5c922369be05d"
+}

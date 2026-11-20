@@ -69,6 +69,8 @@ pub const ETIQUETA_CARTERA: &str = "cartera";
 pub const ETIQUETA_TRIBUTARIO: &str = "tributario";
 /// Etiqueta de la facturación, que se vende sola (plan 18, ADR 0022).
 pub const ETIQUETA_FACTURACION: &str = "facturacion";
+/// Etiqueta de la nómina, que se vende sola (plan 16, ADR 0025).
+pub const ETIQUETA_NOMINA: &str = "nomina";
 
 /// Registra el esquema de seguridad `bearer` (token de acceso opaco).
 struct EsquemaBearer;
@@ -210,6 +212,10 @@ impl utoipa::Modify for EsquemaBearer {
             número interno, pago manual sin tesorería, documentos electrónicos, compras para el \
             documento soporte, facturas recibidas, libros de ventas y compras y paquete de XML y \
             PDF para el contador. Con contabilidad cada documento se contabiliza solo"),
+        (name = ETIQUETA_NOMINA, description = "Nómina de cualquier entidad (plan 16): catálogo \
+            laboral vigente, empleados (personas de la entidad) con sus contratos laborales \
+            versionados, prórroga y terminación, e importación masiva. Los salarios y las \
+            cuentas solo se ven con `nomina.salarios.ver`"),
     ),
     modifiers(&EsquemaBearer),
     components(schemas(ErrorRespuesta, DetalleError, CodigoError))

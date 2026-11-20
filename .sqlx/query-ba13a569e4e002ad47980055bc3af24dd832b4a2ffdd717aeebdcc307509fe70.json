@@ -1,0 +1,101 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT x.id, x.codigo, x.persona_id, x.nombre, x.documento, x.activo AS \"activo!\",\n                      x.cargo, x.fecha_ingreso\n               FROM (\n                   SELECT e.id, e.codigo, e.persona_id, p.nombre, p.documento,\n                          EXISTS (SELECT 1 FROM contratos_laborales c\n                                  WHERE c.empleado_id = e.id\n                                    AND COALESCE(c.fecha_terminacion, c.fecha_fin, 'infinity')\n                                        >= $4) AS activo,\n                          (SELECT v.cargo FROM versiones_contrato_laboral v\n                           JOIN contratos_laborales c ON c.id = v.contrato_id\n                           WHERE c.empleado_id = e.id\n                           ORDER BY v.vigente_desde > $4,\n                                    CASE WHEN v.vigente_desde <= $4 THEN v.vigente_desde END\n                                        DESC NULLS LAST,\n                                    v.vigente_desde\n                           LIMIT 1) AS cargo,\n                          (SELECT min(c.fecha_inicio) FROM contratos_laborales c\n                           WHERE c.empleado_id = e.id) AS fecha_ingreso\n                   FROM empleados e\n                   JOIN personas p ON p.id = e.persona_id\n                   WHERE ($1::uuid IS NULL OR e.id > $1)\n                     AND ($2::text IS NULL\n                          OR normalizar(p.nombre) LIKE normalizar($2) ESCAPE '\\'\n                          OR p.documento LIKE upper($2) ESCAPE '\\'\n                          OR normalizar(e.codigo) LIKE normalizar($2) ESCAPE '\\')\n               ) x\n               WHERE $3::text IS NULL OR ($3 = 'activo') = x.activo\n               ORDER BY x.id\n               LIMIT $5",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "empleados",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "empleados",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "persona_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "empleados",
+            "name": "persona_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "documento",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "personas",
+            "name": "documento"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "activo!",
+        "type_info": "Bool",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 6,
+        "name": "cargo",
+        "type_info": "Text",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 7,
+        "name": "fecha_ingreso",
+        "type_info": "Date",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Date",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "ba13a569e4e002ad47980055bc3af24dd832b4a2ffdd717aeebdcc307509fe70"
+}

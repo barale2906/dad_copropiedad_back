@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT periodo_id FROM liquidaciones_nomina WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "periodo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "periodo_id"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "48d1aa7190b8ae5d8634d03131c106cbc7cd68efcb0c8161fd2fe273465ea013"
+}

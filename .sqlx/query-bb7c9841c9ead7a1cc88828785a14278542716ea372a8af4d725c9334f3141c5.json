@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO contratos_laborales (id, tenant_id, empleado_id, tipo, fecha_inicio,\n                 fecha_fin, descripcion_obra, creado_por, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Date",
+        "Date",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bb7c9841c9ead7a1cc88828785a14278542716ea372a8af4d725c9334f3141c5"
+}

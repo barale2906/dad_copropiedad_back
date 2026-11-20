@@ -685,6 +685,52 @@ id_entidad!(
     Uuid::now_v7
 );
 
+id_entidad!(
+    /// Versión de un parámetro del catálogo laboral de la plataforma (plan 16).
+    ParametroLaboralId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Administradora de la seguridad social (EPS, AFP, cesantías, caja o ARL).
+    AdministradoraId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Empleado de una entidad (una persona del tenant).
+    EmpleadoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Contrato laboral de un empleado.
+    ContratoLaboralId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Versión (condiciones desde una fecha) de un contrato laboral.
+    VersionContratoId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Periodo de nómina (mes o quincena) de una entidad.
+    PeriodoNominaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Novedad de nómina (horas, días o valores de un contrato).
+    NovedadNominaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Liquidación de un contrato en un periodo de nómina.
+    LiquidacionNominaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Deducción de la retención en la fuente declarada por un empleado.
+    DeduccionRetencionId,
+    Uuid::now_v7
+);
+
 #[cfg(test)]
 mod tests {
     use super::*;

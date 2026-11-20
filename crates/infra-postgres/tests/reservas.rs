@@ -108,10 +108,10 @@ fn todos_los_dias() -> Horario {
 /// Franja local de Bogotá dentro de `dias` días a las `h1`–`h2` horas.
 fn franja(dias: i64, h1: u32, h2: u32) -> Franja {
     let fecha = (Utc::now() + Duration::days(dias))
-        .with_timezone(&Tz::America__Bogota)
+        .with_timezone(&Tz::bogota())
         .date_naive();
     let a = |h: u32| -> DateTime<Utc> {
-        Tz::America__Bogota
+        Tz::bogota()
             .from_local_datetime(&fecha.and_hms_opt(h, 0, 0).expect("hora"))
             .single()
             .expect("hora local")

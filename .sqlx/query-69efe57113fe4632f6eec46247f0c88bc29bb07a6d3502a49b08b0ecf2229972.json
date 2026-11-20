@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE liquidaciones SET estado = $3, actualizada_en = $4\n             WHERE id = $1 AND estado = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "69efe57113fe4632f6eec46247f0c88bc29bb07a6d3502a49b08b0ecf2229972"
+}

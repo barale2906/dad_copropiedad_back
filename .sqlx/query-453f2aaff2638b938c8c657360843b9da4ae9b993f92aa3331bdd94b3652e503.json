@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE periodos_nomina SET estado = $2, liquidado_por = $3, liquidado_en = $4,\n                 aprobado_por = $5, aprobado_en = $6, pagado_por = $7, pagado_en = $8,\n                 fecha_pago = $9\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Timestamptz",
+        "Date"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "453f2aaff2638b938c8c657360843b9da4ae9b993f92aa3331bdd94b3652e503"
+}

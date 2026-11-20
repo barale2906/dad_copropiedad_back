@@ -414,6 +414,27 @@ async fn persona_cliente<T: TxVentas>(
     Ok(p.id)
 }
 
+/// La liquidación de publicidad sigue a su corte: facturada al facturarse y pagada al pagarse
+/// (solo si está en el estado anterior, según
+/// [`domain::publicidad::EstadoLiquidacion::transicionar`]).
+async fn seguir_liquidacion<T: TxCobros>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    c: &Corte,
+    hacia: domain::publicidad::EstadoLiquidacion,
+) -> AppResult<()> {
+    let OrigenCorte::Liquidacion(id) = c.origen else {
+        return Ok(());
+    };
+    if let Some(l) = tx.liquidacion_a_cobrar(id).await?
+        && l.estado.transicionar(hacia).is_ok()
+    {
+        tx.avanzar_liquidacion(id, l.estado, hacia, reloj.ahora())
+            .await?;
+    }
+    Ok(())
+}
+
 /// Factura un corte aprobado en el tenant de la entidad de la plataforma: crea y emite la factura
 /// de venta (número interno; el documento electrónico se transmite desde la facturación de esa
 /// entidad), fija el vencimiento con el plazo de pago y envía el aviso al correo de facturación.
@@ -527,6 +548,13 @@ where
     c.facturado_en = Some(fecha);
     c.vencimiento = Some(vencimiento);
     tx.actualizar_corte(&c).await?;
+    seguir_liquidacion(
+        &mut tx,
+        reloj,
+        &c,
+        domain::publicidad::EstadoLiquidacion::Facturada,
+    )
+    .await?;
     if let Some(para) = correo {
         tx.encolar(aviso(
             &para,
@@ -573,6 +601,7 @@ pub(crate) fn aviso(para: &domain::DireccionCorreo, asunto: &str, texto: String)
 /// [`AppError::Dominio`] si no está aprobado; [`AppError::Validacion`] sin número.
 pub async fn marcar_facturado_externo<UP>(
     unidad: &UP,
+    reloj: &impl Reloj,
     ctx: &ContextoPlataforma,
     id: CorteFacturacionId,
     numero: &str,
@@ -600,6 +629,13 @@ where
     c.facturado_en = Some(fecha);
     c.vencimiento = Some(fecha + Duration::days(i64::from(plazo)));
     tx.actualizar_corte(&c).await?;
+    seguir_liquidacion(
+        &mut tx,
+        reloj,
+        &c,
+        domain::publicidad::EstadoLiquidacion::Facturada,
+    )
+    .await?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_FACTURAR, "corte_facturacion", id.as_uuid())
             .con_detalle(DetalleAuditoria::vacio().con("factura_externa", numero.as_str())?),
@@ -636,6 +672,13 @@ where
     c.estado = c.estado.transicionar(EstadoCorte::Pagado)?;
     c.pagado_en = Some(fecha);
     tx.actualizar_corte(&c).await?;
+    seguir_liquidacion(
+        &mut tx,
+        reloj,
+        &c,
+        domain::publicidad::EstadoLiquidacion::Pagada,
+    )
+    .await?;
     tx.registrar(EventoAuditoria::ok(
         ACCION_PAGAR,
         "corte_facturacion",

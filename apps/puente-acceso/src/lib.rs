@@ -23,7 +23,7 @@ use std::{
 };
 
 use chrono::{DateTime, Utc};
-use chrono_tz::Tz;
+use domain::reserva::Tz;
 use domain::{
     CargaQr, CredencialId, Horario, PuntoAccesoId, ResultadoAcceso, SentidoAcceso, TenantId,
     TipoCredencial, VentanaAcceso, VisitaId, acceso::huella_credencial,
@@ -526,7 +526,7 @@ mod tests {
     use super::*;
 
     fn tz() -> Tz {
-        chrono_tz::America::Bogota
+        domain::reserva::Tz::bogota()
     }
 
     fn ahora() -> DateTime<Utc> {

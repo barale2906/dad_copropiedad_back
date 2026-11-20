@@ -571,6 +571,12 @@ pub struct ResumenImportacion {
     /// Importación de usuarios: cuántos no tenían cuenta y se les creó una.
     #[serde(default)]
     pub cuentas_nuevas: u32,
+    /// Importación de empleados (plan 16): empleados de la planilla, cada uno con su contrato.
+    #[serde(default)]
+    pub empleados: u32,
+    /// Importación de novedades de nómina (plan 16).
+    #[serde(default)]
+    pub novedades: u32,
 }
 
 /// Importación registrada.

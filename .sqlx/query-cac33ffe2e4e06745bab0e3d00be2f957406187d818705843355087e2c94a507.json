@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT l.id, l.periodo, l.valor, a.organizacion_id, a.nombre_comercial\n             FROM liquidaciones l JOIN anunciantes a ON a.id = l.anunciante_id\n             WHERE l.id = $1",
+  "query": "SELECT id, codigo, persona_id, creado_por, creado_en\n             FROM empleados WHERE persona_id = $1",
   "describe": {
     "columns": [
       {
@@ -9,52 +9,52 @@
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "liquidaciones",
+            "table": "empleados",
             "name": "id"
           }
         }
       },
       {
         "ordinal": 1,
-        "name": "periodo",
-        "type_info": "Date",
+        "name": "codigo",
+        "type_info": "Text",
         "origin": {
           "Table": {
-            "table": "liquidaciones",
-            "name": "periodo"
+            "table": "empleados",
+            "name": "codigo"
           }
         }
       },
       {
         "ordinal": 2,
-        "name": "valor",
-        "type_info": "Numeric",
+        "name": "persona_id",
+        "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "liquidaciones",
-            "name": "valor"
+            "table": "empleados",
+            "name": "persona_id"
           }
         }
       },
       {
         "ordinal": 3,
-        "name": "organizacion_id",
+        "name": "creado_por",
         "type_info": "Uuid",
         "origin": {
           "Table": {
-            "table": "anunciantes",
-            "name": "organizacion_id"
+            "table": "empleados",
+            "name": "creado_por"
           }
         }
       },
       {
         "ordinal": 4,
-        "name": "nombre_comercial",
-        "type_info": "Text",
+        "name": "creado_en",
+        "type_info": "Timestamptz",
         "origin": {
           "Table": {
-            "table": "anunciantes",
-            "name": "nombre_comercial"
+            "table": "empleados",
+            "name": "creado_en"
           }
         }
       }
@@ -68,9 +68,9 @@
       false,
       false,
       false,
-      false,
+      true,
       false
     ]
   },
-  "hash": "d078fa8347b3a0ed8407558a2398b27dad7468001e73ca2cbb42be10a65e25b7"
+  "hash": "cac33ffe2e4e06745bab0e3d00be2f957406187d818705843355087e2c94a507"
 }

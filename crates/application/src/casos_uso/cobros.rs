@@ -443,6 +443,108 @@ pub(crate) async fn detalle_en<T: TxCobros>(
     })
 }
 
+/// Cobra un módulo recién habilitado: si la entidad tiene suscripción vigente y hay **un**
+/// producto activo, con tarifa, que cobra ese módulo, le agrega su línea desde `desde` (si no la
+/// tiene abierta). Si no, no hace nada: la suscripción sigue mostrando el módulo en
+/// `modulos_sin_cobro` para que el equipo comercial lo resuelva.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.modulos.gestionar`.
+pub async fn cobrar_modulo_habilitado<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+    modulo: Modulo,
+    desde: NaiveDate,
+) -> AppResult<Option<LineaSuscripcion>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxCobros,
+{
+    ctx.exigir(Permiso::PlataformaModulosGestionar)?;
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    let Some(s) = tx.suscripcion_de_entidad(tenant).await? else {
+        return Ok(None);
+    };
+    let mut candidatos = Vec::new();
+    for p in tx.productos().await? {
+        if p.activo && p.modulo == Some(modulo) && !tx.tarifas(p.id).await?.is_empty() {
+            candidatos.push(p);
+        }
+    }
+    let [producto] = candidatos.as_slice() else {
+        return Ok(None);
+    };
+    let ya_tiene = tx
+        .lineas(s.id)
+        .await?
+        .iter()
+        .any(|l| l.producto_id == producto.id && l.hasta.is_none_or(|h| h > desde));
+    if ya_tiene {
+        return Ok(None);
+    }
+    let l = LineaSuscripcion {
+        id: LineaSuscripcionId::nuevo(),
+        suscripcion_id: s.id,
+        producto_id: producto.id,
+        precio_pactado: None,
+        motivo_precio: None,
+        desde,
+        hasta: None,
+        creada_en: reloj.ahora(),
+    };
+    tx.insertar_linea(&l).await?;
+    let detalle = DetalleAuditoria::vacio()
+        .con("producto", producto.codigo.as_str())?
+        .con("automatica", true)?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_LINEA, "suscripcion", s.id.as_uuid()).con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(Some(l))
+}
+
+/// Habilita el módulo en la entidad y, si se puede, agrega su línea de cobro
+/// ([`cobrar_modulo_habilitado`]). Son dos transacciones (la de la entidad y la de la
+/// plataforma): si la línea no se puede agregar, el módulo queda habilitado igual.
+///
+/// # Errors
+///
+/// Los de [`crate::casos_uso::modulos::habilitar_modulo`].
+#[allow(clippy::too_many_arguments)]
+pub async fn habilitar_modulo_con_cobro<U, UP>(
+    unidad: &U,
+    plataforma: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+    modulo: Modulo,
+    desde: Option<chrono::DateTime<chrono::Utc>>,
+    hasta: Option<chrono::DateTime<chrono::Utc>>,
+) -> AppResult<(
+    crate::puertos::modulos::PeriodoModulo,
+    Option<LineaSuscripcion>,
+)>
+where
+    U: crate::puertos::UnidadDeTrabajo,
+    U::Transaccion: crate::puertos::RepositorioModulos
+        + crate::puertos::RepositorioCopropiedad
+        + RegistroAuditoria,
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxCobros,
+{
+    let periodo = crate::casos_uso::modulos::habilitar_modulo(
+        unidad, reloj, ctx, tenant, modulo, desde, hasta,
+    )
+    .await?;
+    let dia = domain::proteccion_datos::fecha_en_colombia(periodo.desde);
+    let linea = cobrar_modulo_habilitado(plataforma, reloj, ctx, tenant, modulo, dia).await?;
+    Ok((periodo, linea))
+}
+
 /// Suscripciones vigentes (no terminadas).
 ///
 /// # Errors

@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, parametro, valor, fuente, vigente_desde, creado_por, creado_en\n         FROM parametros_laborales p\n         WHERE $1::date IS NULL\n            OR vigente_desde = (SELECT max(x.vigente_desde) FROM parametros_laborales x\n                                WHERE x.parametro = p.parametro AND x.vigente_desde <= $1)\n         ORDER BY parametro, vigente_desde",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "parametros_laborales",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "parametro",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "parametros_laborales",
+            "name": "parametro"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "parametros_laborales",
+            "name": "valor"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "fuente",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "parametros_laborales",
+            "name": "fuente"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "vigente_desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "parametros_laborales",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "parametros_laborales",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "parametros_laborales",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "4f43b94bbca098e9d80435e1d3adee0b5f536a9670c75a8f86c12872648176b9"
+}

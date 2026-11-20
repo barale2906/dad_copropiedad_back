@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO parametros_laborales (id, parametro, valor, fuente, vigente_desde,\n             creado_por, creado_en)\n         VALUES ($1, $2, $3, $4, $5, $6, $7)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Numeric",
+        "Text",
+        "Date",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "779c18afe7c4af8b8cc4a0cd6ea095b52be292fffb29cc25be71cf83042668de"
+}

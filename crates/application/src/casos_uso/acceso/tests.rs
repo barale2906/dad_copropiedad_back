@@ -40,7 +40,7 @@ use crate::{
 
 /// Lunes 9 de noviembre de 2026, 15:00 en Bogotá.
 fn t0() -> DateTime<Utc> {
-    domain::reserva::Tz::America__Bogota
+    domain::reserva::Tz::bogota()
         .with_ymd_and_hms(2026, 11, 9, 15, 0, 0)
         .single()
         .expect("fecha")

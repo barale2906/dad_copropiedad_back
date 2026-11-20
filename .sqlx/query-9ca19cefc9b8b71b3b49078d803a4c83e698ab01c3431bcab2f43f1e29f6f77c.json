@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO tramos_laborales (id, tabla, vigente_desde, desde, hasta, tarifa,\n                 adicional, fuente, creado_por, creado_en)\n             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Date",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9ca19cefc9b8b71b3b49078d803a4c83e698ab01c3431bcab2f43f1e29f6f77c"
+}

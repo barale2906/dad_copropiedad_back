@@ -72,6 +72,19 @@ fn el_nucleo_contable_no_conoce_a_la_ph() {
 }
 
 #[test]
+fn la_nomina_no_conoce_a_la_ph() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("src/nomina");
+    let mut permitidos = PERMITIDOS.to_vec();
+    permitidos.extend(["nomina", "contabilidad", "calendario"]);
+    let mut revisados = 0;
+    for entrada in fs::read_dir(&dir).expect("src/nomina existe") {
+        revisar(&entrada.expect("entrada").path(), &permitidos);
+        revisados += 1;
+    }
+    assert!(revisados >= 2, "se revisaron {revisados} fuentes");
+}
+
+#[test]
 fn la_lectura_de_rutas_reconoce_grupos_y_rutas_sueltas() {
     let rutas = rutas_de_crate("use crate::{DominioError, ids::X};\nlet a = crate::Nit::new;");
     assert_eq!(rutas, vec!["DominioError", "ids", "Nit"]);

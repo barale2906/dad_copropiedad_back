@@ -31,6 +31,9 @@ pub enum Modulo {
     Asambleas,
     /// Tickets, chat de WhatsApp, mantenimiento e inventario (plan 07).
     GestionAdministrativa,
+    /// Nómina y nómina electrónica (plan 16): empleados, contratos y liquidación. Se vende sola
+    /// y sirve a cualquier entidad; usa la contabilidad si la entidad la tiene.
+    Nomina,
 }
 
 enum_texto!(Modulo {
@@ -41,13 +44,14 @@ enum_texto!(Modulo {
     ControlAcceso => "control_acceso",
     Asambleas => "asambleas",
     GestionAdministrativa => "gestion_administrativa",
+    Nomina => "nomina",
 });
 
 impl Modulo {
     /// ¿Es un módulo de la vertical PH? Solo se habilita en una entidad que es copropiedad.
     pub fn exige_copropiedad(self) -> bool {
         match self {
-            Modulo::Contabilidad | Modulo::FacturacionElectronica => false,
+            Modulo::Contabilidad | Modulo::FacturacionElectronica | Modulo::Nomina => false,
             Modulo::ContabilidadPh
             | Modulo::BienesComunes
             | Modulo::ControlAcceso
@@ -72,10 +76,12 @@ mod tests {
     #[test]
     fn la_contabilidad_sirve_a_cualquier_entidad_y_lo_demas_es_de_la_ph() {
         assert!(!Modulo::Contabilidad.exige_copropiedad());
-        for m in Modulo::TODOS
-            .iter()
-            .filter(|m| !matches!(m, Modulo::Contabilidad | Modulo::FacturacionElectronica))
-        {
+        for m in Modulo::TODOS.iter().filter(|m| {
+            !matches!(
+                m,
+                Modulo::Contabilidad | Modulo::FacturacionElectronica | Modulo::Nomina
+            )
+        }) {
             assert!(m.exige_copropiedad(), "{m:?}");
         }
     }

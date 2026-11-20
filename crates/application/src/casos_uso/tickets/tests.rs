@@ -23,7 +23,7 @@ use crate::{
 
 /// Miércoles 4 de noviembre de 2026, 10:00 en Bogotá.
 fn ahora() -> DateTime<Utc> {
-    domain::reserva::Tz::America__Bogota
+    domain::reserva::Tz::bogota()
         .with_ymd_and_hms(2026, 11, 4, 10, 0, 0)
         .single()
         .expect("fecha")
@@ -234,7 +234,7 @@ async fn peticion_vence_en_quince_dias_habiles_y_felicitacion_no_vence() {
         .await
         .expect("p");
     // Desde el miércoles 4: 15 días hábiles (sin contar el festivo del 16) → 26 de noviembre, 17:00.
-    let esperado = domain::reserva::Tz::America__Bogota
+    let esperado = domain::reserva::Tz::bogota()
         .with_ymd_and_hms(2026, 11, 26, 17, 0, 0)
         .single()
         .expect("fecha")

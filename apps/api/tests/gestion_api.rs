@@ -170,7 +170,7 @@ async fn reportar_dano_orden_correctiva_verificada_resuelve_y_se_califica(pool: 
     assert_eq!(s, StatusCode::CREATED, "{activo}");
     assert_eq!(activo["codigo"], "ASC-1");
     let hoy = chrono::Utc::now()
-        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .with_timezone(&domain::reserva::Tz::bogota())
         .date_naive()
         .to_string();
     let (s, orden) = ph
@@ -447,7 +447,7 @@ async fn preguntas_frecuentes_bandeja_y_obligaciones(pool: PgPool) {
     );
     // La PH evalúa las fechas en su hora local (Bogotá), no en UTC.
     let hoy = chrono::Utc::now()
-        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .with_timezone(&domain::reserva::Tz::bogota())
         .date_naive();
     let (s, o) = ph
         .pedir(

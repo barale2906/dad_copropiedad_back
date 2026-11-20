@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, tipo, codigo, nit, nombre, activa, creada_en\n         FROM administradoras_seguridad_social\n         WHERE activa OR NOT $1\n         ORDER BY tipo, normalizar(nombre), id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "administradoras_seguridad_social",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "administradoras_seguridad_social",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "codigo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "administradoras_seguridad_social",
+            "name": "codigo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "nit",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "administradoras_seguridad_social",
+            "name": "nit"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "nombre",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "administradoras_seguridad_social",
+            "name": "nombre"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "activa",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "administradoras_seguridad_social",
+            "name": "activa"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "creada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "administradoras_seguridad_social",
+            "name": "creada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "57d864c60115347e33e428a0581e90f55bb5fdd43b41b69669454152b830965f"
+}
