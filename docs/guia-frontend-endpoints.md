@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-680 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+682 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -40,7 +40,7 @@ sesión de persona.
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
 - [tributario](#tributario) (15): Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario
 - [facturacion](#facturacion) (42): Facturación de cualquier entidad, con o sin contabilidad (plan 18): catálogo de productos y servicios, facturas de venta con número interno, pago manual sin tesorería, documentos electrónicos, compras para el documento soporte, facturas recibidas, libros de ventas y compras y paquete de XML y PDF para el contador. Con contabilidad cada documento se contabiliza solo
-- [nomina](#nomina) (25): Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
+- [nomina](#nomina) (27): Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
 
 ## salud
 
@@ -924,3 +924,5 @@ Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (pe
 | GET | `/entidades/{entidad_id}/nomina/cesantias` | Cesantías del año por consignar (contratos con salario ordinario vigentes al 31 de diciembre). | `nomina.salarios.ver` |  | 200 `[CesantiasContratoRespuesta]` | 403, 422 |
 | GET | `/entidades/{entidad_id}/nomina/liquidaciones/{liquidacion_id}/desprendible` | PDF del desprendible de una liquidación (periodo aprobado o pagado). Las incapacidades y licencias salen como «Ausencia remunerada» y no lleva la cuenta bancaria. | `nomina.salarios.ver` |  | 200 `application/pdf` | 403, 409 |
 | POST | `/entidades/{entidad_id}/nomina/periodos/{periodo_id}/desprendibles` | Envía por correo el desprendible de cada empleado del periodo aprobado. | `nomina.liquidar` |  | 200 `EnvioDesprendiblesRespuesta` | 403, 409 |
+| GET | `/entidades/{entidad_id}/nomina/aportes` | Aportes a la seguridad social y parafiscales del mes, por empleado y por administradora (insumo para diligenciar la PILA en el operador). | `nomina.salarios.ver` |  | 200 `ResumenAportesRespuesta` | 403, 422 |
+| GET | `/entidades/{entidad_id}/nomina/ingresos-retenciones` | Ingresos y retenciones del año por empleado, en los grupos del certificado de ingresos y retenciones por rentas de trabajo (insumo del formulario 220). | `nomina.salarios.ver` |  | 200 `[IngresosEmpleadoRespuesta]` | 403, 422 |

@@ -1,6 +1,6 @@
 # ADR 0025 · Nómina que se vende sola: catálogo laboral de plataforma, empleados y contratos versionados
 
-- **Estado:** aceptada (fases 1 a 4)
+- **Estado:** aceptada (fases 1 a 4; de las fases 5 y 7, lo que no depende de terceros)
 - **Fecha:** 2026-11-20
 - **Plan:** `docs/planes/16-nomina-electronica.md`
 
@@ -131,6 +131,21 @@ usuario los ajusta. La fase 1 cubre el catálogo, los empleados, los contratos y
   **por revisar** con el especialista, también el tope de 350 UVT del art. 206 num. 4).
 - **Cesantías por consignar** (`GET …/cesantias?anio=`): por contrato con salario ordinario
   vigente al 31 de diciembre, con su fondo; consignarlas es del empleador en su banco.
+
+## Decisión de las fases 5 y 7 (lo que no depende de terceros)
+- **Contabilización** (`casos_uso::nomina::contabilizacion`), solo con `Modulo::Contabilidad`: la
+  nómina entrega documentos origen al contabilizador en la misma transacción. Al **aprobar**,
+  `nomina.liquidacion` por liquidación (tercero: la persona del empleado) con un concepto por cada
+  `ConceptoNomina` (su texto) y `neto`; al **pagar**, `nomina.pago` con `neto` y `girado`. Las
+  cuentas las pone el contador en la regla de cada evento (los aportes y provisiones llevan
+  débito y crédito en la misma regla). Sin regla vigente, aprobar falla con el nombre del evento.
+- **Aportes del mes** (`GET …/aportes?anio=&mes=`): por empleado y por administradora, con el tipo
+  de cotizante, más ICBF y SENA: el insumo para la PILA mientras no se confirme el archivo plano.
+- **Ingresos y retenciones del año** (`GET …/ingresos-retenciones?anio=`): totales por grupo del
+  certificado (`GrupoCertificado`); el formulario 220 tiene formato prescrito y se genera cuando se
+  tenga su especificación vigente.
+- Pendientes de terceros: archivo plano de la PILA (operador), nómina electrónica (anexo técnico
+  y registro en la DIAN), dispersión por banco (formato de cada banco) y formulario 220.
 
 ## Consecuencias
 - Las fases siguientes (novedades y liquidación, desprendibles, provisiones y liquidación del

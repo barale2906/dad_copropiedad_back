@@ -299,6 +299,15 @@ cuenta con su tipo.
     clase `provision` son informativas (no las sume al neto). Registre las vacaciones
     disfrutadas como novedad `vacaciones` (días calendario). `GET …/cesantias?anio=` da las
     cesantías por consignar por fondo.
+  - Con contabilidad, aprobar y pagar contabilizan solos. El contador debe tener reglas para los
+    eventos `nomina.liquidacion` (un concepto por cada valor de `ConceptoNomina` que use la
+    entidad, más `neto`; los aportes del empleador y las provisiones con débito y crédito) y
+    `nomina.pago` (`neto` y `girado`). Sin regla, aprobar responde 422 nombrando el evento:
+    lleve al contador a la configuración de reglas.
+  - Reportes (`nomina.salarios.ver`, solo con lo aprobado): `GET …/aportes?anio=&mes=` (por
+    empleado y por administradora, con el tipo de cotizante: para diligenciar la PILA en el
+    operador) y `GET …/ingresos-retenciones?anio=` (totales por `GrupoCertificado` para el
+    certificado de ingresos y retenciones).
 
 ## 4. Menú: maqueta 3D, zonas y módulos
 
@@ -384,7 +393,7 @@ no tienen pieza en la maqueta: muéstrelas en la lista de Zonas comunes.
 | Tributario | Tributario | alguno de `contabilidad`, `facturacion_electronica` | Terceros (`terceros.gestionar`; ver con `contabilidad.ver` o `facturacion.ver`) · Perfil tributario (`tributario.configurar`, `tributario.perfil.confirmar`) · Resoluciones de numeración (`tributario.configurar`) · **Solo con `contabilidad`:** retención, IVA, ICA y exógena (`tributario.preparar`) | `/entidades/{id}/{terceros,tributario}`, `…/contabilidad/tributario` |
 | Archivo | Archivo | ninguno | Documentos (`archivos.ver`) | `/entidades/{id}/archivos` |
 | Sala de juntas | Reportes | `contabilidad` | Estados financieros (`contabilidad.ver`) | `…/contabilidad/reportes` |
-| Nómina | Nómina | `nomina` | Empleados y contratos (`nomina.ver`; crear, modificar, prorrogar y terminar con `nomina.empleados.gestionar`; salarios y cuentas con `nomina.salarios.ver`) · Importar empleados (`importaciones.ejecutar` y `nomina.empleados.gestionar`) · Catálogo laboral vigente (`nomina.ver`) · Novedades (`nomina.novedades.registrar`) · Periodos y liquidación (`nomina.liquidar`; aprobar con `nomina.aprobar`, ver con `nomina.salarios.ver`) · Configuración (`nomina.configurar`) · Desprendibles (`nomina.salarios.ver`; enviar con `nomina.liquidar`) · Cesantías por consignar (`nomina.salarios.ver`) · **Próximamente:** PILA y nómina electrónica | `/entidades/{id}/nomina/…` |
+| Nómina | Nómina | `nomina` | Empleados y contratos (`nomina.ver`; crear, modificar, prorrogar y terminar con `nomina.empleados.gestionar`; salarios y cuentas con `nomina.salarios.ver`) · Importar empleados (`importaciones.ejecutar` y `nomina.empleados.gestionar`) · Catálogo laboral vigente (`nomina.ver`) · Novedades (`nomina.novedades.registrar`) · Periodos y liquidación (`nomina.liquidar`; aprobar con `nomina.aprobar`, ver con `nomina.salarios.ver`) · Configuración (`nomina.configurar`) · Desprendibles (`nomina.salarios.ver`; enviar con `nomina.liquidar`) · Cesantías por consignar (`nomina.salarios.ver`) · Aportes del mes e ingresos del año (`nomina.salarios.ver`) · **Próximamente:** archivo plano de la PILA y nómina electrónica | `/entidades/{id}/nomina/…` |
 
 En una PH, estas mismas secciones se abren desde la zona Administración, con las rutas de
 `/entidades/{id}` (mismo id que la copropiedad). La **ficha de la empresa** (nombre, razón

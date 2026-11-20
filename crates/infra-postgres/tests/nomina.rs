@@ -1441,4 +1441,247 @@ mod liquidacion {
         );
         assert_eq!(r[0].fondo_id, Some(e.adm.cesantias));
     }
+
+    /// Cuenta real (los comprobantes guardan quién los creó).
+    async fn cuenta_real(pool: &PgPool, tenant: TenantId, usuario: &str) -> Contexto {
+        let id = CuentaId::nuevo();
+        sqlx::query(
+            "INSERT INTO cuentas (id, nombre_mostrar, usuario, hash_contrasena,
+                 contrasena_actualizada_en, creada_en)
+             VALUES ($1, 'Persona', $2, 'x', now(), now())",
+        )
+        .bind(id.as_uuid())
+        .bind(usuario)
+        .execute(pool)
+        .await
+        .expect("cuenta");
+        Contexto::de_cuenta(tenant, id, ConjuntoPermisos::todos(Ambito::Copropiedad))
+    }
+
+    /// Contabilidad con un plan mínimo y las reglas de `nomina.liquidacion` y `nomina.pago`.
+    async fn con_contabilidad(e: &Entorno, contador: &Contexto) {
+        use application::casos_uso::{
+            contabilidad::configuracion::{
+                self as conf, DatosTipoComprobante, NuevaConfiguracion, NuevaCuenta,
+                NuevaLineaRegla, NuevaRegla,
+            },
+            nomina::contabilizacion::{conceptos, eventos},
+        };
+        use domain::contabilidad::{
+            Cara::{self, Credito as C, Debito as D},
+            CodigoCuenta, MarcoTecnico, OrigenCentro, OrigenTercero,
+        };
+        sqlx::query(
+            "INSERT INTO modulos_habilitados (id, tenant_id, modulo, desde)
+             VALUES (gen_random_uuid(), $1, 'contabilidad', now() - interval '1 day')",
+        )
+        .bind(e.tenant.as_uuid())
+        .execute(&e.duenio)
+        .await
+        .expect("módulo");
+        let cod = |c: &str| CodigoCuenta::new(c).expect("código");
+        for (codigo, movimiento, tercero) in [
+            ("1", false, false),
+            ("11", false, false),
+            ("1110", true, false),
+            ("2", false, false),
+            ("23", false, false),
+            ("2370", true, false),
+            ("25", false, false),
+            ("2505", true, true),
+            ("26", false, false),
+            ("2610", true, false),
+            ("3", false, false),
+            ("36", false, false),
+            ("3605", true, false),
+            ("5", false, false),
+            ("51", false, false),
+            ("5105", true, false),
+        ] {
+            conf::crear_cuenta(
+                &e.unidad,
+                &RelojSistema,
+                contador,
+                NuevaCuenta {
+                    codigo: cod(codigo),
+                    nombre: format!("Cuenta {codigo}"),
+                    naturaleza: None,
+                    acepta_movimiento: movimiento,
+                    exige_tercero: tercero,
+                    exige_centro_costo: false,
+                },
+            )
+            .await
+            .expect("cuenta");
+        }
+        conf::guardar_tipo_comprobante(
+            &e.unidad,
+            &RelojSistema,
+            contador,
+            None,
+            DatosTipoComprobante {
+                codigo: "NO".into(),
+                nombre: "Nómina".into(),
+                manual: false,
+                activo: true,
+            },
+        )
+        .await
+        .expect("tipo");
+        conf::guardar_configuracion(
+            &e.unidad,
+            &RelojSistema,
+            contador,
+            NuevaConfiguracion {
+                marco_tecnico: MarcoTecnico::Grupo3,
+                cuenta_resultado: Some(cod("3605")),
+                soporte_archivo_id: None,
+                vigente_desde: dia(2026, 1, 1),
+            },
+        )
+        .await
+        .expect("configuración");
+        let linea = |concepto: &str, cara: Cara, cuenta: &str, tercero: bool| NuevaLineaRegla {
+            concepto: concepto.into(),
+            cara,
+            cuenta: cod(cuenta),
+            tercero: if tercero {
+                OrigenTercero::Documento
+            } else {
+                OrigenTercero::Ninguno
+            },
+            centro: OrigenCentro::Ninguno,
+            centro_costo: None,
+        };
+        let mut liquidacion = vec![linea(conceptos::NETO, C, "2505", true)];
+        for c in ConceptoNomina::TODOS {
+            match c.clase() {
+                domain::nomina::liquidacion::ClaseLinea::Devengo => {
+                    liquidacion.push(linea(c.as_str(), D, "5105", false));
+                }
+                domain::nomina::liquidacion::ClaseLinea::Deduccion => {
+                    liquidacion.push(linea(c.as_str(), C, "2370", false));
+                }
+                domain::nomina::liquidacion::ClaseLinea::AporteEmpleador => {
+                    liquidacion.push(linea(c.as_str(), D, "5105", false));
+                    liquidacion.push(linea(c.as_str(), C, "2370", false));
+                }
+                domain::nomina::liquidacion::ClaseLinea::Provision => {
+                    liquidacion.push(linea(c.as_str(), D, "5105", false));
+                    liquidacion.push(linea(c.as_str(), C, "2610", false));
+                }
+            }
+        }
+        for (evento, lineas) in [
+            (eventos::LIQUIDACION, liquidacion),
+            (
+                eventos::PAGO,
+                vec![
+                    linea(conceptos::NETO, D, "2505", true),
+                    linea(conceptos::GIRADO, C, "1110", false),
+                ],
+            ),
+        ] {
+            conf::crear_regla(
+                &e.unidad,
+                &RelojSistema,
+                contador,
+                NuevaRegla {
+                    evento: evento.into(),
+                    tipo_comprobante: "NO".into(),
+                    descripcion: None,
+                    vigente_desde: dia(2026, 1, 1),
+                    lineas,
+                },
+            )
+            .await
+            .expect("regla");
+        }
+    }
+
+    async fn comprobantes(e: &Entorno, origen: &str) -> i64 {
+        sqlx::query_scalar(
+            "SELECT count(*) FROM comprobantes WHERE tenant_id = $1 AND origen_tipo = $2
+               AND estado = 'contabilizado'",
+        )
+        .bind(e.tenant.as_uuid())
+        .bind(origen)
+        .fetch_one(&e.duenio)
+        .await
+        .expect("comprobantes")
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn con_contabilidad_aprobar_y_pagar_contabilizan_la_nomina(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let contador = cuenta_real(&pool, e.tenant, "contador").await;
+        let aprobador = cuenta_real(&pool, e.tenant, "aprobador").await;
+        con_contabilidad(&e, &contador).await;
+        empleado(&e, dec!(2100000)).await;
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &contador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+        ul::liquidar_periodo(&e.unidad, &RelojSistema, &contador, p.id)
+            .await
+            .expect("liquida");
+
+        ul::aprobar_periodo(&e.unidad, &RelojSistema, &aprobador, p.id)
+            .await
+            .expect("aprueba y contabiliza");
+        ul::marcar_pagado(&e.unidad, &RelojSistema, &contador, p.id, dia(2026, 3, 31))
+            .await
+            .expect("paga y contabiliza");
+
+        assert_eq!(comprobantes(&e, "nomina.liquidacion").await, 1);
+        assert_eq!(comprobantes(&e, "nomina.pago").await, 1);
+        let por_pagar: Decimal = sqlx::query_scalar(
+            "SELECT COALESCE(sum(l.credito) - sum(l.debito), 0)
+             FROM lineas_comprobante l
+             JOIN comprobantes c ON c.id = l.comprobante_id
+             JOIN cuentas_contables k ON k.id = l.cuenta_id
+             WHERE c.tenant_id = $1 AND k.codigo = '2505'",
+        )
+        .bind(e.tenant.as_uuid())
+        .fetch_one(&pool)
+        .await
+        .expect("saldo");
+        assert_eq!(
+            por_pagar,
+            Decimal::ZERO,
+            "el pago cancela el neto por pagar"
+        );
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn sin_contabilidad_aprobar_no_crea_comprobantes(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        empleado(&e, dec!(2100000)).await;
+        let liquidador = cuenta(e.tenant);
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+        ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, p.id)
+            .await
+            .expect("liquida");
+
+        ul::aprobar_periodo(&e.unidad, &RelojSistema, &cuenta(e.tenant), p.id)
+            .await
+            .expect("aprueba");
+
+        assert_eq!(comprobantes(&e, "nomina.liquidacion").await, 0);
+    }
 }

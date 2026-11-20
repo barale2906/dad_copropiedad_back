@@ -51,6 +51,7 @@ use uuid::Uuid;
 
 mod desprendibles;
 mod liquidacion;
+mod reportes;
 
 pub(crate) use desprendibles::rutas_yo;
 
@@ -83,6 +84,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(terminar_contrato))
         .merge(liquidacion::rutas())
         .merge(desprendibles::rutas())
+        .merge(reportes::rutas())
 }
 
 /// Rutas del catálogo laboral de la plataforma (se montan en `/api/v1/plataforma`).

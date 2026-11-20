@@ -21,11 +21,15 @@ use domain::{
 };
 
 use super::{
-    TxNomina, abrir_nomina, catalogo::catalogo_en, prestaciones::prestaciones_del_periodo,
+    TxNomina, abrir_nomina,
+    catalogo::catalogo_en,
+    contabilizacion::{contabilizar_aprobacion, contabilizar_pago},
+    prestaciones::prestaciones_del_periodo,
 };
 use crate::{
     AppError, AppResult, Contexto,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
+    casos_uso::contabilidad::TxContable,
     puertos::{
         RegistroAuditoria as _, Reloj, Transaccion, UnidadDeTrabajo,
         nomina::{
@@ -422,7 +426,8 @@ where
 }
 
 /// Aprueba la liquidación. La aprueba **otra cuenta** distinta de la que liquidó, y solo si no
-/// hubo novedades después de liquidar.
+/// hubo novedades después de liquidar. Con contabilidad, contabiliza cada liquidación
+/// (`nomina.liquidacion`) en la misma transacción.
 ///
 /// # Errors
 ///
@@ -437,7 +442,7 @@ pub async fn aprobar_periodo<U>(
 ) -> AppResult<PeriodoNomina>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxNomina,
+    U::Transaccion: TxNomina + TxContable,
 {
     let mut tx = abrir_nomina(unidad, reloj, ctx, Permiso::NominaAprobar).await?;
     let mut p = periodo_para(&mut tx, id).await?;
@@ -459,6 +464,8 @@ where
     p.aprobado_por = ctx.actor_id;
     p.aprobado_en = Some(reloj.ahora());
     tx.actualizar_periodo(&p).await?;
+    let liquidaciones = tx.liquidaciones(p.id).await?;
+    contabilizar_aprobacion(&mut tx, reloj, ctx, &p, &liquidaciones).await?;
     tx.registrar(EventoAuditoria::ok(
         ACCION_APROBAR,
         "periodo_nomina",
@@ -469,7 +476,8 @@ where
     Ok(p)
 }
 
-/// Marca el periodo aprobado como pagado en `fecha_pago` (la dispersión la hace el banco).
+/// Marca el periodo aprobado como pagado en `fecha_pago` (la dispersión la hace el banco). Con
+/// contabilidad, contabiliza el pago (`nomina.pago`).
 ///
 /// # Errors
 ///
@@ -484,7 +492,7 @@ pub async fn marcar_pagado<U>(
 ) -> AppResult<PeriodoNomina>
 where
     U: UnidadDeTrabajo,
-    U::Transaccion: TxNomina,
+    U::Transaccion: TxNomina + TxContable,
 {
     let mut tx = abrir_nomina(unidad, reloj, ctx, Permiso::NominaLiquidar).await?;
     let mut p = periodo_para(&mut tx, id).await?;
@@ -493,6 +501,8 @@ where
     p.pagado_en = Some(reloj.ahora());
     p.fecha_pago = Some(fecha_pago);
     tx.actualizar_periodo(&p).await?;
+    let liquidaciones = tx.liquidaciones(p.id).await?;
+    contabilizar_pago(&mut tx, reloj, ctx, &p, &liquidaciones, fecha_pago).await?;
     let detalle = DetalleAuditoria::vacio().con("fecha_pago", fecha_pago.to_string())?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_PAGAR, "periodo_nomina", p.id.as_uuid()).con_detalle(detalle),

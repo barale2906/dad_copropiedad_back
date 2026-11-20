@@ -597,6 +597,26 @@ async fn el_mes_se_liquida_con_novedades_y_lo_aprueba_la_contadora(pool: PgPool)
         .await;
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v["estado"], "aprobado");
+    let (s, aportes) = g.pedir(Method::GET, "/aportes?anio=2026&mes=3", None).await;
+    assert_eq!(s, StatusCode::OK, "{aportes}");
+    // IBC 2.186.000: salud 4 % + 8,5 % = 273.250.
+    assert_eq!(aportes["empleados"][0]["salud"], "273250.00");
+    assert_eq!(aportes["empleados"][0]["tipo_cotizante"], "01");
+    assert_eq!(aportes["administradoras"].as_array().map(Vec::len), Some(4));
+    let (s, ingresos) = g
+        .pedir(Method::GET, "/ingresos-retenciones?anio=2026", None)
+        .await;
+    assert_eq!(s, StatusCode::OK, "{ingresos}");
+    let grupos: Vec<&str> = ingresos[0]["totales"]
+        .as_array()
+        .expect("totales")
+        .iter()
+        .filter_map(|t| t["grupo"].as_str())
+        .collect();
+    assert!(
+        grupos.contains(&"salarios") && grupos.contains(&"aportes_salud"),
+        "{grupos:?}"
+    );
     let (s, v) = g
         .pedir(Method::POST, &format!("/periodos/{id}/liquidacion"), None)
         .await;

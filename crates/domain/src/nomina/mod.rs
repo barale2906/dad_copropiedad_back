@@ -24,6 +24,7 @@ use crate::{DominioError, contabilidad::Monto};
 pub mod liquidacion;
 pub mod periodo;
 pub mod prestaciones;
+pub mod reportes;
 
 fn regla(texto: impl Into<String>) -> DominioError {
     DominioError::ReglaLaboral(texto.into())

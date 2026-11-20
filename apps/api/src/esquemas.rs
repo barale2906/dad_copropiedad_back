@@ -444,5 +444,7 @@ esquema_enum! {
     ConceptoNomina = domain::nomina::liquidacion::ConceptoNomina,
         "Concepto de una línea de la liquidación.";
     ClaseLineaNomina = domain::nomina::liquidacion::ClaseLinea,
-        "Clase de una línea: devengo, deducción o aporte del empleador.";
+        "Clase de una línea: devengo, deducción, aporte del empleador o provisión (informativa).";
+    GrupoCertificado = domain::nomina::reportes::GrupoCertificado,
+        "Grupo del certificado de ingresos y retenciones por rentas de trabajo.";
 }

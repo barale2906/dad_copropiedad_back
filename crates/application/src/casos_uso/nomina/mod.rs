@@ -8,20 +8,26 @@
 //!   terminación).
 //! - [`importacion`]: carga masiva de empleados con vista previa.
 //! - [`novedades`]: novedades de los contratos (horas, días y valores) y su anulación.
+//! - [`contabilizacion`]: documentos origen al contabilizador al aprobar y al pagar (solo con
+//!   contabilidad).
 //! - [`desprendibles`]: PDF de cada liquidación aprobada, envío por correo y portal del
 //!   empleado.
 //! - [`prestaciones`]: prima, cesantías, intereses, vacaciones e indemnización en la
 //!   liquidación y cesantías por consignar.
+//! - [`reportes`]: aportes del mes por administradora (insumo de la PILA) e ingresos y
+//!   retenciones del año (insumo del certificado).
 //! - [`liquidacion`]: configuración de la entidad, periodos, liquidación, aprobación por otra
 //!   cuenta y pago.
 
 pub mod catalogo;
+pub mod contabilizacion;
 pub mod desprendibles;
 pub mod empleados;
 pub mod importacion;
 pub mod liquidacion;
 pub mod novedades;
 pub mod prestaciones;
+pub mod reportes;
 
 use domain::{Modulo, Permiso};
 

@@ -56114,6 +56114,177 @@
           }
         ]
       }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/aportes": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Aportes a la seguridad social y parafiscales del mes, por empleado y por administradora\n(insumo para diligenciar la PILA en el operador).",
+        "operationId": "nomina_aportes_del_mes",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 2026
+          },
+          {
+            "name": "mes",
+            "in": "query",
+            "description": "1 a 12.",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            "example": 3
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aportes del mes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumenAportesRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.salarios.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Mes inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/ingresos-retenciones": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Ingresos y retenciones del año por empleado, en los grupos del certificado de ingresos y\nretenciones por rentas de trabajo (insumo del formulario 220).",
+        "operationId": "nomina_ingresos_y_retenciones",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 2026
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Totales por empleado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IngresosEmpleadoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.salarios.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Año inválido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -57166,6 +57337,117 @@
             ],
             "format": "date",
             "description": "Fecha contable (por defecto, hoy)."
+          }
+        }
+      },
+      "AportesEmpleadoRespuesta": {
+        "type": "object",
+        "description": "Aportes del mes de un empleado.",
+        "required": [
+          "empleado_id",
+          "contrato_id",
+          "codigo",
+          "tipo_cotizante",
+          "dias",
+          "ibc",
+          "salud",
+          "pension",
+          "fondo_solidaridad",
+          "arl",
+          "caja",
+          "icbf",
+          "sena"
+        ],
+        "properties": {
+          "empleado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contrato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tipo_cotizante": {
+            "type": "string",
+            "description": "Tipo de cotizante de la PILA (`01` dependiente, `12` aprendiz lectivo, `19` aprendiz\nproductivo)."
+          },
+          "dias": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "ibc": {
+            "type": "string"
+          },
+          "salud": {
+            "type": "string",
+            "description": "Salud del empleado y del empleador."
+          },
+          "pension": {
+            "type": "string",
+            "description": "Pensión del empleado y del empleador."
+          },
+          "fondo_solidaridad": {
+            "type": "string"
+          },
+          "arl": {
+            "type": "string"
+          },
+          "caja": {
+            "type": "string"
+          },
+          "icbf": {
+            "type": "string"
+          },
+          "sena": {
+            "type": "string"
+          },
+          "eps_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "afp_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "arl_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "ccf_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "clase_riesgo": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ClaseRiesgo"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -60557,7 +60839,7 @@
       },
       "ClaseLineaNomina": {
         "type": "string",
-        "description": "Clase de una línea: devengo, deducción o aporte del empleador.",
+        "description": "Clase de una línea: devengo, deducción, aporte del empleador o provisión (informativa).",
         "enum": [
           "devengo",
           "deduccion",
@@ -69479,6 +69761,20 @@
           }
         }
       },
+      "GrupoCertificado": {
+        "type": "string",
+        "description": "Grupo del certificado de ingresos y retenciones por rentas de trabajo.",
+        "enum": [
+          "salarios",
+          "comisiones",
+          "prestaciones",
+          "cesantias",
+          "otros_pagos",
+          "aportes_salud",
+          "aportes_pension",
+          "retencion_fuente"
+        ]
+      },
       "GuardarPlantillaPeticion": {
         "type": "object",
         "description": "Guardar la configuración de la entidad como plantilla (en borrador).",
@@ -69864,6 +70160,40 @@
               "null"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "IngresosEmpleadoRespuesta": {
+        "type": "object",
+        "description": "Ingresos y retenciones del año de un empleado.",
+        "required": [
+          "empleado_id",
+          "codigo",
+          "nombre",
+          "totales"
+        ],
+        "properties": {
+          "empleado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "documento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "totales": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TotalGrupoCertificadoRespuesta"
+            }
           }
         }
       },
@@ -83407,6 +83737,47 @@
           }
         }
       },
+      "ResumenAportesRespuesta": {
+        "type": "object",
+        "description": "Aportes del mes.",
+        "required": [
+          "desde",
+          "hasta",
+          "empleados",
+          "administradoras",
+          "icbf",
+          "sena"
+        ],
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "empleados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AportesEmpleadoRespuesta"
+            }
+          },
+          "administradoras": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TotalAdministradoraRespuesta"
+            },
+            "description": "Totales por EPS, fondo de pensiones (con el de solidaridad), ARL y caja."
+          },
+          "icbf": {
+            "type": "string"
+          },
+          "sena": {
+            "type": "string"
+          }
+        }
+      },
       "ResumenCampanaRespuesta": {
         "type": "object",
         "description": "Campaña con sus contadores.",
@@ -86523,6 +86894,23 @@
           }
         }
       },
+      "TotalAdministradoraRespuesta": {
+        "type": "object",
+        "description": "Total del mes a una administradora.",
+        "required": [
+          "administradora_id",
+          "valor"
+        ],
+        "properties": {
+          "administradora_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "valor": {
+            "type": "string"
+          }
+        }
+      },
       "TotalConceptoRespuesta": {
         "type": "object",
         "description": "Total de un concepto.",
@@ -86544,6 +86932,22 @@
             "type": "string"
           },
           "total": {
+            "type": "string"
+          }
+        }
+      },
+      "TotalGrupoCertificadoRespuesta": {
+        "type": "object",
+        "description": "Total de un grupo del certificado.",
+        "required": [
+          "grupo",
+          "valor"
+        ],
+        "properties": {
+          "grupo": {
+            "$ref": "#/components/schemas/GrupoCertificado"
+          },
+          "valor": {
             "type": "string"
           }
         }
