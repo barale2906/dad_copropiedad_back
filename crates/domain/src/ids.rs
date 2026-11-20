@@ -725,6 +725,11 @@ id_entidad!(
     LiquidacionNominaId,
     Uuid::now_v7
 );
+id_entidad!(
+    /// Deducción de la retención en la fuente declarada por un empleado.
+    DeduccionRetencionId,
+    Uuid::now_v7
+);
 
 #[cfg(test)]
 mod tests {

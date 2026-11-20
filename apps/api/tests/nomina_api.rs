@@ -753,3 +753,160 @@ async fn la_empleada_recibe_y_descarga_su_desprendible(pool: PgPool) {
     let (s, _, _) = g.api.pedir_texto(&propio, &otro).await;
     assert_eq!(s, StatusCode::NOT_FOUND, "no es suyo");
 }
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn novedades_por_planilla_deducciones_simulacion_y_vacaciones(pool: PgPool) {
+    let g = gimnasio(pool).await;
+    catalogo_de_liquidacion(&g).await;
+    for (parametro, valor) in [
+        ("porcentaje_dependientes", "10"),
+        ("tope_dependientes", "384"),
+        ("tope_intereses_vivienda", "1200"),
+        ("tope_medicina_prepagada", "192"),
+        ("limite_aportes_voluntarios", "30"),
+        ("tope_aportes_voluntarios", "3800"),
+    ] {
+        let (s, v) = g
+            .api
+            .pedir(
+                Method::POST,
+                "/api/v1/plataforma/nomina/parametros",
+                Some(&g.root),
+                Some(json!({ "parametro": parametro, "valor": valor,
+                             "fuente": "Valor de prueba", "vigente_desde": "2026-01-01" })),
+            )
+            .await;
+        assert_eq!(s, StatusCode::CREATED, "{parametro}: {v}");
+    }
+    let (s, ficha) = g
+        .pedir(
+            Method::POST,
+            "/empleados",
+            Some(json!({
+                "codigo": "E-001",
+                "persona": { "nombre": "Ana Pérez", "tipo_documento": "CC", "documento": "52123456" },
+                "contrato": { "tipo": "termino_indefinido", "fecha_inicio": "2026-01-01",
+                              "condiciones": g.condiciones("2100000") },
+            })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{ficha}");
+    let empleado = ficha["id"].as_str().expect("id").to_owned();
+    let contrato = ficha["contratos"][0]["contrato"]["id"]
+        .as_str()
+        .expect("contrato")
+        .to_owned();
+
+    // Novedades por planilla.
+    let (_, _, plantilla) = g
+        .api
+        .pedir_texto(
+            &format!(
+                "/api/v1/entidades/{}/nomina/novedades/importaciones/plantilla",
+                g.id
+            ),
+            &g.gerente,
+        )
+        .await;
+    let encabezados = plantilla.lines().next().expect("encabezados");
+    let csv = format!(
+        "{encabezados}\nE-001;hora_extra_diurna;2026-03-04;;4;\nE-001;vacaciones;2026-03-09;2026-03-13;;\nE-999;ausencia;2026-03-02;2026-03-02;;\n"
+    );
+    let ruta = format!(
+        "/api/v1/entidades/{}/nomina/novedades/importaciones?nombre=novedades.csv",
+        g.id
+    );
+    let (s, v) = g.api.subir(&ruta, &g.gerente, csv.into_bytes()).await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    assert_eq!(v["importacion"]["estado"], "con_errores");
+    assert_eq!(v["importacion"]["errores"][0]["fila"], 4, "{v}");
+    let csv = format!(
+        "{encabezados}\nE-001;hora_extra_diurna;2026-03-04;;4;\nE-001;vacaciones;2026-03-09;2026-03-13;;\n"
+    );
+    let (s, v) = g.api.subir(&ruta, &g.gerente, csv.into_bytes()).await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    let id = v["importacion"]["id"].as_str().expect("id").to_owned();
+    let (s, v) = g
+        .pedir(
+            Method::POST,
+            &format!("/novedades/importaciones/{id}/confirmar"),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v["resumen"]["novedades"], 2);
+
+    // Deducciones.
+    let (s, d) = g
+        .pedir(
+            Method::POST,
+            &format!("/empleados/{empleado}/deducciones"),
+            Some(
+                json!({ "tipo": "medicina_prepagada", "valor_mensual": "350000",
+                         "vigente_desde": "2026-01-01" }),
+            ),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{d}");
+    let deduccion = d["id"].as_str().expect("id").to_owned();
+    let (s, v) = g
+        .pedir(
+            Method::POST,
+            &format!("/deducciones/{deduccion}/terminacion"),
+            Some(json!({ "hasta": "2026-06-30" })),
+        )
+        .await;
+    assert_eq!(
+        (s, v["vigente_hasta"].clone()),
+        (StatusCode::OK, json!("2026-06-30"))
+    );
+    let (_, lista) = g
+        .pedir(
+            Method::GET,
+            &format!("/empleados/{empleado}/deducciones"),
+            None,
+        )
+        .await;
+    assert_eq!(lista.as_array().map(Vec::len), Some(1));
+
+    // Saldo de vacaciones y simulación de la terminación.
+    let (s, saldo) = g
+        .pedir(
+            Method::GET,
+            &format!("/contratos/{contrato}/vacaciones?fecha=2026-06-30"),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{saldo}");
+    // 180 días causan 7,5; disfrutó 5 hábiles (lunes 9 a viernes 13 de marzo).
+    assert_eq!(
+        (
+            saldo["causados"].clone(),
+            saldo["disfrutados"].clone(),
+            saldo["pendientes"].clone()
+        ),
+        (json!("7.5"), json!("5"), json!("2.5"))
+    );
+    let (s, sim) = g
+        .pedir(
+            Method::POST,
+            &format!("/contratos/{contrato}/simulacion-terminacion"),
+            Some(json!({ "fecha": "2026-06-30", "motivo": "sin_justa_causa" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{sim}");
+    let conceptos: Vec<&str> = sim["lineas"]
+        .as_array()
+        .expect("líneas")
+        .iter()
+        .filter_map(|l| l["concepto"].as_str())
+        .collect();
+    assert!(
+        conceptos.contains(&"indemnizacion") && conceptos.contains(&"cesantias"),
+        "{conceptos:?}"
+    );
+    let (_, ficha) = g
+        .pedir(Method::GET, &format!("/empleados/{empleado}"), None)
+        .await;
+    assert!(ficha["contratos"][0]["contrato"]["fecha_terminacion"].is_null());
+}

@@ -7,10 +7,10 @@ use application::{
     AppError, AppResult, Pagina, SolicitudPagina,
     puertos::nomina::{
         Administradora, AnulacionNovedad, ConfiguracionNomina, ContratoLaboral, CuentaNomina,
-        DesprendibleDeCuenta, Empleado, FiltroEmpleados, LiquidacionContrato, NovedadNomina,
-        PeriodoNomina, RepositorioCatalogoLaboral, RepositorioLiquidacionNomina, RepositorioNomina,
-        RepositorioNominaDeCuenta, ResumenEmpleado, VersionContrato, VersionParametroLaboral,
-        VersionTablaLaboral,
+        DeduccionRetencion, DesprendibleDeCuenta, Empleado, FiltroEmpleados, LiquidacionContrato,
+        NovedadNomina, PeriodoNomina, RepositorioCatalogoLaboral, RepositorioLiquidacionNomina,
+        RepositorioNomina, RepositorioNominaDeCuenta, ResumenEmpleado, VersionContrato,
+        VersionParametroLaboral, VersionTablaLaboral,
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
@@ -460,6 +460,7 @@ struct FilaVersion {
     arl_id: Option<Uuid>,
     clase_riesgo: Option<i16>,
     pensionado: bool,
+    centro_costo_id: Option<Uuid>,
     medio_pago: String,
     banco: Option<String>,
     tipo_cuenta: Option<String>,
@@ -502,6 +503,7 @@ impl TryFrom<FilaVersion> for VersionContrato {
             arl_id: f.arl_id.map(AdministradoraId::from_uuid),
             clase_riesgo: f.clase_riesgo.map(ClaseRiesgo::de_numero).transpose()?,
             pensionado: f.pensionado,
+            centro_costo_id: f.centro_costo_id.map(domain::CentroCostoId::from_uuid),
             medio_pago: MedioPago::try_from(f.medio_pago.as_str())?,
             cuenta,
             creada_por: f.creada_por.map(CuentaId::from_uuid),
@@ -539,6 +541,22 @@ impl RepositorioNomina for TransaccionPg {
             FilaEmpleado,
             "SELECT id, codigo, persona_id, creado_por, creado_en FROM empleados WHERE id = $1",
             id.as_uuid(),
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(TryInto::try_into)
+        .transpose()
+    }
+
+    async fn empleado_por_codigo(
+        &mut self,
+        codigo: &CodigoEmpleado,
+    ) -> AppResult<Option<Empleado>> {
+        sqlx::query_as!(
+            FilaEmpleado,
+            "SELECT id, codigo, persona_id, creado_por, creado_en FROM empleados WHERE codigo = $1",
+            codigo.as_str(),
         )
         .fetch_optional(&mut *self.tx)
         .await
@@ -710,9 +728,9 @@ impl RepositorioNomina for TransaccionPg {
                  cargo, salario, tipo_salario, etapa_aprendizaje, jornada, horas_semanales,
                  periodicidad, eps_id, afp_id, cesantias_id, ccf_id, arl_id, clase_riesgo,
                  pensionado, medio_pago, banco, tipo_cuenta, numero_cuenta, creada_por,
-                 creada_en)
+                 creada_en, centro_costo_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-                     $17, $18, $19, $20, $21, $22, $23, $24)",
+                     $17, $18, $19, $20, $21, $22, $23, $24, $25)",
             v.id.as_uuid(),
             self.ctx.tenant_id.as_uuid(),
             v.contrato_id.as_uuid(),
@@ -737,6 +755,7 @@ impl RepositorioNomina for TransaccionPg {
             cuenta.map(|c| c.numero.as_str()),
             v.creada_por.map(CuentaId::as_uuid),
             v.creada_en,
+            v.centro_costo_id.map(domain::CentroCostoId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
@@ -744,7 +763,7 @@ impl RepositorioNomina for TransaccionPg {
             error_nomina(
                 e,
                 "ya hay una versión del contrato con esa fecha",
-                "contrato o administradora",
+                "contrato, administradora o centro de costo",
             )
         })?;
         Ok(())
@@ -755,8 +774,8 @@ impl RepositorioNomina for TransaccionPg {
             FilaVersion,
             "SELECT id, contrato_id, vigente_desde, cargo, salario, tipo_salario,
                     etapa_aprendizaje, jornada, horas_semanales, periodicidad, eps_id, afp_id,
-                    cesantias_id, ccf_id, arl_id, clase_riesgo, pensionado, medio_pago, banco,
-                    tipo_cuenta, numero_cuenta, creada_por, creada_en
+                    cesantias_id, ccf_id, arl_id, clase_riesgo, pensionado, centro_costo_id,
+                    medio_pago, banco, tipo_cuenta, numero_cuenta, creada_por, creada_en
              FROM versiones_contrato_laboral WHERE contrato_id = $1
              ORDER BY vigente_desde",
             contrato.as_uuid(),
@@ -811,6 +830,36 @@ impl TryFrom<FilaPeriodo> for PeriodoNomina {
             pagado_por: cuenta(f.pagado_por),
             pagado_en: f.pagado_en,
             fecha_pago: f.fecha_pago,
+        })
+    }
+}
+
+struct FilaDeduccion {
+    id: Uuid,
+    empleado_id: Uuid,
+    tipo: String,
+    valor_mensual: Decimal,
+    vigente_desde: NaiveDate,
+    vigente_hasta: Option<NaiveDate>,
+    soporte_archivo_id: Option<Uuid>,
+    creado_por: Option<Uuid>,
+    creado_en: DateTime<Utc>,
+}
+
+impl TryFrom<FilaDeduccion> for DeduccionRetencion {
+    type Error = AppError;
+
+    fn try_from(f: FilaDeduccion) -> AppResult<Self> {
+        Ok(Self {
+            id: domain::DeduccionRetencionId::from_uuid(f.id),
+            empleado_id: EmpleadoId::from_uuid(f.empleado_id),
+            tipo: domain::nomina::liquidacion::TipoDeduccion::try_from(f.tipo.as_str())?,
+            valor_mensual: Monto::new(f.valor_mensual)?,
+            vigente_desde: f.vigente_desde,
+            vigente_hasta: f.vigente_hasta,
+            soporte_archivo_id: f.soporte_archivo_id.map(ArchivoId::from_uuid),
+            creado_por: f.creado_por.map(CuentaId::from_uuid),
+            creado_en: f.creado_en,
         })
     }
 }
@@ -1216,6 +1265,79 @@ impl RepositorioLiquidacionNomina for TransaccionPg {
         .await
         .map_err(AppError::infra)?
         .unwrap_or_default())
+    }
+
+    async fn insertar_deduccion(&mut self, d: &DeduccionRetencion) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO deducciones_retencion (id, tenant_id, empleado_id, tipo, valor_mensual,
+                 vigente_desde, vigente_hasta, soporte_archivo_id, creado_por, creado_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+            d.id.as_uuid(),
+            self.ctx.tenant_id.as_uuid(),
+            d.empleado_id.as_uuid(),
+            d.tipo.as_str(),
+            d.valor_mensual.valor(),
+            d.vigente_desde,
+            d.vigente_hasta,
+            d.soporte_archivo_id.map(ArchivoId::as_uuid),
+            d.creado_por.map(CuentaId::as_uuid),
+            d.creado_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_nomina(e, "deducción repetida", "empleado o soporte"))?;
+        Ok(())
+    }
+
+    async fn terminar_deduccion(
+        &mut self,
+        id: domain::DeduccionRetencionId,
+        hasta: NaiveDate,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE deducciones_retencion SET vigente_hasta = $2 WHERE id = $1",
+            id.as_uuid(),
+            hasta,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_nomina(e, "deducción repetida", "deducción"))?;
+        Ok(())
+    }
+
+    async fn deduccion(
+        &mut self,
+        id: domain::DeduccionRetencionId,
+    ) -> AppResult<Option<DeduccionRetencion>> {
+        sqlx::query_as!(
+            FilaDeduccion,
+            "SELECT id, empleado_id, tipo, valor_mensual, vigente_desde, vigente_hasta,
+                    soporte_archivo_id, creado_por, creado_en
+             FROM deducciones_retencion WHERE id = $1",
+            id.as_uuid(),
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(TryInto::try_into)
+        .transpose()
+    }
+
+    async fn deducciones(&mut self, empleado: EmpleadoId) -> AppResult<Vec<DeduccionRetencion>> {
+        sqlx::query_as!(
+            FilaDeduccion,
+            "SELECT id, empleado_id, tipo, valor_mensual, vigente_desde, vigente_hasta,
+                    soporte_archivo_id, creado_por, creado_en
+             FROM deducciones_retencion WHERE empleado_id = $1
+             ORDER BY vigente_desde DESC, id DESC",
+            empleado.as_uuid(),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(TryInto::try_into)
+        .collect()
     }
 
     async fn liquidacion(

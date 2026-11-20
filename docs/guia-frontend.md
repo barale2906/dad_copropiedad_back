@@ -308,6 +308,17 @@ cuenta con su tipo.
     empleado y por administradora, con el tipo de cotizante: para diligenciar la PILA en el
     operador) y `GET …/ingresos-retenciones?anio=` (totales por `GrupoCertificado` para el
     certificado de ingresos y retenciones).
+  - Centro de costo: `condiciones.centro_costo_id` (solo si `capacidades.modulos` trae
+    `contabilidad`; si no, 422). Con contabilidad, `POST …/contabilizacion` con `desde` y `hasta`
+    contabiliza la nómina aprobada antes de tenerla (informe con `contabilizados` y `fallidos`).
+  - `POST …/contratos/{id}/simulacion-terminacion` (fecha y motivo; no guarda nada) muestra el costo
+    del retiro antes de registrarlo; `GET …/contratos/{id}/vacaciones?fecha=` da el saldo
+    (causados, disfrutados y pendientes) para la ficha.
+  - Novedades por planilla: `GET …/novedades/importaciones/plantilla`, `POST
+    …/novedades/importaciones?nombre=` y `…/{id}/confirmar` (empleado por su `codigo`).
+  - Deducciones de la retención del empleado (con su soporte en `/archivos`): `GET|POST
+    …/empleados/{id}/deducciones` (`TipoDeduccion`; `dependientes` sin valor) y `POST
+    …/deducciones/{id}/terminacion` con `hasta`. Se aplican desde la liquidación siguiente.
 
 ## 4. Menú: maqueta 3D, zonas y módulos
 
@@ -690,7 +701,11 @@ contables, consumo de facturación electrónica, moderación del directorio y la
   `aprobado_por: null`. `…/facturar` emite la factura en la entidad de la plataforma; mientras no
   facture en el sistema use `…/factura-externa`. `…/pago` registra el pago y, si la entidad estaba
   suspendida por mora, la reactiva. Las liquidaciones de publicidad se cobran con
-  `POST …/liquidaciones/{id}/corte`. La suspensión (manual o por mora) responde 409 con una
+  `POST …/liquidaciones/{id}/corte`. Al habilitar un módulo (`POST
+  /plataforma/copropiedades/{id}/modulos`) la respuesta trae `linea_suscripcion_id` si se agregó
+  su línea de cobro; si viene `null`, el módulo sigue en `modulos_sin_cobro`. La liquidación de
+  publicidad pasa a `facturada` y `pagada` con su corte. La suspensión (manual o por mora)
+  responde 409 con una
   asamblea instalada.
 
 ### Mi suscripción (la entidad)

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, contrato_id, vigente_desde, cargo, salario, tipo_salario,\n                    etapa_aprendizaje, jornada, horas_semanales, periodicidad, eps_id, afp_id,\n                    cesantias_id, ccf_id, arl_id, clase_riesgo, pensionado, medio_pago, banco,\n                    tipo_cuenta, numero_cuenta, creada_por, creada_en\n             FROM versiones_contrato_laboral WHERE contrato_id = $1\n             ORDER BY vigente_desde",
+  "query": "SELECT id, contrato_id, vigente_desde, cargo, salario, tipo_salario,\n                    etapa_aprendizaje, jornada, horas_semanales, periodicidad, eps_id, afp_id,\n                    cesantias_id, ccf_id, arl_id, clase_riesgo, pensionado, centro_costo_id,\n                    medio_pago, banco, tipo_cuenta, numero_cuenta, creada_por, creada_en\n             FROM versiones_contrato_laboral WHERE contrato_id = $1\n             ORDER BY vigente_desde",
   "describe": {
     "columns": [
       {
@@ -192,6 +192,17 @@
       },
       {
         "ordinal": 17,
+        "name": "centro_costo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "versiones_contrato_laboral",
+            "name": "centro_costo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 18,
         "name": "medio_pago",
         "type_info": "Text",
         "origin": {
@@ -202,7 +213,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "banco",
         "type_info": "Text",
         "origin": {
@@ -213,7 +224,7 @@
         }
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "tipo_cuenta",
         "type_info": "Text",
         "origin": {
@@ -224,7 +235,7 @@
         }
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "numero_cuenta",
         "type_info": "Text",
         "origin": {
@@ -235,7 +246,7 @@
         }
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "creada_por",
         "type_info": "Uuid",
         "origin": {
@@ -246,7 +257,7 @@
         }
       },
       {
-        "ordinal": 22,
+        "ordinal": 23,
         "name": "creada_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -280,6 +291,7 @@
       true,
       true,
       false,
+      true,
       false,
       true,
       true,
@@ -288,5 +300,5 @@
       false
     ]
   },
-  "hash": "0aced5b6a19e8d798784cf9bbf527ba659fb1187e4db01c87e191b36ff36f95e"
+  "hash": "94d9517b116a365dd2332cc2930f1afe5bc016a78bad5c8c280f85b42f07c8fb"
 }

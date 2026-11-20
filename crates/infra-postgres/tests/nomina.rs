@@ -161,6 +161,7 @@ impl Entorno {
             arl_id: Some(self.adm.arl),
             clase_riesgo: Some(ClaseRiesgo::I),
             pensionado: false,
+            centro_costo_id: None,
             medio_pago: MedioPago::Transferencia,
             cuenta: Some(CuentaNomina {
                 banco: "Banco de prueba".into(),
@@ -827,6 +828,12 @@ mod liquidacion {
             (ParametroLaboral::DiasPrima, dec!(30)),
             (ParametroLaboral::InteresesCesantias, dec!(12)),
             (ParametroLaboral::DiasVacaciones, dec!(15)),
+            (ParametroLaboral::PorcentajeDependientes, dec!(10)),
+            (ParametroLaboral::TopeDependientes, dec!(384)),
+            (ParametroLaboral::TopeInteresesVivienda, dec!(1200)),
+            (ParametroLaboral::TopeMedicinaPrepagada, dec!(192)),
+            (ParametroLaboral::LimiteAportesVoluntarios, dec!(30)),
+            (ParametroLaboral::TopeAportesVoluntarios, dec!(3800)),
         ] {
             catalogo::crear_parametro(
                 &e.plataforma,
@@ -1459,7 +1466,7 @@ mod liquidacion {
     }
 
     /// Contabilidad con un plan mínimo y las reglas de `nomina.liquidacion` y `nomina.pago`.
-    async fn con_contabilidad(e: &Entorno, contador: &Contexto) {
+    async fn con_contabilidad(e: &Entorno, contador: &Contexto, centro_en_gasto: bool) {
         use application::casos_uso::{
             contabilidad::configuracion::{
                 self as conf, DatosTipoComprobante, NuevaConfiguracion, NuevaCuenta,
@@ -1550,7 +1557,11 @@ mod liquidacion {
             } else {
                 OrigenTercero::Ninguno
             },
-            centro: OrigenCentro::Ninguno,
+            centro: if centro_en_gasto && cuenta == "5105" {
+                OrigenCentro::Documento
+            } else {
+                OrigenCentro::Ninguno
+            },
             centro_costo: None,
         };
         let mut liquidacion = vec![linea(conceptos::NETO, C, "2505", true)];
@@ -1617,7 +1628,7 @@ mod liquidacion {
         catalogo_completo(&e).await;
         let contador = cuenta_real(&pool, e.tenant, "contador").await;
         let aprobador = cuenta_real(&pool, e.tenant, "aprobador").await;
-        con_contabilidad(&e, &contador).await;
+        con_contabilidad(&e, &contador, false).await;
         empleado(&e, dec!(2100000)).await;
         let p = ul::crear_periodo(
             &e.unidad,
@@ -1683,5 +1694,297 @@ mod liquidacion {
             .expect("aprueba");
 
         assert_eq!(comprobantes(&e, "nomina.liquidacion").await, 0);
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn la_nomina_aprobada_antes_se_contabiliza_despues(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        empleado(&e, dec!(2100000)).await;
+        let contador = cuenta_real(&pool, e.tenant, "contador").await;
+        let aprobador = cuenta_real(&pool, e.tenant, "aprobador").await;
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &contador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+        ul::liquidar_periodo(&e.unidad, &RelojSistema, &contador, p.id)
+            .await
+            .expect("liquida");
+        ul::aprobar_periodo(&e.unidad, &RelojSistema, &aprobador, p.id)
+            .await
+            .expect("aprueba sin contabilidad");
+        ul::marcar_pagado(&e.unidad, &RelojSistema, &contador, p.id, dia(2026, 3, 31))
+            .await
+            .expect("pago");
+        con_contabilidad(&e, &contador, false).await;
+
+        let pendientes = application::casos_uso::nomina::contabilizacion::contabilizar_pendientes(
+            &e.unidad,
+            &RelojSistema,
+            &contador,
+            dia(2026, 1, 1),
+            dia(2026, 12, 31),
+        )
+        .await
+        .expect("contabiliza");
+        let otra_vez = application::casos_uso::nomina::contabilizacion::contabilizar_pendientes(
+            &e.unidad,
+            &RelojSistema,
+            &contador,
+            dia(2026, 1, 1),
+            dia(2026, 12, 31),
+        )
+        .await
+        .expect("idempotente");
+
+        assert_eq!(
+            (pendientes.contabilizados.len(), pendientes.fallidos.len()),
+            (1, 0)
+        );
+        assert_eq!(otra_vez.contabilizados.len(), 1);
+        assert_eq!(comprobantes(&e, "nomina.liquidacion").await, 1);
+        assert_eq!(comprobantes(&e, "nomina.pago").await, 1);
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn el_centro_de_costo_exige_contabilidad(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let mut contrato = e.fijo(dia(2026, 2, 1), dia(2027, 1, 31));
+        contrato.condiciones.centro_costo_id = Some(domain::CentroCostoId::nuevo());
+
+        let r = uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect_err("sin contabilidad");
+
+        assert!(matches!(r, AppError::Validacion(_)), "{r:?}");
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn la_simulacion_y_el_saldo_de_vacaciones_no_guardan_nada(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let mut contrato = e.fijo(dia(2026, 1, 1), dia(2026, 12, 31));
+        contrato.condiciones = e.condiciones(dec!(3000000));
+        let ficha = uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta");
+        let contrato = ficha.contratos[0].contrato.id;
+        un::registrar_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            contrato,
+            NuevaNovedad {
+                tipo: TipoNovedad::Vacaciones,
+                desde: dia(2026, 3, 2),
+                hasta: Some(dia(2026, 3, 6)),
+                cantidad: None,
+                descripcion: None,
+                soporte_archivo_id: None,
+            },
+        )
+        .await
+        .expect("vacaciones");
+        let prest = application::casos_uso::nomina::prestaciones::simular_terminacion;
+
+        let lineas = prest(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            contrato,
+            dia(2026, 6, 15),
+            MotivoTerminacion::SinJustaCausa,
+        )
+        .await
+        .expect("simula");
+        let saldo = application::casos_uso::nomina::prestaciones::saldo_vacaciones(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            contrato,
+            Some(dia(2026, 6, 15)),
+        )
+        .await
+        .expect("saldo");
+        let sigue = uc::ficha_empleado(&e.unidad, &RelojSistema, &e.ctx, ficha.empleado.id)
+            .await
+            .expect("ficha");
+
+        let valor = |c| {
+            lineas
+                .iter()
+                .find(|x| x.concepto == c)
+                .map(|x| x.valor.valor())
+        };
+        // Mismos valores que la liquidación real del retiro (prueba de la fase 4).
+        assert_eq!(
+            valor(ConceptoNomina::Indemnizacion),
+            Some(dec!(19500000.00))
+        );
+        assert_eq!(valor(ConceptoNomina::Cesantias), Some(dec!(1466667.00)));
+        assert_eq!(
+            (
+                saldo.dias_trabajados,
+                saldo.causados,
+                saldo.disfrutados,
+                saldo.pendientes
+            ),
+            (165, dec!(6.88), dec!(5), dec!(1.88))
+        );
+        assert_eq!(
+            sigue.contratos[0].contrato.fecha_terminacion, None,
+            "no se terminó"
+        );
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn las_deducciones_declaradas_bajan_la_retencion(pool: PgPool) {
+        use application::casos_uso::nomina::deducciones::{self as ud, NuevaDeduccion};
+        use domain::nomina::liquidacion::TipoDeduccion;
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let mut contrato = e.fijo(dia(2026, 1, 1), dia(2026, 12, 31));
+        contrato.condiciones = e.condiciones(dec!(12000000));
+        let ficha = uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta");
+        let liquidar_marzo = |desde: NaiveDate| {
+            let e = &e;
+            async move {
+                let p = ul::crear_periodo(
+                    &e.unidad,
+                    &RelojSistema,
+                    &e.ctx,
+                    PeriodicidadPago::Mensual,
+                    desde,
+                )
+                .await
+                .expect("periodo");
+                ul::liquidar_periodo(&e.unidad, &RelojSistema, &e.ctx, p.id)
+                    .await
+                    .expect("liquida")
+                    .liquidaciones[0]
+                    .liquidacion
+                    .lineas
+                    .iter()
+                    .find(|x| x.concepto == ConceptoNomina::RetencionFuente)
+                    .map(|x| x.valor.valor())
+                    .unwrap_or_default()
+            }
+        };
+        let sin = liquidar_marzo(dia(2026, 3, 1)).await;
+        ud::registrar_deduccion(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            ficha.empleado.id,
+            NuevaDeduccion {
+                tipo: TipoDeduccion::Dependientes,
+                valor_mensual: None,
+                vigente_desde: dia(2026, 4, 1),
+                soporte_archivo_id: None,
+            },
+        )
+        .await
+        .expect("dependientes");
+        let con_valor = ud::registrar_deduccion(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            ficha.empleado.id,
+            NuevaDeduccion {
+                tipo: TipoDeduccion::Dependientes,
+                valor_mensual: Some(Monto::new(dec!(1)).expect("monto")),
+                vigente_desde: dia(2026, 4, 1),
+                soporte_archivo_id: None,
+            },
+        )
+        .await
+        .expect_err("dependientes no lleva valor");
+
+        let con = liquidar_marzo(dia(2026, 4, 1)).await;
+
+        assert!(con < sin, "con dependientes {con} y sin {sin}");
+        assert!(matches!(con_valor, AppError::Validacion(_)));
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn el_gasto_de_la_nomina_va_al_centro_de_costo_del_contrato(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let contador = cuenta_real(&pool, e.tenant, "contador").await;
+        let aprobador = cuenta_real(&pool, e.tenant, "aprobador").await;
+        con_contabilidad(&e, &contador, true).await;
+        let centro = application::casos_uso::contabilidad::configuracion::guardar_centro_costo(
+            &e.unidad,
+            &RelojSistema,
+            &contador,
+            None,
+            "SEDE-N",
+            "Sede norte",
+            true,
+        )
+        .await
+        .expect("centro");
+        let mut contrato = e.fijo(dia(2026, 2, 1), dia(2027, 1, 31));
+        contrato.condiciones = e.condiciones(dec!(2100000));
+        contrato.condiciones.centro_costo_id = Some(centro.id);
+        uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta con centro");
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &contador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+        ul::liquidar_periodo(&e.unidad, &RelojSistema, &contador, p.id)
+            .await
+            .expect("liquida");
+
+        ul::aprobar_periodo(&e.unidad, &RelojSistema, &aprobador, p.id)
+            .await
+            .expect("aprueba");
+
+        let con_centro: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM lineas_comprobante l
+             JOIN cuentas_contables k ON k.id = l.cuenta_id
+             WHERE l.tenant_id = $1 AND k.codigo = '5105' AND l.centro_costo_id = $2",
+        )
+        .bind(e.tenant.as_uuid())
+        .bind(centro.id.as_uuid())
+        .fetch_one(&pool)
+        .await
+        .expect("líneas");
+        assert!(con_centro > 0, "el gasto lleva el centro de costo");
     }
 }

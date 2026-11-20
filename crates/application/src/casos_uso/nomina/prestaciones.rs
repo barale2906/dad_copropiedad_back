@@ -124,6 +124,141 @@ fn agregar(lineas: &mut Vec<LineaLiquidacion>, l: Option<LineaLiquidacion>) {
     }
 }
 
+/// Saldo de vacaciones de un contrato a una fecha.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SaldoVacaciones {
+    /// Días comerciales trabajados (sin licencias no remuneradas, ausencias ni suspensiones).
+    pub dias_trabajados: u32,
+    pub causados: Decimal,
+    /// Días hábiles disfrutados (novedades `vacaciones`).
+    pub disfrutados: Decimal,
+    pub pendientes: Decimal,
+}
+
+async fn saldo_en<T: TxNomina>(
+    tx: &mut T,
+    c: &ContratoLaboral,
+    versiones: &[VersionContrato],
+    fin: NaiveDate,
+    catalogo: &CatalogoLaboral,
+    excluir: Option<domain::PeriodoNominaId>,
+) -> AppResult<SaldoVacaciones> {
+    let mut disfrutados = Decimal::ZERO;
+    for n in tx.novedades(Some(c.id), c.fecha_inicio, fin).await? {
+        if n.anulacion.is_none() && n.novedad.tipo == TipoNovedad::Vacaciones {
+            let mut d = n.novedad.desde;
+            while d <= n.novedad.hasta.min(fin) {
+                if es_dia_habil(d) {
+                    disfrutados += Decimal::ONE;
+                }
+                match d.succ_opt() {
+                    Some(s) => d = s,
+                    None => break,
+                }
+            }
+        }
+    }
+    let total = base_lapso(tx, c, versiones, c.fecha_inicio, fin, catalogo, excluir).await?;
+    let causados = (Decimal::from(total.dias) * catalogo.valor(P::DiasVacaciones)?
+        / Decimal::from(360))
+    .round_dp(2);
+    Ok(SaldoVacaciones {
+        dias_trabajados: total.dias,
+        causados,
+        disfrutados,
+        pendientes: dias_vacaciones_pendientes(total.dias, disfrutados, catalogo)?,
+    })
+}
+
+/// Saldo de vacaciones del contrato a la fecha (por defecto hoy, o su terminación si es antes).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `nomina.ver`; [`AppError::NoEncontrado`];
+/// [`domain::DominioError::ReglaLaboral`] si falta un parámetro del catálogo.
+pub async fn saldo_vacaciones<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    contrato: ContratoLaboralId,
+    fecha: Option<NaiveDate>,
+) -> AppResult<SaldoVacaciones>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxNomina,
+{
+    let mut tx = abrir_nomina(unidad, reloj, ctx, Permiso::NominaVer).await?;
+    let c = tx
+        .contrato(contrato)
+        .await?
+        .ok_or(AppError::NoEncontrado("contrato"))?;
+    let fin = fecha
+        .unwrap_or_else(|| reloj.ahora().date_naive())
+        .min(c.fecha_terminacion.unwrap_or(NaiveDate::MAX));
+    if fin < c.fecha_inicio {
+        return Err(AppError::Validacion(
+            "la fecha es anterior al inicio del contrato".into(),
+        ));
+    }
+    let catalogo = catalogo_en(&mut tx, fin).await?;
+    let versiones = tx.versiones(contrato).await?;
+    saldo_en(&mut tx, &c, &versiones, fin, &catalogo, None).await
+}
+
+/// Cuánto costaría terminar el contrato en `fecha` con `motivo`: las prestaciones, las
+/// vacaciones pendientes y la indemnización (sin el salario del periodo ni guardar nada).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `nomina.salarios.ver`; [`AppError::NoEncontrado`];
+/// [`AppError::Conflicto`] si el contrato ya terminó; [`domain::DominioError::ReglaLaboral`] si
+/// la fecha o el motivo no aplican o falta un parámetro del catálogo.
+pub async fn simular_terminacion<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    contrato: ContratoLaboralId,
+    fecha: NaiveDate,
+    motivo: domain::nomina::MotivoTerminacion,
+) -> AppResult<Vec<LineaLiquidacion>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxNomina,
+{
+    let mut tx = abrir_nomina(unidad, reloj, ctx, Permiso::NominaSalariosVer).await?;
+    let mut c = tx
+        .contrato(contrato)
+        .await?
+        .ok_or(AppError::NoEncontrado("contrato"))?;
+    if c.fecha_terminacion.is_some() {
+        return Err(AppError::Conflicto("el contrato ya terminó".into()));
+    }
+    domain::nomina::validar_terminacion(c.tipo, c.fecha_inicio, c.fecha_fin, fecha, motivo)?;
+    c.fecha_terminacion = Some(fecha);
+    c.motivo_terminacion = Some(motivo);
+    let desde = fecha
+        .with_day(1)
+        .ok_or_else(|| AppError::Validacion("fecha inválida".into()))?;
+    let periodo = PeriodoNomina {
+        id: domain::PeriodoNominaId::nuevo(),
+        periodicidad: domain::nomina::PeriodicidadPago::Mensual,
+        desde,
+        hasta: fecha,
+        estado: domain::nomina::periodo::EstadoPeriodoNomina::Abierto,
+        creado_por: None,
+        creado_en: reloj.ahora(),
+        liquidado_por: None,
+        liquidado_en: None,
+        aprobado_por: None,
+        aprobado_en: None,
+        pagado_por: None,
+        pagado_en: None,
+        fecha_pago: None,
+    };
+    let catalogo = catalogo_en(&mut tx, fecha).await?;
+    prestaciones_del_periodo(&mut tx, &c, &periodo, &catalogo).await
+}
+
 /// Prestaciones que el contrato cobra en el periodo.
 pub(crate) async fn prestaciones_del_periodo<T: TxNomina>(
     tx: &mut T,
@@ -214,23 +349,8 @@ pub(crate) async fn prestaciones_del_periodo<T: TxNomina>(
     }
 
     // Vacaciones pendientes: causadas en todo el contrato menos las disfrutadas (días hábiles).
-    let mut disfrutados = Decimal::ZERO;
-    for n in tx.novedades(Some(c.id), c.fecha_inicio, fin).await? {
-        if n.anulacion.is_none() && n.novedad.tipo == TipoNovedad::Vacaciones {
-            let mut d = n.novedad.desde;
-            while d <= n.novedad.hasta {
-                if es_dia_habil(d) {
-                    disfrutados += Decimal::ONE;
-                }
-                match d.succ_opt() {
-                    Some(s) => d = s,
-                    None => break,
-                }
-            }
-        }
-    }
-    let total = base_lapso(tx, c, &versiones, c.fecha_inicio, fin, catalogo, Some(p.id)).await?;
-    let pendientes = dias_vacaciones_pendientes(total.dias, disfrutados, catalogo)?;
+    let saldo = saldo_en(tx, c, &versiones, fin, catalogo, Some(p.id)).await?;
+    let pendientes = saldo.pendientes;
     let ultimo_ano = fin
         .checked_sub_months(Months::new(12))
         .and_then(|d| d.succ_opt())

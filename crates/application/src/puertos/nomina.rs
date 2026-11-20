@@ -224,6 +224,8 @@ pub struct VersionContrato {
     /// Va con la ARL.
     pub clase_riesgo: Option<ClaseRiesgo>,
     pub pensionado: bool,
+    /// Centro de costo al que va el gasto (solo con contabilidad).
+    pub centro_costo_id: Option<domain::CentroCostoId>,
     pub medio_pago: MedioPago,
     /// Con transferencia. `None` también cuando quien consulta no tiene `nomina.salarios.ver`.
     pub cuenta: Option<CuentaNomina>,
@@ -245,6 +247,12 @@ pub trait RepositorioNomina: Send {
     fn empleado(
         &mut self,
         id: EmpleadoId,
+    ) -> impl Future<Output = AppResult<Option<Empleado>>> + Send;
+
+    /// Empleado por su código en la entidad.
+    fn empleado_por_codigo(
+        &mut self,
+        codigo: &CodigoEmpleado,
     ) -> impl Future<Output = AppResult<Option<Empleado>>> + Send;
 
     /// Empleado de la persona, si lo es.
@@ -493,6 +501,35 @@ pub trait RepositorioLiquidacionNomina: Send {
         excluir: Option<PeriodoNominaId>,
     ) -> impl Future<Output = AppResult<Decimal>> + Send;
 
+    /// Guarda una deducción de la retención declarada por el empleado.
+    fn insertar_deduccion(
+        &mut self,
+        deduccion: &DeduccionRetencion,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Termina una deducción (su último día de vigencia).
+    ///
+    /// # Errors
+    ///
+    /// [`domain::DominioError::ReglaLaboral`] si ya estaba terminada.
+    fn terminar_deduccion(
+        &mut self,
+        id: domain::DeduccionRetencionId,
+        hasta: NaiveDate,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Deducción por id.
+    fn deduccion(
+        &mut self,
+        id: domain::DeduccionRetencionId,
+    ) -> impl Future<Output = AppResult<Option<DeduccionRetencion>>> + Send;
+
+    /// Deducciones del empleado, las más recientes primero.
+    fn deducciones(
+        &mut self,
+        empleado: EmpleadoId,
+    ) -> impl Future<Output = AppResult<Vec<DeduccionRetencion>>> + Send;
+
     /// Liquidación por id, con sus líneas.
     fn liquidacion(
         &mut self,
@@ -533,4 +570,19 @@ pub trait RepositorioNominaDeCuenta: Send {
         cuenta: CuentaId,
         limite: u32,
     ) -> impl Future<Output = AppResult<Vec<DesprendibleDeCuenta>>> + Send;
+}
+
+/// Deducción o renta exenta de la retención que declaró un empleado, con su soporte.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeduccionRetencion {
+    pub id: domain::DeduccionRetencionId,
+    pub empleado_id: EmpleadoId,
+    pub tipo: domain::nomina::liquidacion::TipoDeduccion,
+    /// Valor mensual declarado (cero en dependientes). Dato personal.
+    pub valor_mensual: Monto,
+    pub vigente_desde: NaiveDate,
+    pub vigente_hasta: Option<NaiveDate>,
+    pub soporte_archivo_id: Option<ArchivoId>,
+    pub creado_por: Option<CuentaId>,
+    pub creado_en: DateTime<Utc>,
 }

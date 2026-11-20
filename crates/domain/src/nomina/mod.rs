@@ -136,6 +136,18 @@ pub enum ParametroLaboral {
     LimiteBeneficiosRetencion,
     /// Tope anual de las rentas exentas y deducciones.
     TopeBeneficiosRetencion,
+    /// Deducción por dependientes, en % del ingreso bruto (art. 387 del ET).
+    PorcentajeDependientes,
+    /// Tope anual de la deducción por dependientes.
+    TopeDependientes,
+    /// Tope anual de la deducción por intereses de vivienda (art. 119 del ET).
+    TopeInteresesVivienda,
+    /// Tope anual de la deducción por medicina prepagada (art. 387 del ET).
+    TopeMedicinaPrepagada,
+    /// Límite de los aportes voluntarios exentos sobre el ingreso (arts. 126-1 y 126-4 del ET).
+    LimiteAportesVoluntarios,
+    /// Tope anual de los aportes voluntarios exentos.
+    TopeAportesVoluntarios,
 }
 
 enum_texto!(ParametroLaboral {
@@ -178,6 +190,12 @@ enum_texto!(ParametroLaboral {
     TopeRentaExentaLaboral => "tope_renta_exenta_laboral",
     LimiteBeneficiosRetencion => "limite_beneficios_retencion",
     TopeBeneficiosRetencion => "tope_beneficios_retencion",
+    PorcentajeDependientes => "porcentaje_dependientes",
+    TopeDependientes => "tope_dependientes",
+    TopeInteresesVivienda => "tope_intereses_vivienda",
+    TopeMedicinaPrepagada => "tope_medicina_prepagada",
+    LimiteAportesVoluntarios => "limite_aportes_voluntarios",
+    TopeAportesVoluntarios => "tope_aportes_voluntarios",
 });
 
 impl ParametroLaboral {
@@ -190,7 +208,12 @@ impl ParametroLaboral {
             | P::SalarioIntegralMinimo
             | P::TopeIbc
             | P::TopeExoneracionAportes => Unidad::SalariosMinimos,
-            P::TopeRentaExentaLaboral | P::TopeBeneficiosRetencion => Unidad::UvtAnuales,
+            P::TopeRentaExentaLaboral
+            | P::TopeBeneficiosRetencion
+            | P::TopeDependientes
+            | P::TopeInteresesVivienda
+            | P::TopeMedicinaPrepagada
+            | P::TopeAportesVoluntarios => Unidad::UvtAnuales,
             P::JornadaMaximaSemanal => Unidad::HorasSemana,
             P::InicioJornadaNocturna | P::FinJornadaNocturna => Unidad::HoraDelDia,
             P::DiasIncapacidadEmpleador | P::DiasCesantias | P::DiasPrima | P::DiasVacaciones => {
@@ -219,7 +242,9 @@ impl ParametroLaboral {
             | P::ApoyoAprendizLectiva
             | P::ApoyoAprendizProductiva
             | P::RentaExentaLaboral
-            | P::LimiteBeneficiosRetencion => Unidad::Porcentaje,
+            | P::LimiteBeneficiosRetencion
+            | P::PorcentajeDependientes
+            | P::LimiteAportesVoluntarios => Unidad::Porcentaje,
         }
     }
 

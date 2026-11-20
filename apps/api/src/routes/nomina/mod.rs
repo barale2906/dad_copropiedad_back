@@ -49,6 +49,7 @@ use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
+mod complementos;
 mod desprendibles;
 mod liquidacion;
 mod reportes;
@@ -85,6 +86,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .merge(liquidacion::rutas())
         .merge(desprendibles::rutas())
         .merge(reportes::rutas())
+        .merge(complementos::rutas())
 }
 
 /// Rutas del catálogo laboral de la plataforma (se montan en `/api/v1/plataforma`).
@@ -416,6 +418,8 @@ pub struct CondicionesContratoPeticion {
     pub clase_riesgo: Option<ClaseRiesgo>,
     #[serde(default)]
     pub pensionado: bool,
+    /// Centro de costo del gasto (solo si la entidad lleva contabilidad).
+    pub centro_costo_id: Option<Uuid>,
     #[schema(value_type = crate::esquemas::MedioPago)]
     pub medio_pago: MedioPago,
     /// Solo con transferencia.
@@ -440,6 +444,7 @@ impl From<CondicionesContratoPeticion> for CondicionesVersion {
             arl_id: adm(p.arl_id),
             clase_riesgo: p.clase_riesgo,
             pensionado: p.pensionado,
+            centro_costo_id: p.centro_costo_id.map(domain::CentroCostoId::from_uuid),
             medio_pago: p.medio_pago,
             cuenta: p.cuenta.map(|c| CuentaNomina {
                 banco: c.banco,
@@ -593,6 +598,7 @@ pub struct VersionContratoRespuesta {
     #[schema(value_type = Option<crate::esquemas::ClaseRiesgo>)]
     pub clase_riesgo: Option<ClaseRiesgo>,
     pub pensionado: bool,
+    pub centro_costo_id: Option<Uuid>,
     #[schema(value_type = crate::esquemas::MedioPago)]
     pub medio_pago: MedioPago,
     /// `null` sin transferencia o sin `nomina.salarios.ver`.
@@ -621,6 +627,7 @@ impl From<VersionContrato> for VersionContratoRespuesta {
             arl_id: id(v.arl_id),
             clase_riesgo: v.clase_riesgo,
             pensionado: v.pensionado,
+            centro_costo_id: v.centro_costo_id.map(|c| c.as_uuid()),
             medio_pago: v.medio_pago,
             cuenta: v.cuenta.map(|c| CuentaNominaDto {
                 banco: c.banco,

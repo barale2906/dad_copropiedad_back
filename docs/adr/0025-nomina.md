@@ -147,6 +147,23 @@ usuario los ajusta. La fase 1 cubre el catálogo, los empleados, los contratos y
 - Pendientes de terceros: archivo plano de la PILA (operador), nómina electrónica (anexo técnico
   y registro en la DIAN), dispersión por banco (formato de cada banco) y formulario 220.
 
+## Complementos (2026-11-20)
+- **Centro de costo** opcional en cada versión del contrato (solo con contabilidad; FK a
+  `centros_costo`): va en los importes de `nomina.liquidacion` y la regla lo usa en las líneas con
+  centro `documento`.
+- **Contabilizar lo aprobado antes de tener contabilidad** (`POST …/contabilizacion`): cada periodo
+  aprobado o pagado en su transacción, idempotente por origen, con informe de fallidos.
+- **Simulación de la terminación** (sin guardar nada) y **saldo de vacaciones** por contrato, con
+  el mismo cálculo de la liquidación real.
+- **Importación de novedades** (tipo `novedades_nomina`): empleado por código y contrato que cubre
+  las fechas; se aplica en una transacción.
+- **Deducciones de la retención** declaradas por el empleado (`deducciones_retencion`: dependientes,
+  intereses de vivienda, medicina prepagada y aportes voluntarios), con topes en el catálogo
+  (`porcentaje_dependientes`, `tope_*` en UVT anuales, `limite_aportes_voluntarios`). Depuración:
+  ingresos − aportes obligatorios − deducciones − aportes voluntarios → renta exenta del 25 % → todo
+  limitado al 40 % y a 1340 UVT anuales. **Por revisar** con el especialista: los 72 UVT por
+  dependiente de la Ley 2277 de 2022 y el procedimiento 2 no están.
+
 ## Consecuencias
 - Las fases siguientes (novedades y liquidación, desprendibles, provisiones y liquidación del
   contrato, PILA, nómina electrónica, contabilización) leen el catálogo y las versiones vigentes en

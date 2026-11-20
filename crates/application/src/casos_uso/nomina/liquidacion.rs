@@ -387,6 +387,7 @@ where
             exonerada,
             retencion: retencion(&p, &previas, &c),
             prestaciones: prestaciones_del_periodo(&mut tx, &c, &p, &normativa.catalogo).await?,
+            deducciones: super::deducciones::vigentes_en(&mut tx, c.empleado_id, p.hasta).await?,
         };
         let liquidacion = match liquidar(&entrada, &normativa) {
             Ok(l) => l,

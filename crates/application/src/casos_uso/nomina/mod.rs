@@ -7,9 +7,11 @@
 //! - [`empleados`]: empleados, contratos laborales y sus versiones (modificación, prórroga y
 //!   terminación).
 //! - [`importacion`]: carga masiva de empleados con vista previa.
+//! - [`importacion_novedades`]: carga masiva de novedades con vista previa.
 //! - [`novedades`]: novedades de los contratos (horas, días y valores) y su anulación.
 //! - [`contabilizacion`]: documentos origen al contabilizador al aprobar y al pagar (solo con
 //!   contabilidad).
+//! - [`deducciones`]: deducciones de la retención declaradas por el empleado.
 //! - [`desprendibles`]: PDF de cada liquidación aprobada, envío por correo y portal del
 //!   empleado.
 //! - [`prestaciones`]: prima, cesantías, intereses, vacaciones e indemnización en la
@@ -21,9 +23,11 @@
 
 pub mod catalogo;
 pub mod contabilizacion;
+pub mod deducciones;
 pub mod desprendibles;
 pub mod empleados;
 pub mod importacion;
+pub mod importacion_novedades;
 pub mod liquidacion;
 pub mod novedades;
 pub mod prestaciones;

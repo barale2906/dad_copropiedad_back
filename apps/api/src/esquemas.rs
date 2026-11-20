@@ -445,6 +445,8 @@ esquema_enum! {
         "Concepto de una línea de la liquidación.";
     ClaseLineaNomina = domain::nomina::liquidacion::ClaseLinea,
         "Clase de una línea: devengo, deducción, aporte del empleador o provisión (informativa).";
+    TipoDeduccion = domain::nomina::liquidacion::TipoDeduccion,
+        "Deducción o renta exenta de la retención que declara el empleado.";
     GrupoCertificado = domain::nomina::reportes::GrupoCertificado,
         "Grupo del certificado de ingresos y retenciones por rentas de trabajo.";
 }

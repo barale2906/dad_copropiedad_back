@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT l.id, l.periodo, l.valor, a.organizacion_id, a.nombre_comercial\n             FROM liquidaciones l JOIN anunciantes a ON a.id = l.anunciante_id\n             WHERE l.id = $1",
+  "query": "SELECT l.id, l.periodo, l.valor, l.estado, a.organizacion_id, a.nombre_comercial\n             FROM liquidaciones l JOIN anunciantes a ON a.id = l.anunciante_id\n             WHERE l.id = $1",
   "describe": {
     "columns": [
       {
@@ -38,6 +38,17 @@
       },
       {
         "ordinal": 3,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
         "name": "organizacion_id",
         "type_info": "Uuid",
         "origin": {
@@ -48,7 +59,7 @@
         }
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "nombre_comercial",
         "type_info": "Text",
         "origin": {
@@ -69,8 +80,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "d078fa8347b3a0ed8407558a2398b27dad7468001e73ca2cbb42be10a65e25b7"
+  "hash": "cdf372147824790f1599a83d5ca49c9737c67a5008712744136192e1d0e74048"
 }

@@ -992,6 +992,7 @@ pub async fn facturado_externo(
 ) -> ApiResult<Json<CorteRespuesta>> {
     let c = uc_cortes::marcar_facturado_externo(
         &state.plataforma,
+        &RelojSistema,
         &op.ctx,
         CorteFacturacionId::from_uuid(id),
         &p.numero,

@@ -291,7 +291,7 @@
         "tags": [
           "plataforma"
         ],
-        "summary": "Habilita un módulo en una copropiedad (venta por módulo). Los endpoints del módulo dejan de\nresponder `modulo_no_habilitado` desde `desde`.",
+        "summary": "Habilita un módulo en una copropiedad (venta por módulo). Los endpoints del módulo dejan de\nresponder `modulo_no_habilitado` desde `desde`. Si la entidad tiene suscripción y hay un\nproducto con tarifa para el módulo, agrega su línea de cobro.",
         "operationId": "plataforma_habilitar_modulo",
         "parameters": [
           {
@@ -56285,6 +56285,794 @@
           }
         ]
       }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/novedades/importaciones": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Sube y valida una planilla de novedades (columnas `codigo` del empleado, `tipo`, `desde`,\n`hasta`, `cantidad` y `descripcion`). No registra nada: devuelve la vista previa.",
+        "operationId": "nomina_importar_novedades",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "nombre",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "bienes_privados.xlsx"
+          }
+        ],
+        "requestBody": {
+          "description": "Contenido del CSV o XLSX",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Importación registrada (revise `estado` y `errores`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VistaPreviaNovedadesRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `importaciones.ejecutar` o `nomina.novedades.registrar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No es CSV/XLSX o no se puede leer (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/novedades/importaciones/plantilla": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Plantilla CSV de novedades.",
+        "operationId": "nomina_plantilla_novedades",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plantilla CSV",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No exige permisos: basta un rol en la entidad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/novedades/importaciones/{importacion_id}/confirmar": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Registra las novedades de una importación validada en una sola transacción.",
+        "operationId": "nomina_confirmar_importacion_novedades",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "importacion_id",
+            "in": "path",
+            "description": "Importación de novedades",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aplicada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `importaciones.ejecutar` o `nomina.novedades.registrar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es de novedades",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya aplicada, con errores, los datos cambiaron o una fila cae en un periodo aprobado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/contabilizacion": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Contabiliza los periodos aprobados o pagados entre las fechas (la nómina aprobada antes de\nhabilitar la contabilidad). Es idempotente; cada periodo va aparte.",
+        "operationId": "nomina_contabilizar_pendientes",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RangoContabilizacionNominaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Informe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformeContabilizacionNominaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.comprobantes.contabilizar` (`sin_permiso`) o sin los módulos `nomina` y `contabilidad` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Rango invertido (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/contratos/{contrato_id}/simulacion-terminacion": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Simula la terminación del contrato en una fecha y con un motivo: prestaciones, vacaciones\npendientes e indemnización, sin guardar nada.",
+        "operationId": "nomina_simular_terminacion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "contrato_id",
+            "in": "path",
+            "description": "Contrato laboral",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulacionTerminacionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Simulación",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulacionTerminacionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.salarios.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contrato inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El contrato ya terminó (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Fecha o motivo que no aplican, o falta un parámetro del catálogo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/contratos/{contrato_id}/vacaciones": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Saldo de vacaciones del contrato: días causados, disfrutados y pendientes.",
+        "operationId": "nomina_saldo_vacaciones",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "contrato_id",
+            "in": "path",
+            "description": "Contrato laboral",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "fecha",
+            "in": "query",
+            "description": "Hoy si se omite (o la terminación, si el contrato terminó antes).",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Saldo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaldoVacacionesRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contrato inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Fecha antes del inicio o falta un parámetro del catálogo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/empleados/{empleado_id}/deducciones": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Deducciones de la retención del empleado.",
+        "operationId": "nomina_listar_deducciones",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "empleado_id",
+            "in": "path",
+            "description": "Empleado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deducciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeduccionRetencionRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.salarios.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Registra una deducción de la retención que declaró el empleado (con su soporte).",
+        "operationId": "nomina_registrar_deduccion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "empleado_id",
+            "in": "path",
+            "description": "Empleado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaDeduccionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Deducción registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeduccionRetencionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.empleados.gestionar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empleado o soporte inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Dependientes con valor o los demás sin él (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/deducciones/{deduccion_id}/terminacion": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Termina una deducción (desde el día siguiente ya no se aplica).",
+        "operationId": "nomina_terminar_deduccion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "deduccion_id",
+            "in": "path",
+            "description": "Deducción",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminacionDeduccionPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Deducción terminada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeduccionRetencionRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.empleados.gestionar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Deducción inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Antes de su inicio o ya terminada (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -61823,6 +62611,14 @@
           "pensionado": {
             "type": "boolean"
           },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Centro de costo del gasto (solo si la entidad lleva contabilidad)."
+          },
           "medio_pago": {
             "$ref": "#/components/schemas/MedioPago"
           },
@@ -64609,6 +65405,56 @@
           },
           "visita": {
             "$ref": "#/components/schemas/VisitaRespuesta"
+          }
+        }
+      },
+      "DeduccionRetencionRespuesta": {
+        "type": "object",
+        "description": "Deducción declarada.",
+        "required": [
+          "id",
+          "empleado_id",
+          "tipo",
+          "valor_mensual",
+          "vigente_desde",
+          "creado_en"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "empleado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDeduccion"
+          },
+          "valor_mensual": {
+            "type": "string"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -69179,6 +70025,28 @@
           }
         }
       },
+      "FilaNovedadPreviaRespuesta": {
+        "type": "object",
+        "description": "Fila válida de la vista previa.",
+        "required": [
+          "fila",
+          "codigo",
+          "tipo"
+        ],
+        "properties": {
+          "fila": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoNovedad"
+          }
+        }
+      },
       "FilaPropietarioRespuesta": {
         "type": "object",
         "description": "Fila del libro de propietarios.",
@@ -70109,6 +70977,29 @@
               "null"
             ],
             "description": "Saldo del extracto − saldo conciliado (cero si cuadra)."
+          }
+        }
+      },
+      "InformeContabilizacionNominaRespuesta": {
+        "type": "object",
+        "description": "Resultado de contabilizar la nómina pendiente.",
+        "required": [
+          "contabilizados",
+          "fallidos"
+        ],
+        "properties": {
+          "contabilizados": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "fallidos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PeriodoFallidoRespuesta"
+            }
           }
         }
       },
@@ -73339,6 +74230,38 @@
             "type": "boolean"
           },
           "pregunta_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "NuevaDeduccionPeticion": {
+        "type": "object",
+        "description": "Deducción nueva.",
+        "required": [
+          "tipo",
+          "vigente_desde"
+        ],
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDeduccion"
+          },
+          "valor_mensual": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Valor mensual; no va en `dependientes`.",
+            "example": "450000"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "soporte_archivo_id": {
             "type": [
               "string",
               "null"
@@ -78925,7 +79848,13 @@
           "renta_exenta_laboral",
           "tope_renta_exenta_laboral",
           "limite_beneficios_retencion",
-          "tope_beneficios_retencion"
+          "tope_beneficios_retencion",
+          "porcentaje_dependientes",
+          "tope_dependientes",
+          "tope_intereses_vivienda",
+          "tope_medicina_prepagada",
+          "limite_aportes_voluntarios",
+          "tope_aportes_voluntarios"
         ]
       },
       "ParametroLaboralRespuesta": {
@@ -79241,6 +80170,23 @@
           "quincenal"
         ]
       },
+      "PeriodoFallidoRespuesta": {
+        "type": "object",
+        "description": "Periodo que no se pudo contabilizar.",
+        "required": [
+          "periodo_id",
+          "motivo"
+        ],
+        "properties": {
+          "periodo_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo": {
+            "type": "string"
+          }
+        }
+      },
       "PeriodoLiquidadoRespuesta": {
         "type": "object",
         "description": "Periodo con sus liquidaciones.",
@@ -79281,6 +80227,14 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "linea_suscripcion_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Línea de cobro que se agregó a la suscripción de la entidad (si tiene suscripción y hay un\nproducto con tarifa para el módulo); `null` si no: el módulo queda en\n`modulos_sin_cobro`."
           }
         }
       },
@@ -81894,6 +82848,24 @@
           }
         }
       },
+      "RangoContabilizacionNominaPeticion": {
+        "type": "object",
+        "description": "Rango de periodos por contabilizar.",
+        "required": [
+          "desde",
+          "hasta"
+        ],
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "RangoSincronizadoRespuesta": {
         "type": "object",
         "description": "Resolución de numeración registrada desde la DIAN (sin la clave técnica).",
@@ -83891,7 +84863,8 @@
           "coeficientes",
           "usuarios",
           "cuentas_nuevas",
-          "empleados"
+          "empleados",
+          "novedades"
         ],
         "properties": {
           "bienes_privados": {
@@ -83944,6 +84917,12 @@
             "type": "integer",
             "format": "int32",
             "description": "Importación de empleados: empleados de la planilla, cada uno con su contrato.",
+            "minimum": 0
+          },
+          "novedades": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Importación de novedades de nómina: novedades de la planilla.",
             "minimum": 0
           }
         }
@@ -84592,6 +85571,33 @@
           }
         }
       },
+      "SaldoVacacionesRespuesta": {
+        "type": "object",
+        "description": "Saldo de vacaciones.",
+        "required": [
+          "dias_trabajados",
+          "causados",
+          "disfrutados",
+          "pendientes"
+        ],
+        "properties": {
+          "dias_trabajados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "causados": {
+            "type": "string"
+          },
+          "disfrutados": {
+            "type": "string",
+            "description": "Días hábiles disfrutados."
+          },
+          "pendientes": {
+            "type": "string"
+          }
+        }
+      },
       "SaldosInicialesPeticion": {
         "type": "object",
         "description": "Saldos iniciales.",
@@ -84818,6 +85824,44 @@
             "description": "Notas débito, cada una referida a una factura de este envío.",
             "example": 1,
             "minimum": 0
+          }
+        }
+      },
+      "SimulacionTerminacionPeticion": {
+        "type": "object",
+        "description": "Terminación que se quiere simular.",
+        "required": [
+          "fecha",
+          "motivo"
+        ],
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date"
+          },
+          "motivo": {
+            "$ref": "#/components/schemas/MotivoTerminacion"
+          }
+        }
+      },
+      "SimulacionTerminacionRespuesta": {
+        "type": "object",
+        "description": "Lo que costaría terminar el contrato.",
+        "required": [
+          "lineas",
+          "total"
+        ],
+        "properties": {
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaLiquidacionNominaRespuesta"
+            },
+            "description": "Prestaciones, vacaciones pendientes e indemnización."
+          },
+          "total": {
+            "type": "string",
+            "description": "Suma de las líneas (sin el salario del periodo ni las deducciones)."
           }
         }
       },
@@ -85870,6 +86914,19 @@
           }
         }
       },
+      "TerminacionDeduccionPeticion": {
+        "type": "object",
+        "description": "Último día de la deducción.",
+        "required": [
+          "hasta"
+        ],
+        "properties": {
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "TerminarPeticion": {
         "type": "object",
         "description": "Fecha en que termina una vigencia.",
@@ -86348,6 +87405,16 @@
           "caja_general",
           "caja_menor",
           "fondo"
+        ]
+      },
+      "TipoDeduccion": {
+        "type": "string",
+        "description": "Deducción o renta exenta de la retención que declara el empleado.",
+        "enum": [
+          "dependientes",
+          "intereses_vivienda",
+          "medicina_prepagada",
+          "aportes_voluntarios"
         ]
       },
       "TipoDispositivoAcceso": {
@@ -87705,6 +88772,13 @@
           "pensionado": {
             "type": "boolean"
           },
+          "centro_costo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
           "medio_pago": {
             "$ref": "#/components/schemas/MedioPago"
           },
@@ -88014,6 +89088,25 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/ErrorLecturaRespuesta"
+            }
+          }
+        }
+      },
+      "VistaPreviaNovedadesRespuesta": {
+        "type": "object",
+        "description": "Importación de novedades con su vista previa.",
+        "required": [
+          "importacion",
+          "filas"
+        ],
+        "properties": {
+          "importacion": {
+            "$ref": "#/components/schemas/ImportacionRespuesta"
+          },
+          "filas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilaNovedadPreviaRespuesta"
             }
           }
         }

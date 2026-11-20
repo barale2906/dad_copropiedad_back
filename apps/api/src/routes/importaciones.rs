@@ -92,6 +92,8 @@ pub struct ResumenRespuesta {
     pub cuentas_nuevas: u32,
     /// Importación de empleados: empleados de la planilla, cada uno con su contrato.
     pub empleados: u32,
+    /// Importación de novedades de nómina: novedades de la planilla.
+    pub novedades: u32,
 }
 
 impl From<ResumenImportacion> for ResumenRespuesta {
@@ -106,6 +108,7 @@ impl From<ResumenImportacion> for ResumenRespuesta {
             usuarios: r.usuarios,
             cuentas_nuevas: r.cuentas_nuevas,
             empleados: r.empleados,
+            novedades: r.novedades,
         }
     }
 }

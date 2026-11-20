@@ -112,6 +112,7 @@ fn alta_de(
         arl_id: buscar(TipoAdministradora::Arl, e.arl.as_ref())?,
         clase_riesgo: e.clase_riesgo,
         pensionado: e.pensionado,
+        centro_costo_id: None,
         medio_pago: e.medio_pago,
         cuenta: e.cuenta.map(|c| CuentaNomina {
             banco: c.banco,
@@ -148,7 +149,11 @@ fn mensaje(e: &AppError) -> String {
     }
 }
 
-async fn analizar<T: TxNomina>(tx: &mut T, filas: &[Vec<String>]) -> AppResult<Analisis> {
+async fn analizar<T: TxNomina>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    filas: &[Vec<String>],
+) -> AppResult<Analisis> {
     let planilla = leer_planilla_empleados(filas);
     let codigos: BTreeMap<_, _> = tx
         .administradoras(true)
@@ -181,7 +186,7 @@ async fn analizar<T: TxNomina>(tx: &mut T, filas: &[Vec<String>]) -> AppResult<A
             ));
             continue;
         }
-        match validar_nuevo_contrato(tx, &alta.contrato).await {
+        match validar_nuevo_contrato(tx, reloj, &alta.contrato).await {
             Ok(_) => a.empleados.push((fila, alta)),
             Err(e @ (AppError::Validacion(_) | AppError::Dominio(_))) => {
                 a.errores.push(ErrorFila::new(fila, None, mensaje(&e)));
@@ -229,7 +234,7 @@ where
     let archivo = nuevo_archivo(ctx, almacen, reloj, &subido, tipo);
     almacen.guardar(&archivo.clave, &subido.contenido).await?;
     let resultado = async {
-        let analisis = analizar(&mut tx, &filas).await?;
+        let analisis = analizar(&mut tx, reloj, &filas).await?;
         registrar_en(&mut tx, &archivo).await?;
         let importacion = Importacion {
             id: ImportacionId::nuevo(),
@@ -326,7 +331,7 @@ where
         .ok_or(AppError::NoEncontrado("archivo"))?;
     let contenido = almacen.obtener(&archivo.clave).await?;
     let filas = lector.leer(archivo.tipo, &contenido)?;
-    let analisis = analizar(&mut tx, &filas).await?;
+    let analisis = analizar(&mut tx, reloj, &filas).await?;
     if !analisis.errores.is_empty() {
         return Err(AppError::Conflicto(
             "los datos cambiaron desde la vista previa: importe el archivo de nuevo".into(),

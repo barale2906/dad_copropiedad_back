@@ -66,6 +66,8 @@ pub struct CondicionesVersion {
     /// Va con la ARL.
     pub clase_riesgo: Option<ClaseRiesgo>,
     pub pensionado: bool,
+    /// Centro de costo del gasto (solo si la entidad lleva contabilidad).
+    pub centro_costo_id: Option<domain::CentroCostoId>,
     pub medio_pago: MedioPago,
     /// Solo con transferencia.
     pub cuenta: Option<CuentaNomina>,
@@ -202,10 +204,20 @@ async fn exigir_administradora<T: RepositorioCatalogoLaboral>(
 /// Valida las condiciones de una versión del contrato contra el catálogo vigente en `fecha`.
 async fn validar_version<T: TxNomina>(
     tx: &mut T,
+    reloj: &impl Reloj,
     tipo_contrato: TipoContratoLaboral,
     fecha: NaiveDate,
     c: &CondicionesVersion,
 ) -> AppResult<()> {
+    if c.centro_costo_id.is_some()
+        && !tx
+            .modulo_habilitado(domain::Modulo::Contabilidad, reloj.ahora())
+            .await?
+    {
+        return Err(validacion(
+            "sin el módulo de contabilidad el contrato no lleva centro de costo",
+        ));
+    }
     if c.arl_id.is_some() != c.clase_riesgo.is_some() {
         return Err(validacion("la ARL va con la clase de riesgo"));
     }
@@ -273,6 +285,7 @@ fn version_de(
         arl_id: c.arl_id,
         clase_riesgo: c.clase_riesgo,
         pensionado: c.pensionado,
+        centro_costo_id: c.centro_costo_id,
         medio_pago: c.medio_pago,
         cuenta: c.cuenta,
         creada_por: ctx.actor_id,
@@ -284,6 +297,7 @@ fn version_de(
 /// importación lo usa). Devuelve la descripción de la obra normalizada.
 pub(crate) async fn validar_nuevo_contrato<T: TxNomina>(
     tx: &mut T,
+    reloj: &impl Reloj,
     nuevo: &NuevoContrato,
 ) -> AppResult<Option<String>> {
     let descripcion = texto_opcional("descripcion_obra", nuevo.descripcion_obra.as_deref(), 300)?;
@@ -293,7 +307,14 @@ pub(crate) async fn validar_nuevo_contrato<T: TxNomina>(
         nuevo.fecha_fin,
         descripcion.as_deref(),
     )?;
-    validar_version(tx, nuevo.tipo, nuevo.fecha_inicio, &nuevo.condiciones).await?;
+    validar_version(
+        tx,
+        reloj,
+        nuevo.tipo,
+        nuevo.fecha_inicio,
+        &nuevo.condiciones,
+    )
+    .await?;
     Ok(descripcion)
 }
 
@@ -306,7 +327,7 @@ pub(crate) async fn contratar_en<T: TxNomina>(
     empleado: EmpleadoId,
     nuevo: NuevoContrato,
 ) -> AppResult<ContratoConVersiones> {
-    let descripcion = validar_nuevo_contrato(tx, &nuevo).await?;
+    let descripcion = validar_nuevo_contrato(tx, reloj, &nuevo).await?;
     let contrato = ContratoLaboral {
         id: ContratoLaboralId::nuevo(),
         empleado_id: empleado,
@@ -488,7 +509,7 @@ where
             "la modificación empieza después de la última versión y dentro del contrato",
         ));
     }
-    validar_version(&mut tx, c.tipo, vigente_desde, &condiciones).await?;
+    validar_version(&mut tx, reloj, c.tipo, vigente_desde, &condiciones).await?;
     let mut v = version_de(ctx, reloj, contrato, vigente_desde, condiciones)?;
     tx.insertar_version(&v).await?;
     let detalle = DetalleAuditoria::vacio().con("vigente_desde", vigente_desde.to_string())?;

@@ -696,6 +696,43 @@ pub struct AcumuladoMes {
     pub retenido: Decimal,
 }
 
+/// Tipo de deducción o renta exenta que el empleado declara para la retención en la fuente.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TipoDeduccion {
+    /// Tiene dependientes (un porcentaje del ingreso con su tope; no lleva valor).
+    Dependientes,
+    InteresesVivienda,
+    MedicinaPrepagada,
+    /// Aportes voluntarios a pensión o a cuentas AFC (renta exenta).
+    AportesVoluntarios,
+}
+
+enum_texto!(TipoDeduccion {
+    Dependientes => "dependientes",
+    InteresesVivienda => "intereses_vivienda",
+    MedicinaPrepagada => "medicina_prepagada",
+    AportesVoluntarios => "aportes_voluntarios",
+});
+
+/// Deducciones y rentas exentas declaradas, vigentes en el mes (valores mensuales).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DeduccionesRetencion {
+    pub dependientes: bool,
+    pub intereses_vivienda: Decimal,
+    pub medicina_prepagada: Decimal,
+    pub aportes_voluntarios: Decimal,
+}
+
+impl DeduccionesRetencion {
+    fn vacias(&self) -> bool {
+        !self.dependientes
+            && self.intereses_vivienda.is_zero()
+            && self.medicina_prepagada.is_zero()
+            && self.aportes_voluntarios.is_zero()
+    }
+}
+
 /// Cuándo se calcula la retención en la fuente.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Retencion {
@@ -729,6 +766,8 @@ pub struct EntradaLiquidacion {
     /// Prestaciones que se pagan en este periodo (prima, intereses, liquidación del contrato),
     /// ya calculadas con [`super::prestaciones`].
     pub prestaciones: Vec<LineaLiquidacion>,
+    /// Deducciones de la retención que declaró el empleado.
+    pub deducciones: DeduccionesRetencion,
 }
 
 /// Resultado de la liquidación.
@@ -1008,12 +1047,40 @@ pub fn liquidar(e: &EntradaLiquidacion, n: &Normativa) -> Result<Liquidacion, Do
         )
     });
     if let Retencion::CierreMes(previo) = e.retencion {
-        let depurado = previo.ingresos + ingresos - previo.aportes - aportes_empleado;
+        let ingreso = previo.ingresos + ingresos;
+        let depurado = ingreso - previo.aportes - aportes_empleado;
         let doce = Decimal::from(12);
-        let exenta = (depurado * c.valor(P::RentaExentaLaboral)? / cien())
-            .min(c.valor(P::TopeRentaExentaLaboral)? / doce * n.uvt);
+        let mensual = |p: P| c.valor(p).map(|v| v / doce * n.uvt);
+        // Deducciones (dependientes, vivienda, medicina prepagada) y aportes voluntarios exentos,
+        // cada uno con su tope; luego la renta exenta del 25 % sobre lo que queda.
+        let d = e.deducciones;
+        let mut deducciones = Decimal::ZERO;
+        let mut voluntarios = Decimal::ZERO;
+        if !d.vacias() {
+            if d.dependientes {
+                deducciones += (ingreso * c.valor(P::PorcentajeDependientes)? / cien())
+                    .min(mensual(P::TopeDependientes)?);
+            }
+            if !d.intereses_vivienda.is_zero() {
+                deducciones += d.intereses_vivienda.min(mensual(P::TopeInteresesVivienda)?);
+            }
+            if !d.medicina_prepagada.is_zero() {
+                deducciones += d.medicina_prepagada.min(mensual(P::TopeMedicinaPrepagada)?);
+            }
+            if !d.aportes_voluntarios.is_zero() {
+                voluntarios = d
+                    .aportes_voluntarios
+                    .min(ingreso * c.valor(P::LimiteAportesVoluntarios)? / cien())
+                    .min(mensual(P::TopeAportesVoluntarios)?);
+            }
+        }
+        let sujeto = (depurado - deducciones - voluntarios).max(Decimal::ZERO);
+        let exenta = deducciones
+            + voluntarios
+            + (sujeto * c.valor(P::RentaExentaLaboral)? / cien())
+                .min(mensual(P::TopeRentaExentaLaboral)?);
         let limite = (depurado * c.valor(P::LimiteBeneficiosRetencion)? / cien())
-            .min(c.valor(P::TopeBeneficiosRetencion)? / doce * n.uvt);
+            .min(mensual(P::TopeBeneficiosRetencion)?);
         let base = (depurado - exenta.min(limite)).max(Decimal::ZERO);
         let en_uvt = n.retencion.aplicar(base / n.uvt);
         let mes = (en_uvt * n.uvt / Decimal::from(1000))
@@ -1124,6 +1191,12 @@ mod tests {
                 v(P::DiasPrima, "30"),
                 v(P::InteresesCesantias, "12"),
                 v(P::DiasVacaciones, "15"),
+                v(P::PorcentajeDependientes, "10"),
+                v(P::TopeDependientes, "384"),
+                v(P::TopeInteresesVivienda, "1200"),
+                v(P::TopeMedicinaPrepagada, "192"),
+                v(P::LimiteAportesVoluntarios, "30"),
+                v(P::TopeAportesVoluntarios, "3800"),
             ],
             fecha(2026, 3, 31),
         );
@@ -1182,6 +1255,7 @@ mod tests {
             exonerada: false,
             retencion: Retencion::CierreMes(AcumuladoMes::default()),
             prestaciones: vec![],
+            deducciones: DeduccionesRetencion::default(),
         }
     }
 
@@ -1304,6 +1378,31 @@ mod tests {
         assert_eq!(
             valor(&l, ConceptoNomina::RetencionFuente),
             Some(dec("4463000"))
+        );
+    }
+
+    /// Caso de referencia 2b: el mismo salario integral con dependientes.
+    #[test]
+    fn los_dependientes_bajan_la_retencion() {
+        let mut t = tramo("26000000", fecha(2026, 3, 1), fecha(2026, 3, 31));
+        t.tipo_salario = TipoSalario::Integral;
+        let mut e = marzo(vec![t], vec![]);
+        e.deducciones.dependientes = true;
+        let l = liquidar(&e, &normativa()).expect("liquida");
+        // Dependientes: mín(10 % × 26.000.000, 32 UVT = 1.600.000) = 1.600.000. Sujeto a la
+        // exenta: 24.362.000 − 1.600.000 = 22.762.000; 25 % con tope = 3.291.666,67. Beneficios
+        // 4.891.666,67 (bajo el límite de 5.583.333,33). Base 19.470.333,33 = 389,41 UVT →
+        // (389,41 − 360) × 33 % + 69 = 78,70 UVT = 3.935.211 → 3.935.000.
+        assert_eq!(
+            valor(&l, ConceptoNomina::RetencionFuente),
+            Some(dec("3935000"))
+        );
+        e.deducciones.medicina_prepagada = dec("5000000");
+        let con_prepagada = liquidar(&e, &normativa()).expect("liquida");
+        // La medicina prepagada se limita a 16 UVT (800.000) y el total, al 40 % / 1340 UVT.
+        assert!(
+            valor(&con_prepagada, ConceptoNomina::RetencionFuente)
+                < valor(&l, ConceptoNomina::RetencionFuente)
         );
     }
 
@@ -1499,6 +1598,7 @@ mod tests {
             exonerada: false,
             retencion: Retencion::NoAplica,
             prestaciones: vec![],
+            deducciones: DeduccionesRetencion::default(),
         };
         let q1 = liquidar(&primera, &n).expect("primera");
         assert_eq!(valor(&q1, ConceptoNomina::RetencionFuente), None);
@@ -1512,6 +1612,7 @@ mod tests {
             exonerada: false,
             retencion: Retencion::CierreMes(q1.acumulado),
             prestaciones: vec![],
+            deducciones: DeduccionesRetencion::default(),
         };
         let q2 = liquidar(&segunda, &n).expect("segunda");
         let mes = liquidar(

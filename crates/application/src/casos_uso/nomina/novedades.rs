@@ -20,10 +20,7 @@ use crate::{
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
         RegistroAuditoria as _, Reloj, Transaccion, UnidadDeTrabajo,
-        nomina::{
-            AnulacionNovedad, NovedadNomina, RepositorioLiquidacionNomina as _,
-            RepositorioNomina as _,
-        },
+        nomina::{AnulacionNovedad, NovedadNomina, RepositorioLiquidacionNomina as _},
     },
 };
 
@@ -82,9 +79,22 @@ where
     U: UnidadDeTrabajo,
     U::Transaccion: TxNomina,
 {
+    let mut tx = abrir_nomina(unidad, reloj, ctx, Permiso::NominaNovedadesRegistrar).await?;
+    let registro = registrar_en(&mut tx, reloj, ctx, contrato, nueva).await?;
+    tx.confirmar().await?;
+    Ok(registro)
+}
+
+/// Registra la novedad dentro de la transacción (lo usan el registro y la importación).
+pub(crate) async fn registrar_en<T: TxNomina>(
+    tx: &mut T,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    contrato: ContratoLaboralId,
+    nueva: NuevaNovedad,
+) -> AppResult<NovedadNomina> {
     let novedad = Novedad::new(nueva.tipo, nueva.desde, nueva.hasta, nueva.cantidad)?;
     let descripcion = texto_opcional("descripcion", nueva.descripcion.as_deref(), 300)?;
-    let mut tx = abrir_nomina(unidad, reloj, ctx, Permiso::NominaNovedadesRegistrar).await?;
     let c = tx
         .contrato(contrato)
         .await?
@@ -116,7 +126,6 @@ where
             .con_detalle(detalle),
     )
     .await?;
-    tx.confirmar().await?;
     Ok(registro)
 }
 

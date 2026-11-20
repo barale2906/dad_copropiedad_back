@@ -296,9 +296,16 @@ async fn enero_facturado(e: &Entorno, s: domain::SuscripcionId) -> domain::Corte
     cortes::aprobar(&e.plataforma, &reloj, &e.ctx, c.id)
         .await
         .expect("aprobar");
-    let c = cortes::marcar_facturado_externo(&e.plataforma, &e.ctx, c.id, "FE-1", dia(2026, 1, 31))
-        .await
-        .expect("facturado");
+    let c = cortes::marcar_facturado_externo(
+        &e.plataforma,
+        &application::puertos::RelojSistema,
+        &e.ctx,
+        c.id,
+        "FE-1",
+        dia(2026, 1, 31),
+    )
+    .await
+    .expect("facturado");
     assert_eq!(c.vencimiento, Some(dia(2026, 2, 15)));
     c.id
 }
@@ -428,4 +435,153 @@ async fn la_entidad_suspendida_queda_en_solo_lectura(pool: PgPool) {
     assert!(suspendida);
     assert!(permisos.contiene(domain::Permiso::CensoVer));
     assert!(!permisos.contiene(domain::Permiso::CensoEditar));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn habilitar_un_modulo_con_producto_agrega_su_linea_de_cobro(pool: PgPool) {
+    let (e, s) = Entorno::new(&pool).await;
+    let reloj = a_mediodia(2026, 2, 1);
+    let sin_producto = uc::habilitar_modulo_con_cobro(
+        &e.unidad,
+        &e.plataforma,
+        &reloj,
+        &e.ctx,
+        e.tenant,
+        domain::Modulo::BienesComunes,
+        None,
+        None,
+    )
+    .await
+    .expect("habilita sin producto");
+    let p = uc::crear_producto(
+        &e.plataforma,
+        &reloj,
+        &e.ctx,
+        DatosProducto {
+            codigo: "asambleas".into(),
+            nombre: "Asambleas".into(),
+            descripcion_factura: "{producto} — {periodo}".into(),
+            modulo: Some(domain::Modulo::Asambleas),
+            item_facturacion_id: None,
+            activo: true,
+        },
+    )
+    .await
+    .expect("producto");
+    uc::fijar_tarifa(
+        &e.plataforma,
+        &reloj,
+        &e.ctx,
+        p.id,
+        Tarifa {
+            modelo: ModeloTarifa::Plana,
+            valor: dec!(50000),
+            incluidas: None,
+            valor_excedente: None,
+            metrica: None,
+        },
+        dia(2026, 1, 1),
+    )
+    .await
+    .expect("tarifa");
+
+    let (periodo, linea) = uc::habilitar_modulo_con_cobro(
+        &e.unidad,
+        &e.plataforma,
+        &reloj,
+        &e.ctx,
+        e.tenant,
+        domain::Modulo::Asambleas,
+        None,
+        None,
+    )
+    .await
+    .expect("habilita con cobro");
+    let detalle = uc::ver_suscripcion(&e.plataforma, &reloj, &e.ctx, s)
+        .await
+        .expect("detalle");
+
+    assert!(sin_producto.1.is_none(), "sin producto queda sin cobro");
+    assert_eq!(periodo.modulo, domain::Modulo::Asambleas);
+    let linea = linea.expect("línea de cobro");
+    assert_eq!((linea.producto_id, linea.desde), (p.id, dia(2026, 2, 1)));
+    assert!(
+        detalle
+            .modulos_sin_cobro
+            .contains(&"bienes_comunes".to_owned())
+    );
+    assert!(!detalle.modulos_sin_cobro.contains(&"asambleas".to_owned()));
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_liquidacion_de_publicidad_sigue_a_su_corte(pool: PgPool) {
+    let (e, _) = Entorno::new(&pool).await;
+    let org = Uuid::now_v7();
+    let liquidacion = Uuid::now_v7();
+    sqlx::query(
+        "INSERT INTO organizaciones (id, nit, razon_social, naturaleza, tipos)
+         VALUES ($1, '900111222-3', 'Comercio SAS', 'juridica', ARRAY['anunciante']);
+        ",
+    )
+    .bind(org)
+    .execute(&e.owner)
+    .await
+    .expect("organización");
+    sqlx::query(
+        "INSERT INTO anunciantes (id, organizacion_id, nombre_comercial, estado_verificacion,
+             creado_en, actualizado_en)
+         VALUES (gen_random_uuid(), $1, 'Comercio', 'verificado', now(), now())",
+    )
+    .bind(org)
+    .execute(&e.owner)
+    .await
+    .expect("anunciante");
+    sqlx::query(
+        "INSERT INTO liquidaciones (id, anunciante_id, periodo, variable, fijos, leads,
+             valor_leads, valor, costo_whatsapp, estado, calculada_en, actualizada_en)
+         SELECT $1, a.id, '2026-01-01', 0, 100000, 0, 0, 100000, 0, 'calculada', now(), now()
+         FROM anunciantes a WHERE a.organizacion_id = $2",
+    )
+    .bind(liquidacion)
+    .bind(org)
+    .execute(&e.owner)
+    .await
+    .expect("liquidación");
+    let reloj = a_mediodia(2026, 2, 1);
+    let estado = || async {
+        sqlx::query_scalar::<_, String>("SELECT estado FROM liquidaciones WHERE id = $1")
+            .bind(liquidacion)
+            .fetch_one(&e.owner)
+            .await
+            .expect("estado")
+    };
+
+    let c = cortes::cobrar_liquidacion(
+        &e.plataforma,
+        &reloj,
+        &e.ctx,
+        domain::LiquidacionId::from_uuid(liquidacion),
+    )
+    .await
+    .expect("corte");
+    cortes::aprobar(&e.plataforma, &reloj, &e.ctx, c.id)
+        .await
+        .expect("aprobado");
+    cortes::marcar_facturado_externo(&e.plataforma, &reloj, &e.ctx, c.id, "FE-9", dia(2026, 2, 1))
+        .await
+        .expect("facturado");
+    let facturada = estado().await;
+    cortes::marcar_pagado(
+        &e.plataforma,
+        &e.unidad,
+        &reloj,
+        &e.ctx,
+        c.id,
+        dia(2026, 2, 10),
+    )
+    .await
+    .expect("pagado");
+
+    assert_eq!(facturada, "facturada");
+    assert_eq!(estado().await, "pagada");
 }
