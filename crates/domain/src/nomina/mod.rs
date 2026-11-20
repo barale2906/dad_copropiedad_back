@@ -21,6 +21,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{DominioError, contabilidad::Monto};
 
+pub mod liquidacion;
+pub mod periodo;
+pub mod prestaciones;
+
 fn regla(texto: impl Into<String>) -> DominioError {
     DominioError::ReglaLaboral(texto.into())
 }
@@ -45,6 +49,8 @@ pub enum Unidad {
     HoraDelDia,
     /// Días.
     Dias,
+    /// Unidades de valor tributario al año.
+    UvtAnuales,
 }
 
 enum_texto!(Unidad {
@@ -54,6 +60,7 @@ enum_texto!(Unidad {
     HorasSemana => "horas_semana",
     HoraDelDia => "hora_del_dia",
     Dias => "dias",
+    UvtAnuales => "uvt_anuales",
 });
 
 /// Parámetro del catálogo laboral. El texto es contrato con `parametros_laborales.parametro`.
@@ -84,10 +91,15 @@ pub enum ParametroLaboral {
     CajaCompensacion,
     Icbf,
     Sena,
+    #[serde(rename = "arl_clase_1")]
     ArlClase1,
+    #[serde(rename = "arl_clase_2")]
     ArlClase2,
+    #[serde(rename = "arl_clase_3")]
     ArlClase3,
+    #[serde(rename = "arl_clase_4")]
     ArlClase4,
+    #[serde(rename = "arl_clase_5")]
     ArlClase5,
     /// Salario integral mínimo, en salarios mínimos.
     SalarioIntegralMinimo,
@@ -111,6 +123,18 @@ pub enum ParametroLaboral {
     ApoyoAprendizLectiva,
     /// Apoyo de sostenimiento del aprendiz en etapa productiva, en % del salario mínimo.
     ApoyoAprendizProductiva,
+    /// Tope del ingreso base de cotización, en salarios mínimos.
+    TopeIbc,
+    /// Desde cuántos salarios mínimos de IBC no aplica la exoneración del art. 114-1 del ET.
+    TopeExoneracionAportes,
+    /// Renta exenta de los pagos laborales (art. 206 num. 10 del ET), en %.
+    RentaExentaLaboral,
+    /// Tope anual de esa renta exenta.
+    TopeRentaExentaLaboral,
+    /// Límite de las rentas exentas y deducciones sobre el ingreso depurado (art. 336 del ET).
+    LimiteBeneficiosRetencion,
+    /// Tope anual de las rentas exentas y deducciones.
+    TopeBeneficiosRetencion,
 }
 
 enum_texto!(ParametroLaboral {
@@ -147,6 +171,12 @@ enum_texto!(ParametroLaboral {
     DiasVacaciones => "dias_vacaciones",
     ApoyoAprendizLectiva => "apoyo_aprendiz_lectiva",
     ApoyoAprendizProductiva => "apoyo_aprendiz_productiva",
+    TopeIbc => "tope_ibc",
+    TopeExoneracionAportes => "tope_exoneracion_aportes",
+    RentaExentaLaboral => "renta_exenta_laboral",
+    TopeRentaExentaLaboral => "tope_renta_exenta_laboral",
+    LimiteBeneficiosRetencion => "limite_beneficios_retencion",
+    TopeBeneficiosRetencion => "tope_beneficios_retencion",
 });
 
 impl ParametroLaboral {
@@ -155,7 +185,11 @@ impl ParametroLaboral {
         use ParametroLaboral as P;
         match self {
             P::SalarioMinimo | P::AuxilioTransporte => Unidad::Pesos,
-            P::TopeAuxilioTransporte | P::SalarioIntegralMinimo => Unidad::SalariosMinimos,
+            P::TopeAuxilioTransporte
+            | P::SalarioIntegralMinimo
+            | P::TopeIbc
+            | P::TopeExoneracionAportes => Unidad::SalariosMinimos,
+            P::TopeRentaExentaLaboral | P::TopeBeneficiosRetencion => Unidad::UvtAnuales,
             P::JornadaMaximaSemanal => Unidad::HorasSemana,
             P::InicioJornadaNocturna | P::FinJornadaNocturna => Unidad::HoraDelDia,
             P::DiasIncapacidadEmpleador | P::DiasCesantias | P::DiasPrima | P::DiasVacaciones => {
@@ -182,7 +216,9 @@ impl ParametroLaboral {
             | P::IncapacidadEps
             | P::InteresesCesantias
             | P::ApoyoAprendizLectiva
-            | P::ApoyoAprendizProductiva => Unidad::Porcentaje,
+            | P::ApoyoAprendizProductiva
+            | P::RentaExentaLaboral
+            | P::LimiteBeneficiosRetencion => Unidad::Porcentaje,
         }
     }
 
@@ -202,6 +238,7 @@ impl ParametroLaboral {
             Unidad::HorasSemana => valor > Decimal::ZERO && valor <= Decimal::from(168),
             Unidad::HoraDelDia => entero && valor >= Decimal::ZERO && valor <= Decimal::from(23),
             Unidad::Dias => valor >= Decimal::ZERO && valor <= Decimal::from(366),
+            Unidad::UvtAnuales => valor > Decimal::ZERO && valor <= Decimal::from(100_000),
         };
         if !valido || valor.normalize().scale() > 4 {
             return Err(regla(format!(
@@ -861,6 +898,14 @@ mod tests {
         match r {
             Err(DominioError::ReglaLaboral(t)) => t,
             otro => panic!("se esperaba una regla laboral: {otro:?}"),
+        }
+    }
+
+    #[test]
+    fn el_json_usa_el_mismo_texto_que_la_base() {
+        for p in ParametroLaboral::TODOS {
+            let json = serde_json::to_value(p).expect("json");
+            assert_eq!(json, serde_json::Value::from(p.as_str()), "{p:?}");
         }
     }
 

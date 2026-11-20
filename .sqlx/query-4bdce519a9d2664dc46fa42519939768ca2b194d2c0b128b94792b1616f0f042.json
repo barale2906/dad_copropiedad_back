@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO liquidaciones_nomina (id, tenant_id, periodo_id, contrato_id,\n                     empleado_id, dias, ibc, devengos, deducciones, neto, aportes_empleador,\n                     ingresos_mes, aportes_mes, retenido_mes, creado_en)\n                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int2",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Numeric",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4bdce519a9d2664dc46fa42519939768ca2b194d2c0b128b94792b1616f0f042"
+}

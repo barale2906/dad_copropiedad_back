@@ -290,6 +290,14 @@ catalogo_permisos! {
     NominaSalariosVer => "nomina.salarios.ver", Copropiedad;
     /// Crear empleados y sus contratos, modificarlos, prorrogarlos, terminarlos e importarlos.
     NominaEmpleadosGestionar => "nomina.empleados.gestionar", Copropiedad;
+    /// Configurar la nómina de la entidad (exoneración de aportes).
+    NominaConfigurar => "nomina.configurar", Copropiedad;
+    /// Registrar y anular novedades (horas, incapacidades, licencias, bonificaciones…).
+    NominaNovedadesRegistrar => "nomina.novedades.registrar", Copropiedad;
+    /// Abrir periodos, liquidarlos y marcarlos pagados.
+    NominaLiquidar => "nomina.liquidar", Copropiedad;
+    /// Aprobar la liquidación de un periodo (otra cuenta distinta de la que liquidó).
+    NominaAprobar => "nomina.aprobar", Copropiedad;
     /// Consultar el directorio de comercios y servicios que alcanzan a la copropiedad.
     DirectorioVer => "directorio.ver", Copropiedad;
     /// Calificar a un anunciante del directorio (además, ser residente o propietario vigente).
@@ -548,6 +556,10 @@ pub const ROLES_PLANTILLA: &[RolPlantilla] = &[
             P::NominaVer,
             P::NominaSalariosVer,
             P::NominaEmpleadosGestionar,
+            P::NominaConfigurar,
+            P::NominaNovedadesRegistrar,
+            P::NominaLiquidar,
+            P::NominaAprobar,
         ]),
     },
     RolPlantilla {

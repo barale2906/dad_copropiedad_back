@@ -710,6 +710,21 @@ id_entidad!(
     VersionContratoId,
     Uuid::now_v7
 );
+id_entidad!(
+    /// Periodo de nómina (mes o quincena) de una entidad.
+    PeriodoNominaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Novedad de nómina (horas, días o valores de un contrato).
+    NovedadNominaId,
+    Uuid::now_v7
+);
+id_entidad!(
+    /// Liquidación de un contrato en un periodo de nómina.
+    LiquidacionNominaId,
+    Uuid::now_v7
+);
 
 #[cfg(test)]
 mod tests {

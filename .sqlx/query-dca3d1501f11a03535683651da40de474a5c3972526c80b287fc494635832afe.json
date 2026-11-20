@@ -1,0 +1,185 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, periodicidad, desde, hasta, estado, creado_por, creado_en, liquidado_por,\n                    liquidado_en, aprobado_por, aprobado_en, pagado_por, pagado_en, fecha_pago\n             FROM periodos_nomina WHERE periodicidad = $1 AND desde = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "periodicidad",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "periodicidad"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "desde"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "estado",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "estado"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "liquidado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "liquidado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "liquidado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "liquidado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "aprobado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "aprobado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "aprobado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "aprobado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "pagado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "pagado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "pagado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "pagado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 13,
+        "name": "fecha_pago",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "periodos_nomina",
+            "name": "fecha_pago"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "dca3d1501f11a03535683651da40de474a5c3972526c80b287fc494635832afe"
+}

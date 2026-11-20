@@ -1,6 +1,6 @@
 # ADR 0025 · Nómina que se vende sola: catálogo laboral de plataforma, empleados y contratos versionados
 
-- **Estado:** aceptada (fase 1)
+- **Estado:** aceptada (fases 1 a 4)
 - **Fecha:** 2026-11-20
 - **Plan:** `docs/planes/16-nomina-electronica.md`
 
@@ -62,6 +62,75 @@ usuario los ajusta. La fase 1 cubre el catálogo, los empleados, los contratos y
 - **Carga masiva**: tipo de importación `empleados` con el flujo de siempre (vista previa →
   confirmar en una transacción), planilla en `domain::importacion::empleados` (administradoras
   por código PILA). El lector de XLSX convierte las celdas de fecha a `AAAA-MM-DD`.
+
+## Decisión de la fase 2: novedades y liquidación
+- **Catálogo**: parámetros nuevos (tope del IBC, tope de la exoneración, renta exenta laboral y
+  sus topes en UVT anuales, límite de beneficios) y **tablas por tramos** versionadas
+  (`tramos_laborales`: retención por salarios en UVT con tarifa marginal y UVT adicionales, y
+  fondo de solidaridad en salarios mínimos). Una versión = todos los tramos con el mismo
+  `vigente_desde`; contiguos desde cero y con el último abierto (`TablaTramos`). La UVT sale de la
+  tabla `uvt` del catálogo tributario (no se duplica).
+- **Configuración por entidad** (`configuraciones_nomina`): la exoneración del art. 114-1 del
+  ET la decide la entidad (`nomina.configurar`), porque depende de su situación tributaria (una PH
+  no suele ser contribuyente).
+- **Novedades** de solo inserción (`novedades_nomina`), con su medida (horas en una fecha, un
+  rango de días o un valor); se anulan con un registro aparte con motivo. Las dominicales se
+  validan contra el domingo o el festivo de `domain::calendario`. Las incapacidades y licencias
+  de maternidad o paternidad son `dato_sensible` (sin diagnóstico): solo con
+  `personas.datos_sensibles.ver`; los valores en pesos, solo con `nomina.salarios.ver`.
+- **Periodos** `abierto → liquidado → aprobado → pagado` (`EstadoPeriodoNomina::transicionar`):
+  mes completo o quincenas 1–15 y 16–fin. Liquidar se repite mientras no esté aprobado
+  (reemplaza todo). **Aprueba otra cuenta** (también `CHECK`), y no si hubo novedades después de
+  liquidar. Aprobado, la BD rechaza cambiar sus liquidaciones o registrar y anular novedades en
+  sus fechas. La corrección será la nómina de ajuste (fase 6).
+- **Cálculo puro** (`domain::nomina::liquidacion::liquidar`, por contrato y periodo) con las
+  convenciones del encabezado del módulo, **para revisión del especialista**: días comerciales de
+  30, hora = salario ÷ (jornada ÷ 6 × 30), incapacidad común al porcentaje del catálogo sin bajar
+  del mínimo diario, auxilio de transporte con salario ordinario hasta el tope (inclusive) por días
+  laborados, IBC con la regla del 40 % y entre un mínimo proporcional y el tope, aportes con
+  exoneración, aprendiz solo salud a cargo del empleador y ARL en etapa productiva, retención por
+  el procedimiento 1 (renta exenta del 25 % con sus topes, aproximada a mil) sobre el mes: en la
+  nómina quincenal la segunda quincena retiene con lo liquidado en la primera.
+- **Permisos**: `nomina.configurar`, `nomina.novedades.registrar`, `nomina.liquidar`,
+  `nomina.aprobar`. Ver una liquidación exige `nomina.salarios.ver`.
+- Pendiente para después: vacaciones y prestaciones (fase 4), deducciones de la retención
+  (dependientes, vivienda, medicina prepagada) y el procedimiento 2, cotización por semanas de
+  la jornada parcial y la nómina de ajuste.
+
+## Decisión de la fase 3: desprendibles y portal del empleado
+- El desprendible es el **PDF tabular** que ya genera `infra-pdf` (`TablaPdf`): no hay plantilla
+  nueva. Solo existe con el periodo **aprobado** o pagado; no lleva la cuenta bancaria ni los
+  aportes del empleador, y las incapacidades y licencias salen como «Ausencia remunerada»
+  (`ConceptoNomina::etiqueta_desprendible`): el desprendible circula y el motivo es sensible.
+- Envío por correo con el PDF adjunto **por el outbox** (sale solo si la transacción confirma);
+  quien no tiene correo se cuenta en `sin_correo`.
+- **Portal del empleado** en `/yo/nomina`: el empleado no necesita roles en la entidad. El listado
+  cruza entidades solo por la función `SECURITY DEFINER` `desprendibles_de_cuenta` (lo mínimo:
+  entidad, periodo y totales); la descarga abre la transacción de la entidad sin permisos y
+  verifica que la persona de la liquidación esté vinculada a la cuenta (404 si no, sin distinguir
+  si existe).
+
+## Decisión de la fase 4: prestaciones sociales y liquidación del contrato
+- **Provisiones** en cada liquidación (clase `provision`, no tocan el neto): cesantías y prima
+  sobre lo salarial más el auxilio, intereses (12 % anual) sobre la provisión de cesantías y
+  vacaciones sobre el salario ordinario. El integral solo provisiona vacaciones y el aprendiz,
+  nada.
+- **Novedad `vacaciones`**: los días calendario del descanso, pagados al salario diario (salarial).
+  El saldo cuenta los días **hábiles** disfrutados con `domain::calendario::es_dia_habil` (lunes a
+  viernes no festivos: por confirmar si el sábado es hábil en cada entidad).
+- **Pagos dentro del periodo** (`casos_uso::nomina::prestaciones`), sin documentos aparte: así se
+  aprueban, se reflejan en el desprendible y llegarán a la PILA y a la nómina electrónica con el
+  resto. Prima en junio (periodo que termina el 30) y diciembre (periodo que incluye el 20);
+  intereses del año anterior en el primer periodo de enero; al **terminar el contrato** en el
+  periodo: cesantías e intereses del año, prima del semestre, vacaciones pendientes en dinero e
+  indemnización (CST art. 64, `domain::nomina::prestaciones`).
+- **Base** de cada lapso: último salario, o el promedio si cambió en los últimos tres meses, más
+  el auxilio (no en vacaciones) y el promedio de lo variable ya liquidado en otros periodos del
+  lapso. Las prestaciones no son IBC ni entran a la regla del 40 %; cesantías, intereses e
+  indemnización no entran a la retención del procedimiento 1 (exentas o con retención propia:
+  **por revisar** con el especialista, también el tope de 350 UVT del art. 206 num. 4).
+- **Cesantías por consignar** (`GET …/cesantias?anio=`): por contrato con salario ordinario
+  vigente al 31 de diciembre, con su fondo; consignarlas es del empleador en su banco.
 
 ## Consecuencias
 - Las fases siguientes (novedades y liquidación, desprendibles, provisiones y liquidación del

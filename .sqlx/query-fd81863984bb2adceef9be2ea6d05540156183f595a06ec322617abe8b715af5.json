@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT liquidacion_id, concepto, cantidad, valor FROM lineas_liquidacion_nomina\n             WHERE liquidacion_id = ANY($1) ORDER BY concepto",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "liquidacion_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "lineas_liquidacion_nomina",
+            "name": "liquidacion_id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "concepto",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "lineas_liquidacion_nomina",
+            "name": "concepto"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "cantidad",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "lineas_liquidacion_nomina",
+            "name": "cantidad"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "valor",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "lineas_liquidacion_nomina",
+            "name": "valor"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "fd81863984bb2adceef9be2ea6d05540156183f595a06ec322617abe8b715af5"
+}

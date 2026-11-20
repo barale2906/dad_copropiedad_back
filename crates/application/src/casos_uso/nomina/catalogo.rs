@@ -8,6 +8,7 @@ use domain::{
     AdministradoraId, Nit, ParametroLaboralId, Permiso,
     nomina::{
         CatalogoLaboral, ParametroLaboral, TipoAdministradora, VersionParametro,
+        liquidacion::{TablaLaboral, TablaTramos, Tramo},
         validar_codigo_administradora,
     },
 };
@@ -20,7 +21,10 @@ use crate::{
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
         RegistroAuditoria, Reloj, Transaccion, UnidadDeTrabajo, UnidadDeTrabajoPlataforma,
-        nomina::{Administradora, RepositorioCatalogoLaboral, VersionParametroLaboral},
+        nomina::{
+            Administradora, RepositorioCatalogoLaboral, VersionParametroLaboral,
+            VersionTablaLaboral,
+        },
     },
 };
 
@@ -30,6 +34,7 @@ const ACCION_ADMINISTRADORA: AccionAuditoria =
     AccionAuditoria::new("plataforma.administradora.crear");
 const ACCION_ADMINISTRADORA_EDITAR: AccionAuditoria =
     AccionAuditoria::new("plataforma.administradora.editar");
+const ACCION_TABLA: AccionAuditoria = AccionAuditoria::new("plataforma.tabla_laboral.crear");
 
 /// Versión nueva de un parámetro.
 #[derive(Debug, Clone)]
@@ -183,6 +188,56 @@ where
     Ok(a)
 }
 
+/// Versión nueva de una tabla por tramos.
+#[derive(Debug, Clone)]
+pub struct NuevaTablaLaboral {
+    pub tabla: TablaLaboral,
+    pub vigente_desde: NaiveDate,
+    pub fuente: String,
+    pub tramos: Vec<Tramo>,
+}
+
+/// Agrega una versión completa de una tabla por tramos (la retención por salarios en UVT o el
+/// fondo de solidaridad en salarios mínimos). Solo inserción: vale la de mayor `vigente_desde`.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.normativa.gestionar`;
+/// [`domain::DominioError::ReglaLaboral`] si los tramos no empiezan en cero, no son contiguos o
+/// el último no es abierto; [`AppError::Conflicto`] si ya hay una versión con esa fecha.
+pub async fn crear_tabla_laboral<UP>(
+    plataforma: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    nueva: NuevaTablaLaboral,
+) -> AppResult<VersionTablaLaboral>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioCatalogoLaboral + RegistroAuditoria,
+{
+    ctx.exigir(Permiso::PlataformaNormativaGestionar)?;
+    let version = VersionTablaLaboral {
+        tabla: nueva.tabla,
+        vigente_desde: nueva.vigente_desde,
+        fuente: texto("fuente", &nueva.fuente, 300)?,
+        tramos: TablaTramos::new(nueva.tramos)?,
+        creado_por: ctx.actor_id,
+        creado_en: reloj.ahora(),
+    };
+    let mut tx = plataforma.iniciar_plataforma(ctx).await?;
+    tx.insertar_tabla(&version).await?;
+    let detalle = DetalleAuditoria::vacio()
+        .con("tabla", version.tabla.as_str())?
+        .con("vigente_desde", version.vigente_desde.to_string())?
+        .con("tramos", version.tramos.tramos().len())?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_TABLA, "tabla_laboral", uuid::Uuid::nil()).con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(version)
+}
+
 /// Catálogo laboral: versiones de los parámetros y administradoras.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CatalogoLaboralRespuesta {
@@ -190,6 +245,8 @@ pub struct CatalogoLaboralRespuesta {
     pub parametros: Vec<VersionParametroLaboral>,
     /// En la plataforma, todas; en la entidad, las activas.
     pub administradoras: Vec<Administradora>,
+    /// En la plataforma, todas las versiones; en la entidad, la vigente de cada tabla.
+    pub tablas: Vec<VersionTablaLaboral>,
 }
 
 /// Catálogo completo (todas las versiones y administradoras) visto desde la plataforma.
@@ -210,6 +267,7 @@ where
     Ok(CatalogoLaboralRespuesta {
         parametros: tx.parametros(None).await?,
         administradoras: tx.administradoras(false).await?,
+        tablas: tx.tablas(None).await?,
     })
 }
 
@@ -234,6 +292,7 @@ where
     Ok(CatalogoLaboralRespuesta {
         parametros: tx.parametros(Some(fecha)).await?,
         administradoras: tx.administradoras(true).await?,
+        tablas: tx.tablas(Some(fecha)).await?,
     })
 }
 

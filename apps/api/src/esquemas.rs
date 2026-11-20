@@ -433,4 +433,16 @@ esquema_enum! {
         "Clase de riesgo laboral del puesto (1 a 5).";
     EstadoEmpleado = domain::nomina::EstadoEmpleado,
         "Estado del empleado según sus contratos.";
+    TipoNovedad = domain::nomina::liquidacion::TipoNovedad,
+        "Tipo de novedad de nómina (horas, días o valores).";
+    MedidaNovedad = domain::nomina::liquidacion::Medida,
+        "Cómo se mide una novedad: horas en una fecha, un rango de días o un valor.";
+    TablaLaboral = domain::nomina::liquidacion::TablaLaboral,
+        "Tabla laboral por tramos del catálogo de la plataforma.";
+    EstadoPeriodoNomina = domain::nomina::periodo::EstadoPeriodoNomina,
+        "Estado de un periodo de nómina (lo aprueba otra cuenta).";
+    ConceptoNomina = domain::nomina::liquidacion::ConceptoNomina,
+        "Concepto de una línea de la liquidación.";
+    ClaseLineaNomina = domain::nomina::liquidacion::ClaseLinea,
+        "Clase de una línea: devengo, deducción o aporte del empleador.";
 }

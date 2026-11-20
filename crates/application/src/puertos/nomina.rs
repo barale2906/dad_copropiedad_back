@@ -8,13 +8,16 @@ use std::future::Future;
 
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    AdministradoraId, ContratoLaboralId, CuentaId, Documento, EmpleadoId, Nit, ParametroLaboralId,
-    PersonaId, VersionContratoId,
+    AdministradoraId, ArchivoId, ContratoLaboralId, CuentaId, Documento, EmpleadoId,
+    LiquidacionNominaId, Nit, NovedadNominaId, ParametroLaboralId, PeriodoNominaId, PersonaId,
+    VersionContratoId,
     contabilidad::{Monto, tesoreria::TipoCuentaBancaria},
     nomina::{
         ClaseRiesgo, CodigoEmpleado, EstadoEmpleado, EtapaAprendizaje, Jornada, MedioPago,
         MotivoTerminacion, ParametroLaboral, PeriodicidadPago, TipoAdministradora,
         TipoContratoLaboral, TipoSalario,
+        liquidacion::{Liquidacion, Novedad, TablaLaboral, TablaTramos},
+        periodo::EstadoPeriodoNomina,
     },
 };
 use rust_decimal::Decimal;
@@ -93,6 +96,34 @@ pub trait RepositorioCatalogoLaboral: Send {
         &mut self,
         solo_activas: bool,
     ) -> impl Future<Output = AppResult<Vec<Administradora>>> + Send;
+
+    /// Guarda una versión de una tabla por tramos (solo inserción).
+    ///
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si ya hay una versión de la tabla con esa fecha.
+    fn insertar_tabla(
+        &mut self,
+        tabla: &VersionTablaLaboral,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Versiones de las tablas por tramos: con `fecha`, la vigente de cada tabla en esa fecha;
+    /// sin ella, todas.
+    fn tablas(
+        &mut self,
+        fecha: Option<NaiveDate>,
+    ) -> impl Future<Output = AppResult<Vec<VersionTablaLaboral>>> + Send;
+}
+
+/// Versión de una tabla laboral por tramos (retención en la fuente o fondo de solidaridad).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VersionTablaLaboral {
+    pub tabla: TablaLaboral,
+    pub vigente_desde: NaiveDate,
+    pub fuente: String,
+    pub tramos: TablaTramos,
+    pub creado_por: Option<CuentaId>,
+    pub creado_en: DateTime<Utc>,
 }
 
 /// Empleado de la entidad.
@@ -280,4 +311,226 @@ pub trait RepositorioNomina: Send {
         &mut self,
         contrato: ContratoLaboralId,
     ) -> impl Future<Output = AppResult<Vec<VersionContrato>>> + Send;
+}
+
+/// Configuración de la nómina de la entidad.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfiguracionNomina {
+    /// Aplica la exoneración del art. 114-1 del ET (salud del empleador, ICBF y SENA por debajo
+    /// del tope).
+    pub exonerada_aportes: bool,
+    pub actualizada_por: Option<CuentaId>,
+    pub actualizada_en: DateTime<Utc>,
+}
+
+/// Periodo de nómina (mes o quincena).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PeriodoNomina {
+    pub id: PeriodoNominaId,
+    pub periodicidad: PeriodicidadPago,
+    pub desde: NaiveDate,
+    pub hasta: NaiveDate,
+    pub estado: EstadoPeriodoNomina,
+    pub creado_por: Option<CuentaId>,
+    pub creado_en: DateTime<Utc>,
+    pub liquidado_por: Option<CuentaId>,
+    pub liquidado_en: Option<DateTime<Utc>>,
+    pub aprobado_por: Option<CuentaId>,
+    pub aprobado_en: Option<DateTime<Utc>>,
+    pub pagado_por: Option<CuentaId>,
+    pub pagado_en: Option<DateTime<Utc>>,
+    pub fecha_pago: Option<NaiveDate>,
+}
+
+/// Anulación de una novedad.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AnulacionNovedad {
+    pub motivo: String,
+    pub anulada_por: Option<CuentaId>,
+    pub anulada_en: DateTime<Utc>,
+}
+
+/// Novedad registrada de un contrato.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NovedadNomina {
+    pub id: NovedadNominaId,
+    pub contrato_id: ContratoLaboralId,
+    pub novedad: Novedad,
+    /// Dato personal.
+    pub descripcion: Option<String>,
+    pub soporte_archivo_id: Option<ArchivoId>,
+    pub creado_por: Option<CuentaId>,
+    pub creado_en: DateTime<Utc>,
+    /// `Some` si se anuló (ya no entra a la liquidación).
+    pub anulacion: Option<AnulacionNovedad>,
+}
+
+/// Liquidación de un contrato en un periodo.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LiquidacionContrato {
+    pub id: LiquidacionNominaId,
+    pub periodo_id: PeriodoNominaId,
+    pub contrato_id: ContratoLaboralId,
+    pub empleado_id: EmpleadoId,
+    pub liquidacion: Liquidacion,
+    pub creado_en: DateTime<Utc>,
+}
+
+/// Persistencia de la liquidación de la nómina (en la transacción de la entidad).
+pub trait RepositorioLiquidacionNomina: Send {
+    /// Configuración de la entidad (`None` = la predeterminada, sin exoneración).
+    fn configuracion(
+        &mut self,
+    ) -> impl Future<Output = AppResult<Option<ConfiguracionNomina>>> + Send;
+
+    /// Crea o reemplaza la configuración.
+    fn guardar_configuracion(
+        &mut self,
+        configuracion: &ConfiguracionNomina,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si ya existe el periodo con esa periodicidad y fecha.
+    fn insertar_periodo(
+        &mut self,
+        periodo: &PeriodoNomina,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Guarda el estado y las marcas del periodo.
+    ///
+    /// # Errors
+    ///
+    /// [`domain::DominioError::ReglaLaboral`] si la BD lo rechaza (periodo aprobado, misma
+    /// cuenta que liquidó…).
+    fn actualizar_periodo(
+        &mut self,
+        periodo: &PeriodoNomina,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Periodo por id, bloqueado para actualizarlo (`FOR UPDATE`).
+    fn periodo(
+        &mut self,
+        id: PeriodoNominaId,
+    ) -> impl Future<Output = AppResult<Option<PeriodoNomina>>> + Send;
+
+    /// Periodo por su periodicidad e inicio.
+    fn periodo_por_inicio(
+        &mut self,
+        periodicidad: PeriodicidadPago,
+        desde: NaiveDate,
+    ) -> impl Future<Output = AppResult<Option<PeriodoNomina>>> + Send;
+
+    /// Periodos, el más reciente primero (a lo sumo `limite`).
+    fn periodos(
+        &mut self,
+        limite: u32,
+    ) -> impl Future<Output = AppResult<Vec<PeriodoNomina>>> + Send;
+
+    /// Guarda una novedad (solo inserción).
+    ///
+    /// # Errors
+    ///
+    /// [`domain::DominioError::ReglaLaboral`] si cae en un periodo aprobado.
+    fn insertar_novedad(
+        &mut self,
+        novedad: &NovedadNomina,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// # Errors
+    ///
+    /// [`crate::AppError::Conflicto`] si ya estaba anulada;
+    /// [`domain::DominioError::ReglaLaboral`] si cae en un periodo aprobado.
+    fn anular_novedad(
+        &mut self,
+        id: NovedadNominaId,
+        anulacion: &AnulacionNovedad,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Novedad por id.
+    fn novedad(
+        &mut self,
+        id: NovedadNominaId,
+    ) -> impl Future<Output = AppResult<Option<NovedadNomina>>> + Send;
+
+    /// Novedades que tocan el rango (de un contrato o de todos), con su anulación.
+    fn novedades(
+        &mut self,
+        contrato: Option<ContratoLaboralId>,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> impl Future<Output = AppResult<Vec<NovedadNomina>>> + Send;
+
+    /// Última vez que se registró o anuló una novedad que toca el rango.
+    fn ultimo_cambio_novedades(
+        &mut self,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> impl Future<Output = AppResult<Option<DateTime<Utc>>>> + Send;
+
+    /// Contratos que tocan el rango (de toda la entidad).
+    fn contratos_en(
+        &mut self,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> impl Future<Output = AppResult<Vec<ContratoLaboral>>> + Send;
+
+    /// Borra las liquidaciones del periodo y guarda estas (solo con el periodo sin aprobar).
+    fn reemplazar_liquidaciones(
+        &mut self,
+        periodo: PeriodoNominaId,
+        liquidaciones: &[LiquidacionContrato],
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Suma de los devengos salariales variables (horas extra, recargos, comisiones y
+    /// bonificaciones salariales) liquidados al contrato en periodos dentro del rango, sin el
+    /// periodo `excluir` (el que se está liquidando), si se da.
+    fn variables_liquidadas(
+        &mut self,
+        contrato: ContratoLaboralId,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+        excluir: Option<PeriodoNominaId>,
+    ) -> impl Future<Output = AppResult<Decimal>> + Send;
+
+    /// Liquidación por id, con sus líneas.
+    fn liquidacion(
+        &mut self,
+        id: LiquidacionNominaId,
+    ) -> impl Future<Output = AppResult<Option<LiquidacionContrato>>> + Send;
+
+    /// Liquidaciones del periodo con sus líneas.
+    fn liquidaciones(
+        &mut self,
+        periodo: PeriodoNominaId,
+    ) -> impl Future<Output = AppResult<Vec<LiquidacionContrato>>> + Send;
+}
+
+/// Desprendible de la cuenta en una de sus entidades (lo mínimo para el portal del empleado).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DesprendibleDeCuenta {
+    pub tenant_id: domain::TenantId,
+    /// Nombre de la entidad empleadora.
+    pub entidad: String,
+    pub liquidacion_id: LiquidacionNominaId,
+    pub periodicidad: PeriodicidadPago,
+    pub desde: NaiveDate,
+    pub hasta: NaiveDate,
+    pub estado: EstadoPeriodoNomina,
+    pub fecha_pago: Option<NaiveDate>,
+    pub devengos: Monto,
+    pub deducciones: Monto,
+    pub neto: Monto,
+}
+
+/// Desprendibles de una cuenta en todas sus entidades (transacción de plataforma; función
+/// `SECURITY DEFINER` `desprendibles_de_cuenta`).
+pub trait RepositorioNominaDeCuenta: Send {
+    /// Liquidaciones aprobadas o pagadas de las personas vinculadas a la cuenta, las más
+    /// recientes primero.
+    fn desprendibles_de_cuenta(
+        &mut self,
+        cuenta: CuentaId,
+        limite: u32,
+    ) -> impl Future<Output = AppResult<Vec<DesprendibleDeCuenta>>> + Send;
 }

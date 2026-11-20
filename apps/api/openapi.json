@@ -8404,6 +8404,82 @@
         ]
       }
     },
+    "/api/v1/plataforma/nomina/tablas": {
+      "post": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Agrega una versión completa de una tabla por tramos (retención por salarios o fondo de\nsolidaridad). Nunca se edita: un error se corrige con otra versión.",
+        "operationId": "plataforma_crear_tabla_laboral",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaTablaLaboralPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Versión creada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TablaLaboralRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.normativa.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya hay una versión con esa fecha (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Tramos que no empiezan en cero, con huecos o sin el último abierto (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/yo": {
       "get": {
         "tags": [
@@ -8937,6 +9013,128 @@
           },
           "404": {
             "description": "No es de la cuenta o ya se retiró",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/nomina/desprendibles": {
+      "get": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Mis desprendibles en todas las entidades donde trabajo o trabajé (periodos aprobados).",
+        "operationId": "cuenta_mis_desprendibles",
+        "responses": {
+          "200": {
+            "description": "Desprendibles de la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DesprendibleDeCuentaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/yo/nomina/{entidad_id}/desprendibles/{liquidacion_id}": {
+      "get": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "PDF de uno de mis desprendibles.",
+        "operationId": "cuenta_mi_desprendible",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad empleadora",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "liquidacion_id",
+            "in": "path",
+            "description": "Liquidación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del desprendible",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o no es de la persona vinculada a la cuenta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El periodo no está aprobado (`conflicto`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -54723,6 +54921,1199 @@
           }
         ]
       }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/configuracion": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Configuración de la nómina (la predeterminada, sin exoneración, si nunca se guardó).",
+        "operationId": "nomina_ver_configuracion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configuración",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionNominaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Guarda la configuración de la nómina.",
+        "operationId": "nomina_guardar_configuracion",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfiguracionNominaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Configuración guardada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionNominaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.configurar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/contratos/{contrato_id}/novedades": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Registra una novedad del contrato (dentro de sus fechas y fuera de periodos aprobados).",
+        "operationId": "nomina_registrar_novedad",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "contrato_id",
+            "in": "path",
+            "description": "Contrato laboral",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaNovedadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Novedad registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NovedadNominaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.novedades.registrar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Contrato o soporte inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Medida o fechas que no corresponden, dominical que no cae en domingo o festivo, fuera del contrato o en un periodo aprobado (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/novedades": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Novedades que tocan el rango (con las anuladas marcadas). Las incapacidades y licencias de\nmaternidad o paternidad solo con `personas.datos_sensibles.ver`.",
+        "operationId": "nomina_listar_novedades",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "contrato_id",
+            "in": "query",
+            "description": "Solo las de este contrato.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Novedades",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NovedadNominaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`hasta` antes de `desde` (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/novedades/{novedad_id}/anulacion": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Anula una novedad (deja de entrar a la liquidación).",
+        "operationId": "nomina_anular_novedad",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "novedad_id",
+            "in": "path",
+            "description": "Novedad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnulacionNovedadPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Anulada"
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.novedades.registrar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Novedad inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya estaba anulada (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Cae en un periodo aprobado o falta el motivo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/periodos": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Periodos de la entidad, el más reciente primero (a lo sumo 120).",
+        "operationId": "nomina_listar_periodos",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Periodos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PeriodoNominaRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Abre un periodo (el mes completo, o la quincena del 1 al 15 o del 16 al fin de mes).",
+        "operationId": "nomina_crear_periodo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevoPeriodoNominaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Periodo abierto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoNominaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.liquidar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El periodo ya existe (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`desde` no inicia un periodo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/periodos/{periodo_id}": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Periodo con sus liquidaciones (datos personales).",
+        "operationId": "nomina_ver_periodo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo de nómina",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Periodo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoLiquidadoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.salarios.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Periodo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/periodos/{periodo_id}/liquidacion": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Liquida (o vuelve a liquidar) todos los contratos del periodo con su periodicidad.",
+        "operationId": "nomina_liquidar_periodo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo de nómina",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liquidado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoLiquidadoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.liquidar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Periodo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya fue aprobado (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Falta un parámetro, una tabla o la UVT vigentes, o un contrato no se puede liquidar (`validacion`; el mensaje dice el código del empleado)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/periodos/{periodo_id}/aprobacion": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Aprueba la liquidación: otra cuenta distinta de la que liquidó y sin novedades posteriores.",
+        "operationId": "nomina_aprobar_periodo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo de nómina",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aprobado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoNominaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.aprobar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Periodo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está liquidado (`conflicto_estado`), lo aprueba quien liquidó o hay novedades posteriores (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/periodos/{periodo_id}/pago": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Marca pagado un periodo aprobado.",
+        "operationId": "nomina_pagar_periodo",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo de nómina",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PagoPeriodoNominaPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Pagado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeriodoNominaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.liquidar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Periodo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "No está aprobado (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/cesantias": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Cesantías del año por consignar (contratos con salario ordinario vigentes al 31 de diciembre).",
+        "operationId": "nomina_cesantias_del_ano",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "anio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "example": 2026
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cesantías por contrato",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CesantiasContratoRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.salarios.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Falta un parámetro del catálogo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/liquidaciones/{liquidacion_id}/desprendible": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "PDF del desprendible de una liquidación (periodo aprobado o pagado). Las incapacidades y\nlicencias salen como «Ausencia remunerada» y no lleva la cuenta bancaria.",
+        "operationId": "nomina_desprendible",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "liquidacion_id",
+            "in": "path",
+            "description": "Liquidación",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del desprendible",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.salarios.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Liquidación inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El periodo no está aprobado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/periodos/{periodo_id}/desprendibles": {
+      "post": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Envía por correo el desprendible de cada empleado del periodo aprobado.",
+        "operationId": "nomina_enviar_desprendibles",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "periodo_id",
+            "in": "path",
+            "description": "Periodo de nómina",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Desprendibles encolados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnvioDesprendiblesRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.liquidar` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Periodo inexistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El periodo no está aprobado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -55477,6 +56868,19 @@
           "plataforma",
           "copropiedad"
         ]
+      },
+      "AnulacionNovedadPeticion": {
+        "type": "object",
+        "description": "Motivo de la anulación.",
+        "required": [
+          "motivo"
+        ],
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "example": "Registrada en el contrato equivocado"
+          }
+        }
       },
       "AnulacionPeticion": {
         "type": "object",
@@ -58524,7 +59928,8 @@
         "description": "Catálogo laboral: versiones de los parámetros y administradoras.",
         "required": [
           "parametros",
-          "administradoras"
+          "administradoras",
+          "tablas"
         ],
         "properties": {
           "parametros": {
@@ -58540,6 +59945,13 @@
               "$ref": "#/components/schemas/AdministradoraRespuesta"
             },
             "description": "En la entidad, las activas; en la plataforma, todas."
+          },
+          "tablas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TablaLaboralRespuesta"
+            },
+            "description": "Tablas por tramos: en la entidad, la vigente de cada una; en la plataforma, todas."
           }
         }
       },
@@ -59039,6 +60451,52 @@
           }
         }
       },
+      "CesantiasContratoRespuesta": {
+        "type": "object",
+        "description": "Cesantías e intereses de un contrato en el año.",
+        "required": [
+          "empleado_id",
+          "contrato_id",
+          "dias",
+          "base",
+          "cesantias",
+          "intereses"
+        ],
+        "properties": {
+          "empleado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contrato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dias": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "base": {
+            "type": "string",
+            "description": "Base mensual (último salario o promedio, más auxilio y lo variable)."
+          },
+          "cesantias": {
+            "type": "string",
+            "description": "Por consignar al fondo antes del 14 de febrero."
+          },
+          "intereses": {
+            "type": "string",
+            "description": "Por pagar al empleado antes del 31 de enero (salen en el primer periodo de enero)."
+          },
+          "fondo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "ChecklistDto": {
         "type": "object",
         "description": "Elemento del checklist.",
@@ -59095,6 +60553,16 @@
           "herramienta",
           "mobiliario",
           "dotacion"
+        ]
+      },
+      "ClaseLineaNomina": {
+        "type": "string",
+        "description": "Clase de una línea: devengo, deducción o aporte del empleador.",
+        "enum": [
+          "devengo",
+          "deduccion",
+          "aporte_empleador",
+          "provision"
         ]
       },
       "ClaseRiesgo": {
@@ -59728,6 +61196,55 @@
           }
         }
       },
+      "ConceptoNomina": {
+        "type": "string",
+        "description": "Concepto de una línea de la liquidación.",
+        "enum": [
+          "basico",
+          "apoyo_sostenimiento",
+          "auxilio_transporte",
+          "hora_extra_diurna",
+          "hora_extra_nocturna",
+          "hora_extra_dominical_diurna",
+          "hora_extra_dominical_nocturna",
+          "recargo_nocturno",
+          "recargo_dominical",
+          "recargo_nocturno_dominical",
+          "incapacidad_comun",
+          "incapacidad_laboral",
+          "licencia_maternidad",
+          "licencia_paternidad",
+          "licencia_remunerada",
+          "vacaciones",
+          "bonificacion_salarial",
+          "bonificacion_no_salarial",
+          "comision",
+          "auxilio_no_salarial",
+          "prima",
+          "cesantias",
+          "intereses_cesantias",
+          "vacaciones_compensadas",
+          "indemnizacion",
+          "salud",
+          "pension",
+          "fondo_solidaridad",
+          "retencion_fuente",
+          "prestamo",
+          "libranza",
+          "embargo",
+          "otra_deduccion",
+          "salud_empleador",
+          "pension_empleador",
+          "arl",
+          "caja_compensacion",
+          "icbf",
+          "sena",
+          "provision_cesantias",
+          "provision_intereses",
+          "provision_prima",
+          "provision_vacaciones"
+        ]
+      },
       "ConceptoNotaDebito": {
         "type": "string",
         "description": "Concepto de corrección de una nota débito (lista de la DIAN).",
@@ -60140,6 +61657,37 @@
             "description": "Temporizador por defecto de las preguntas, en segundos.",
             "example": 120,
             "minimum": 0
+          }
+        }
+      },
+      "ConfiguracionNominaPeticion": {
+        "type": "object",
+        "description": "Cambios de la configuración.",
+        "required": [
+          "exonerada_aportes"
+        ],
+        "properties": {
+          "exonerada_aportes": {
+            "type": "boolean",
+            "description": "La deciden el contador y el revisor fiscal según la situación tributaria de la entidad."
+          }
+        }
+      },
+      "ConfiguracionNominaRespuesta": {
+        "type": "object",
+        "description": "Configuración de la nómina de la entidad.",
+        "required": [
+          "exonerada_aportes",
+          "actualizada_en"
+        ],
+        "properties": {
+          "exonerada_aportes": {
+            "type": "boolean",
+            "description": "Aplica la exoneración del art. 114-1 del ET (salud del empleador, ICBF y SENA por debajo\ndel tope del catálogo)."
+          },
+          "actualizada_en": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -62782,6 +64330,65 @@
           }
         }
       },
+      "DesprendibleDeCuentaRespuesta": {
+        "type": "object",
+        "description": "Desprendible de la cuenta en una de sus entidades.",
+        "required": [
+          "entidad_id",
+          "entidad",
+          "liquidacion_id",
+          "periodicidad",
+          "desde",
+          "hasta",
+          "estado",
+          "devengos",
+          "deducciones",
+          "neto"
+        ],
+        "properties": {
+          "entidad_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entidad": {
+            "type": "string"
+          },
+          "liquidacion_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodicidad": {
+            "$ref": "#/components/schemas/PeriodicidadPago"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPeriodoNomina"
+          },
+          "fecha_pago": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "devengos": {
+            "type": "string"
+          },
+          "deducciones": {
+            "type": "string"
+          },
+          "neto": {
+            "type": "string"
+          }
+        }
+      },
       "DestinoCobro": {
         "type": "string",
         "description": "Cómo se cobra el valor de las reservas de un recurso: `manual`, `cartera` o `factura`.",
@@ -64302,6 +65909,27 @@
           }
         }
       },
+      "EnvioDesprendiblesRespuesta": {
+        "type": "object",
+        "description": "Resultado del envío de los desprendibles.",
+        "required": [
+          "enviados",
+          "sin_correo"
+        ],
+        "properties": {
+          "enviados": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "sin_correo": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Empleados sin correo: entrégueles el PDF a mano o por el portal.",
+            "minimum": 0
+          }
+        }
+      },
       "EnvioSetRespuesta": {
         "type": "object",
         "description": "Documento del set de pruebas enviado a la DIAN.",
@@ -65052,6 +66680,16 @@
           "abierto",
           "en_revision",
           "cerrado"
+        ]
+      },
+      "EstadoPeriodoNomina": {
+        "type": "string",
+        "description": "Estado de un periodo de nómina (lo aprueba otra cuenta).",
+        "enum": [
+          "abierto",
+          "liquidado",
+          "aprobado",
+          "pagado"
         ]
       },
       "EstadoPeriodoPeticion": {
@@ -68787,6 +70425,31 @@
           }
         }
       },
+      "LineaLiquidacionNominaRespuesta": {
+        "type": "object",
+        "description": "Línea de una liquidación.",
+        "required": [
+          "concepto",
+          "clase",
+          "cantidad",
+          "valor"
+        ],
+        "properties": {
+          "concepto": {
+            "$ref": "#/components/schemas/ConceptoNomina"
+          },
+          "clase": {
+            "$ref": "#/components/schemas/ClaseLineaNomina"
+          },
+          "cantidad": {
+            "type": "string",
+            "description": "Días, horas o el porcentaje del aporte."
+          },
+          "valor": {
+            "type": "string"
+          }
+        }
+      },
       "LineaPeticion": {
         "type": "object",
         "description": "Línea nueva (ya verificada en Meta).",
@@ -69246,6 +70909,62 @@
           }
         }
       },
+      "LiquidacionNominaRespuesta": {
+        "type": "object",
+        "description": "Liquidación de un contrato en el periodo.",
+        "required": [
+          "id",
+          "contrato_id",
+          "empleado_id",
+          "dias",
+          "ibc",
+          "devengos",
+          "deducciones",
+          "neto",
+          "aportes_empleador",
+          "lineas"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contrato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "empleado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "dias": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "ibc": {
+            "type": "string"
+          },
+          "devengos": {
+            "type": "string"
+          },
+          "deducciones": {
+            "type": "string"
+          },
+          "neto": {
+            "type": "string"
+          },
+          "aportes_empleador": {
+            "type": "string"
+          },
+          "lineas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LineaLiquidacionNominaRespuesta"
+            }
+          }
+        }
+      },
       "LiquidacionRespuesta": {
         "type": "object",
         "description": "Liquidación de un anunciante en un mes (sin reparto a las copropiedades).",
@@ -69647,6 +71366,15 @@
             "type": "string"
           }
         }
+      },
+      "MedidaNovedad": {
+        "type": "string",
+        "description": "Cómo se mide una novedad: horas en una fecha, un rango de días o un valor.",
+        "enum": [
+          "horas",
+          "dias",
+          "valor"
+        ]
       },
       "MedioAutorizacion": {
         "type": "string",
@@ -70875,6 +72603,75 @@
           }
         }
       },
+      "NovedadNominaRespuesta": {
+        "type": "object",
+        "description": "Novedad registrada.",
+        "required": [
+          "id",
+          "contrato_id",
+          "tipo",
+          "medida",
+          "desde",
+          "hasta",
+          "cantidad",
+          "creado_en",
+          "anulada"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contrato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoNovedad"
+          },
+          "medida": {
+            "$ref": "#/components/schemas/MedidaNovedad"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "cantidad": {
+            "type": "string",
+            "description": "Horas o valor; los valores en `0` sin `nomina.salarios.ver`."
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "anulada": {
+            "type": "boolean"
+          },
+          "motivo_anulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
       "NovedadPeticion": {
         "type": "object",
         "description": "Novedad nueva.",
@@ -71398,6 +73195,54 @@
         ],
         "description": "Mascota nueva."
       },
+      "NuevaNovedadPeticion": {
+        "type": "object",
+        "description": "Novedad nueva de un contrato.",
+        "required": [
+          "tipo",
+          "desde"
+        ],
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoNovedad"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha (horas y valores) o primer día (días)."
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "Último día: solo en las de días (incapacidades, licencias, ausencias)."
+          },
+          "cantidad": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Horas (de 0 a 24) o valor en pesos; no va en las de días.",
+            "example": "4"
+          },
+          "descripcion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "soporte_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Soporte ya subido a `/archivos` (incapacidad, licencia…)."
+          }
+        }
+      },
       "NuevaOrganizacionPeticion": {
         "type": "object",
         "description": "Organización nueva.",
@@ -71657,6 +73502,36 @@
               "null"
             ],
             "description": "Clave técnica que entrega la DIAN (secreto: no se devuelve)."
+          }
+        }
+      },
+      "NuevaTablaLaboralPeticion": {
+        "type": "object",
+        "description": "Versión nueva de una tabla por tramos.",
+        "required": [
+          "tabla",
+          "vigente_desde",
+          "fuente",
+          "tramos"
+        ],
+        "properties": {
+          "tabla": {
+            "$ref": "#/components/schemas/TablaLaboral"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "fuente": {
+            "type": "string",
+            "example": "Estatuto Tributario, art. 383"
+          },
+          "tramos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TramoDto"
+            },
+            "description": "Todos los tramos: empiezan en cero, contiguos y el último abierto."
           }
         }
       },
@@ -72430,6 +74305,24 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "NuevoPeriodoNominaPeticion": {
+        "type": "object",
+        "description": "Periodo nuevo.",
+        "required": [
+          "periodicidad",
+          "desde"
+        ],
+        "properties": {
+          "periodicidad": {
+            "$ref": "#/components/schemas/PeriodicidadPago"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date",
+            "description": "El día 1 (o el 16 en la quincenal)."
           }
         }
       },
@@ -76599,6 +78492,19 @@
           }
         }
       },
+      "PagoPeriodoNominaPeticion": {
+        "type": "object",
+        "description": "Fecha en que se pagó la nómina.",
+        "required": [
+          "fecha_pago"
+        ],
+        "properties": {
+          "fecha_pago": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
       "PagoPeticion": {
         "type": "object",
         "description": "Estado del pago.",
@@ -76683,7 +78589,13 @@
           "dias_prima",
           "dias_vacaciones",
           "apoyo_aprendiz_lectiva",
-          "apoyo_aprendiz_productiva"
+          "apoyo_aprendiz_productiva",
+          "tope_ibc",
+          "tope_exoneracion_aportes",
+          "renta_exenta_laboral",
+          "tope_renta_exenta_laboral",
+          "limite_beneficios_retencion",
+          "tope_beneficios_retencion"
         ]
       },
       "ParametroLaboralRespuesta": {
@@ -76999,6 +78911,25 @@
           "quincenal"
         ]
       },
+      "PeriodoLiquidadoRespuesta": {
+        "type": "object",
+        "description": "Periodo con sus liquidaciones.",
+        "required": [
+          "periodo",
+          "liquidaciones"
+        ],
+        "properties": {
+          "periodo": {
+            "$ref": "#/components/schemas/PeriodoNominaRespuesta"
+          },
+          "liquidaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiquidacionNominaRespuesta"
+            }
+          }
+        }
+      },
       "PeriodoModuloRespuesta": {
         "type": "object",
         "description": "Periodo contratado de un módulo.",
@@ -77020,6 +78951,72 @@
               "null"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "PeriodoNominaRespuesta": {
+        "type": "object",
+        "description": "Periodo de nómina.",
+        "required": [
+          "id",
+          "periodicidad",
+          "desde",
+          "hasta",
+          "estado"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "periodicidad": {
+            "$ref": "#/components/schemas/PeriodicidadPago"
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoPeriodoNomina"
+          },
+          "liquidado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "liquidado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "aprobado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "aprobado_en": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "fecha_pago": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
           }
         }
       },
@@ -77225,6 +79222,10 @@
           "nomina.ver",
           "nomina.salarios.ver",
           "nomina.empleados.gestionar",
+          "nomina.configurar",
+          "nomina.novedades.registrar",
+          "nomina.liquidar",
+          "nomina.aprobar",
           "directorio.ver",
           "directorio.resenar",
           "directorio.compartir"
@@ -83010,6 +85011,42 @@
           }
         }
       },
+      "TablaLaboral": {
+        "type": "string",
+        "description": "Tabla laboral por tramos del catálogo de la plataforma.",
+        "enum": [
+          "retencion_salarios",
+          "fondo_solidaridad"
+        ]
+      },
+      "TablaLaboralRespuesta": {
+        "type": "object",
+        "description": "Versión de una tabla por tramos.",
+        "required": [
+          "tabla",
+          "vigente_desde",
+          "fuente",
+          "tramos"
+        ],
+        "properties": {
+          "tabla": {
+            "$ref": "#/components/schemas/TablaLaboral"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "fuente": {
+            "type": "string"
+          },
+          "tramos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TramoDto"
+            }
+          }
+        }
+      },
       "TableroMantenimientoRespuesta": {
         "type": "object",
         "description": "Indicadores del tablero de mantenimiento.",
@@ -84038,6 +86075,36 @@
           "baja"
         ]
       },
+      "TipoNovedad": {
+        "type": "string",
+        "description": "Tipo de novedad de nómina (horas, días o valores).",
+        "enum": [
+          "hora_extra_diurna",
+          "hora_extra_nocturna",
+          "hora_extra_dominical_diurna",
+          "hora_extra_dominical_nocturna",
+          "recargo_nocturno",
+          "recargo_dominical",
+          "recargo_nocturno_dominical",
+          "incapacidad_comun",
+          "incapacidad_laboral",
+          "licencia_maternidad",
+          "licencia_paternidad",
+          "licencia_remunerada",
+          "vacaciones",
+          "licencia_no_remunerada",
+          "ausencia",
+          "suspension",
+          "bonificacion_salarial",
+          "bonificacion_no_salarial",
+          "comision",
+          "auxilio_no_salarial",
+          "prestamo",
+          "libranza",
+          "embargo",
+          "otra_deduccion"
+        ]
+      },
       "TipoNovedadMinuta": {
         "type": "string",
         "description": "Tipo de novedad de la minuta de portería.",
@@ -84481,6 +86548,39 @@
           }
         }
       },
+      "TramoDto": {
+        "type": "object",
+        "description": "Tramo `(desde, hasta]` de una tabla (el primero incluye su `desde`).",
+        "required": [
+          "desde",
+          "tarifa"
+        ],
+        "properties": {
+          "desde": {
+            "type": "string",
+            "description": "En UVT (retención) o en salarios mínimos (fondo de solidaridad).",
+            "example": "95"
+          },
+          "hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "`null` en el último tramo.",
+            "example": "150"
+          },
+          "tarifa": {
+            "type": "string",
+            "description": "Porcentaje.",
+            "example": "19"
+          },
+          "adicional": {
+            "type": "string",
+            "description": "UVT que se suman (retención); cero en el fondo de solidaridad.",
+            "example": "0"
+          }
+        }
+      },
       "TramoEdad": {
         "type": "string",
         "description": "Tramo de edad de una cuenta por cobrar.",
@@ -84602,7 +86702,8 @@
           "salarios_minimos",
           "horas_semana",
           "hora_del_dia",
-          "dias"
+          "dias",
+          "uvt_anuales"
         ]
       },
       "UnidadPlazo": {

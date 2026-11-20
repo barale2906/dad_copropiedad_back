@@ -7,10 +7,21 @@
 //! - [`empleados`]: empleados, contratos laborales y sus versiones (modificación, prórroga y
 //!   terminación).
 //! - [`importacion`]: carga masiva de empleados con vista previa.
+//! - [`novedades`]: novedades de los contratos (horas, días y valores) y su anulación.
+//! - [`desprendibles`]: PDF de cada liquidación aprobada, envío por correo y portal del
+//!   empleado.
+//! - [`prestaciones`]: prima, cesantías, intereses, vacaciones e indemnización en la
+//!   liquidación y cesantías por consignar.
+//! - [`liquidacion`]: configuración de la entidad, periodos, liquidación, aprobación por otra
+//!   cuenta y pago.
 
 pub mod catalogo;
+pub mod desprendibles;
 pub mod empleados;
 pub mod importacion;
+pub mod liquidacion;
+pub mod novedades;
+pub mod prestaciones;
 
 use domain::{Modulo, Permiso};
 
@@ -19,8 +30,9 @@ use crate::{
     casos_uso::modulos::exigir_modulo_en,
     puertos::{
         RegistroAuditoria, Reloj, RepositorioModulos, Transaccion, UnidadDeTrabajo,
-        nomina::{RepositorioCatalogoLaboral, RepositorioNomina},
+        nomina::{RepositorioCatalogoLaboral, RepositorioLiquidacionNomina, RepositorioNomina},
         personas::RepositorioPersonas,
+        tesoreria::CatalogoRetenciones,
     },
 };
 
@@ -28,7 +40,9 @@ use crate::{
 pub trait TxNomina:
     Transaccion
     + RepositorioNomina
+    + RepositorioLiquidacionNomina
     + RepositorioCatalogoLaboral
+    + CatalogoRetenciones
     + RepositorioPersonas
     + RepositorioModulos
     + RegistroAuditoria
@@ -38,7 +52,9 @@ pub trait TxNomina:
 impl<T> TxNomina for T where
     T: Transaccion
         + RepositorioNomina
+        + RepositorioLiquidacionNomina
         + RepositorioCatalogoLaboral
+        + CatalogoRetenciones
         + RepositorioPersonas
         + RepositorioModulos
         + RegistroAuditoria

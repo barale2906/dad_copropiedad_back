@@ -1,0 +1,172 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT n.id, n.contrato_id, n.tipo, n.desde, n.hasta, n.cantidad, n.descripcion,\n                      n.soporte_archivo_id, n.creado_por, n.creado_en,\n                      a.motivo AS \"motivo?\", a.anulada_por AS \"anulada_por?\",\n                      a.anulada_en AS \"anulada_en?\"\n               FROM novedades_nomina n\n               LEFT JOIN anulaciones_novedad_nomina a ON a.novedad_id = n.id\n               WHERE n.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "contrato_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "contrato_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "tipo",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "tipo"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "desde",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "hasta",
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "cantidad",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "cantidad"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "descripcion",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "descripcion"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "soporte_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "soporte_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "creado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "creado_por"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "novedades_nomina",
+            "name": "creado_en"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "motivo?",
+        "type_info": "Text",
+        "origin": {
+          "Table": {
+            "table": "anulaciones_novedad_nomina",
+            "name": "motivo"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "anulada_por?",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anulaciones_novedad_nomina",
+            "name": "anulada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "anulada_en?",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "anulaciones_novedad_nomina",
+            "name": "anulada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "5a38ccb9c3f2a45e419808d17b57dba690fb5a4c4c301a30193b235364e67d80"
+}

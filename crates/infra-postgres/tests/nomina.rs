@@ -778,3 +778,667 @@ async fn la_base_protege_contratos_y_versiones(pool: PgPool) {
     assert_eq!(sqlstate(&borrar), "42501");
     assert_eq!(sqlstate(&cambiar_inicio), "V0010");
 }
+
+// ---------------------------------------------------------------------------------------------
+// Fase 2 · Liquidación
+// ---------------------------------------------------------------------------------------------
+
+mod liquidacion {
+    use application::casos_uso::nomina::{
+        catalogo::NuevaTablaLaboral,
+        liquidacion as ul,
+        novedades::{self as un, NuevaNovedad},
+    };
+    use domain::nomina::{
+        PeriodicidadPago,
+        liquidacion::{ConceptoNomina, TablaLaboral, TipoNovedad, Tramo},
+        periodo::EstadoPeriodoNomina,
+    };
+
+    use super::*;
+
+    /// Completa el catálogo de 2026 con lo que necesita la liquidación (valores de prueba).
+    async fn catalogo_completo(e: &Entorno) {
+        for (p, v) in [
+            (ParametroLaboral::AuxilioTransporte, dec!(200000)),
+            (ParametroLaboral::TopeAuxilioTransporte, dec!(2)),
+            (ParametroLaboral::RecargoNocturno, dec!(35)),
+            (ParametroLaboral::HoraExtraDiurna, dec!(25)),
+            (ParametroLaboral::HoraExtraNocturna, dec!(75)),
+            (ParametroLaboral::RecargoDominicalFestivo, dec!(90)),
+            (ParametroLaboral::SaludEmpleador, dec!(8.5)),
+            (ParametroLaboral::SaludEmpleado, dec!(4)),
+            (ParametroLaboral::PensionEmpleador, dec!(12)),
+            (ParametroLaboral::PensionEmpleado, dec!(4)),
+            (ParametroLaboral::CajaCompensacion, dec!(4)),
+            (ParametroLaboral::Icbf, dec!(3)),
+            (ParametroLaboral::Sena, dec!(2)),
+            (ParametroLaboral::ArlClase1, dec!(0.522)),
+            (ParametroLaboral::FactorSalarioIntegral, dec!(70)),
+            (ParametroLaboral::LimitePagosNoSalariales, dec!(40)),
+            (ParametroLaboral::IncapacidadEps, dec!(66.67)),
+            (ParametroLaboral::TopeIbc, dec!(25)),
+            (ParametroLaboral::TopeExoneracionAportes, dec!(10)),
+            (ParametroLaboral::RentaExentaLaboral, dec!(25)),
+            (ParametroLaboral::TopeRentaExentaLaboral, dec!(790)),
+            (ParametroLaboral::LimiteBeneficiosRetencion, dec!(40)),
+            (ParametroLaboral::TopeBeneficiosRetencion, dec!(1340)),
+            (ParametroLaboral::DiasCesantias, dec!(30)),
+            (ParametroLaboral::DiasPrima, dec!(30)),
+            (ParametroLaboral::InteresesCesantias, dec!(12)),
+            (ParametroLaboral::DiasVacaciones, dec!(15)),
+        ] {
+            catalogo::crear_parametro(
+                &e.plataforma,
+                &RelojSistema,
+                &e.operador,
+                NuevoParametro {
+                    parametro: p,
+                    valor: v,
+                    fuente: "Valor de prueba".into(),
+                    vigente_desde: dia(2026, 1, 1),
+                },
+            )
+            .await
+            .expect("parámetro");
+        }
+        let t =
+            |desde: Decimal, hasta: Option<Decimal>, tarifa: Decimal, adicional: Decimal| Tramo {
+                desde,
+                hasta,
+                tarifa,
+                adicional,
+            };
+        for (tabla, tramos) in [
+            (
+                TablaLaboral::RetencionSalarios,
+                vec![
+                    t(dec!(0), Some(dec!(95)), dec!(0), dec!(0)),
+                    t(dec!(95), Some(dec!(150)), dec!(19), dec!(0)),
+                    t(dec!(150), Some(dec!(360)), dec!(28), dec!(10)),
+                    t(dec!(360), None, dec!(33), dec!(69)),
+                ],
+            ),
+            (
+                TablaLaboral::FondoSolidaridad,
+                vec![
+                    t(dec!(0), Some(dec!(4)), dec!(0), dec!(0)),
+                    t(dec!(4), None, dec!(1), dec!(0)),
+                ],
+            ),
+        ] {
+            catalogo::crear_tabla_laboral(
+                &e.plataforma,
+                &RelojSistema,
+                &e.operador,
+                NuevaTablaLaboral {
+                    tabla,
+                    vigente_desde: dia(2026, 1, 1),
+                    fuente: "Tabla de prueba".into(),
+                    tramos,
+                },
+            )
+            .await
+            .expect("tabla");
+        }
+    }
+
+    fn cuenta(tenant: TenantId) -> Contexto {
+        Contexto::de_cuenta(
+            tenant,
+            CuentaId::nuevo(),
+            ConjuntoPermisos::todos(Ambito::Copropiedad),
+        )
+    }
+
+    async fn empleado(e: &Entorno, salario: Decimal) -> domain::ContratoLaboralId {
+        let mut contrato = e.fijo(dia(2026, 2, 1), dia(2027, 1, 31));
+        contrato.condiciones = e.condiciones(salario);
+        uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta")
+        .contratos[0]
+            .contrato
+            .id
+    }
+
+    fn horas(tipo: TipoNovedad, fecha: NaiveDate, horas: Decimal) -> NuevaNovedad {
+        NuevaNovedad {
+            tipo,
+            desde: fecha,
+            hasta: None,
+            cantidad: Some(horas),
+            descripcion: None,
+            soporte_archivo_id: None,
+        }
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn el_mes_se_liquida_lo_aprueba_otra_cuenta_y_se_paga(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let contrato = empleado(&e, dec!(2100000)).await;
+        let liquidador = cuenta(e.tenant);
+        let aprobador = cuenta(e.tenant);
+        un::registrar_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            contrato,
+            horas(TipoNovedad::HoraExtraDiurna, dia(2026, 3, 4), dec!(10)),
+        )
+        .await
+        .expect("horas extra");
+        let periodo = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+
+        let liquidado = ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, periodo.id)
+            .await
+            .expect("liquida");
+        let misma_cuenta = ul::aprobar_periodo(&e.unidad, &RelojSistema, &liquidador, periodo.id)
+            .await
+            .expect_err("cuatro ojos");
+        let aprobado = ul::aprobar_periodo(&e.unidad, &RelojSistema, &aprobador, periodo.id)
+            .await
+            .expect("aprueba");
+        let tarde = un::registrar_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            contrato,
+            horas(TipoNovedad::HoraExtraDiurna, dia(2026, 3, 5), dec!(2)),
+        )
+        .await
+        .expect_err("periodo aprobado");
+        let otra_vez = ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, periodo.id)
+            .await
+            .expect_err("aprobado");
+        let pagado = ul::marcar_pagado(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            periodo.id,
+            dia(2026, 3, 31),
+        )
+        .await
+        .expect("pago");
+        let leido = ul::periodo(&e.unidad, &RelojSistema, &e.ctx, periodo.id)
+            .await
+            .expect("periodo");
+
+        let l = &liquidado.liquidaciones[0].liquidacion;
+        let valor = |c| {
+            l.lineas
+                .iter()
+                .find(|x| x.concepto == c)
+                .map(|x| x.valor.valor())
+        };
+        assert_eq!(liquidado.liquidaciones.len(), 1);
+        assert_eq!(valor(ConceptoNomina::Basico), Some(dec!(2100000.00)));
+        // 10 × 10.000 × 1,25.
+        assert_eq!(
+            valor(ConceptoNomina::HoraExtraDiurna),
+            Some(dec!(125000.00))
+        );
+        assert_eq!(l.ibc.valor(), dec!(2225000.00));
+        assert!(
+            matches!(misma_cuenta, AppError::Conflicto(_)),
+            "{misma_cuenta:?}"
+        );
+        assert_eq!(aprobado.estado, EstadoPeriodoNomina::Aprobado);
+        assert!(super::regla_laboral(tarde).contains("aprobado"));
+        assert!(matches!(
+            otra_vez,
+            AppError::Dominio(DominioError::TransicionInvalida { .. })
+        ));
+        assert_eq!(pagado.estado, EstadoPeriodoNomina::Pagado);
+        let leida = &leido.liquidaciones[0].liquidacion;
+        assert_eq!((leida.neto, leida.ibc), (l.neto, l.ibc));
+        assert_eq!(leida.lineas.len(), l.lineas.len());
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn una_novedad_despues_de_liquidar_exige_liquidar_de_nuevo(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let contrato = empleado(&e, dec!(2100000)).await;
+        let liquidador = cuenta(e.tenant);
+        let aprobador = cuenta(e.tenant);
+        let periodo = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+        ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, periodo.id)
+            .await
+            .expect("liquida");
+        let n = un::registrar_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            contrato,
+            horas(TipoNovedad::HoraExtraNocturna, dia(2026, 3, 6), dec!(3)),
+        )
+        .await
+        .expect("novedad");
+
+        let pendiente = ul::aprobar_periodo(&e.unidad, &RelojSistema, &aprobador, periodo.id)
+            .await
+            .expect_err("hay una novedad nueva");
+        un::anular_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            n.id,
+            "Registrada por error",
+        )
+        .await
+        .expect("anula");
+        let de_nuevo = ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, periodo.id)
+            .await
+            .expect("liquida otra vez");
+        let aprobado = ul::aprobar_periodo(&e.unidad, &RelojSistema, &aprobador, periodo.id).await;
+
+        assert!(matches!(pendiente, AppError::Conflicto(_)), "{pendiente:?}");
+        assert!(
+            de_nuevo.liquidaciones[0]
+                .liquidacion
+                .lineas
+                .iter()
+                .all(|l| l.concepto != ConceptoNomina::HoraExtraNocturna),
+            "la anulada no entra"
+        );
+        assert!(aprobado.is_ok(), "{aprobado:?}");
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn la_segunda_quincena_retiene_con_lo_de_la_primera(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let mut contrato = e.fijo(dia(2026, 2, 1), dia(2027, 1, 31));
+        contrato.condiciones = e.condiciones(dec!(12000000));
+        contrato.condiciones.periodicidad = PeriodicidadPago::Quincenal;
+        uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta");
+        let liquidador = cuenta(e.tenant);
+        let mut retenciones = Vec::new();
+        for desde in [dia(2026, 3, 1), dia(2026, 3, 16)] {
+            let p = ul::crear_periodo(
+                &e.unidad,
+                &RelojSistema,
+                &liquidador,
+                PeriodicidadPago::Quincenal,
+                desde,
+            )
+            .await
+            .expect("periodo");
+            let l = ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, p.id)
+                .await
+                .expect("liquida");
+            retenciones.push(
+                l.liquidaciones[0]
+                    .liquidacion
+                    .lineas
+                    .iter()
+                    .find(|x| x.concepto == ConceptoNomina::RetencionFuente)
+                    .map(|x| x.valor.valor()),
+            );
+        }
+        let mensual = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo mensual");
+        let sin_contratos = ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, mensual.id)
+            .await
+            .expect("liquida");
+
+        assert_eq!(retenciones[0], None, "la primera quincena no retiene");
+        assert!(
+            retenciones[1].is_some_and(|r| r > Decimal::ZERO),
+            "{retenciones:?}"
+        );
+        assert!(
+            sin_contratos.liquidaciones.is_empty(),
+            "el contrato quincenal no entra al periodo mensual"
+        );
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn las_incapacidades_solo_las_ve_quien_ve_datos_sensibles(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        let contrato = empleado(&e, dec!(2100000)).await;
+        un::registrar_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            contrato,
+            NuevaNovedad {
+                tipo: TipoNovedad::IncapacidadComun,
+                desde: dia(2026, 3, 10),
+                hasta: Some(dia(2026, 3, 12)),
+                cantidad: None,
+                descripcion: None,
+                soporte_archivo_id: None,
+            },
+        )
+        .await
+        .expect("incapacidad");
+        un::registrar_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            contrato,
+            NuevaNovedad {
+                tipo: TipoNovedad::BonificacionSalarial,
+                desde: dia(2026, 3, 20),
+                hasta: None,
+                cantidad: Some(dec!(300000)),
+                descripcion: None,
+                soporte_archivo_id: None,
+            },
+        )
+        .await
+        .expect("bonificación");
+        let restringido = Contexto::de_cuenta(
+            e.tenant,
+            CuentaId::nuevo(),
+            [Permiso::NominaVer].into_iter().collect(),
+        );
+
+        let todas = un::novedades(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            None,
+            dia(2026, 3, 1),
+            dia(2026, 3, 31),
+        )
+        .await
+        .expect("todas");
+        let vistas = un::novedades(
+            &e.unidad,
+            &RelojSistema,
+            &restringido,
+            None,
+            dia(2026, 3, 1),
+            dia(2026, 3, 31),
+        )
+        .await
+        .expect("restringidas");
+
+        assert_eq!(todas.len(), 2);
+        assert_eq!(vistas.len(), 1);
+        assert_eq!(
+            vistas[0].novedad.cantidad,
+            Decimal::ZERO,
+            "sin salarios no ve el valor"
+        );
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn sin_las_tablas_vigentes_no_se_liquida(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        empleado(&e, dec!(2100000)).await;
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+        let fuera = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 16),
+        )
+        .await
+        .expect_err("no empieza el día 1");
+
+        let r = ul::liquidar_periodo(&e.unidad, &RelojSistema, &e.ctx, p.id)
+            .await
+            .expect_err("sin tablas");
+
+        assert!(super::regla_laboral(r).contains("tabla"));
+        assert!(super::regla_laboral(fuera).contains("día 1"));
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn la_base_protege_lo_aprobado(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        empleado(&e, dec!(2100000)).await;
+        let liquidador = cuenta(e.tenant);
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &liquidador,
+            PeriodicidadPago::Mensual,
+            dia(2026, 3, 1),
+        )
+        .await
+        .expect("periodo");
+        ul::liquidar_periodo(&e.unidad, &RelojSistema, &liquidador, p.id)
+            .await
+            .expect("liquida");
+        ul::aprobar_periodo(&e.unidad, &RelojSistema, &cuenta(e.tenant), p.id)
+            .await
+            .expect("aprueba");
+        let id = p.id.as_uuid();
+
+        let borrar = e
+            .sql(&format!(
+                "DELETE FROM liquidaciones_nomina WHERE periodo_id = '{id}'"
+            ))
+            .await
+            .expect_err("aprobado");
+        let reabrir = e
+            .sql(&format!(
+                "UPDATE periodos_nomina SET estado = 'liquidado', aprobado_en = NULL,
+                     aprobado_por = NULL WHERE id = '{id}'"
+            ))
+            .await
+            .expect_err("no vuelve atrás");
+
+        assert_eq!(sqlstate(&borrar), "V0010");
+        assert_eq!(sqlstate(&reabrir), "V0010");
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn la_prima_de_junio_cubre_el_semestre_trabajado(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let mut contrato = e.fijo(dia(2026, 4, 1), dia(2027, 3, 31));
+        contrato.condiciones = e.condiciones(dec!(1500000));
+        uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta");
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            PeriodicidadPago::Mensual,
+            dia(2026, 6, 1),
+        )
+        .await
+        .expect("junio");
+
+        let l = ul::liquidar_periodo(&e.unidad, &RelojSistema, &e.ctx, p.id)
+            .await
+            .expect("liquida");
+
+        let linea = l.liquidaciones[0]
+            .liquidacion
+            .lineas
+            .iter()
+            .find(|x| x.concepto == ConceptoNomina::Prima)
+            .copied()
+            .expect("prima");
+        // Abril a junio: 90 días × (1.500.000 + 200.000) / 360.
+        assert_eq!(
+            (linea.cantidad, linea.valor.valor()),
+            (dec!(90), dec!(425000.00))
+        );
+        // La prima no entra al IBC.
+        assert_eq!(l.liquidaciones[0].liquidacion.ibc.valor(), dec!(1500000.00));
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn el_retiro_sin_justa_causa_liquida_prestaciones_e_indemnizacion(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let mut contrato = e.fijo(dia(2026, 1, 1), dia(2026, 12, 31));
+        contrato.condiciones = e.condiciones(dec!(3000000));
+        let ficha = uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta");
+        let contrato = ficha.contratos[0].contrato.id;
+        un::registrar_novedad(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            contrato,
+            NuevaNovedad {
+                tipo: TipoNovedad::Vacaciones,
+                // Lunes 2 a viernes 6 de marzo: 5 días hábiles.
+                desde: dia(2026, 3, 2),
+                hasta: Some(dia(2026, 3, 6)),
+                cantidad: None,
+                descripcion: None,
+                soporte_archivo_id: None,
+            },
+        )
+        .await
+        .expect("vacaciones");
+        uc::terminar_contrato(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            contrato,
+            dia(2026, 6, 15),
+            MotivoTerminacion::SinJustaCausa,
+        )
+        .await
+        .expect("terminación");
+        let p = ul::crear_periodo(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            PeriodicidadPago::Mensual,
+            dia(2026, 6, 1),
+        )
+        .await
+        .expect("junio");
+
+        let l = ul::liquidar_periodo(&e.unidad, &RelojSistema, &e.ctx, p.id)
+            .await
+            .expect("liquida");
+
+        let q = &l.liquidaciones[0].liquidacion;
+        let valor = |c| {
+            q.lineas
+                .iter()
+                .find(|x| x.concepto == c)
+                .map(|x| x.valor.valor())
+        };
+        assert_eq!(q.dias, 15, "retiro a mitad de mes");
+        assert_eq!(valor(ConceptoNomina::Basico), Some(dec!(1500000.00)));
+        // 165 días (enero a 15 de junio) × (3.000.000 + 200.000 de auxilio: hasta dos mínimos)
+        // / 360.
+        assert_eq!(valor(ConceptoNomina::Cesantias), Some(dec!(1466667.00)));
+        assert_eq!(valor(ConceptoNomina::Prima), Some(dec!(1466667.00)));
+        // 1.466.666,67 × 12 % × 165 / 360.
+        assert_eq!(
+            valor(ConceptoNomina::InteresesCesantias),
+            Some(dec!(80667.00))
+        );
+        // Causó 6,88 días; disfrutó 5: 1,88 × 100.000.
+        assert_eq!(
+            valor(ConceptoNomina::VacacionesCompensadas),
+            Some(dec!(188000.00))
+        );
+        // Término fijo: lo que faltaba (16 de junio a 31 de diciembre = 195 días).
+        assert_eq!(
+            valor(ConceptoNomina::Indemnizacion),
+            Some(dec!(19500000.00))
+        );
+        assert_eq!(
+            q.ibc.valor(),
+            dec!(1500000.00),
+            "las prestaciones no son IBC"
+        );
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn las_cesantias_del_ano_se_reportan_por_fondo(pool: PgPool) {
+        let e = Entorno::new(&pool).await;
+        catalogo_completo(&e).await;
+        let mut contrato = e.fijo(dia(2026, 7, 1), dia(2027, 6, 30));
+        contrato.condiciones = e.condiciones(dec!(1500000));
+        uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta");
+
+        let r = application::casos_uso::nomina::prestaciones::cesantias_del_ano(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            2026,
+        )
+        .await
+        .expect("cesantías");
+
+        assert_eq!(r.len(), 1);
+        // 180 días × 1.700.000 / 360 = 850.000; intereses 850.000 × 12 % × 180 / 360.
+        assert_eq!(
+            (r[0].dias, r[0].cesantias, r[0].intereses),
+            (180, dec!(850000), dec!(51000))
+        );
+        assert_eq!(r[0].fondo_id, Some(e.adm.cesantias));
+    }
+}

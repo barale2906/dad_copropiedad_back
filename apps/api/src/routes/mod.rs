@@ -153,7 +153,12 @@ fn rutas() -> OpenApiRouter<AppState> {
 fn api_v1() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .nest("/plataforma", plataforma::rutas())
-        .nest("/yo", yo::rutas().merge(acceso::push::rutas()))
+        .nest(
+            "/yo",
+            yo::rutas()
+                .merge(acceso::push::rutas())
+                .merge(nomina::rutas_yo()),
+        )
         .nest("/puentes", acceso::puentes::rutas())
         .nest("/archivos", archivos::rutas())
         .nest("/auth", auth::rutas())

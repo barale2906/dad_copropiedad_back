@@ -395,3 +395,341 @@ async fn solo_la_plataforma_carga_el_catalogo(pool: PgPool) {
     let (_, vigente) = g.pedir(Method::GET, "/catalogo", None).await;
     assert_eq!(vigente["administradoras"].as_array().map(Vec::len), Some(4));
 }
+
+/// Completa el catálogo con lo que necesita la liquidación y las dos tablas por tramos.
+async fn catalogo_de_liquidacion(g: &Gimnasio) {
+    for (parametro, valor) in [
+        ("auxilio_transporte", "200000"),
+        ("tope_auxilio_transporte", "2"),
+        ("recargo_nocturno", "35"),
+        ("hora_extra_diurna", "25"),
+        ("hora_extra_nocturna", "75"),
+        ("recargo_dominical_festivo", "90"),
+        ("salud_empleador", "8.5"),
+        ("salud_empleado", "4"),
+        ("pension_empleador", "12"),
+        ("pension_empleado", "4"),
+        ("caja_compensacion", "4"),
+        ("icbf", "3"),
+        ("sena", "2"),
+        ("arl_clase_1", "0.522"),
+        ("factor_salario_integral", "70"),
+        ("limite_pagos_no_salariales", "40"),
+        ("incapacidad_eps", "66.67"),
+        ("tope_ibc", "25"),
+        ("tope_exoneracion_aportes", "10"),
+        ("renta_exenta_laboral", "25"),
+        ("tope_renta_exenta_laboral", "790"),
+        ("limite_beneficios_retencion", "40"),
+        ("tope_beneficios_retencion", "1340"),
+        ("dias_cesantias", "30"),
+        ("dias_prima", "30"),
+        ("intereses_cesantias", "12"),
+        ("dias_vacaciones", "15"),
+    ] {
+        let (s, v) = g
+            .api
+            .pedir(
+                Method::POST,
+                "/api/v1/plataforma/nomina/parametros",
+                Some(&g.root),
+                Some(json!({ "parametro": parametro, "valor": valor,
+                             "fuente": "Valor de prueba", "vigente_desde": "2026-01-01" })),
+            )
+            .await;
+        assert_eq!(s, StatusCode::CREATED, "{parametro}: {v}");
+    }
+    for (tabla, tramos) in [
+        (
+            "retencion_salarios",
+            json!([
+                { "desde": "0", "hasta": "95", "tarifa": "0" },
+                { "desde": "95", "hasta": "150", "tarifa": "19" },
+                { "desde": "150", "tarifa": "28", "adicional": "10" },
+            ]),
+        ),
+        (
+            "fondo_solidaridad",
+            json!([
+                { "desde": "0", "hasta": "4", "tarifa": "0" },
+                { "desde": "4", "tarifa": "1" },
+            ]),
+        ),
+    ] {
+        let (s, v) = g
+            .api
+            .pedir(
+                Method::POST,
+                "/api/v1/plataforma/nomina/tablas",
+                Some(&g.root),
+                Some(json!({ "tabla": tabla, "vigente_desde": "2026-01-01",
+                             "fuente": "Tabla de prueba", "tramos": tramos })),
+            )
+            .await;
+        assert_eq!(s, StatusCode::CREATED, "{tabla}: {v}");
+    }
+}
+
+/// Cuenta nueva con el rol plantilla `contador` en el gimnasio; devuelve su token.
+async fn contadora(g: &Gimnasio) -> String {
+    let cuenta = g.api.registrar("contadora").await;
+    let (s, roles) = g
+        .api
+        .pedir(
+            Method::GET,
+            &format!("/api/v1/entidades/{}/roles", g.id),
+            Some(&g.gerente),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{roles}");
+    let rol = roles
+        .as_array()
+        .and_then(|r| r.iter().find(|r| r["codigo"] == "contador"))
+        .and_then(|r| r["id"].as_str())
+        .expect("rol contador")
+        .to_owned();
+    let (s, v) = g
+        .api
+        .pedir(
+            Method::POST,
+            &format!("/api/v1/entidades/{}/asignaciones", g.id),
+            Some(&g.gerente),
+            Some(json!({ "cuenta_id": cuenta, "rol_id": rol })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    g.api.token("contadora").await
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_mes_se_liquida_con_novedades_y_lo_aprueba_la_contadora(pool: PgPool) {
+    let g = gimnasio(pool).await;
+    catalogo_de_liquidacion(&g).await;
+    let (s, catalogo) = g
+        .pedir(Method::GET, "/catalogo?fecha=2026-03-31", None)
+        .await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(catalogo["tablas"].as_array().map(Vec::len), Some(2));
+    let (s, ficha) = g
+        .pedir(
+            Method::POST,
+            "/empleados",
+            Some(json!({
+                "codigo": "E-001",
+                "persona": { "nombre": "Ana Pérez", "tipo_documento": "CC", "documento": "52123456" },
+                "contrato": { "tipo": "termino_indefinido", "fecha_inicio": "2026-01-15",
+                              "condiciones": g.condiciones("2100000") },
+            })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{ficha}");
+    let contrato = ficha["contratos"][0]["contrato"]["id"]
+        .as_str()
+        .expect("contrato")
+        .to_owned();
+    let (s, v) = g
+        .pedir(
+            Method::POST,
+            &format!("/contratos/{contrato}/novedades"),
+            Some(
+                json!({ "tipo": "hora_extra_dominical_diurna", "desde": "2026-03-09",
+                         "cantidad": "4" }),
+            ),
+        )
+        .await;
+    assert_eq!(
+        s,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "el 9 de marzo es lunes: {v}"
+    );
+    let (s, v) = g
+        .pedir(
+            Method::POST,
+            &format!("/contratos/{contrato}/novedades"),
+            Some(
+                json!({ "tipo": "hora_extra_dominical_diurna", "desde": "2026-03-08",
+                         "cantidad": "4" }),
+            ),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    let (s, periodo) = g
+        .pedir(
+            Method::POST,
+            "/periodos",
+            Some(json!({ "periodicidad": "mensual", "desde": "2026-03-01" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{periodo}");
+    let id = periodo["id"].as_str().expect("id").to_owned();
+
+    let (s, liquidado) = g
+        .pedir(Method::POST, &format!("/periodos/{id}/liquidacion"), None)
+        .await;
+    assert_eq!(s, StatusCode::OK, "{liquidado}");
+    let l = &liquidado["liquidaciones"][0];
+    let linea = |c: &str| {
+        l["lineas"]
+            .as_array()
+            .and_then(|x| x.iter().find(|y| y["concepto"] == c))
+            .map(|y| y["valor"].clone())
+    };
+    // 4 × 10.000 × (1 + 25 % + 90 %).
+    assert_eq!(
+        linea("hora_extra_dominical_diurna"),
+        Some(json!("86000.00"))
+    );
+    assert_eq!(l["ibc"], "2186000.00");
+    let (s, v) = g
+        .pedir(Method::POST, &format!("/periodos/{id}/aprobacion"), None)
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "quien liquidó no aprueba: {v}");
+    let token = contadora(&g).await;
+    let (s, v) = g
+        .api
+        .pedir(
+            Method::POST,
+            &format!("/api/v1/entidades/{}/nomina/periodos/{id}/aprobacion", g.id),
+            Some(&token),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v["estado"], "aprobado");
+    let (s, v) = g
+        .pedir(Method::POST, &format!("/periodos/{id}/liquidacion"), None)
+        .await;
+    assert_eq!(s, StatusCode::CONFLICT, "aprobado: {v}");
+    let (s, v) = g
+        .pedir(
+            Method::POST,
+            &format!("/periodos/{id}/pago"),
+            Some(json!({ "fecha_pago": "2026-03-31" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v["estado"], "pagado");
+    let (s, lista) = g.pedir(Method::GET, "/periodos", None).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(lista[0]["fecha_pago"], "2026-03-31");
+    let (s, cesantias) = g.pedir(Method::GET, "/cesantias?anio=2026", None).await;
+    assert_eq!(s, StatusCode::OK, "{cesantias}");
+    // 15 de enero a 31 de diciembre: 346 días × (2.100.000 + 200.000 + lo variable de marzo).
+    assert_eq!(cesantias[0]["dias"], 346);
+    assert!(cesantias[0]["fondo_id"].is_string());
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_empleada_recibe_y_descarga_su_desprendible(pool: PgPool) {
+    let g = gimnasio(pool).await;
+    catalogo_de_liquidacion(&g).await;
+    let (s, ficha) = g
+        .pedir(
+            Method::POST,
+            "/empleados",
+            Some(json!({
+                "codigo": "E-001",
+                "persona": { "nombre": "Ana Pérez", "tipo_documento": "CC",
+                             "documento": "52123456", "correo": "ana@correo.co" },
+                "contrato": { "tipo": "termino_indefinido", "fecha_inicio": "2026-01-15",
+                              "condiciones": g.condiciones("2100000") },
+            })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{ficha}");
+    let contrato = ficha["contratos"][0]["contrato"]["id"]
+        .as_str()
+        .expect("contrato")
+        .to_owned();
+    let (s, v) = g
+        .pedir(
+            Method::POST,
+            &format!("/contratos/{contrato}/novedades"),
+            Some(json!({ "tipo": "incapacidad_comun", "desde": "2026-03-10",
+                         "hasta": "2026-03-12" })),
+        )
+        .await;
+    assert_eq!(s, StatusCode::CREATED, "{v}");
+    let (_, periodo) = g
+        .pedir(
+            Method::POST,
+            "/periodos",
+            Some(json!({ "periodicidad": "mensual", "desde": "2026-03-01" })),
+        )
+        .await;
+    let id = periodo["id"].as_str().expect("id").to_owned();
+    let (_, liquidado) = g
+        .pedir(Method::POST, &format!("/periodos/{id}/liquidacion"), None)
+        .await;
+    let liquidacion = liquidado["liquidaciones"][0]["id"]
+        .as_str()
+        .expect("liquidación")
+        .to_owned();
+    let ruta_pdf = format!(
+        "/api/v1/entidades/{}/nomina/liquidaciones/{liquidacion}/desprendible",
+        g.id
+    );
+    let (s, _, _) = g.api.pedir_texto(&ruta_pdf, &g.gerente).await;
+    assert_eq!(s, StatusCode::CONFLICT, "sin aprobar no hay desprendible");
+    let token = contadora(&g).await;
+    let (s, v) = g
+        .api
+        .pedir(
+            Method::POST,
+            &format!("/api/v1/entidades/{}/nomina/periodos/{id}/aprobacion", g.id),
+            Some(&token),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+
+    let (s, tipo, contenido) = g.api.pedir_texto(&ruta_pdf, &g.gerente).await;
+    assert_eq!(s, StatusCode::OK);
+    assert_eq!(tipo, "application/pdf");
+    assert!(contenido.starts_with("%PDF"));
+    let (s, v) = g
+        .pedir(Method::POST, &format!("/periodos/{id}/desprendibles"), None)
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(
+        (v["enviados"].clone(), v["sin_correo"].clone()),
+        (json!(1), json!(0))
+    );
+    let correos: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM outbox WHERE canal = 'correo'
+           AND payload::text LIKE '%Desprendible de n%'",
+    )
+    .fetch_one(&g.api.duenio)
+    .await
+    .expect("outbox");
+    assert_eq!(correos, 1);
+
+    // La empleada vincula su cuenta a su persona y consulta su portal (sin roles en el gimnasio).
+    let ana = g.api.registrar("ana").await;
+    sqlx::query("UPDATE personas SET cuenta_id = $1::uuid WHERE documento = '52123456'")
+        .bind(&ana)
+        .execute(&g.api.duenio)
+        .await
+        .expect("vínculo");
+    let ana_token = g.api.token("ana").await;
+    let (s, mis) = g
+        .api
+        .pedir(
+            Method::GET,
+            "/api/v1/yo/nomina/desprendibles",
+            Some(&ana_token),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{mis}");
+    assert_eq!(mis[0]["entidad"], "Gimnasio Fuerte");
+    assert_eq!(mis[0]["liquidacion_id"], liquidacion);
+    let propio = format!("/api/v1/yo/nomina/{}/desprendibles/{liquidacion}", g.id);
+    let (s, tipo, _) = g.api.pedir_texto(&propio, &ana_token).await;
+    assert_eq!((s, tipo.as_str()), (StatusCode::OK, "application/pdf"));
+    g.api.registrar("otro").await;
+    let otro = g.api.token("otro").await;
+    let (s, _, _) = g.api.pedir_texto(&propio, &otro).await;
+    assert_eq!(s, StatusCode::NOT_FOUND, "no es suyo");
+}

@@ -6,20 +6,28 @@
 use application::{
     AppError, AppResult, Pagina, SolicitudPagina,
     puertos::nomina::{
-        Administradora, ContratoLaboral, CuentaNomina, Empleado, FiltroEmpleados,
-        RepositorioCatalogoLaboral, RepositorioNomina, ResumenEmpleado, VersionContrato,
-        VersionParametroLaboral,
+        Administradora, AnulacionNovedad, ConfiguracionNomina, ContratoLaboral, CuentaNomina,
+        DesprendibleDeCuenta, Empleado, FiltroEmpleados, LiquidacionContrato, NovedadNomina,
+        PeriodoNomina, RepositorioCatalogoLaboral, RepositorioLiquidacionNomina, RepositorioNomina,
+        RepositorioNominaDeCuenta, ResumenEmpleado, VersionContrato, VersionParametroLaboral,
+        VersionTablaLaboral,
     },
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    AdministradoraId, ContratoLaboralId, CuentaId, Documento, DominioError, EmpleadoId, Nit,
-    ParametroLaboralId, PersonaId, VersionContratoId,
+    AdministradoraId, ArchivoId, ContratoLaboralId, CuentaId, Documento, DominioError, EmpleadoId,
+    LiquidacionNominaId, Nit, NovedadNominaId, ParametroLaboralId, PeriodoNominaId, PersonaId,
+    VersionContratoId,
     contabilidad::{Monto, tesoreria::TipoCuentaBancaria},
     nomina::{
         ClaseRiesgo, CodigoEmpleado, EstadoEmpleado, EtapaAprendizaje, Jornada, MedioPago,
         MotivoTerminacion, ParametroLaboral, PeriodicidadPago, TipoAdministradora,
         TipoContratoLaboral, TipoSalario,
+        liquidacion::{
+            AcumuladoMes, ConceptoNomina, LineaLiquidacion, Liquidacion, Novedad, TablaLaboral,
+            TablaTramos, TipoNovedad, Tramo,
+        },
+        periodo::EstadoPeriodoNomina,
     },
 };
 use rust_decimal::Decimal;
@@ -230,6 +238,89 @@ async fn administradoras_de(
     .collect()
 }
 
+async fn insertar_tabla_en(c: &mut PgConnection, t: &VersionTablaLaboral) -> AppResult<()> {
+    for tramo in t.tramos.tramos() {
+        sqlx::query!(
+            "INSERT INTO tramos_laborales (id, tabla, vigente_desde, desde, hasta, tarifa,
+                 adicional, fuente, creado_por, creado_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+            Uuid::now_v7(),
+            t.tabla.as_str(),
+            t.vigente_desde,
+            tramo.desde,
+            tramo.hasta,
+            tramo.tarifa,
+            tramo.adicional,
+            t.fuente,
+            t.creado_por.map(CuentaId::as_uuid),
+            t.creado_en,
+        )
+        .execute(&mut *c)
+        .await
+        .map_err(|e| error_nomina(e, "ya hay una versión de la tabla con esa fecha", "tabla"))?;
+    }
+    Ok(())
+}
+
+async fn tablas_de(
+    c: &mut PgConnection,
+    fecha: Option<NaiveDate>,
+) -> AppResult<Vec<VersionTablaLaboral>> {
+    let filas = sqlx::query!(
+        "SELECT tabla, vigente_desde, desde, hasta, tarifa, adicional, fuente, creado_por,
+                creado_en
+         FROM tramos_laborales t
+         WHERE $1::date IS NULL
+            OR vigente_desde = (SELECT max(x.vigente_desde) FROM tramos_laborales x
+                                WHERE x.tabla = t.tabla AND x.vigente_desde <= $1)
+         ORDER BY tabla, vigente_desde, desde",
+        fecha,
+    )
+    .fetch_all(c)
+    .await
+    .map_err(AppError::infra)?;
+    // Agrupa las filas por (tabla, vigente_desde): cada grupo es una versión.
+    let mut grupos: Vec<(VersionTablaLaboral, Vec<Tramo>)> = Vec::new();
+    for f in filas {
+        let tabla = TablaLaboral::try_from(f.tabla.as_str())?;
+        let tramo = Tramo {
+            desde: f.desde,
+            hasta: f.hasta,
+            tarifa: f.tarifa,
+            adicional: f.adicional,
+        };
+        match grupos.last_mut() {
+            Some((v, tramos)) if v.tabla == tabla && v.vigente_desde == f.vigente_desde => {
+                tramos.push(tramo);
+            }
+            _ => grupos.push((
+                VersionTablaLaboral {
+                    tabla,
+                    vigente_desde: f.vigente_desde,
+                    fuente: f.fuente,
+                    // Se reemplaza al cerrar el grupo con sus tramos.
+                    tramos: TablaTramos::new(vec![Tramo {
+                        desde: Decimal::ZERO,
+                        hasta: None,
+                        tarifa: Decimal::ZERO,
+                        adicional: Decimal::ZERO,
+                    }])?,
+                    creado_por: f.creado_por.map(CuentaId::from_uuid),
+                    creado_en: f.creado_en,
+                },
+                vec![tramo],
+            )),
+        }
+    }
+    grupos
+        .into_iter()
+        .map(|(mut v, tramos)| {
+            v.tramos = TablaTramos::new(tramos)?;
+            Ok(v)
+        })
+        .collect()
+}
+
 /// El catálogo se escribe desde la plataforma (las políticas RLS rechazan la escritura desde
 /// una entidad) y se lee desde cualquier transacción.
 macro_rules! catalogo_laboral {
@@ -266,6 +357,17 @@ macro_rules! catalogo_laboral {
                 solo_activas: bool,
             ) -> AppResult<Vec<Administradora>> {
                 administradoras_de(&mut self.tx, solo_activas).await
+            }
+
+            async fn insertar_tabla(&mut self, t: &VersionTablaLaboral) -> AppResult<()> {
+                insertar_tabla_en(&mut self.tx, t).await
+            }
+
+            async fn tablas(
+                &mut self,
+                fecha: Option<NaiveDate>,
+            ) -> AppResult<Vec<VersionTablaLaboral>> {
+                tablas_de(&mut self.tx, fecha).await
             }
         }
     };
@@ -664,6 +766,576 @@ impl RepositorioNomina for TransaccionPg {
         .map_err(AppError::infra)?
         .into_iter()
         .map(TryInto::try_into)
+        .collect()
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Liquidación
+// ---------------------------------------------------------------------------------------------
+
+struct FilaPeriodo {
+    id: Uuid,
+    periodicidad: String,
+    desde: NaiveDate,
+    hasta: NaiveDate,
+    estado: String,
+    creado_por: Option<Uuid>,
+    creado_en: DateTime<Utc>,
+    liquidado_por: Option<Uuid>,
+    liquidado_en: Option<DateTime<Utc>>,
+    aprobado_por: Option<Uuid>,
+    aprobado_en: Option<DateTime<Utc>>,
+    pagado_por: Option<Uuid>,
+    pagado_en: Option<DateTime<Utc>>,
+    fecha_pago: Option<NaiveDate>,
+}
+
+impl TryFrom<FilaPeriodo> for PeriodoNomina {
+    type Error = AppError;
+
+    fn try_from(f: FilaPeriodo) -> AppResult<Self> {
+        let cuenta = |u: Option<Uuid>| u.map(CuentaId::from_uuid);
+        Ok(Self {
+            id: PeriodoNominaId::from_uuid(f.id),
+            periodicidad: PeriodicidadPago::try_from(f.periodicidad.as_str())?,
+            desde: f.desde,
+            hasta: f.hasta,
+            estado: EstadoPeriodoNomina::try_from(f.estado.as_str())?,
+            creado_por: cuenta(f.creado_por),
+            creado_en: f.creado_en,
+            liquidado_por: cuenta(f.liquidado_por),
+            liquidado_en: f.liquidado_en,
+            aprobado_por: cuenta(f.aprobado_por),
+            aprobado_en: f.aprobado_en,
+            pagado_por: cuenta(f.pagado_por),
+            pagado_en: f.pagado_en,
+            fecha_pago: f.fecha_pago,
+        })
+    }
+}
+
+struct FilaNovedad {
+    id: Uuid,
+    contrato_id: Uuid,
+    tipo: String,
+    desde: NaiveDate,
+    hasta: NaiveDate,
+    cantidad: Decimal,
+    descripcion: Option<String>,
+    soporte_archivo_id: Option<Uuid>,
+    creado_por: Option<Uuid>,
+    creado_en: DateTime<Utc>,
+    motivo: Option<String>,
+    anulada_por: Option<Uuid>,
+    anulada_en: Option<DateTime<Utc>>,
+}
+
+impl TryFrom<FilaNovedad> for NovedadNomina {
+    type Error = AppError;
+
+    fn try_from(f: FilaNovedad) -> AppResult<Self> {
+        Ok(Self {
+            id: NovedadNominaId::from_uuid(f.id),
+            contrato_id: ContratoLaboralId::from_uuid(f.contrato_id),
+            // Ya validada al registrarla: se reconstruye tal cual.
+            novedad: Novedad {
+                tipo: TipoNovedad::try_from(f.tipo.as_str())?,
+                desde: f.desde,
+                hasta: f.hasta,
+                cantidad: f.cantidad,
+            },
+            descripcion: f.descripcion,
+            soporte_archivo_id: f.soporte_archivo_id.map(ArchivoId::from_uuid),
+            creado_por: f.creado_por.map(CuentaId::from_uuid),
+            creado_en: f.creado_en,
+            anulacion: match (f.motivo, f.anulada_en) {
+                (Some(motivo), Some(anulada_en)) => Some(AnulacionNovedad {
+                    motivo,
+                    anulada_por: f.anulada_por.map(CuentaId::from_uuid),
+                    anulada_en,
+                }),
+                _ => None,
+            },
+        })
+    }
+}
+
+impl RepositorioLiquidacionNomina for TransaccionPg {
+    async fn configuracion(&mut self) -> AppResult<Option<ConfiguracionNomina>> {
+        Ok(sqlx::query!(
+            "SELECT exonerada_aportes, actualizada_por, actualizada_en FROM configuraciones_nomina"
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(|f| ConfiguracionNomina {
+            exonerada_aportes: f.exonerada_aportes,
+            actualizada_por: f.actualizada_por.map(CuentaId::from_uuid),
+            actualizada_en: f.actualizada_en,
+        }))
+    }
+
+    async fn guardar_configuracion(&mut self, c: &ConfiguracionNomina) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO configuraciones_nomina (tenant_id, exonerada_aportes, actualizada_por,
+                 actualizada_en)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (tenant_id) DO UPDATE SET exonerada_aportes = EXCLUDED.exonerada_aportes,
+                 actualizada_por = EXCLUDED.actualizada_por,
+                 actualizada_en = EXCLUDED.actualizada_en",
+            self.ctx.tenant_id.as_uuid(),
+            c.exonerada_aportes,
+            c.actualizada_por.map(CuentaId::as_uuid),
+            c.actualizada_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
+    async fn insertar_periodo(&mut self, p: &PeriodoNomina) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO periodos_nomina (id, tenant_id, periodicidad, desde, hasta, estado,
+                 creado_por, creado_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            p.id.as_uuid(),
+            self.ctx.tenant_id.as_uuid(),
+            p.periodicidad.as_str(),
+            p.desde,
+            p.hasta,
+            p.estado.as_str(),
+            p.creado_por.map(CuentaId::as_uuid),
+            p.creado_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_nomina(e, "el periodo ya existe", "periodo"))?;
+        Ok(())
+    }
+
+    async fn actualizar_periodo(&mut self, p: &PeriodoNomina) -> AppResult<()> {
+        sqlx::query!(
+            "UPDATE periodos_nomina SET estado = $2, liquidado_por = $3, liquidado_en = $4,
+                 aprobado_por = $5, aprobado_en = $6, pagado_por = $7, pagado_en = $8,
+                 fecha_pago = $9
+             WHERE id = $1",
+            p.id.as_uuid(),
+            p.estado.as_str(),
+            p.liquidado_por.map(CuentaId::as_uuid),
+            p.liquidado_en,
+            p.aprobado_por.map(CuentaId::as_uuid),
+            p.aprobado_en,
+            p.pagado_por.map(CuentaId::as_uuid),
+            p.pagado_en,
+            p.fecha_pago,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_nomina(e, "periodo repetido", "periodo"))?;
+        Ok(())
+    }
+
+    async fn periodo(&mut self, id: PeriodoNominaId) -> AppResult<Option<PeriodoNomina>> {
+        sqlx::query_as!(
+            FilaPeriodo,
+            "SELECT id, periodicidad, desde, hasta, estado, creado_por, creado_en, liquidado_por,
+                    liquidado_en, aprobado_por, aprobado_en, pagado_por, pagado_en, fecha_pago
+             FROM periodos_nomina WHERE id = $1 FOR UPDATE",
+            id.as_uuid(),
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(TryInto::try_into)
+        .transpose()
+    }
+
+    async fn periodo_por_inicio(
+        &mut self,
+        periodicidad: PeriodicidadPago,
+        desde: NaiveDate,
+    ) -> AppResult<Option<PeriodoNomina>> {
+        sqlx::query_as!(
+            FilaPeriodo,
+            "SELECT id, periodicidad, desde, hasta, estado, creado_por, creado_en, liquidado_por,
+                    liquidado_en, aprobado_por, aprobado_en, pagado_por, pagado_en, fecha_pago
+             FROM periodos_nomina WHERE periodicidad = $1 AND desde = $2",
+            periodicidad.as_str(),
+            desde,
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(TryInto::try_into)
+        .transpose()
+    }
+
+    async fn periodos(&mut self, limite: u32) -> AppResult<Vec<PeriodoNomina>> {
+        sqlx::query_as!(
+            FilaPeriodo,
+            "SELECT id, periodicidad, desde, hasta, estado, creado_por, creado_en, liquidado_por,
+                    liquidado_en, aprobado_por, aprobado_en, pagado_por, pagado_en, fecha_pago
+             FROM periodos_nomina ORDER BY desde DESC, periodicidad LIMIT $1",
+            i64::from(limite),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(TryInto::try_into)
+        .collect()
+    }
+
+    async fn insertar_novedad(&mut self, n: &NovedadNomina) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO novedades_nomina (id, tenant_id, contrato_id, tipo, desde, hasta,
+                 cantidad, descripcion, soporte_archivo_id, creado_por, creado_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+            n.id.as_uuid(),
+            self.ctx.tenant_id.as_uuid(),
+            n.contrato_id.as_uuid(),
+            n.novedad.tipo.as_str(),
+            n.novedad.desde,
+            n.novedad.hasta,
+            n.novedad.cantidad,
+            n.descripcion,
+            n.soporte_archivo_id.map(ArchivoId::as_uuid),
+            n.creado_por.map(CuentaId::as_uuid),
+            n.creado_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_nomina(e, "novedad repetida", "contrato o soporte"))?;
+        Ok(())
+    }
+
+    async fn anular_novedad(&mut self, id: NovedadNominaId, a: &AnulacionNovedad) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO anulaciones_novedad_nomina (novedad_id, tenant_id, motivo, anulada_por,
+                 anulada_en)
+             VALUES ($1, $2, $3, $4, $5)",
+            id.as_uuid(),
+            self.ctx.tenant_id.as_uuid(),
+            a.motivo,
+            a.anulada_por.map(CuentaId::as_uuid),
+            a.anulada_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_nomina(e, "la novedad ya estaba anulada", "novedad"))?;
+        Ok(())
+    }
+
+    async fn novedad(&mut self, id: NovedadNominaId) -> AppResult<Option<NovedadNomina>> {
+        sqlx::query_as!(
+            FilaNovedad,
+            r#"SELECT n.id, n.contrato_id, n.tipo, n.desde, n.hasta, n.cantidad, n.descripcion,
+                      n.soporte_archivo_id, n.creado_por, n.creado_en,
+                      a.motivo AS "motivo?", a.anulada_por AS "anulada_por?",
+                      a.anulada_en AS "anulada_en?"
+               FROM novedades_nomina n
+               LEFT JOIN anulaciones_novedad_nomina a ON a.novedad_id = n.id
+               WHERE n.id = $1"#,
+            id.as_uuid(),
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(TryInto::try_into)
+        .transpose()
+    }
+
+    async fn novedades(
+        &mut self,
+        contrato: Option<ContratoLaboralId>,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> AppResult<Vec<NovedadNomina>> {
+        sqlx::query_as!(
+            FilaNovedad,
+            r#"SELECT n.id, n.contrato_id, n.tipo, n.desde, n.hasta, n.cantidad, n.descripcion,
+                      n.soporte_archivo_id, n.creado_por, n.creado_en,
+                      a.motivo AS "motivo?", a.anulada_por AS "anulada_por?",
+                      a.anulada_en AS "anulada_en?"
+               FROM novedades_nomina n
+               LEFT JOIN anulaciones_novedad_nomina a ON a.novedad_id = n.id
+               WHERE ($1::uuid IS NULL OR n.contrato_id = $1)
+                 AND n.desde <= $3 AND n.hasta >= $2
+               ORDER BY n.desde, n.id"#,
+            contrato.map(ContratoLaboralId::as_uuid),
+            desde,
+            hasta,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(TryInto::try_into)
+        .collect()
+    }
+
+    async fn ultimo_cambio_novedades(
+        &mut self,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> AppResult<Option<DateTime<Utc>>> {
+        sqlx::query_scalar!(
+            "SELECT max(GREATEST(n.creado_en, a.anulada_en))
+             FROM novedades_nomina n
+             LEFT JOIN anulaciones_novedad_nomina a ON a.novedad_id = n.id
+             WHERE n.desde <= $2 AND n.hasta >= $1",
+            desde,
+            hasta,
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
+    async fn contratos_en(
+        &mut self,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+    ) -> AppResult<Vec<ContratoLaboral>> {
+        sqlx::query_as!(
+            FilaContrato,
+            "SELECT id, empleado_id, tipo, fecha_inicio, fecha_fin, descripcion_obra,
+                    fecha_terminacion, motivo_terminacion, creado_por, creado_en, terminado_por,
+                    terminado_en
+             FROM contratos_laborales
+             WHERE fecha_inicio <= $2
+               AND COALESCE(fecha_terminacion, fecha_fin, 'infinity') >= $1
+             ORDER BY empleado_id, fecha_inicio",
+            desde,
+            hasta,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(TryInto::try_into)
+        .collect()
+    }
+
+    async fn reemplazar_liquidaciones(
+        &mut self,
+        periodo: PeriodoNominaId,
+        liquidaciones: &[LiquidacionContrato],
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "DELETE FROM liquidaciones_nomina WHERE periodo_id = $1",
+            periodo.as_uuid()
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(|e| error_nomina(e, "liquidación repetida", "periodo"))?;
+        let tenant = self.ctx.tenant_id.as_uuid();
+        for l in liquidaciones {
+            let q = &l.liquidacion;
+            sqlx::query!(
+                "INSERT INTO liquidaciones_nomina (id, tenant_id, periodo_id, contrato_id,
+                     empleado_id, dias, ibc, devengos, deducciones, neto, aportes_empleador,
+                     ingresos_mes, aportes_mes, retenido_mes, creado_en)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",
+                l.id.as_uuid(),
+                tenant,
+                periodo.as_uuid(),
+                l.contrato_id.as_uuid(),
+                l.empleado_id.as_uuid(),
+                i16::try_from(q.dias).map_err(AppError::infra)?,
+                q.ibc.valor(),
+                q.devengos.valor(),
+                q.deducciones.valor(),
+                q.neto.valor(),
+                q.aportes_empleador.valor(),
+                q.acumulado.ingresos,
+                q.acumulado.aportes,
+                q.acumulado.retenido,
+                l.creado_en,
+            )
+            .execute(&mut *self.tx)
+            .await
+            .map_err(|e| error_nomina(e, "liquidación repetida", "contrato"))?;
+            for linea in &q.lineas {
+                sqlx::query!(
+                    "INSERT INTO lineas_liquidacion_nomina (liquidacion_id, tenant_id, concepto,
+                         clase, cantidad, valor)
+                     VALUES ($1, $2, $3, $4, $5, $6)",
+                    l.id.as_uuid(),
+                    tenant,
+                    linea.concepto.as_str(),
+                    linea.concepto.clase().as_str(),
+                    linea.cantidad.round_dp(4),
+                    linea.valor.valor(),
+                )
+                .execute(&mut *self.tx)
+                .await
+                .map_err(|e| error_nomina(e, "línea repetida", "liquidación"))?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn variables_liquidadas(
+        &mut self,
+        contrato: ContratoLaboralId,
+        desde: NaiveDate,
+        hasta: NaiveDate,
+        excluir: Option<PeriodoNominaId>,
+    ) -> AppResult<Decimal> {
+        let conceptos: Vec<String> = [
+            ConceptoNomina::HoraExtraDiurna,
+            ConceptoNomina::HoraExtraNocturna,
+            ConceptoNomina::HoraExtraDominicalDiurna,
+            ConceptoNomina::HoraExtraDominicalNocturna,
+            ConceptoNomina::RecargoNocturno,
+            ConceptoNomina::RecargoDominical,
+            ConceptoNomina::RecargoNocturnoDominical,
+            ConceptoNomina::Comision,
+            ConceptoNomina::BonificacionSalarial,
+        ]
+        .iter()
+        .map(|c| c.as_str().to_owned())
+        .collect();
+        Ok(sqlx::query_scalar!(
+            "SELECT COALESCE(sum(li.valor), 0)
+             FROM lineas_liquidacion_nomina li
+             JOIN liquidaciones_nomina l ON l.id = li.liquidacion_id
+             JOIN periodos_nomina p ON p.id = l.periodo_id
+             WHERE l.contrato_id = $1 AND ($4::uuid IS NULL OR p.id <> $4)
+               AND p.desde >= $2 AND p.hasta <= $3 AND li.concepto = ANY($5)",
+            contrato.as_uuid(),
+            desde,
+            hasta,
+            excluir.map(PeriodoNominaId::as_uuid),
+            &conceptos,
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .unwrap_or_default())
+    }
+
+    async fn liquidacion(
+        &mut self,
+        id: LiquidacionNominaId,
+    ) -> AppResult<Option<LiquidacionContrato>> {
+        let periodo = sqlx::query_scalar!(
+            "SELECT periodo_id FROM liquidaciones_nomina WHERE id = $1",
+            id.as_uuid()
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        let Some(periodo) = periodo else {
+            return Ok(None);
+        };
+        Ok(self
+            .liquidaciones(PeriodoNominaId::from_uuid(periodo))
+            .await?
+            .into_iter()
+            .find(|l| l.id == id))
+    }
+
+    async fn liquidaciones(
+        &mut self,
+        periodo: PeriodoNominaId,
+    ) -> AppResult<Vec<LiquidacionContrato>> {
+        let cabeceras = sqlx::query!(
+            "SELECT id, contrato_id, empleado_id, dias, ibc, devengos, deducciones, neto,
+                    aportes_empleador, ingresos_mes, aportes_mes, retenido_mes, creado_en
+             FROM liquidaciones_nomina WHERE periodo_id = $1
+             ORDER BY empleado_id, contrato_id",
+            periodo.as_uuid(),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        let ids: Vec<Uuid> = cabeceras.iter().map(|c| c.id).collect();
+        let lineas = sqlx::query!(
+            "SELECT liquidacion_id, concepto, cantidad, valor FROM lineas_liquidacion_nomina
+             WHERE liquidacion_id = ANY($1) ORDER BY concepto",
+            &ids,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        cabeceras
+            .into_iter()
+            .map(|c| {
+                let lineas = lineas
+                    .iter()
+                    .filter(|l| l.liquidacion_id == c.id)
+                    .map(|l| {
+                        Ok(LineaLiquidacion {
+                            concepto: ConceptoNomina::try_from(l.concepto.as_str())?,
+                            cantidad: l.cantidad,
+                            valor: Monto::new(l.valor)?,
+                        })
+                    })
+                    .collect::<AppResult<Vec<_>>>()?;
+                Ok(LiquidacionContrato {
+                    id: LiquidacionNominaId::from_uuid(c.id),
+                    periodo_id: periodo,
+                    contrato_id: ContratoLaboralId::from_uuid(c.contrato_id),
+                    empleado_id: EmpleadoId::from_uuid(c.empleado_id),
+                    liquidacion: Liquidacion {
+                        dias: u32::try_from(c.dias).map_err(AppError::infra)?,
+                        ibc: Monto::new(c.ibc)?,
+                        lineas,
+                        devengos: Monto::new(c.devengos)?,
+                        deducciones: Monto::new(c.deducciones)?,
+                        neto: Monto::new(c.neto)?,
+                        aportes_empleador: Monto::new(c.aportes_empleador)?,
+                        acumulado: AcumuladoMes {
+                            ingresos: c.ingresos_mes,
+                            aportes: c.aportes_mes,
+                            retenido: c.retenido_mes,
+                        },
+                    },
+                    creado_en: c.creado_en,
+                })
+            })
+            .collect()
+    }
+}
+
+impl RepositorioNominaDeCuenta for TransaccionPlataformaPg {
+    async fn desprendibles_de_cuenta(
+        &mut self,
+        cuenta: CuentaId,
+        limite: u32,
+    ) -> AppResult<Vec<DesprendibleDeCuenta>> {
+        sqlx::query!(
+            r#"SELECT tenant_id AS "tenant_id!", entidad AS "entidad!",
+                      liquidacion_id AS "liquidacion_id!", periodicidad AS "periodicidad!",
+                      desde AS "desde!", hasta AS "hasta!", estado AS "estado!", fecha_pago,
+                      devengos AS "devengos!", deducciones AS "deducciones!", neto AS "neto!"
+               FROM desprendibles_de_cuenta($1, $2)"#,
+            cuenta.as_uuid(),
+            i32::try_from(limite).unwrap_or(i32::MAX),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| {
+            Ok(DesprendibleDeCuenta {
+                tenant_id: domain::TenantId::from_uuid(f.tenant_id),
+                entidad: f.entidad,
+                liquidacion_id: LiquidacionNominaId::from_uuid(f.liquidacion_id),
+                periodicidad: PeriodicidadPago::try_from(f.periodicidad.as_str())?,
+                desde: f.desde,
+                hasta: f.hasta,
+                estado: EstadoPeriodoNomina::try_from(f.estado.as_str())?,
+                fecha_pago: f.fecha_pago,
+                devengos: Monto::new(f.devengos)?,
+                deducciones: Monto::new(f.deducciones)?,
+                neto: Monto::new(f.neto)?,
+            })
+        })
         .collect()
     }
 }

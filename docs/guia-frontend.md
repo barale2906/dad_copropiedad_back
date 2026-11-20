@@ -268,8 +268,37 @@ cuenta con su tipo.
     en el cuerpo) y `…/importaciones/{id}/confirmar`, como las demás importaciones. Las
     administradoras van por su **código PILA**.
   - En la consola de la plataforma (`plataforma.normativa.gestionar`): `GET /plataforma/nomina/
-    catalogo`, `POST /plataforma/nomina/parametros` (versión nueva; nunca se edita) y
-    `POST|PUT /plataforma/nomina/administradoras`.
+    catalogo`, `POST /plataforma/nomina/parametros` (versión nueva; nunca se edita),
+    `POST /plataforma/nomina/tablas` (la tabla completa de retención o del fondo de
+    solidaridad) y `POST|PUT /plataforma/nomina/administradoras`.
+  - Configuración: `GET|PUT …/configuracion` (`exonerada_aportes`, art. 114-1 del ET; muéstrelo
+    con una advertencia: lo decide el contador).
+  - Novedades: `POST …/contratos/{id}/novedades` con `tipo` (`TipoNovedad`); según su medida
+    (`MedidaNovedad` en la respuesta) llevan `cantidad` (horas o pesos) en una fecha, o `desde` y
+    `hasta` (días). Las dominicales solo en domingo o festivo (422). `GET …/novedades?desde=&hasta=
+    &contrato_id=` y `POST …/novedades/{id}/anulacion` con `motivo` (204). Sin
+    `personas.datos_sensibles.ver` las incapacidades no aparecen; sin `nomina.salarios.ver` los
+    valores llegan en `0`.
+  - Periodos (`EstadoPeriodoNomina`): `POST …/periodos` (`periodicidad` y `desde` = día 1, o 16 en
+    la quincenal) → `…/liquidacion` (se repite mientras no esté aprobado) → `…/aprobacion` (**otra
+    cuenta**: a quien liquidó muéstrele «pendiente de aprobación»; 409 si hubo novedades después
+    de liquidar: ofrezca liquidar de nuevo) → `…/pago` con `fecha_pago`. `GET …/periodos/{id}`
+    (exige `nomina.salarios.ver`) trae cada liquidación con sus líneas (`ConceptoNomina`,
+    `ClaseLineaNomina`): agrúpelas en devengos, deducciones y aportes del empleador. Si falta un
+    parámetro o una tabla vigente, liquidar responde 422 nombrándolo (y el código del empleado).
+  - Desprendibles (periodo aprobado o pagado; antes, 409): `GET …/liquidaciones/{id}/desprendible`
+    (PDF, `nomina.salarios.ver`) y `POST …/periodos/{id}/desprendibles` (los envía por correo;
+    devuelve `enviados` y `sin_correo`: ofrezca descargar los de quienes no tienen correo).
+  - **Mi nómina** (cualquier cuenta, sin roles en la entidad): `GET /yo/nomina/desprendibles`
+    (todas las entidades donde trabaja) y `GET /yo/nomina/{entidad_id}/desprendibles/{id}` (PDF).
+    Muestre la sección en la app solo si la lista no viene vacía.
+  - Prestaciones: no tienen pantalla propia de pago. La prima llega sola en los periodos de junio
+    y diciembre, los intereses en el primer periodo de enero y, al terminar un contrato, el
+    periodo de la terminación trae cesantías, intereses, prima, vacaciones compensadas e
+    indemnización: **liquide el periodo después de registrar la terminación**. Las líneas de
+    clase `provision` son informativas (no las sume al neto). Registre las vacaciones
+    disfrutadas como novedad `vacaciones` (días calendario). `GET …/cesantias?anio=` da las
+    cesantías por consignar por fondo.
 
 ## 4. Menú: maqueta 3D, zonas y módulos
 
@@ -355,7 +384,7 @@ no tienen pieza en la maqueta: muéstrelas en la lista de Zonas comunes.
 | Tributario | Tributario | alguno de `contabilidad`, `facturacion_electronica` | Terceros (`terceros.gestionar`; ver con `contabilidad.ver` o `facturacion.ver`) · Perfil tributario (`tributario.configurar`, `tributario.perfil.confirmar`) · Resoluciones de numeración (`tributario.configurar`) · **Solo con `contabilidad`:** retención, IVA, ICA y exógena (`tributario.preparar`) | `/entidades/{id}/{terceros,tributario}`, `…/contabilidad/tributario` |
 | Archivo | Archivo | ninguno | Documentos (`archivos.ver`) | `/entidades/{id}/archivos` |
 | Sala de juntas | Reportes | `contabilidad` | Estados financieros (`contabilidad.ver`) | `…/contabilidad/reportes` |
-| Nómina | Nómina | `nomina` | Empleados y contratos (`nomina.ver`; crear, modificar, prorrogar y terminar con `nomina.empleados.gestionar`; salarios y cuentas con `nomina.salarios.ver`) · Importar empleados (`importaciones.ejecutar` y `nomina.empleados.gestionar`) · Catálogo laboral vigente (`nomina.ver`) · **Próximamente:** liquidación, desprendibles, PILA y nómina electrónica | `/entidades/{id}/nomina/…` |
+| Nómina | Nómina | `nomina` | Empleados y contratos (`nomina.ver`; crear, modificar, prorrogar y terminar con `nomina.empleados.gestionar`; salarios y cuentas con `nomina.salarios.ver`) · Importar empleados (`importaciones.ejecutar` y `nomina.empleados.gestionar`) · Catálogo laboral vigente (`nomina.ver`) · Novedades (`nomina.novedades.registrar`) · Periodos y liquidación (`nomina.liquidar`; aprobar con `nomina.aprobar`, ver con `nomina.salarios.ver`) · Configuración (`nomina.configurar`) · Desprendibles (`nomina.salarios.ver`; enviar con `nomina.liquidar`) · Cesantías por consignar (`nomina.salarios.ver`) · **Próximamente:** PILA y nómina electrónica | `/entidades/{id}/nomina/…` |
 
 En una PH, estas mismas secciones se abren desde la zona Administración, con las rutas de
 `/entidades/{id}` (mismo id que la copropiedad). La **ficha de la empresa** (nombre, razón
@@ -705,6 +734,7 @@ si aun así llega el 409, recargue el recurso. Los principales:
 | Suscripción | `EstadoSuscripcion`: activa, suspendida, terminada | `suspendida_por_mora` dice si el pago la reactiva. |
 | Empleado | `EstadoEmpleado`: activo, retirado | Derivado de sus contratos. |
 | Contrato laboral | Sin `estado`: `fecha_terminacion` nula = vigente | Terminado no acepta versiones ni prórrogas. |
+| Periodo de nómina | `EstadoPeriodoNomina`: abierto → liquidado → aprobado → pagado | Aprueba otra cuenta; aprobado no cambia. |
 
 ## 7. Sesión
 

@@ -229,7 +229,11 @@ async fn columnas_personales_estan_clasificadas(pool: PgPool) {
                ('versiones_contrato_laboral', 'eps_id'),
                ('versiones_contrato_laboral', 'afp_id'),
                ('versiones_contrato_laboral', 'cesantias_id'),
-               ('versiones_contrato_laboral', 'pensionado'))
+               ('versiones_contrato_laboral', 'pensionado'),
+               ('novedades_nomina', 'tipo'), ('novedades_nomina', 'descripcion'),
+               ('novedades_nomina', 'cantidad'), ('liquidaciones_nomina', 'ibc'),
+               ('liquidaciones_nomina', 'devengos'), ('liquidaciones_nomina', 'neto'),
+               ('lineas_liquidacion_nomina', 'valor'))
            AND coalesce(col_description(
                    format('%I.%I', c.table_schema, c.table_name)::regclass, c.ordinal_position),
                    '') !~ '^dato_(personal|sensible):'",

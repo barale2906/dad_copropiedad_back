@@ -49,6 +49,13 @@ use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
+mod desprendibles;
+mod liquidacion;
+
+pub(crate) use desprendibles::rutas_yo;
+
+pub(crate) use liquidacion::TablaLaboralRespuesta;
+
 use crate::{
     error::{ApiError, ApiResult, ErrorRespuesta},
     extractores::{Json, Path, Query},
@@ -74,6 +81,8 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(modificar_contrato))
         .routes(routes!(prorrogar_contrato))
         .routes(routes!(terminar_contrato))
+        .merge(liquidacion::rutas())
+        .merge(desprendibles::rutas())
 }
 
 /// Rutas del catálogo laboral de la plataforma (se montan en `/api/v1/plataforma`).
@@ -83,6 +92,7 @@ pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
         .routes(routes!(crear_parametro_laboral))
         .routes(routes!(crear_administradora))
         .routes(routes!(actualizar_administradora))
+        .routes(routes!(liquidacion::crear_tabla_laboral))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -157,6 +167,8 @@ pub struct CatalogoLaboralRespuesta {
     pub parametros: Vec<ParametroLaboralRespuesta>,
     /// En la entidad, las activas; en la plataforma, todas.
     pub administradoras: Vec<AdministradoraRespuesta>,
+    /// Tablas por tramos: en la entidad, la vigente de cada una; en la plataforma, todas.
+    pub tablas: Vec<TablaLaboralRespuesta>,
 }
 
 impl From<Catalogo> for CatalogoLaboralRespuesta {
@@ -164,6 +176,7 @@ impl From<Catalogo> for CatalogoLaboralRespuesta {
         Self {
             parametros: c.parametros.into_iter().map(Into::into).collect(),
             administradoras: c.administradoras.into_iter().map(Into::into).collect(),
+            tablas: c.tablas.into_iter().map(Into::into).collect(),
         }
     }
 }

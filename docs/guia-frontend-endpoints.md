@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-663 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+680 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -15,7 +15,7 @@ sesión de persona.
 - [salud](#salud) (2): Sondas de vida y disponibilidad del servicio
 - [archivos](#archivos) (4): Archivos y adjuntos: descarga con enlaces firmados de vida corta
 - [autenticacion](#autenticacion) (7): Registro, inicio y cierre de sesión
-- [cuenta](#cuenta) (12): La cuenta autenticada
+- [cuenta](#cuenta) (14): La cuenta autenticada
 - [roles](#roles) (14): Roles, permisos y asignaciones
 - [organizaciones](#organizaciones) (9): Organizaciones compartidas y contratos de servicio
 - [copropiedad](#copropiedad) (7): Ficha de la copropiedad: datos legales, cargos vigentes, advertencias y puntos de atención
@@ -34,13 +34,13 @@ sesión de persona.
 - [proteccion_datos](#proteccion-datos) (13): Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
 - [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
-- [plataforma](#plataforma) (75): Operación de la plataforma (exige segundo factor)
+- [plataforma](#plataforma) (76): Operación de la plataforma (exige segundo factor)
 - [contabilidad](#contabilidad) (51): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
 - [tesoreria](#tesoreria) (39): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
 - [tributario](#tributario) (15): Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario
 - [facturacion](#facturacion) (42): Facturación de cualquier entidad, con o sin contabilidad (plan 18): catálogo de productos y servicios, facturas de venta con número interno, pago manual sin tesorería, documentos electrónicos, compras para el documento soporte, facturas recibidas, libros de ventas y compras y paquete de XML y PDF para el contador. Con contabilidad cada documento se contabiliza solo
-- [nomina](#nomina) (11): Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
+- [nomina](#nomina) (25): Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
 
 ## salud
 
@@ -94,6 +94,8 @@ La cuenta autenticada
 | GET | `/yo/dispositivos-push` | Dispositivos activos de la cuenta. |  |  | 200 `[DispositivoPushRespuesta]` |  |
 | POST | `/yo/dispositivos-push` | Registra (o reactiva) el dispositivo: desde ahí los avisos de portería llegan por la app y no por WhatsApp. |  | `RegistrarDispositivoPeticion` | 201 `DispositivoPushRespuesta` | 422 |
 | DELETE | `/yo/dispositivos-push/{dispositivo_id}` | Retira el dispositivo (al cerrar sesión en la app). |  |  | 204  |  |
+| GET | `/yo/nomina/desprendibles` | Mis desprendibles en todas las entidades donde trabajo o trabajé (periodos aprobados). |  |  | 200 `[DesprendibleDeCuentaRespuesta]` |  |
+| GET | `/yo/nomina/{entidad_id}/desprendibles/{liquidacion_id}` | PDF de uno de mis desprendibles. |  |  | 200 `application/pdf` | 409 |
 
 ## roles
 
@@ -643,6 +645,7 @@ Operación de la plataforma (exige segundo factor)
 | POST | `/plataforma/nomina/parametros` | Agrega una versión de un parámetro laboral. El catálogo es de solo inserción: un error se corrige con otra versión. | `plataforma.normativa.gestionar` | `NuevoParametroLaboralPeticion` | 201 `ParametroLaboralRespuesta` | 403, 409, 422 |
 | POST | `/plataforma/nomina/administradoras` | Agrega una administradora de la seguridad social al catálogo. | `plataforma.normativa.gestionar` | `NuevaAdministradoraPeticion` | 201 `AdministradoraRespuesta` | 403, 409, 422 |
 | PUT | `/plataforma/nomina/administradoras/{administradora_id}` | Cambia el nombre y el estado de una administradora. | `plataforma.normativa.gestionar` | `CambiosAdministradoraPeticion` | 200 `AdministradoraRespuesta` | 403, 422 |
+| POST | `/plataforma/nomina/tablas` | Agrega una versión completa de una tabla por tramos (retención por salarios o fondo de solidaridad). Nunca se edita: un error se corrige con otra versión. | `plataforma.normativa.gestionar` | `NuevaTablaLaboralPeticion` | 201 `TablaLaboralRespuesta` | 403, 409, 422 |
 | GET | `/entidades/{entidad_id}/suscripcion` | El plan de la entidad con la plataforma, su consumo del periodo en curso y sus facturas. | `suscripcion.ver` |  | 200 `MiSuscripcionRespuesta` | 403 |
 
 ## contabilidad
@@ -907,3 +910,17 @@ Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (pe
 | POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/versiones` | Modifica las condiciones del contrato desde una fecha (una versión nueva; las anteriores no cambian). | `nomina.empleados.gestionar` | `ModificacionContratoPeticion` | 201 `VersionContratoRespuesta` | 403, 409, 422 |
 | POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/prorroga` | Prorroga un contrato a término fijo. | `nomina.empleados.gestionar` | `ProrrogaContratoPeticion` | 200 `ContratoLaboralRespuesta` | 403, 409, 422 |
 | POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/terminacion` | Termina un contrato con su motivo (la liquidación llega en la fase 4). | `nomina.empleados.gestionar` | `TerminacionContratoPeticion` | 200 `ContratoLaboralRespuesta` | 403, 409, 422 |
+| GET | `/entidades/{entidad_id}/nomina/configuracion` | Configuración de la nómina (la predeterminada, sin exoneración, si nunca se guardó). | `nomina.ver` |  | 200 `ConfiguracionNominaRespuesta` | 403 |
+| PUT | `/entidades/{entidad_id}/nomina/configuracion` | Guarda la configuración de la nómina. | `nomina.configurar` | `ConfiguracionNominaPeticion` | 200 `ConfiguracionNominaRespuesta` | 403 |
+| POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/novedades` | Registra una novedad del contrato (dentro de sus fechas y fuera de periodos aprobados). | `nomina.novedades.registrar` | `NuevaNovedadPeticion` | 201 `NovedadNominaRespuesta` | 403, 422 |
+| GET | `/entidades/{entidad_id}/nomina/novedades` | Novedades que tocan el rango (con las anuladas marcadas). Las incapacidades y licencias de maternidad o paternidad solo con `personas.datos_sensibles.ver`. | `nomina.ver` |  | 200 `[NovedadNominaRespuesta]` | 403, 422 |
+| POST | `/entidades/{entidad_id}/nomina/novedades/{novedad_id}/anulacion` | Anula una novedad (deja de entrar a la liquidación). | `nomina.novedades.registrar` | `AnulacionNovedadPeticion` | 204  | 403, 409, 422 |
+| GET | `/entidades/{entidad_id}/nomina/periodos` | Periodos de la entidad, el más reciente primero (a lo sumo 120). | `nomina.ver` |  | 200 `[PeriodoNominaRespuesta]` | 403 |
+| POST | `/entidades/{entidad_id}/nomina/periodos` | Abre un periodo (el mes completo, o la quincena del 1 al 15 o del 16 al fin de mes). | `nomina.liquidar` | `NuevoPeriodoNominaPeticion` | 201 `PeriodoNominaRespuesta` | 403, 409, 422 |
+| GET | `/entidades/{entidad_id}/nomina/periodos/{periodo_id}` | Periodo con sus liquidaciones (datos personales). | `nomina.salarios.ver` |  | 200 `PeriodoLiquidadoRespuesta` | 403 |
+| POST | `/entidades/{entidad_id}/nomina/periodos/{periodo_id}/liquidacion` | Liquida (o vuelve a liquidar) todos los contratos del periodo con su periodicidad. | `nomina.liquidar` |  | 200 `PeriodoLiquidadoRespuesta` | 403, 409, 422 |
+| POST | `/entidades/{entidad_id}/nomina/periodos/{periodo_id}/aprobacion` | Aprueba la liquidación: otra cuenta distinta de la que liquidó y sin novedades posteriores. | `nomina.aprobar` |  | 200 `PeriodoNominaRespuesta` | 403, 409 |
+| POST | `/entidades/{entidad_id}/nomina/periodos/{periodo_id}/pago` | Marca pagado un periodo aprobado. | `nomina.liquidar` | `PagoPeriodoNominaPeticion` | 200 `PeriodoNominaRespuesta` | 403, 409 |
+| GET | `/entidades/{entidad_id}/nomina/cesantias` | Cesantías del año por consignar (contratos con salario ordinario vigentes al 31 de diciembre). | `nomina.salarios.ver` |  | 200 `[CesantiasContratoRespuesta]` | 403, 422 |
+| GET | `/entidades/{entidad_id}/nomina/liquidaciones/{liquidacion_id}/desprendible` | PDF del desprendible de una liquidación (periodo aprobado o pagado). Las incapacidades y licencias salen como «Ausencia remunerada» y no lleva la cuenta bancaria. | `nomina.salarios.ver` |  | 200 `application/pdf` | 403, 409 |
+| POST | `/entidades/{entidad_id}/nomina/periodos/{periodo_id}/desprendibles` | Envía por correo el desprendible de cada empleado del periodo aprobado. | `nomina.liquidar` |  | 200 `EnvioDesprendiblesRespuesta` | 403, 409 |

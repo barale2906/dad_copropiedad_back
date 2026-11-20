@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT max(GREATEST(n.creado_en, a.anulada_en))\n             FROM novedades_nomina n\n             LEFT JOIN anulaciones_novedad_nomina a ON a.novedad_id = n.id\n             WHERE n.desde <= $2 AND n.hasta >= $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "max",
+        "type_info": "Timestamptz",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Date",
+        "Date"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "cdc12c5c0b09bb0f9f331bb7cac5c8833380d57f29e139eaf676f189c52be15c"
+}

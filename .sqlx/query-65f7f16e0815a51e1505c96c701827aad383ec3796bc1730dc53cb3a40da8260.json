@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(sum(li.valor), 0)\n             FROM lineas_liquidacion_nomina li\n             JOIN liquidaciones_nomina l ON l.id = li.liquidacion_id\n             JOIN periodos_nomina p ON p.id = l.periodo_id\n             WHERE l.contrato_id = $1 AND ($4::uuid IS NULL OR p.id <> $4)\n               AND p.desde >= $2 AND p.hasta <= $3 AND li.concepto = ANY($5)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "coalesce",
+        "type_info": "Numeric",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Date",
+        "Date",
+        "Uuid",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "65f7f16e0815a51e1505c96c701827aad383ec3796bc1730dc53cb3a40da8260"
+}

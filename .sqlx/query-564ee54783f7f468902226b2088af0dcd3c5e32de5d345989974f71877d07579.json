@@ -1,0 +1,172 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, contrato_id, empleado_id, dias, ibc, devengos, deducciones, neto,\n                    aportes_empleador, ingresos_mes, aportes_mes, retenido_mes, creado_en\n             FROM liquidaciones_nomina WHERE periodo_id = $1\n             ORDER BY empleado_id, contrato_id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "contrato_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "contrato_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "empleado_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "empleado_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "dias",
+        "type_info": "Int2",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "dias"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "ibc",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "ibc"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "devengos",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "devengos"
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "deducciones",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "deducciones"
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "neto",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "neto"
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "aportes_empleador",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "aportes_empleador"
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "ingresos_mes",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "ingresos_mes"
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "aportes_mes",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "aportes_mes"
+          }
+        }
+      },
+      {
+        "ordinal": 11,
+        "name": "retenido_mes",
+        "type_info": "Numeric",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "retenido_mes"
+          }
+        }
+      },
+      {
+        "ordinal": 12,
+        "name": "creado_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "liquidaciones_nomina",
+            "name": "creado_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "564ee54783f7f468902226b2088af0dcd3c5e32de5d345989974f71877d07579"
+}

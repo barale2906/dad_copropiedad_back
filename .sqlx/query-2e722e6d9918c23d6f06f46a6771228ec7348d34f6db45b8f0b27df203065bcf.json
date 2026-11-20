@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT exonerada_aportes, actualizada_por, actualizada_en FROM configuraciones_nomina",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exonerada_aportes",
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_nomina",
+            "name": "exonerada_aportes"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "actualizada_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_nomina",
+            "name": "actualizada_por"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "actualizada_en",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "configuraciones_nomina",
+            "name": "actualizada_en"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "2e722e6d9918c23d6f06f46a6771228ec7348d34f6db45b8f0b27df203065bcf"
+}
