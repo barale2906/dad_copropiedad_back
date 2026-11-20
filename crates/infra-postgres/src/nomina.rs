@@ -1340,6 +1340,38 @@ impl RepositorioLiquidacionNomina for TransaccionPg {
         .collect()
     }
 
+    async fn aviso_enviado(&mut self, tipo: &str, referencia: &str) -> AppResult<bool> {
+        sqlx::query_scalar!(
+            r#"SELECT EXISTS (SELECT 1 FROM avisos_nomina WHERE tipo = $1 AND referencia = $2)
+                   AS "existe!""#,
+            tipo,
+            referencia,
+        )
+        .fetch_one(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
+    async fn registrar_aviso(
+        &mut self,
+        tipo: &str,
+        referencia: &str,
+        ahora: DateTime<Utc>,
+    ) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO avisos_nomina (tenant_id, tipo, referencia, enviado_en)
+             VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+            self.ctx.tenant_id.as_uuid(),
+            tipo,
+            referencia,
+            ahora,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
     async fn liquidacion(
         &mut self,
         id: LiquidacionNominaId,
@@ -1459,5 +1491,33 @@ impl RepositorioNominaDeCuenta for TransaccionPlataformaPg {
             })
         })
         .collect()
+    }
+}
+
+/// Directorio de las entidades con nómina (consulta entre tenants del worker de avisos).
+#[derive(Debug, Clone)]
+pub struct DirectorioNominaPg {
+    pool: sqlx::PgPool,
+}
+
+impl DirectorioNominaPg {
+    /// Directorio sobre el pool de la aplicación (rol `dad_app`).
+    pub fn new(pool: sqlx::PgPool) -> Self {
+        Self { pool }
+    }
+}
+
+impl application::puertos::nomina::DirectorioNomina for DirectorioNominaPg {
+    async fn entidades_con_nomina(&self, ahora: DateTime<Utc>) -> AppResult<Vec<domain::TenantId>> {
+        Ok(sqlx::query_scalar!(
+            r#"SELECT tenant_id AS "tenant_id!" FROM entidades_con_nomina($1)"#,
+            ahora
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(domain::TenantId::from_uuid)
+        .collect())
     }
 }

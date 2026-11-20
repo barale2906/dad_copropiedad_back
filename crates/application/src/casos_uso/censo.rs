@@ -962,11 +962,11 @@ where
     ctx.exigir(Permiso::CensoExportar)?;
     let ficha =
         crate::puertos::RepositorioCopropiedad::ficha(&mut unidad.iniciar(ctx).await?).await?;
-    let (nombre, tz) = ficha.map_or((String::new(), domain::reserva::Tz::America__Bogota), |f| {
+    let (nombre, tz) = ficha.map_or((String::new(), domain::reserva::Tz::bogota()), |f| {
         let tz = f
             .zona_horaria
             .parse()
-            .unwrap_or(domain::reserva::Tz::America__Bogota);
+            .unwrap_or(domain::reserva::Tz::bogota());
         (f.nombre, tz)
     });
     let hora = |t| crate::puertos::actas::hora_local(t, tz);

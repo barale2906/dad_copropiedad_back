@@ -88,6 +88,67 @@ impl GrupoCertificado {
     }
 }
 
+/// Obligación legal de la nómina que se recuerda antes de su fecha límite.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Recordatorio {
+    /// Tipo del aviso (`intereses_cesantias`, `consignacion_cesantias`, `prima`).
+    pub tipo: &'static str,
+    /// Referencia única del aviso (año, o año y semestre).
+    pub referencia: String,
+    pub asunto: String,
+    pub texto: String,
+}
+
+/// Recordatorios que tocan en la fecha (dos semanas antes de cada límite legal): intereses de las
+/// cesantías (31 de enero), consignación de las cesantías al fondo (14 de febrero) y prima de
+/// servicios (30 de junio y 20 de diciembre).
+pub fn recordatorios_legales(hoy: chrono::NaiveDate) -> Vec<Recordatorio> {
+    use chrono::Datelike;
+    let (a, m, d) = (hoy.year(), hoy.month(), hoy.day());
+    let mut v = Vec::new();
+    if m == 1 && d >= 15 {
+        v.push(Recordatorio {
+            tipo: "intereses_cesantias",
+            referencia: (a - 1).to_string(),
+            asunto: "Intereses sobre las cesantías".into(),
+            texto: format!(
+                "Recuerde pagar a los empleados los intereses sobre las cesantías de {} antes del 31 \
+                 de enero. La nómina de enero los incluye: liquídela y apruébela a tiempo.",
+                a - 1
+            ),
+        });
+    }
+    if m == 2 && d <= 14 {
+        v.push(Recordatorio {
+            tipo: "consignacion_cesantias",
+            referencia: (a - 1).to_string(),
+            asunto: "Consignación de las cesantías".into(),
+            texto: format!(
+                "Las cesantías de {} se consignan en el fondo de cada empleado a más tardar el 14 de \
+                 febrero. Consulte el reporte de cesantías por consignar en la nómina.",
+                a - 1
+            ),
+        });
+    }
+    let prima = match (m, d) {
+        (6, 15..=30) => Some(("1", "30 de junio")),
+        (12, 5..=20) => Some(("2", "20 de diciembre")),
+        _ => None,
+    };
+    if let Some((semestre, limite)) = prima {
+        v.push(Recordatorio {
+            tipo: "prima",
+            referencia: format!("{a}-{semestre}"),
+            asunto: "Prima de servicios".into(),
+            texto: format!(
+                "La prima de servicios del semestre se paga a más tardar el {limite}. La nómina del \
+                 periodo la incluye: liquídela y apruébela a tiempo."
+            ),
+        });
+    }
+    v
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,5 +186,29 @@ mod tests {
                 );
             assert_eq!(GrupoCertificado::de(*c).is_some(), empleado, "{c:?}");
         }
+    }
+
+    #[test]
+    fn los_recordatorios_salen_dos_semanas_antes_del_limite() {
+        let f = |m, d| chrono::NaiveDate::from_ymd_opt(2027, m, d).expect("fecha");
+        let tipos = |m, d| {
+            recordatorios_legales(f(m, d))
+                .into_iter()
+                .map(|r| (r.tipo, r.referencia))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(tipos(1, 14), vec![]);
+        assert_eq!(
+            tipos(1, 20),
+            vec![("intereses_cesantias", "2026".to_owned())]
+        );
+        assert_eq!(
+            tipos(2, 3),
+            vec![("consignacion_cesantias", "2026".to_owned())]
+        );
+        assert_eq!(tipos(2, 15), vec![]);
+        assert_eq!(tipos(6, 20), vec![("prima", "2027-1".to_owned())]);
+        assert_eq!(tipos(12, 10), vec![("prima", "2027-2".to_owned())]);
+        assert_eq!(tipos(12, 21), vec![]);
     }
 }

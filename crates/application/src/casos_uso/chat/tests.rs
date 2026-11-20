@@ -26,7 +26,7 @@ const PNG: &[u8] = &[
 ];
 
 fn ahora() -> DateTime<Utc> {
-    domain::reserva::Tz::America__Bogota
+    domain::reserva::Tz::bogota()
         .with_ymd_and_hms(2026, 11, 4, 10, 0, 0)
         .single()
         .expect("fecha")
@@ -610,7 +610,7 @@ async fn autorizar_una_visita_desde_el_chat_envia_el_qr_sin_cuenta() {
 
     let dias = e.enviar(texto("Rosa Pérez")).await;
     let hoy = ahora()
-        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .with_timezone(&domain::reserva::Tz::bogota())
         .date_naive();
     assert!(ids(&dias[0]).contains(&format!("vd:{hoy}")));
     let r = e.enviar(elige(&format!("vd:{hoy}"))).await;
@@ -646,7 +646,7 @@ async fn quien_no_vive_ni_es_dueno_no_autoriza_visitas() {
     e.enviar(elige("m:visita")).await;
     e.enviar(texto("Rosa Pérez")).await;
     let hoy = ahora()
-        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .with_timezone(&domain::reserva::Tz::bogota())
         .date_naive();
 
     let r = e.enviar(elige(&format!("vd:{hoy}"))).await;

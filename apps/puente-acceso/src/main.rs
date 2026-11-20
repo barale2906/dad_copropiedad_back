@@ -15,7 +15,7 @@ use std::{path::PathBuf, sync::Arc, time::Duration};
 
 use anyhow::Context;
 use chrono::Utc;
-use chrono_tz::Tz;
+use domain::reserva::Tz;
 use puente_acceso::{
     Cache, ColaEventos, ControladorDispositivo, ControladorSimulado, cliente::ClienteNube, decidir,
     leer_linea_simulador,

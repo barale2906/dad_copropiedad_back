@@ -48,7 +48,7 @@ use crate::{
 
 /// Lunes 9 de noviembre de 2026, 08:00 en Bogotá.
 fn ahora() -> DateTime<Utc> {
-    domain::reserva::Tz::America__Bogota
+    domain::reserva::Tz::bogota()
         .with_ymd_and_hms(2026, 11, 9, 8, 0, 0)
         .single()
         .expect("fecha")
@@ -400,7 +400,7 @@ async fn no_instala_sin_quorum_y_convoca_la_segunda_al_tercer_dia_habil() {
     let local = segunda
         .reunion
         .fecha_programada
-        .with_timezone(&domain::reserva::Tz::America__Bogota);
+        .with_timezone(&domain::reserva::Tz::bogota());
     assert_eq!(local.hour(), 20, "a las 8:00 p. m. (art. 41)");
     let original = e
         .unidad

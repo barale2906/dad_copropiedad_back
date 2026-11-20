@@ -430,7 +430,7 @@ async fn las_ordenes_preventivas_no_se_repiten_y_el_worker_las_encuentra(pool: P
     .await
     .expect("activo");
     let hoy = Utc::now()
-        .with_timezone(&domain::reserva::Tz::America__Bogota)
+        .with_timezone(&domain::reserva::Tz::bogota())
         .date_naive();
     guardar_plan(
         &e.unidad,

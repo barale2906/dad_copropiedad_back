@@ -1987,4 +1987,59 @@ mod liquidacion {
         .expect("líneas");
         assert!(con_centro > 0, "el gasto lleva el centro de costo");
     }
+
+    struct RelojFijo(chrono::DateTime<chrono::Utc>);
+
+    impl application::puertos::Reloj for RelojFijo {
+        fn ahora(&self) -> chrono::DateTime<chrono::Utc> {
+            self.0
+        }
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn el_worker_avisa_contratos_por_vencer_y_fechas_legales_una_vez(pool: PgPool) {
+        use chrono::TimeZone;
+        let e = Entorno::new(&pool).await;
+        let mut contrato = e.fijo(dia(2026, 2, 1), dia(2026, 7, 31));
+        contrato.condiciones = e.condiciones(dec!(2100000));
+        uc::crear_empleado(
+            &e.unidad,
+            &RelojSistema,
+            &e.ctx,
+            e.nuevo("E-1", "52123456", contrato),
+        )
+        .await
+        .expect("alta");
+        // 20 de junio: el contrato vence en 41 días y toca el recordatorio de la prima.
+        let reloj = RelojFijo(
+            chrono::Utc
+                .with_ymd_and_hms(2026, 6, 20, 15, 0, 0)
+                .single()
+                .expect("hora"),
+        );
+        sqlx::query("UPDATE modulos_habilitados SET desde = '2026-01-01' WHERE tenant_id = $1")
+            .bind(e.tenant.as_uuid())
+            .execute(&pool)
+            .await
+            .expect("módulo desde enero");
+        let directorio = infra_postgres::DirectorioNominaPg::new(pool_como_app(&pool).await);
+
+        let primera =
+            application::casos_uso::nomina::tareas::avisar_nomina(&directorio, &e.unidad, &reloj)
+                .await
+                .expect("avisos");
+        let segunda =
+            application::casos_uso::nomina::tareas::avisar_nomina(&directorio, &e.unidad, &reloj)
+                .await
+                .expect("avisos");
+        let tipos: Vec<String> =
+            sqlx::query_scalar("SELECT tipo FROM avisos_nomina WHERE tenant_id = $1 ORDER BY tipo")
+                .bind(e.tenant.as_uuid())
+                .fetch_all(&pool)
+                .await
+                .expect("avisos");
+
+        assert_eq!((primera, segunda), (2, 0), "una sola vez");
+        assert_eq!(tipos, vec!["prima", "vencimiento_contrato"]);
+    }
 }

@@ -59,6 +59,7 @@ pub mod ticket;
 pub mod titularidad;
 pub mod tributario;
 pub mod voto;
+pub mod zona;
 
 pub use acceso::{
     CanalAviso, CanalRespuestaVisita, CargaQr, ConfiguracionAcceso, EstadoCorrespondencia,

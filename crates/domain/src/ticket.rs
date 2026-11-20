@@ -327,7 +327,7 @@ fn a_utc(tz: Tz, local: NaiveDateTime) -> DateTime<Utc> {
 /// use chrono::{NaiveDate, TimeZone, Utc};
 /// use domain::ticket::{JornadaHabil, Plazo, UnidadPlazo, vencimiento};
 ///
-/// let tz: chrono_tz::Tz = "America/Bogota".parse().expect("zona");
+/// let tz: domain::reserva::Tz = "America/Bogota".parse().expect("zona");
 /// // Radicado el jueves 2 de abril de 2026 (Jueves Santo) a las 10:00 locales: 3 días hábiles
 /// // vencen el miércoles 8 al final de la jornada (17:00).
 /// let desde = tz.with_ymd_and_hms(2026, 4, 2, 10, 0, 0).unwrap().with_timezone(&Utc);

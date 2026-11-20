@@ -319,6 +319,12 @@ cuenta con su tipo.
   - Deducciones de la retención del empleado (con su soporte en `/archivos`): `GET|POST
     …/empleados/{id}/deducciones` (`TipoDeduccion`; `dependientes` sin valor) y `POST
     …/deducciones/{id}/terminacion` con `hasta`. Se aplican desde la liquidación siguiente.
+  - Certificado laboral: `GET …/empleados/{id}/certificado-laboral?con_salario=` (PDF; con salario
+    exige `nomina.salarios.ver`) y, para el empleado, `GET /yo/nomina/{entidad_id}/certificado-laboral`
+    (con su salario).
+  - Avisos automáticos (no tienen pantalla): quienes tienen `nomina.empleados.gestionar` reciben por
+    correo los contratos a término fijo que vencen en 45 días (para entregar el preaviso a tiempo) y
+    los recordatorios de intereses y consignación de cesantías y de la prima.
 
 ## 4. Menú: maqueta 3D, zonas y módulos
 

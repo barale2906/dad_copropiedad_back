@@ -1488,10 +1488,12 @@ pub(crate) mod tests {
         puertos::{reloj::RelojFijo, unidad_trabajo::memoria::UnidadEnMemoria},
     };
 
-    const BOGOTA: Tz = Tz::America__Bogota;
+    fn bogota() -> Tz {
+        Tz::bogota()
+    }
 
     pub(crate) fn local(d: u32, h: u32) -> DateTime<Utc> {
-        BOGOTA
+        bogota()
             .with_ymd_and_hms(2026, 11, d, h, 0, 0)
             .single()
             .expect("hora válida")

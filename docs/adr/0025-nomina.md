@@ -163,6 +163,15 @@ usuario los ajusta. La fase 1 cubre el catálogo, los empleados, los contratos y
   ingresos − aportes obligatorios − deducciones − aportes voluntarios → renta exenta del 25 % → todo
   limitado al 40 % y a 1340 UVT anuales. **Por revisar** con el especialista: los 72 UVT por
   dependiente de la Ley 2277 de 2022 y el procedimiento 2 no están.
+- **Certificado laboral** en PDF (`TablaPdf`): cargo, tipo de contrato y fechas, y el salario actual
+  solo si se pide con `nomina.salarios.ver`; el empleado descarga el suyo (con salario) en
+  `/yo/nomina/{entidad_id}/certificado-laboral` sin roles en la entidad.
+- **Avisos automáticos** (worker `worker_nomina` del gateway, cada 6 horas): a las cuentas con
+  `nomina.empleados.gestionar`, por correo y una vez por referencia (`avisos_nomina`): contratos a
+  término fijo que vencen en 45 días (el preaviso es de 30: CST art. 46) y recordatorios de los
+  intereses de cesantías (31 de enero), su consignación (14 de febrero) y la prima (30 de junio y
+  20 de diciembre). Las entidades se recorren con la función `SECURITY DEFINER`
+  `entidades_con_nomina`.
 
 ## Consecuencias
 - Las fases siguientes (novedades y liquidación, desprendibles, provisiones y liquidación del

@@ -909,4 +909,31 @@ async fn novedades_por_planilla_deducciones_simulacion_y_vacaciones(pool: PgPool
         .pedir(Method::GET, &format!("/empleados/{empleado}"), None)
         .await;
     assert!(ficha["contratos"][0]["contrato"]["fecha_terminacion"].is_null());
+    // Certificado laboral: la administración y la empleada desde «Mi nómina».
+    let (s, tipo, contenido) = g
+        .api
+        .pedir_texto(
+            &format!(
+                "/api/v1/entidades/{}/nomina/empleados/{empleado}/certificado-laboral?con_salario=true",
+                g.id
+            ),
+            &g.gerente,
+        )
+        .await;
+    assert_eq!((s, tipo.as_str()), (StatusCode::OK, "application/pdf"));
+    assert!(contenido.starts_with("%PDF"));
+    let ana = g.api.registrar("ana").await;
+    sqlx::query("UPDATE personas SET cuenta_id = $1::uuid WHERE documento = '52123456'")
+        .bind(&ana)
+        .execute(&g.api.duenio)
+        .await
+        .expect("vínculo");
+    let token = g.api.token("ana").await;
+    let propio = format!("/api/v1/yo/nomina/{}/certificado-laboral", g.id);
+    let (s, tipo, _) = g.api.pedir_texto(&propio, &token).await;
+    assert_eq!((s, tipo.as_str()), (StatusCode::OK, "application/pdf"));
+    g.api.registrar("otro").await;
+    let otro = g.api.token("otro").await;
+    let (s, _, _) = g.api.pedir_texto(&propio, &otro).await;
+    assert_eq!(s, StatusCode::NOT_FOUND, "no es empleado");
 }

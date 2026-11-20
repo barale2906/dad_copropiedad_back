@@ -70,6 +70,7 @@ pub use chat::{DirectorioGestionPg, DirectorioTelefonosPg, SesionesChatPg};
 pub use cola_salida::{ColaSalidaPg, LoteSalidaPg};
 pub use error::InfraPgError;
 pub use idempotencia::IdempotenciaPg;
+pub use nomina::DirectorioNominaPg;
 pub use plataforma::{TransaccionPlataformaPg, UnidadDeTrabajoPlataformaPg};
 pub use pool::{conectar, migrar, ping, revertir_en, revertir_hasta, verificar_rol_restringido};
 pub use publicidad::DirectorioPublicidadPg;

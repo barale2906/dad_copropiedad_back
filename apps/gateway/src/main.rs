@@ -19,6 +19,7 @@
 //! - Publicidad de la plataforma ([`worker_publicidad`]): finaliza campañas vencidas y encola
 //!   los masivos (solo a quien autorizó, prioridad 9).
 //! - Cartera de la PH ([`worker_cartera`]): recordatorios de pago y avisos de mora.
+//! - Nómina ([`worker_nomina`]): contratos a término fijo por vencer y fechas legales.
 //! - Facturación electrónica ([`worker_facturacion`]): retransmite los documentos en contingencia
 //!   y sincroniza a diario los correos de recepción de la DIAN.
 //! - Cobro de la plataforma ([`worker_cobros`]): cortes de las suscripciones y calendario de mora
@@ -33,6 +34,7 @@ mod worker_cartera;
 mod worker_cobros;
 mod worker_facturacion;
 mod worker_gestion;
+mod worker_nomina;
 mod worker_publicidad;
 mod worker_recordatorios;
 mod worker_salida;
@@ -151,6 +153,12 @@ async fn main() -> anyhow::Result<()> {
         esperar_apagado(apagado.clone()),
     ));
 
+    let nomina = tokio::spawn(worker_nomina::ejecutar(
+        infra_postgres::DirectorioNominaPg::new(db.clone()),
+        UnidadDeTrabajoPg::new(db.clone()),
+        Arc::clone(&hay_salida),
+        esperar_apagado(apagado.clone()),
+    ));
     let cartera = tokio::spawn(worker_cartera::ejecutar(
         infra_postgres::DirectorioCarteraPg::new(db.clone()),
         UnidadDeTrabajoPg::new(db.clone()),
@@ -251,6 +259,9 @@ async fn main() -> anyhow::Result<()> {
         tracing::error!(error = %e, "el worker de envíos terminó con error");
     }
 
+    if let Err(e) = nomina.await {
+        tracing::error!(error = %e, "el worker de avisos de nómina terminó con error");
+    }
     if let Err(e) = cartera.await {
         tracing::error!(error = %e, "el worker de avisos de cartera terminó con error");
     }

@@ -530,6 +530,21 @@ pub trait RepositorioLiquidacionNomina: Send {
         empleado: EmpleadoId,
     ) -> impl Future<Output = AppResult<Vec<DeduccionRetencion>>> + Send;
 
+    /// ¿Ya se envió el aviso de ese tipo y referencia?
+    fn aviso_enviado(
+        &mut self,
+        tipo: &str,
+        referencia: &str,
+    ) -> impl Future<Output = AppResult<bool>> + Send;
+
+    /// Registra que el aviso se envió (una sola vez por tipo y referencia).
+    fn registrar_aviso(
+        &mut self,
+        tipo: &str,
+        referencia: &str,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
     /// Liquidación por id, con sus líneas.
     fn liquidacion(
         &mut self,
@@ -585,4 +600,14 @@ pub struct DeduccionRetencion {
     pub soporte_archivo_id: Option<ArchivoId>,
     pub creado_por: Option<CuentaId>,
     pub creado_en: DateTime<Utc>,
+}
+
+/// Entidades con la nómina habilitada (para el worker de avisos; función `SECURITY DEFINER`
+/// `entidades_con_nomina`).
+pub trait DirectorioNomina: Send + Sync {
+    /// Entidades activas con la nómina habilitada ahora.
+    fn entidades_con_nomina(
+        &self,
+        ahora: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<Vec<domain::TenantId>>> + Send;
 }

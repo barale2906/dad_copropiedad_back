@@ -3,7 +3,10 @@
 //! en la entidad: basta ser la persona de la liquidación).
 
 use application::{
-    casos_uso::nomina::desprendibles::{self as uc, EnvioDesprendibles},
+    casos_uso::nomina::{
+        certificados as uc_certificados,
+        desprendibles::{self as uc, EnvioDesprendibles},
+    },
     puertos::{RelojSistema, nomina::DesprendibleDeCuenta},
 };
 use axum::{
@@ -18,13 +21,13 @@ use domain::{
 };
 use rust_decimal::Decimal;
 use serde::Serialize;
-use utoipa::ToSchema;
+use utoipa::{IntoParams, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use uuid::Uuid;
 
 use crate::{
     error::{ApiResult, ErrorRespuesta},
-    extractores::{Json, Path},
+    extractores::{Json, Path, Query},
     openapi::{ETIQUETA_CUENTA, ETIQUETA_NOMINA},
     sesion::{CuentaAutenticada, EnEntidad},
     state::AppState,
@@ -35,6 +38,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(desprendible))
         .routes(routes!(enviar_desprendibles))
+        .routes(routes!(certificado_laboral))
 }
 
 /// Rutas del portal del empleado (se montan en `/api/v1/yo`).
@@ -42,6 +46,7 @@ pub fn rutas_yo() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(mis_desprendibles))
         .routes(routes!(mi_desprendible))
+        .routes(routes!(mi_certificado_laboral))
 }
 
 fn pdf(contenido: Vec<u8>, nombre: &str) -> Response {
@@ -223,4 +228,74 @@ pub async fn mi_desprendible(
     )
     .await?;
     Ok(pdf(contenido, "desprendible.pdf"))
+}
+
+/// Opciones del certificado laboral.
+#[derive(Debug, serde::Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct CertificadoLaboralParametros {
+    /// Incluir el salario actual (exige `nomina.salarios.ver`).
+    #[serde(default)]
+    pub con_salario: bool,
+}
+
+/// Certificado laboral del empleado en PDF (cargo, tipo de contrato y fechas; el salario solo si
+/// se pide).
+#[utoipa::path(
+    get,
+    path = "/empleados/{empleado_id}/certificado-laboral",
+    tag = ETIQUETA_NOMINA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("empleado_id" = Uuid, Path, description = "Empleado"), CertificadoLaboralParametros),
+    responses(
+        (status = OK, description = "PDF del certificado", content_type = "application/pdf", body = Vec<u8>),
+        (status = FORBIDDEN, description = "Sin `nomina.ver` (o sin `nomina.salarios.ver` con salario) (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "Empleado inexistente o sin contratos", body = ErrorRespuesta),
+    )
+)]
+pub async fn certificado_laboral(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+    Query(q): Query<CertificadoLaboralParametros>,
+) -> ApiResult<Response> {
+    let contenido = uc_certificados::certificado_laboral(
+        &state.unidad,
+        &state.actas,
+        &RelojSistema,
+        &en.ctx,
+        domain::EmpleadoId::from_uuid(ruta.1),
+        q.con_salario,
+    )
+    .await?;
+    Ok(pdf(contenido, "certificado-laboral.pdf"))
+}
+
+/// Mi certificado laboral en una entidad donde trabajo o trabajé (con mi salario actual).
+#[utoipa::path(
+    get,
+    path = "/nomina/{entidad_id}/certificado-laboral",
+    tag = ETIQUETA_CUENTA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad empleadora")),
+    responses(
+        (status = OK, description = "PDF del certificado", content_type = "application/pdf", body = Vec<u8>),
+        (status = UNAUTHORIZED, description = "Sin sesión (`no_autenticado`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "La cuenta no es empleada de la entidad", body = ErrorRespuesta),
+    )
+)]
+pub async fn mi_certificado_laboral(
+    State(state): State<AppState>,
+    cuenta: CuentaAutenticada,
+    Path(entidad): Path<Uuid>,
+) -> ApiResult<Response> {
+    let contenido = uc_certificados::mi_certificado_laboral(
+        &state.unidad,
+        &state.actas,
+        &RelojSistema,
+        cuenta.sesion.cuenta_id,
+        TenantId::from_uuid(entidad),
+    )
+    .await?;
+    Ok(pdf(contenido, "certificado-laboral.pdf"))
 }

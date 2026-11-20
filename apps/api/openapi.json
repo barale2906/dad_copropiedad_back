@@ -9151,6 +9151,69 @@
         ]
       }
     },
+    "/api/v1/yo/nomina/{entidad_id}/certificado-laboral": {
+      "get": {
+        "tags": [
+          "cuenta"
+        ],
+        "summary": "Mi certificado laboral en una entidad donde trabajo o trabajé (con mi salario actual).",
+        "operationId": "cuenta_mi_certificado_laboral",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad empleadora",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del certificado",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La cuenta no es empleada de la entidad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/puentes/sincronizacion": {
       "get": {
         "tags": [
@@ -56099,6 +56162,98 @@
           },
           "409": {
             "description": "El periodo no está aprobado (`conflicto`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/nomina/empleados/{empleado_id}/certificado-laboral": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Certificado laboral del empleado en PDF (cargo, tipo de contrato y fechas; el salario solo si\nse pide).",
+        "operationId": "nomina_certificado_laboral",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "empleado_id",
+            "in": "path",
+            "description": "Empleado",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "con_salario",
+            "in": "query",
+            "description": "Incluir el salario actual (exige `nomina.salarios.ver`).",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del certificado",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.ver` (o sin `nomina.salarios.ver` con salario) (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Empleado inexistente o sin contratos",
             "content": {
               "application/json": {
                 "schema": {

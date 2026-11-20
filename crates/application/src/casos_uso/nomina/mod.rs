@@ -9,6 +9,7 @@
 //! - [`importacion`]: carga masiva de empleados con vista previa.
 //! - [`importacion_novedades`]: carga masiva de novedades con vista previa.
 //! - [`novedades`]: novedades de los contratos (horas, días y valores) y su anulación.
+//! - [`certificados`]: certificado laboral para la administración y para «Mi nómina».
 //! - [`contabilizacion`]: documentos origen al contabilizador al aprobar y al pagar (solo con
 //!   contabilidad).
 //! - [`deducciones`]: deducciones de la retención declaradas por el empleado.
@@ -18,10 +19,12 @@
 //!   liquidación y cesantías por consignar.
 //! - [`reportes`]: aportes del mes por administradora (insumo de la PILA) e ingresos y
 //!   retenciones del año (insumo del certificado).
+//! - [`tareas`]: avisos automáticos (contratos por vencer y fechas legales) del worker.
 //! - [`liquidacion`]: configuración de la entidad, periodos, liquidación, aprobación por otra
 //!   cuenta y pago.
 
 pub mod catalogo;
+pub mod certificados;
 pub mod contabilizacion;
 pub mod deducciones;
 pub mod desprendibles;
@@ -32,6 +35,7 @@ pub mod liquidacion;
 pub mod novedades;
 pub mod prestaciones;
 pub mod reportes;
+pub mod tareas;
 
 use domain::{Modulo, Permiso};
 

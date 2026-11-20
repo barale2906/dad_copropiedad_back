@@ -8,9 +8,10 @@
 //!   alistamiento.
 //! - Montos en `Decimal` (COP), nunca `f64`.
 
+/// Zona horaria IANA (re-exportada para que las capas externas no dependan de la librería de
+/// zonas).
+pub use crate::zona::Tz;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, TimeZone, Timelike, Utc};
-/// Zona horaria IANA (re-exportada para que las capas externas no dependan de `chrono-tz`).
-pub use chrono_tz::Tz;
 use rust_decimal::{Decimal, RoundingStrategy};
 use serde::{Deserialize, Serialize};
 
@@ -783,10 +784,12 @@ mod tests {
     use super::*;
     use crate::FranjaSemanal;
 
-    const BOGOTA: Tz = chrono_tz::America::Bogota;
+    fn bogota() -> Tz {
+        Tz::bogota()
+    }
 
     fn local(a: i32, m: u32, d: u32, h: u32) -> DateTime<Utc> {
-        BOGOTA
+        bogota()
             .with_ymd_and_hms(a, m, d, h, 0, 0)
             .single()
             .expect("hora válida")
@@ -829,7 +832,7 @@ mod tests {
     fn franja_valida_dentro_del_horario() {
         let p = PoliticaReserva::default();
         assert!(
-            p.validar_franja(&franja(5, 14, 18), ahora(), &horario_semana(), BOGOTA)
+            p.validar_franja(&franja(5, 14, 18), ahora(), &horario_semana(), bogota())
                 .is_ok()
         );
     }
@@ -851,7 +854,7 @@ mod tests {
         for f in casos {
             assert!(
                 matches!(
-                    p.validar_franja(&f, ahora(), &h, BOGOTA),
+                    p.validar_franja(&f, ahora(), &h, bogota()),
                     Err(DominioError::ReservaNoPermitida(_))
                 ),
                 "{f:?}"
@@ -863,7 +866,7 @@ mod tests {
         };
         assert!(
             sorteo
-                .validar_franja(&franja(5, 14, 16), ahora(), &h, BOGOTA)
+                .validar_franja(&franja(5, 14, 16), ahora(), &h, bogota())
                 .is_err()
         );
     }
@@ -922,10 +925,10 @@ mod tests {
             ..PoliticaReserva::default()
         };
         // 5 de diciembre de 2026: sábado ordinario. 8 de diciembre: festivo (Inmaculada).
-        assert_eq!(p.liquidar(&franja(5, 14, 17), BOGOTA), dec!(60000));
-        assert_eq!(p.liquidar(&franja(8, 14, 16), BOGOTA), dec!(60000));
+        assert_eq!(p.liquidar(&franja(5, 14, 17), bogota()), dec!(60000));
+        assert_eq!(p.liquidar(&franja(8, 14, 16), bogota()), dec!(60000));
         assert_eq!(
-            p.liquidar(&franja(6, 14, 15), BOGOTA),
+            p.liquidar(&franja(6, 14, 15), bogota()),
             dec!(30000),
             "domingo"
         );
@@ -979,7 +982,7 @@ mod tests {
         let dia = NaiveDate::from_ymd_opt(2026, 12, 5).expect("fecha");
         let libres = disponibilidad(
             &h,
-            BOGOTA,
+            bogota(),
             dia,
             dia,
             &[franja(5, 12, 14)],
@@ -989,7 +992,7 @@ mod tests {
         assert_eq!(libres, vec![franja(5, 8, 11), franja(5, 15, 22)]);
         let dos_dias = disponibilidad(
             &h,
-            BOGOTA,
+            bogota(),
             dia,
             dia.succ_opt().expect("fecha"),
             &[],
@@ -1000,7 +1003,7 @@ mod tests {
         assert!(
             disponibilidad(
                 &h,
-                BOGOTA,
+                bogota(),
                 dia,
                 dia - Duration::days(1),
                 &[],

@@ -18,7 +18,7 @@ shared.workspace = true
 
 anyhow.workspace = true
 chrono.workspace = true
-chrono-tz.workspace = true
+jiff.workspace = true
 hex.workspace = true
 reqwest.workspace = true
 ring.workspace = true
