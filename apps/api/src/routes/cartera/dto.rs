@@ -20,7 +20,7 @@ use application::{
 };
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    TipoBienPrivado,
+    CuentaId, TipoBienPrivado,
     contabilidad::{Monto, tesoreria::MedioRecibo},
     contabilidad_ph::{
         CriterioDistribucion, EstadoCuotaExtraordinaria, EstadoLiquidacionExpensas,
@@ -1338,7 +1338,11 @@ pub struct AcuerdoRespuesta {
     #[schema(value_type = crate::esquemas::EstadoAcuerdo)]
     pub estado: EstadoAcuerdo,
     pub observaciones: Option<String>,
+    /// Cuenta que propuso el acuerdo: no puede aprobarlo (cuatro ojos).
+    pub propuesto_por: Uuid,
     pub creado_en: DateTime<Utc>,
+    /// Cuenta que lo aprobó (`None` mientras está propuesto).
+    pub aprobado_por: Option<Uuid>,
     pub aprobado_en: Option<DateTime<Utc>>,
     pub cerrado_en: Option<DateTime<Utc>>,
     pub cuotas: Vec<CuotaAcuerdoRespuesta>,
@@ -1360,7 +1364,9 @@ impl From<AcuerdoPago> for AcuerdoRespuesta {
             valor: a.valor,
             estado: a.estado,
             observaciones: a.observaciones,
+            propuesto_por: a.creado_por.as_uuid(),
             creado_en: a.creado_en,
+            aprobado_por: a.aprobado_por.map(CuentaId::as_uuid),
             aprobado_en: a.aprobado_en,
             cerrado_en: a.cerrado_en,
             cuotas: a

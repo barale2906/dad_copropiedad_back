@@ -477,3 +477,44 @@ async fn el_propietario_consulta_su_cartera_y_el_consejo_sus_informes(pool: PgPo
     assert_eq!(s, StatusCode::OK);
     assert_eq!(tipo, "application/pdf");
 }
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_acuerdo_dice_quien_lo_propuso_y_esa_cuenta_no_lo_aprueba(pool: PgPool) {
+    let (e, bien, _) = copropiedad(pool).await;
+    crear(
+        &e,
+        "/cartera/liquidaciones",
+        json!({ "periodo": "2026-12-01" }),
+    )
+    .await;
+    let acuerdo = crear(
+        &e,
+        "/cartera/acuerdos",
+        json!({ "bien_privado_id": bien, "numero_cuotas": 3,
+                "primer_vencimiento": "2027-01-10" }),
+    )
+    .await;
+    let propuesto_por = acuerdo["propuesto_por"].as_str().expect("propuesto_por");
+    assert!(acuerdo["aprobado_por"].is_null());
+    let aprobacion = format!(
+        "/cartera/acuerdos/{}/aprobacion",
+        acuerdo["id"].as_str().expect("id")
+    );
+
+    let (s, v) = e.pedir(Method::POST, &aprobacion, None).await;
+    assert_eq!(s, StatusCode::CONFLICT, "{v}");
+
+    let (s, v) = e
+        .api
+        .pedir(
+            Method::POST,
+            &format!("{}{aprobacion}", e.base),
+            Some(&e.root),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert_eq!(v["propuesto_por"], json!(propuesto_por));
+    assert!(v["aprobado_por"].is_string());
+    assert_ne!(v["aprobado_por"], v["propuesto_por"]);
+}

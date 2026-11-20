@@ -8,7 +8,7 @@
 use application::puertos::copropiedades::AltaCopropiedad;
 use application::{
     casos_uso::{modulos, organizaciones as org, plataforma as uc},
-    puertos::RelojSistema,
+    puertos::{RelojSistema, identidad::AsignacionPlataforma},
 };
 use axum::{extract::State, http::StatusCode};
 use chrono::{DateTime, Utc};
@@ -23,11 +23,11 @@ use uuid::Uuid;
 
 use crate::{
     error::{ApiResult, ErrorRespuesta},
-    extractores::{Json, Path},
+    extractores::{Json, Path, Query},
     openapi::ETIQUETA_PLATAFORMA,
     routes::{
         organizaciones::ReclamacionRespuesta,
-        roles::{NuevoRolPeticion, PermisosPeticion, RolRespuesta},
+        roles::{FiltroAsignaciones, NuevoRolPeticion, PermisosPeticion, RolRespuesta},
     },
     sesion::OperadorPlataforma,
     state::AppState,
@@ -42,7 +42,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(terminar_modulo))
         .routes(routes!(listar_roles, crear_rol))
         .routes(routes!(editar_permisos_rol))
-        .routes(routes!(asignar))
+        .routes(routes!(listar_asignaciones, asignar))
         .routes(routes!(revocar))
         .routes(routes!(bloquear_cuenta))
         .merge(super::usuarios::rutas_plataforma())
@@ -389,6 +389,58 @@ pub struct AsignacionPlataformaPeticion {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct AsignacionPlataformaRespuesta {
     pub id: Uuid,
+}
+
+/// Asignación de un rol de plataforma (vigente o histórica).
+#[derive(Debug, Serialize, ToSchema)]
+pub struct AsignacionPlataformaDetalleRespuesta {
+    /// Lo que se pasa a `DELETE /plataforma/asignaciones/{asignacion_id}`.
+    pub id: Uuid,
+    pub cuenta_id: Uuid,
+    pub rol_id: Uuid,
+    pub vigente_desde: DateTime<Utc>,
+    /// `null` = vigente sin fecha de fin.
+    pub vigente_hasta: Option<DateTime<Utc>>,
+    pub asignado_por: Option<Uuid>,
+}
+
+impl From<AsignacionPlataforma> for AsignacionPlataformaDetalleRespuesta {
+    fn from(a: AsignacionPlataforma) -> Self {
+        Self {
+            id: a.id.as_uuid(),
+            cuenta_id: a.cuenta_id.as_uuid(),
+            rol_id: a.rol_id.as_uuid(),
+            vigente_desde: a.vigente_desde,
+            vigente_hasta: a.vigente_hasta,
+            asignado_por: a.asignado_por.map(CuentaId::as_uuid),
+        }
+    }
+}
+
+/// Historial de asignaciones de roles de plataforma, las más recientes primero.
+#[utoipa::path(
+    get,
+    path = "/asignaciones",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    params(FiltroAsignaciones),
+    responses(
+        (status = OK, description = "Asignaciones", body = Vec<AsignacionPlataformaDetalleRespuesta>),
+        (status = FORBIDDEN, description = "Sin `plataforma.roles.asignar` ni `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn listar_asignaciones(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Query(f): Query<FiltroAsignaciones>,
+) -> ApiResult<Json<Vec<AsignacionPlataformaDetalleRespuesta>>> {
+    let lista = uc::listar_asignaciones_plataforma(
+        &state.plataforma,
+        &op.ctx,
+        f.cuenta_id.map(CuentaId::from_uuid),
+    )
+    .await?;
+    Ok(Json(lista.into_iter().map(Into::into).collect()))
 }
 
 /// Asigna un rol de plataforma (soporte, comercial, superusuario…).

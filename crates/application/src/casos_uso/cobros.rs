@@ -283,8 +283,7 @@ async fn exigir_entidad<T: TxCobros>(
     ahora: chrono::DateTime<chrono::Utc>,
 ) -> AppResult<domain::TipoEntidad> {
     tx.entidades(
-        None,
-        Some(tenant),
+        &crate::puertos::identidad::FiltroEntidades::por_id(tenant),
         crate::SolicitudPagina::new(Some(1), None)?,
         ahora,
     )
@@ -423,8 +422,7 @@ pub(crate) async fn detalle_en<T: TxCobros>(
         .collect();
     let habilitados = tx
         .entidades(
-            None,
-            Some(s.tenant_id),
+            &crate::puertos::identidad::FiltroEntidades::por_id(s.tenant_id),
             crate::SolicitudPagina::new(Some(1), None)?,
             reloj.ahora(),
         )

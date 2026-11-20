@@ -554,7 +554,7 @@ pub async fn editar_producto(
         (status = FORBIDDEN, description = PROHIBIDO_COMERCIAL, body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya hay una tarifa desde ese día (`conflicto`)", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Tarifa incoherente con su modelo (`dominio`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Tarifa incoherente con su modelo (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn fijar_tarifa(
@@ -617,7 +617,7 @@ pub async fn listar_suscripciones(
         (status = FORBIDDEN, description = PROHIBIDO_COMERCIAL, body = ErrorRespuesta),
         (status = NOT_FOUND, description = "La entidad o el pagador no existen", body = ErrorRespuesta),
         (status = CONFLICT, description = "Ya tiene una suscripción vigente (`conflicto`)", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Ciclo, prueba, plazo o pagador inválidos (`validacion`, `dominio`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Ciclo, prueba, plazo o pagador inválidos (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_suscripcion(

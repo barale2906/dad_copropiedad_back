@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, cuenta_id, rol_id, vigente_desde, vigente_hasta, asignado_por\n             FROM asignaciones_plataforma\n             WHERE $1::uuid IS NULL OR cuenta_id = $1\n             ORDER BY vigente_desde DESC, id DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_plataforma",
+            "name": "id"
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "cuenta_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_plataforma",
+            "name": "cuenta_id"
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "rol_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_plataforma",
+            "name": "rol_id"
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "vigente_desde",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_plataforma",
+            "name": "vigente_desde"
+          }
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "vigente_hasta",
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_plataforma",
+            "name": "vigente_hasta"
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "asignado_por",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "asignaciones_plataforma",
+            "name": "asignado_por"
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "9d2c54a5942b6ac4c14b01bb4a3d7d029718c3dcf9ef65391e09f01ef9426303"
+}

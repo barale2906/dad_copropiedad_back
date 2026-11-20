@@ -13,7 +13,11 @@ use application::{
         roles::{self as uc_roles, SolicitudAsignacion},
         usuarios::{self as uc_usuarios, NuevoUsuario},
     },
-    puertos::{RelojSistema, identidad::EntidadResumen, usuarios::FiltroUsuarios},
+    puertos::{
+        RelojSistema,
+        identidad::{EntidadResumen, FiltroEntidades as FiltroEntidadesPlataforma},
+        usuarios::FiltroUsuarios,
+    },
 };
 use axum::{extract::State, http::StatusCode};
 use chrono::{DateTime, Utc};
@@ -47,6 +51,7 @@ use crate::{
 pub fn rutas() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(listar_entidades))
+        .routes(routes!(ver_entidad))
         .routes(routes!(cambiar_estado))
         .routes(routes!(abrir_soporte))
         .routes(routes!(roles))
@@ -92,6 +97,12 @@ impl From<EntidadResumen> for EntidadPlataformaRespuesta {
 pub struct FiltroEntidades {
     /// Fragmento del nombre (sin tildes ni mayúsculas) o del NIT.
     pub q: Option<String>,
+    /// Solo las de este tipo.
+    #[param(value_type = Option<crate::esquemas::TipoEntidad>)]
+    pub tipo: Option<TipoEntidad>,
+    /// Solo las que están en este estado.
+    #[param(value_type = Option<crate::esquemas::EstadoCopropiedad>)]
+    pub estado: Option<EstadoCopropiedad>,
 }
 
 /// Motivo de un acceso de soporte.
@@ -124,7 +135,8 @@ async fn gestion(
     .await?)
 }
 
-/// PH, empresas y la plataforma en una sola tabla, con tipo, estado y módulos.
+/// PH, empresas y la plataforma en una sola tabla, con tipo, estado y módulos; los filtros se
+/// aplican en todas las páginas.
 #[utoipa::path(
     get,
     path = "/entidades",
@@ -142,16 +154,49 @@ pub async fn listar_entidades(
     Query(f): Query<FiltroEntidades>,
     Query(p): Query<ParametrosPagina>,
 ) -> ApiResult<Json<PaginaRespuesta<EntidadPlataformaRespuesta>>> {
-    let texto = f.q.filter(|q| !q.trim().is_empty());
+    let filtro = FiltroEntidadesPlataforma {
+        texto: f.q.filter(|q| !q.trim().is_empty()),
+        tipo: f.tipo,
+        estado: f.estado,
+        id: None,
+    };
     let pagina = uc::listar_entidades(
         &state.plataforma,
         &RelojSistema,
         &op.ctx,
-        texto.as_deref(),
+        &filtro,
         p.validar()?,
     )
     .await?;
     Ok(Json(pagina.mapear(Into::into).into()))
+}
+
+/// Una entidad por su id, con tipo, estado y módulos (la ficha del cliente en la consola).
+#[utoipa::path(
+    get,
+    path = "/entidades/{entidad_id}",
+    tag = ETIQUETA_PLATAFORMA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = PARAM_ENTIDAD)),
+    responses(
+        (status = OK, description = "Entidad", body = EntidadPlataformaRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.copropiedades.ver` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
+    )
+)]
+pub async fn ver_entidad(
+    State(state): State<AppState>,
+    OperadorPlataforma(op): OperadorPlataforma,
+    Path(id): Path<Uuid>,
+) -> ApiResult<Json<EntidadPlataformaRespuesta>> {
+    let e = uc::ver_entidad(
+        &state.plataforma,
+        &RelojSistema,
+        &op.ctx,
+        TenantId::from_uuid(id),
+    )
+    .await?;
+    Ok(Json(e.into()))
 }
 
 /// Activa, suspende, reactiva o retira una entidad (PH o empresa).

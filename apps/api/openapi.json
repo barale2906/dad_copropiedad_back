@@ -633,6 +633,65 @@
       }
     },
     "/api/v1/plataforma/asignaciones": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Historial de asignaciones de roles de plataforma, las más recientes primero.",
+        "operationId": "plataforma_listar_asignaciones",
+        "parameters": [
+          {
+            "name": "cuenta_id",
+            "in": "query",
+            "description": "Solo las de esta cuenta.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asignaciones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AsignacionPlataformaDetalleRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.roles.asignar` ni `plataforma.roles.gestionar` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
       "post": {
         "tags": [
           "plataforma"
@@ -1037,7 +1096,7 @@
         "tags": [
           "plataforma"
         ],
-        "summary": "PH, empresas y la plataforma en una sola tabla, con tipo, estado y módulos.",
+        "summary": "PH, empresas y la plataforma en una sola tabla, con tipo, estado y módulos; los filtros se\naplican en todas las páginas.",
         "operationId": "plataforma_listar_entidades",
         "parameters": [
           {
@@ -1047,6 +1106,24 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "description": "Solo las de este tipo.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TipoEntidad"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "description": "Solo las que están en este estado.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EstadoCopropiedad"
             }
           },
           {
@@ -1180,6 +1257,74 @@
           },
           "422": {
             "description": "Falta el administrador o vienen los dos, o datos inválidos (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/entidades/{entidad_id}": {
+      "get": {
+        "tags": [
+          "plataforma"
+        ],
+        "summary": "Una entidad por su id, con tipo, estado y módulos (la ficha del cliente en la consola).",
+        "operationId": "plataforma_ver_entidad",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad (PH, empresa o la plataforma)",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entidad",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntidadPlataformaRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.copropiedades.ver` (`sin_permiso`) o sin segundo factor (`segundo_factor_requerido`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe",
             "content": {
               "application/json": {
                 "schema": {
@@ -2978,7 +3123,7 @@
             }
           },
           "409": {
-            "description": "Transición no permitida (`transicion_invalida`)",
+            "description": "Transición no permitida (`conflicto_estado`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -3588,8 +3733,18 @@
               }
             }
           },
+          "409": {
+            "description": "Transición no permitida (`conflicto_estado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
           "422": {
-            "description": "Transición no permitida (`dominio`) o falta algo (`validacion`)",
+            "description": "Acción desconocida o falta algo (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5408,26 +5563,30 @@
         "tags": [
           "plataforma"
         ],
-        "summary": "Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y\ntipo en el periodo: la base para cobrar el módulo de facturación (plan 19). Solo conteos.",
+        "summary": "Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y\ntipo en el periodo, con `desde` y `hasta` **incluidos**: la base para cobrar el módulo de\nfacturación (plan 19). Solo conteos.",
         "operationId": "plataforma_consumo_documentos",
         "parameters": [
           {
             "name": "desde",
             "in": "query",
+            "description": "Primer día del periodo (incluido).",
             "required": true,
             "schema": {
               "type": "string",
               "format": "date"
-            }
+            },
+            "example": "2026-11-01"
           },
           {
             "name": "hasta",
             "in": "query",
+            "description": "Último día del periodo (incluido: cuenta lo transmitido ese día).",
             "required": true,
             "schema": {
               "type": "string",
               "format": "date"
-            }
+            },
+            "example": "2026-11-30"
           }
         ],
         "responses": {
@@ -6748,7 +6907,7 @@
             }
           },
           "422": {
-            "description": "Tarifa incoherente con su modelo (`dominio`)",
+            "description": "Tarifa incoherente con su modelo (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6881,7 +7040,7 @@
             }
           },
           "422": {
-            "description": "Ciclo, prueba, plazo o pagador inválidos (`validacion`, `dominio`)",
+            "description": "Ciclo, prueba, plazo o pagador inválidos (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -9530,7 +9689,7 @@
             }
           },
           "422": {
-            "description": "Oferta vencida o sin usos (`dominio`)",
+            "description": "Oferta vencida o sin usos (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -42128,7 +42287,7 @@
             }
           },
           "422": {
-            "description": "Perfil incoherente con el RUT (`validacion`, `dato_invalido`)",
+            "description": "Perfil incoherente con el RUT (`validacion`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -53573,6 +53732,7 @@
           "fecha",
           "valor",
           "estado",
+          "propuesto_por",
           "creado_en",
           "cuotas"
         ],
@@ -53605,9 +53765,22 @@
               "null"
             ]
           },
+          "propuesto_por": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Cuenta que propuso el acuerdo: no puede aprobarlo (cuatro ojos)."
+          },
           "creado_en": {
             "type": "string",
             "format": "date-time"
+          },
+          "aprobado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Cuenta que lo aprobó (`None` mientras está propuesto)."
           },
           "aprobado_en": {
             "type": [
@@ -54522,6 +54695,50 @@
             ],
             "format": "date-time",
             "description": "Por defecto, sin fecha de fin."
+          }
+        }
+      },
+      "AsignacionPlataformaDetalleRespuesta": {
+        "type": "object",
+        "description": "Asignación de un rol de plataforma (vigente o histórica).",
+        "required": [
+          "id",
+          "cuenta_id",
+          "rol_id",
+          "vigente_desde"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Lo que se pasa a `DELETE /plataforma/asignaciones/{asignacion_id}`."
+          },
+          "cuenta_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rol_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vigente_desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vigente_hasta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "`null` = vigente sin fecha de fin."
+          },
+          "asignado_por": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           }
         }
       },

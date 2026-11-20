@@ -131,7 +131,7 @@ pub async fn listar_perfiles(
     responses(
         (status = CREATED, description = "Versión en borrador", body = PerfilTributarioRespuesta),
         (status = FORBIDDEN, description = "Sin `tributario.configurar` o sin el módulo", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Perfil incoherente con el RUT (`validacion`, `dato_invalido`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Perfil incoherente con el RUT (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn crear_perfil(

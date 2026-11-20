@@ -11,7 +11,8 @@ use application::{
         identidad::{
             AccesoSoporte, AsignacionPlataforma, CambiosFicha, CodigoVerificacion,
             ConsumoDocumentos, CopropiedadResumen, Cuenta, EntidadResumen, FichaOrganizacion,
-            HashesTokens, Membresia, Organizacion, PropositoCodigo, Reclamacion, Rol, Sesion,
+            FiltroEntidades, HashesTokens, Membresia, Organizacion, PropositoCodigo, Reclamacion,
+            Rol, Sesion,
         },
     },
 };
@@ -676,18 +677,19 @@ fn patron_like(texto: &str) -> String {
 impl RepositorioPlataforma for TransaccionPlataformaPg {
     async fn entidades(
         &mut self,
-        texto: Option<&str>,
-        id: Option<TenantId>,
+        filtro: &FiltroEntidades,
         pagina: application::SolicitudPagina,
         ahora: DateTime<Utc>,
     ) -> AppResult<application::Pagina<EntidadResumen>> {
         let filas = sqlx::query!(
             r#"SELECT id AS "id!", nombre AS "nombre!", nit, tipo AS "tipo!", estado AS "estado!",
                       modulos AS "modulos!"
-               FROM entidades_plataforma($1, $2, $3, $4, $5)"#,
+               FROM entidades_plataforma($1, $2, $3, $4, $5, $6, $7)"#,
             ahora,
-            id.map(TenantId::as_uuid),
-            texto.map(patron_like),
+            filtro.id.map(TenantId::as_uuid),
+            filtro.texto.as_deref().map(patron_like),
+            filtro.tipo.map(TipoEntidad::as_str),
+            filtro.estado.map(EstadoCopropiedad::as_str),
             pagina.despues(),
             i32::try_from(pagina.filas_a_consultar()).unwrap_or(i32::MAX),
         )
@@ -988,6 +990,32 @@ impl RepositorioPlataforma for TransaccionPlataformaPg {
             vigente_hasta: f.vigente_hasta,
             asignado_por: f.asignado_por.map(CuentaId::from_uuid),
         }))
+    }
+
+    async fn asignaciones_plataforma(
+        &mut self,
+        cuenta: Option<CuentaId>,
+    ) -> AppResult<Vec<AsignacionPlataforma>> {
+        Ok(sqlx::query!(
+            "SELECT id, cuenta_id, rol_id, vigente_desde, vigente_hasta, asignado_por
+             FROM asignaciones_plataforma
+             WHERE $1::uuid IS NULL OR cuenta_id = $1
+             ORDER BY vigente_desde DESC, id DESC",
+            cuenta.map(CuentaId::as_uuid),
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| AsignacionPlataforma {
+            id: AsignacionRolId::from_uuid(f.id),
+            cuenta_id: CuentaId::from_uuid(f.cuenta_id),
+            rol_id: RolId::from_uuid(f.rol_id),
+            vigente_desde: f.vigente_desde,
+            vigente_hasta: f.vigente_hasta,
+            asignado_por: f.asignado_por.map(CuentaId::from_uuid),
+        })
+        .collect())
     }
 
     async fn terminar_asignacion_plataforma(

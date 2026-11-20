@@ -610,7 +610,8 @@ pub async fn editar_campana(
         (status = FORBIDDEN, description = PROHIBIDO_GESTION, body = ErrorRespuesta),
         (status = OK, description = "Estado cambiado", body = CampanaRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Transición no permitida (`dominio`) o falta algo (`validacion`)", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Transición no permitida (`conflicto_estado`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Acción desconocida o falta algo (`validacion`)", body = ErrorRespuesta),
     )
 )]
 pub async fn cambiar_estado_campana(
@@ -805,7 +806,7 @@ pub async fn leads(
         (status = OK, description = "Redimido", body = RedencionRespuesta),
         (status = UNAUTHORIZED, description = "Sin enlace o enlace revocado (`no_autenticado`)", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "Código desconocido", body = ErrorRespuesta),
-        (status = UNPROCESSABLE_ENTITY, description = "Oferta vencida o sin usos (`dominio`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "Oferta vencida o sin usos (`validacion`)", body = ErrorRespuesta),
         (status = TOO_MANY_REQUESTS, description = "Demasiadas peticiones desde esta IP (`demasiadas_peticiones`, cabecera `Retry-After`)", body = ErrorRespuesta),
     )
 )]

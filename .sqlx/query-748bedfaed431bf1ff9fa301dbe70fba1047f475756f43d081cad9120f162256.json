@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id AS \"id!\", nombre AS \"nombre!\", nit, tipo AS \"tipo!\", estado AS \"estado!\",\n                      modulos AS \"modulos!\"\n               FROM entidades_plataforma($1, $2, $3, $4, $5)",
+  "query": "SELECT id AS \"id!\", nombre AS \"nombre!\", nit, tipo AS \"tipo!\", estado AS \"estado!\",\n                      modulos AS \"modulos!\"\n               FROM entidades_plataforma($1, $2, $3, $4, $5, $6, $7)",
   "describe": {
     "columns": [
       {
@@ -45,6 +45,8 @@
         "Timestamptz",
         "Uuid",
         "Text",
+        "Text",
+        "Text",
         "Uuid",
         "Int4"
       ]
@@ -58,5 +60,5 @@
       null
     ]
   },
-  "hash": "874930cc4858052db0dc6000324cc9d547511382f61589d528705a98e6defc22"
+  "hash": "748bedfaed431bf1ff9fa301dbe70fba1047f475756f43d081cad9120f162256"
 }

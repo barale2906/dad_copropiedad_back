@@ -166,11 +166,16 @@ pub async fn designar_entidad_plataforma(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Periodo del consumo.
+/// Periodo del consumo: **ambos días incluidos** (de las 00:00 de `desde` a las 24:00 de
+/// `hasta`, en UTC).
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct PeriodoConsumo {
+    /// Primer día del periodo (incluido).
+    #[param(example = "2026-11-01")]
     pub desde: chrono::NaiveDate,
+    /// Último día del periodo (incluido: cuenta lo transmitido ese día).
+    #[param(example = "2026-11-30")]
     pub hasta: chrono::NaiveDate,
 }
 
@@ -185,7 +190,8 @@ pub struct ConsumoDocumentosRespuesta {
 }
 
 /// Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y
-/// tipo en el periodo: la base para cobrar el módulo de facturación (plan 19). Solo conteos.
+/// tipo en el periodo, con `desde` y `hasta` **incluidos**: la base para cobrar el módulo de
+/// facturación (plan 19). Solo conteos.
 #[utoipa::path(
     get,
     path = "/facturacion/consumo",
