@@ -22,7 +22,10 @@ use crate::{
         RepositorioEntidad, RepositorioPlataforma, RepositorioRoles, RepositorioSesiones,
         Transaccion, UnidadDeTrabajo, UnidadDeTrabajoPlataforma,
         copropiedades::AltaCopropiedad,
-        identidad::{AccesoSoporte, AsignacionPlataforma, CopropiedadResumen, EntidadResumen, Rol},
+        identidad::{
+            AccesoSoporte, AsignacionPlataforma, CopropiedadResumen, EntidadResumen,
+            FiltroEntidades, Rol,
+        },
     },
 };
 
@@ -245,8 +248,7 @@ async fn entidad<T: RepositorioPlataforma>(
     ahora: chrono::DateTime<chrono::Utc>,
 ) -> AppResult<EntidadResumen> {
     tx.entidades(
-        None,
-        Some(tenant),
+        &FiltroEntidades::por_id(tenant),
         crate::SolicitudPagina::new(Some(1), None)?,
         ahora,
     )
@@ -320,7 +322,8 @@ where
     Ok(nuevo)
 }
 
-/// Entidades de la plataforma (PH, empresas y la plataforma) con su tipo, estado y módulos.
+/// Entidades de la plataforma (PH, empresas y la plataforma) con su tipo, estado y módulos,
+/// filtradas por texto, tipo y estado.
 ///
 /// # Errors
 ///
@@ -329,7 +332,7 @@ pub async fn listar_entidades<UP>(
     unidad: &UP,
     reloj: &impl Reloj,
     ctx: &ContextoPlataforma,
-    texto: Option<&str>,
+    filtro: &FiltroEntidades,
     pagina: crate::SolicitudPagina,
 ) -> AppResult<crate::Pagina<EntidadResumen>>
 where
@@ -340,8 +343,33 @@ where
     unidad
         .iniciar_plataforma(ctx)
         .await?
-        .entidades(texto, None, pagina, reloj.ahora())
+        .entidades(filtro, pagina, reloj.ahora())
         .await
+}
+
+/// Una entidad de la plataforma por su id (la ficha de un cliente en la consola).
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.copropiedades.ver`; [`AppError::NoEncontrado`] si
+/// no existe.
+pub async fn ver_entidad<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    tenant: TenantId,
+) -> AppResult<EntidadResumen>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaCopropiedadesVer)?;
+    entidad(
+        &mut unidad.iniciar_plataforma(ctx).await?,
+        tenant,
+        reloj.ahora(),
+    )
+    .await
 }
 
 /// Contexto para gestionar los usuarios y roles de una entidad desde la plataforma (U3): todos
@@ -716,6 +744,30 @@ where
         .iniciar_plataforma(ctx)
         .await?
         .consumo_documentos(desde, hasta)
+        .await
+}
+
+/// Historial de asignaciones de roles de plataforma (de una cuenta, si se da), con el id que
+/// se usa para terminarlas; las más recientes primero.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.roles.asignar` ni `plataforma.roles.gestionar`.
+pub async fn listar_asignaciones_plataforma<UP>(
+    unidad: &UP,
+    ctx: &ContextoPlataforma,
+    cuenta: Option<CuentaId>,
+) -> AppResult<Vec<AsignacionPlataforma>>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: RepositorioPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaRolesAsignar)
+        .or_else(|_| ctx.exigir(Permiso::PlataformaRolesGestionar))?;
+    unidad
+        .iniciar_plataforma(ctx)
+        .await?
+        .asignaciones_plataforma(cuenta)
         .await
 }
 

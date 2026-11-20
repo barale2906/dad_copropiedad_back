@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-646 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+648 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -34,7 +34,7 @@ sesión de persona.
 - [proteccion_datos](#proteccion-datos) (13): Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
 - [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
-- [plataforma](#plataforma) (69): Operación de la plataforma (exige segundo factor)
+- [plataforma](#plataforma) (71): Operación de la plataforma (exige segundo factor)
 - [contabilidad](#contabilidad) (51): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
 - [tesoreria](#tesoreria) (39): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
@@ -527,7 +527,7 @@ Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, 
 | POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas` | Crea una campaña en borrador. | `plataforma.publicidad.gestionar` | `CampanaPeticion` | 201 `CampanaRespuesta` | 403, 422 |
 | GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}` | Campaña con sus creativos. | `plataforma.publicidad.gestionar` |  | 200 `CampanaDetalleRespuesta` | 403 |
 | PUT | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}` | Edita la campaña (una aprobada o pausada vuelve a borrador y a moderación). | `plataforma.publicidad.gestionar` | `CampanaPeticion` | 200 `CampanaRespuesta` | 403, 422 |
-| POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/estado` | Envía a revisión, activa, pausa o finaliza la campaña. | `plataforma.publicidad.gestionar` | `AccionCampanaPeticion` | 200 `CampanaRespuesta` | 403, 422 |
+| POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/estado` | Envía a revisión, activa, pausa o finaliza la campaña. | `plataforma.publicidad.gestionar` | `AccionCampanaPeticion` | 200 `CampanaRespuesta` | 403, 409, 422 |
 | POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos` | Agrega un creativo (queda pendiente de moderación). | `plataforma.publicidad.gestionar` | `CreativoPeticion` | 201 `CreativoRespuesta` | 403, 409, 422 |
 | PUT | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}` | Edita un creativo (si cambia, vuelve a moderación). | `plataforma.publicidad.gestionar` | `CreativoPeticion` | 200 `CreativoRespuesta` | 403, 409 |
 | GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/metricas` | Métricas agregadas de la campaña. | `plataforma.publicidad.gestionar` |  | 200 `MetricasRespuesta` | 403 |
@@ -576,14 +576,16 @@ Operación de la plataforma (exige segundo factor)
 | GET | `/plataforma/roles` | Roles de plataforma (plantillas y propios). | `plataforma.roles.asignar` `plataforma.roles.gestionar` |  | 200 `[RolRespuesta]` | 403 |
 | POST | `/plataforma/roles` | Crea un rol de plataforma propio (solo permisos de plataforma). | `plataforma.roles.gestionar` | `NuevoRolPeticion` | 201 `RolRespuesta` | 403, 409 |
 | PUT | `/plataforma/roles/{rol_id}/permisos` | Reemplaza los permisos de un rol de plataforma propio. | `plataforma.roles.gestionar` | `PermisosPeticion` | 200 `RolRespuesta` | 403 |
+| GET | `/plataforma/asignaciones` | Historial de asignaciones de roles de plataforma, las más recientes primero. | `plataforma.roles.asignar` `plataforma.roles.gestionar` |  | 200 `[AsignacionPlataformaDetalleRespuesta]` | 403 |
 | POST | `/plataforma/asignaciones` | Asigna un rol de plataforma (soporte, comercial, superusuario…). | `plataforma.roles.asignar` | `AsignacionPlataformaPeticion` | 201 `AsignacionPlataformaRespuesta` | 403 |
 | DELETE | `/plataforma/asignaciones/{asignacion_id}` | Termina una asignación de plataforma (nunca el último superusuario). | `plataforma.roles.asignar` |  | 204  | 403, 409 |
 | POST | `/plataforma/cuentas/{cuenta_id}/bloquear` | Bloquea una cuenta y cierra sus sesiones. | `plataforma.cuentas.bloquear` |  | 204  | 403 |
 | GET | `/plataforma/cuentas` | Busca una cuenta por usuario o correo exactos: estado, contraseña pendiente y segundo factor. | `plataforma.cuentas.ver` |  | 200 `CuentaPlataformaRespuesta` | 403 |
 | POST | `/plataforma/cuentas` | Crea un usuario de la plataforma (o reconoce la cuenta de ese correo) y, si se pide, le asigna un rol de plataforma. Recibe por correo el código para definir su contraseña. | `plataforma.cuentas.crear` `plataforma.roles.asignar` | `NuevoUsuarioPlataformaPeticion` | 201 `UsuarioPlataformaRespuesta` | 403, 409, 422 |
 | POST | `/plataforma/cuentas/{cuenta_id}/desbloquear` | Desbloquea una cuenta bloqueada por la plataforma (y su bloqueo temporal por intentos). | `plataforma.cuentas.bloquear` | `MotivoPeticion` | 204  | 403, 422 |
-| GET | `/plataforma/entidades` | PH, empresas y la plataforma en una sola tabla, con tipo, estado y módulos. | `plataforma.copropiedades.ver` |  | 200 `PaginaRespuesta_EntidadPlataformaRespuesta` | 403 |
+| GET | `/plataforma/entidades` | PH, empresas y la plataforma en una sola tabla, con tipo, estado y módulos; los filtros se aplican en todas las páginas. | `plataforma.copropiedades.ver` |  | 200 `PaginaRespuesta_EntidadPlataformaRespuesta` | 403 |
 | POST | `/plataforma/entidades` | Da de alta una entidad sin vertical (cualquier empresa de la contabilidad base); sus módulos se habilitan después, uno a uno. | `plataforma.entidades.crear` | `NuevaEntidadPeticion` | 201 `EntidadRespuesta` | 403, 409, 422 |
+| GET | `/plataforma/entidades/{entidad_id}` | Una entidad por su id, con tipo, estado y módulos (la ficha del cliente en la consola). | `plataforma.copropiedades.ver` |  | 200 `EntidadPlataformaRespuesta` | 403 |
 | POST | `/plataforma/entidades/{entidad_id}/estado` | Activa, suspende, reactiva o retira una entidad (PH o empresa). | `plataforma.copropiedades.crear` `plataforma.entidades.crear` | `EstadoCopropiedadPeticion` | 200 `EstadoCopropiedadRespuesta` | 403, 409 |
 | POST | `/plataforma/entidades/{entidad_id}/soporte` | Abre un acceso de soporte de solo lectura a la entidad por 2 horas. Después la cuenta entra por las rutas normales de la entidad: ve lo que se lee (nunca datos sensibles, votos reservados ni convivencia) y toda escritura responde 403. | `plataforma.soporte.ver` | `SoportePeticion` | 201 `SoporteRespuesta` | 403, 422 |
 | GET | `/plataforma/entidades/{entidad_id}/roles` | Roles de la entidad (plantillas y propios). | `plataforma.entidades.usuarios` |  | 200 `[RolRespuesta]` | 403 |
@@ -601,7 +603,7 @@ Operación de la plataforma (exige segundo factor)
 | GET | `/plataforma/whatsapp/tarifas` | Tarifas registradas (la vigente es la más reciente por país, categoría y moneda). | `plataforma.whatsapp.gestionar` |  | 200 `[TarifaDto]` | 403 |
 | POST | `/plataforma/whatsapp/tarifas` | Registra la tarifa vigente desde una fecha (Meta publica tablas nuevas cada trimestre). | `plataforma.whatsapp.gestionar` | `TarifaDto` | 201 `TarifaDto` | 403, 422 |
 | PUT | `/plataforma/entidad-plataforma` | Designa la entidad que opera la plataforma (la empresa de GISLA SAS). Quien tiene roles de plataforma la recibe como `plataforma` al iniciar sesión. Solo hay una: designar otra le quita la marca a la anterior. | `plataforma.entidad_propia.designar` | `EntidadPlataformaPeticion` | 204  | 403, 409 |
-| GET | `/plataforma/facturacion/consumo` | Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y tipo en el periodo: la base para cobrar el módulo de facturación (plan 19). Solo conteos. | `plataforma.facturacion.ver` |  | 200 `[ConsumoDocumentosRespuesta]` | 403, 422 |
+| GET | `/plataforma/facturacion/consumo` | Documentos electrónicos transmitidos (validados, enviados o en contingencia) por entidad y tipo en el periodo, con `desde` y `hasta` **incluidos**: la base para cobrar el módulo de facturación (plan 19). Solo conteos. | `plataforma.facturacion.ver` |  | 200 `[ConsumoDocumentosRespuesta]` | 403, 422 |
 | PUT | `/plataforma/puc` | Carga (inserta o actualiza) cuentas del catálogo PUC. | `plataforma.normativa.gestionar` | `CargaPucPeticion` | 200 `CargaPucRespuesta` | 403, 422 |
 | GET | `/plataforma/retenciones` | Catálogo de retenciones (todas las versiones) y valores de la UVT. | `plataforma.normativa.gestionar` |  | 200 `CatalogoRetencionesRespuesta` | 403 |
 | POST | `/plataforma/retenciones` | Agrega una versión de un concepto de retención (la anterior del mismo código queda vigente hasta el día antes de `vigente_desde`). | `plataforma.normativa.gestionar` | `NuevoConceptoRetencionPeticion` | 201 `ConceptoRetencionRespuesta` | 403, 409, 422 |

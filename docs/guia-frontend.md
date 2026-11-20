@@ -146,7 +146,8 @@ cuenta con su tipo.
   nunca se editan: `…/bienes/{id}/estado-cuenta`, `…/saldos` y `…/cuadre` los calculan.
   Mora: la plataforma carga el interés bancario corriente (`/plataforma/tasas-referencia`); cada
   mes `…/intereses/vista-previa` y `POST …/intereses`. Acuerdos de pago: `POST …/acuerdos` y los
-  aprueba **otra cuenta** (`…/acuerdos/{id}/aprobacion`, 409 si es la misma). Edades:
+  aprueba **otra cuenta** (`…/acuerdos/{id}/aprobacion`, 409 si es la misma: oculte «Aprobar»
+  cuando `propuesto_por` es la cuenta de la sesión). Edades:
   `…/edades`. Paz y salvo o certificado de deuda: `POST …/bienes/{id}/certificados` devuelve el
   `codigo` y el PDF en Base64 **una sola vez** (guárdelos). La verificación es pública:
   `POST /copropiedades/{id}/certificados/verificacion` con el código (sin sesión, límite por IP).
@@ -348,7 +349,7 @@ aparece con candado y lleva a activarlo (las rutas responden 403 `segundo_factor
 | Normativa | PUC, retenciones y UVT, IVA, ICA, exógena, tasas de referencia (`plataforma.normativa.gestionar`) · Plantillas contables (`plataforma.plantillas_contables.publicar`) | `/plataforma/{puc,retenciones,uvt,tributario,tasas-referencia,plantillas-contables}` |
 | WhatsApp | Líneas y tarifas (`plataforma.whatsapp.gestionar`) | `/plataforma/whatsapp/…` |
 | Directorio y publicidad | Anunciantes y categorías (`plataforma.directorio.gestionar`) · Moderación (`plataforma.publicidad.moderar`) · Tarifas y liquidaciones (`plataforma.publicidad.liquidar`) · Pantallas de lobby (`plataforma.modulos.gestionar`) | `/plataforma/publicidad/…` |
-| Consumo | Documentos electrónicos por entidad (`plataforma.facturacion.ver`) | `/plataforma/facturacion/consumo` |
+| Consumo | Documentos electrónicos por entidad (`plataforma.facturacion.ver`; `desde` y `hasta` incluidos) | `/plataforma/facturacion/consumo` |
 | Cobros | Catálogo, tarifas y suscripciones (`plataforma.comercial.gestionar`) · Cortes: calcular, aprobar, descartar (`plataforma.cobros.aprobar`) · Facturar, factura externa y pago (`plataforma.cobros.facturar`) | `/plataforma/cobros/…` |
 
 ### Acciones personales (propietarios y residentes)
@@ -598,8 +599,11 @@ reclamaciones de organizaciones, líneas y tarifas de WhatsApp, catálogos norma
 facturación electrónica, moderación del directorio y la publicidad.
 
 - **Entidades** (`/plataforma/entidades`): PH, empresas y la plataforma en una tabla (tipo, estado,
-  módulos, búsqueda `q` por nombre o NIT); `POST …/{id}/estado` para empresas y PH (la ruta de
-  copropiedades queda como alias).
+  módulos; filtros `q` por nombre o NIT, `tipo` y `estado`, aplicados en todas las páginas);
+  `GET …/{id}` da una sola (la ficha del cliente) y `POST …/{id}/estado` cambia el de empresas y
+  PH (la ruta de copropiedades queda como alias).
+- **Roles de plataforma de una cuenta**: `GET /plataforma/asignaciones?cuenta_id=` da el historial
+  (vigentes con `vigente_hasta` nulo) con el `id` que se pasa a `DELETE /plataforma/asignaciones/{id}`.
 - **Usuarios de cualquier entidad** (`plataforma.entidades.usuarios`): `/plataforma/entidades/{id}/
   {roles,asignaciones,usuarios}` con los mismos esquemas que `/entidades/{id}/…`.
 - **Soporte** (`plataforma.soporte.ver`): `POST /plataforma/entidades/{id}/soporte` con `motivo`

@@ -933,7 +933,7 @@ pub struct EstadoAnunciantePeticion {
         (status = OK, description = "Estado cambiado", body = AnuncianteRespuesta),
         (status = FORBIDDEN, description = "Sin `plataforma.publicidad.moderar`", body = ErrorRespuesta),
         (status = NOT_FOUND, description = "No existe", body = ErrorRespuesta),
-        (status = CONFLICT, description = "Transición no permitida (`transicion_invalida`)", body = ErrorRespuesta),
+        (status = CONFLICT, description = "Transición no permitida (`conflicto_estado`)", body = ErrorRespuesta),
         (status = UNPROCESSABLE_ENTITY, description = "Sin motivo (`validacion`)", body = ErrorRespuesta),
     )
 )]

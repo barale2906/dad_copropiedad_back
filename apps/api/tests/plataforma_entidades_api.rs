@@ -230,3 +230,98 @@ async fn soporte_entra_en_solo_lectura_y_sin_datos_sensibles(pool: PgPool) {
     .expect("auditoría");
     assert_eq!(en_la_entidad, 1);
 }
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn filtra_las_entidades_por_tipo_y_estado_y_da_una_por_id(pool: PgPool) {
+    let ph = ph(pool).await;
+    let gym = empresa(&ph).await;
+    let pedir = |ruta: String| {
+        let ph = &ph;
+        async move { ph.api.pedir(Method::GET, &ruta, Some(&ph.root), None).await }
+    };
+    let ids = |v: &serde_json::Value| -> Vec<String> {
+        v["datos"]
+            .as_array()
+            .expect("datos")
+            .iter()
+            .map(|e| e["id"].as_str().expect("id").to_owned())
+            .collect()
+    };
+
+    let (s, empresas) = pedir("/api/v1/plataforma/entidades?tipo=empresa".into()).await;
+    assert_eq!(s, StatusCode::OK, "{empresas}");
+    assert_eq!(ids(&empresas), vec![gym.clone()]);
+    let (_, phs) = pedir("/api/v1/plataforma/entidades?tipo=propiedad_horizontal".into()).await;
+    assert_eq!(ids(&phs), vec![ph.id.clone()]);
+    let (_, retiradas) = pedir("/api/v1/plataforma/entidades?estado=retirada".into()).await;
+    assert!(ids(&retiradas).is_empty());
+    let (s, v) = pedir("/api/v1/plataforma/entidades?tipo=gimnasio".into()).await;
+    assert_eq!(s, StatusCode::BAD_REQUEST, "{v}");
+
+    let (s, una) = pedir(format!("/api/v1/plataforma/entidades/{gym}")).await;
+    assert_eq!(s, StatusCode::OK, "{una}");
+    assert_eq!(
+        (una["nombre"].as_str(), una["tipo"].as_str()),
+        (Some("Gimnasio Fuerza"), Some("empresa"))
+    );
+    let (s, _) = pedir(format!(
+        "/api/v1/plataforma/entidades/{}",
+        uuid::Uuid::now_v7()
+    ))
+    .await;
+    assert_eq!(s, StatusCode::NOT_FOUND);
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn lista_las_asignaciones_de_plataforma_de_una_cuenta_para_terminarlas(pool: PgPool) {
+    let ph = ph(pool).await;
+    let _ = soporte(&ph).await;
+    let laura =
+        sqlx::query_scalar::<_, uuid::Uuid>("SELECT id FROM cuentas WHERE usuario = 'laura'")
+            .fetch_one(&ph.api.duenio)
+            .await
+            .expect("cuenta");
+    let ruta = format!("/api/v1/plataforma/asignaciones?cuenta_id={laura}");
+
+    let (s, v) = ph.api.pedir(Method::GET, &ruta, Some(&ph.root), None).await;
+    assert_eq!(s, StatusCode::OK, "{v}");
+    let lista = v.as_array().expect("lista");
+    assert_eq!(lista.len(), 1, "{v}");
+    assert!(lista[0]["vigente_hasta"].is_null());
+    let id = lista[0]["id"].as_str().expect("id");
+
+    let (s, _) = ph
+        .api
+        .pedir(
+            Method::DELETE,
+            &format!("/api/v1/plataforma/asignaciones/{id}"),
+            Some(&ph.root),
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::NO_CONTENT);
+    let (_, v) = ph.api.pedir(Method::GET, &ruta, Some(&ph.root), None).await;
+    assert!(
+        v[0]["vigente_hasta"].is_string(),
+        "queda en el historial: {v}"
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn sin_permiso_de_roles_no_ve_las_asignaciones_de_plataforma(pool: PgPool) {
+    let ph = ph(pool).await;
+    let laura = soporte(&ph).await;
+
+    let (s, v) = ph
+        .api
+        .pedir(
+            Method::GET,
+            "/api/v1/plataforma/asignaciones",
+            Some(&laura),
+            None,
+        )
+        .await;
+
+    assert_eq!(s, StatusCode::FORBIDDEN, "{v}");
+    assert_eq!(v["error"]["codigo"], json!("sin_permiso"));
+}

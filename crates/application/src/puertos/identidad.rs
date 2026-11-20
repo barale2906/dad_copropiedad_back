@@ -456,6 +456,28 @@ pub struct EntidadResumen {
     pub modulos: Vec<String>,
 }
 
+/// Filtro del listado de entidades de la plataforma (los campos `None` no filtran).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FiltroEntidades {
+    /// Fragmento del nombre (sin tildes ni mayúsculas) o del NIT.
+    pub texto: Option<String>,
+    /// Una sola entidad.
+    pub id: Option<TenantId>,
+    pub tipo: Option<TipoEntidad>,
+    pub estado: Option<EstadoCopropiedad>,
+}
+
+impl FiltroEntidades {
+    /// Filtro de una sola entidad por su id.
+    #[must_use]
+    pub fn por_id(id: TenantId) -> Self {
+        Self {
+            id: Some(id),
+            ..Self::default()
+        }
+    }
+}
+
 /// Acceso de soporte de una cuenta de la plataforma a una entidad (solo lectura, plan 20).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AccesoSoporte {
@@ -469,12 +491,11 @@ pub struct AccesoSoporte {
 
 /// Roles de plataforma y vistas que cruzan copropiedades (transacción de plataforma).
 pub trait RepositorioPlataforma: Send {
-    /// Entidades (PH, empresas y la plataforma) con su tipo, estado y módulos; por cursor, con
-    /// búsqueda por nombre (sin tildes ni mayúsculas) o NIT, o una sola por `id`.
+    /// Entidades (PH, empresas y la plataforma) con su tipo, estado y módulos; por cursor y
+    /// con el [`FiltroEntidades`] (texto, tipo, estado o una sola por `id`).
     fn entidades(
         &mut self,
-        texto: Option<&str>,
-        id: Option<TenantId>,
+        filtro: &FiltroEntidades,
         pagina: crate::SolicitudPagina,
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<crate::Pagina<EntidadResumen>>> + Send;
@@ -579,6 +600,13 @@ pub trait RepositorioPlataforma: Send {
         &mut self,
         id: AsignacionRolId,
     ) -> impl Future<Output = AppResult<Option<AsignacionPlataforma>>> + Send;
+
+    /// Historial de asignaciones de roles de plataforma (de la cuenta, si se da), las más
+    /// recientes primero.
+    fn asignaciones_plataforma(
+        &mut self,
+        cuenta: Option<CuentaId>,
+    ) -> impl Future<Output = AppResult<Vec<AsignacionPlataforma>>> + Send;
 
     /// Termina una asignación de rol de plataforma.
     fn terminar_asignacion_plataforma(

@@ -71,6 +71,60 @@ fn cada_prohibido_nombra_su_permiso() {
     );
 }
 
+/// Cada código de error que nombra una respuesta de error entre paréntesis (`` (`conflicto`) ``
+/// o `` (`validacion`, `conflicto`) ``) existe en `CodigoError`: el cliente del frontend solo conoce los valores de ese enum, y un código
+/// inventado en la documentación (como lo fue `dominio`) nunca llega en una respuesta.
+#[test]
+fn cada_error_documentado_usa_un_codigo_del_catalogo() {
+    let doc: serde_json::Value = serde_json::from_str(
+        &api::routes::openapi()
+            .to_json()
+            .expect("el documento OpenAPI se serializa"),
+    )
+    .expect("JSON válido");
+    let codigos: Vec<&str> = doc["components"]["schemas"]["CodigoError"]["enum"]
+        .as_array()
+        .expect("CodigoError es un enum")
+        .iter()
+        .filter_map(serde_json::Value::as_str)
+        .collect();
+    let parece_codigo =
+        |t: &str| !t.is_empty() && t.chars().all(|c| c.is_ascii_lowercase() || c == '_');
+    let mut desconocidos = Vec::new();
+    for (ruta, item) in doc["paths"].as_object().expect("paths") {
+        for (metodo, op) in item.as_object().expect("operaciones") {
+            let Some(respuestas) = op["responses"].as_object() else {
+                continue;
+            };
+            for (estado, r) in respuestas {
+                if !estado.starts_with('4') && !estado.starts_with('5') {
+                    continue;
+                }
+                let texto = r["description"].as_str().unwrap_or_default();
+                let entre_parentesis = texto
+                    .split("(`")
+                    .skip(1)
+                    .map(|resto| resto.split(')').next().unwrap_or_default());
+                for grupo in entre_parentesis {
+                    let primero = grupo.split('`').next().unwrap_or_default();
+                    let siguientes = grupo.split('`').skip(2).step_by(2);
+                    for t in std::iter::once(primero).chain(siguientes) {
+                        if parece_codigo(t) && !codigos.contains(&t) {
+                            desconocidos
+                                .push(format!("{} {ruta} {estado}: `{t}`", metodo.to_uppercase()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        desconocidos.is_empty(),
+        "Respuestas que nombran un código que no está en `CodigoError`:\n{}",
+        desconocidos.join("\n")
+    );
+}
+
 /// Cada esquema del contrato tiene un nombre propio. utoipa registra los esquemas por nombre y,
 /// si dos DTO se llaman igual (`ObligacionRespuesta` de cartera y de mantenimiento), publica
 /// **uno solo** sin avisar: las rutas del otro quedan con tipos equivocados en los clientes
