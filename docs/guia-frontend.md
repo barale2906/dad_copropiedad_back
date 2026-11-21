@@ -325,6 +325,10 @@ cuenta con su tipo.
   - Avisos automáticos (no tienen pantalla): quienes tienen `nomina.empleados.gestionar` reciben por
     correo los contratos a término fijo que vencen en 45 días (para entregar el preaviso a tiempo) y
     los recordatorios de intereses y consignación de cesantías y de la prima.
+  - Contratos por vencer para el inicio: `GET …/contratos/por-vencer?dias=` (`nomina.ver`; por
+    omisión 45, los mismos del correo; máximo 120) da cada contrato a término fijo sin terminar con
+    su `fecha_fin` y su `fecha_limite_preaviso` (30 días antes), del más próximo al más lejano. Si
+    la fecha límite ya pasó, el contrato se prorroga solo si no se termina.
 
 ## 4. Menú: maqueta 3D, zonas y módulos
 

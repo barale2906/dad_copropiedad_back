@@ -1997,6 +1997,60 @@ mod liquidacion {
     }
 
     #[sqlx::test(migrator = "MIGRACIONES")]
+    async fn el_inicio_lista_los_contratos_por_vencer_con_el_plazo_del_aviso(pool: PgPool) {
+        use chrono::TimeZone;
+        let e = Entorno::new(&pool).await;
+        for (codigo, documento, fin) in [
+            ("E-1", "52123456", dia(2026, 7, 31)),
+            ("E-2", "52123457", dia(2026, 9, 30)),
+        ] {
+            let mut contrato = e.fijo(dia(2026, 2, 1), fin);
+            contrato.condiciones = e.condiciones(dec!(2100000));
+            uc::crear_empleado(
+                &e.unidad,
+                &RelojSistema,
+                &e.ctx,
+                e.nuevo(codigo, documento, contrato),
+            )
+            .await
+            .expect("alta");
+        }
+        let reloj = RelojFijo(
+            chrono::Utc
+                .with_ymd_and_hms(2026, 6, 20, 15, 0, 0)
+                .single()
+                .expect("hora"),
+        );
+
+        sqlx::query("UPDATE modulos_habilitados SET desde = '2026-01-01' WHERE tenant_id = $1")
+            .bind(e.tenant.as_uuid())
+            .execute(&pool)
+            .await
+            .expect("módulo desde enero");
+
+        let en_45 = uc::contratos_por_vencer(&e.unidad, &reloj, &e.ctx, None)
+            .await
+            .expect("por vencer");
+        let en_120 = uc::contratos_por_vencer(&e.unidad, &reloj, &e.ctx, Some(120))
+            .await
+            .expect("por vencer");
+        let demasiado = uc::contratos_por_vencer(&e.unidad, &reloj, &e.ctx, Some(121)).await;
+
+        assert_eq!(en_45.len(), 1, "solo el que vence en 41 días");
+        assert_eq!(en_45[0].codigo.as_str(), "E-1");
+        assert_eq!(en_45[0].fecha_limite_preaviso, dia(2026, 7, 1));
+        assert_eq!(
+            en_120.iter().map(|c| c.codigo.as_str()).collect::<Vec<_>>(),
+            vec!["E-1", "E-2"],
+            "del más próximo al más lejano"
+        );
+        assert!(matches!(
+            demasiado,
+            Err(application::AppError::Validacion(_))
+        ));
+    }
+
+    #[sqlx::test(migrator = "MIGRACIONES")]
     async fn el_worker_avisa_contratos_por_vencer_y_fechas_legales_una_vez(pool: PgPool) {
         use chrono::TimeZone;
         let e = Entorno::new(&pool).await;

@@ -79,6 +79,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(catalogo))
         .routes(routes!(listar_empleados, crear_empleado))
         .routes(routes!(ver_empleado))
+        .routes(routes!(contratos_por_vencer))
         .routes(routes!(crear_contrato))
         .routes(routes!(modificar_contrato))
         .routes(routes!(prorrogar_contrato))
@@ -753,6 +754,63 @@ pub async fn listar_empleados(
     )
     .await?;
     Ok(Json(pagina.mapear(Into::into).into()))
+}
+
+/// Contrato a término fijo por vencer.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ContratoPorVencerRespuesta {
+    pub contrato_id: Uuid,
+    pub empleado_id: Uuid,
+    pub codigo: String,
+    pub nombre: String,
+    pub fecha_fin: NaiveDate,
+    /// Último día para entregar el preaviso de no renovación (30 días antes del fin, CST art. 46);
+    /// si ya pasó, el contrato se prorroga solo por un periodo igual.
+    pub fecha_limite_preaviso: NaiveDate,
+}
+
+impl From<uc::ContratoPorVencer> for ContratoPorVencerRespuesta {
+    fn from(c: uc::ContratoPorVencer) -> Self {
+        Self {
+            contrato_id: c.contrato_id.as_uuid(),
+            empleado_id: c.empleado_id.as_uuid(),
+            codigo: c.codigo.as_str().to_owned(),
+            nombre: c.nombre,
+            fecha_fin: c.fecha_fin,
+            fecha_limite_preaviso: c.fecha_limite_preaviso,
+        }
+    }
+}
+
+/// Plazo de la consulta de contratos por vencer.
+#[derive(Debug, Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+pub struct PorVencerParametros {
+    /// Días hacia adelante (por omisión 45, el plazo del aviso por correo; máximo 120).
+    pub dias: Option<u64>,
+}
+
+/// Contratos a término fijo sin terminar que vencen en los próximos días (los mismos del aviso por
+/// correo), del más próximo al más lejano.
+#[utoipa::path(
+    get,
+    path = "/contratos/por-vencer",
+    tag = ETIQUETA_NOMINA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), PorVencerParametros),
+    responses(
+        (status = OK, description = "Contratos por vencer", body = [ContratoPorVencerRespuesta]),
+        (status = UNPROCESSABLE_ENTITY, description = "`dias` mayor que 120 (`validacion`)", body = ErrorRespuesta),
+        (status = FORBIDDEN, description = "Sin `nomina.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)", body = ErrorRespuesta),
+    )
+)]
+pub async fn contratos_por_vencer(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Query(q): Query<PorVencerParametros>,
+) -> ApiResult<Json<Vec<ContratoPorVencerRespuesta>>> {
+    let lista = uc::contratos_por_vencer(&state.unidad, &RelojSistema, &en.ctx, q.dias).await?;
+    Ok(Json(lista.into_iter().map(Into::into).collect()))
 }
 
 /// Da de alta un empleado con su primer contrato (crea la persona si no está en la entidad).
