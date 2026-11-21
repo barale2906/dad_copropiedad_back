@@ -54553,6 +54553,88 @@
         ]
       }
     },
+    "/api/v1/entidades/{entidad_id}/nomina/contratos/por-vencer": {
+      "get": {
+        "tags": [
+          "nomina"
+        ],
+        "summary": "Contratos a término fijo sin terminar que vencen en los próximos días (los mismos del aviso por\ncorreo), del más próximo al más lejano.",
+        "operationId": "nomina_contratos_por_vencer",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dias",
+            "in": "query",
+            "description": "Días hacia adelante (por omisión 45, el plazo del aviso por correo; máximo 120).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contratos por vencer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContratoPorVencerRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `nomina.ver` (`sin_permiso`) o sin el módulo `nomina` (`modulo_no_habilitado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`dias` mayor que 120 (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/entidades/{entidad_id}/nomina/empleados/{empleado_id}/contratos": {
       "post": {
         "tags": [
@@ -63444,6 +63526,43 @@
               "null"
             ],
             "example": "2500000.00"
+          }
+        }
+      },
+      "ContratoPorVencerRespuesta": {
+        "type": "object",
+        "description": "Contrato a término fijo por vencer.",
+        "required": [
+          "contrato_id",
+          "empleado_id",
+          "codigo",
+          "nombre",
+          "fecha_fin",
+          "fecha_limite_preaviso"
+        ],
+        "properties": {
+          "contrato_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "empleado_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "fecha_fin": {
+            "type": "string",
+            "format": "date"
+          },
+          "fecha_limite_preaviso": {
+            "type": "string",
+            "format": "date",
+            "description": "Último día para entregar el preaviso de no renovación (30 días antes del fin, CST art. 46);\nsi ya pasó, el contrato se prorroga solo por un periodo igual."
           }
         }
       },

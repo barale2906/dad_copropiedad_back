@@ -673,3 +673,67 @@ where
         contratos,
     })
 }
+
+/// Contrato a término fijo por vencer, para el inicio de la nómina.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContratoPorVencer {
+    pub contrato_id: ContratoLaboralId,
+    pub empleado_id: EmpleadoId,
+    pub codigo: CodigoEmpleado,
+    pub nombre: String,
+    pub fecha_fin: NaiveDate,
+    /// Último día para entregar el preaviso de no renovación (30 días antes, CST art. 46).
+    pub fecha_limite_preaviso: NaiveDate,
+}
+
+/// Días máximos que se pueden consultar hacia adelante.
+pub const MAX_DIAS_POR_VENCER: u64 = 120;
+
+/// Contratos a término fijo sin terminar que vencen en los próximos `dias` (por omisión
+/// [`super::tareas::DIAS_AVISO`], el mismo plazo del aviso por correo), del más próximo al más
+/// lejano.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `nomina.ver`; [`AppError::Validacion`] si `dias` pasa de
+/// [`MAX_DIAS_POR_VENCER`]; [`AppError::ModuloNoHabilitado`].
+pub async fn contratos_por_vencer<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    dias: Option<u64>,
+) -> AppResult<Vec<ContratoPorVencer>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxNomina,
+{
+    let dias = dias.unwrap_or(super::tareas::DIAS_AVISO);
+    if dias > MAX_DIAS_POR_VENCER {
+        return Err(AppError::Validacion(format!(
+            "dias no puede pasar de {MAX_DIAS_POR_VENCER}"
+        )));
+    }
+    let mut tx = abrir_nomina(unidad, reloj, ctx, Permiso::NominaVer).await?;
+    let hoy = domain::proteccion_datos::fecha_en_colombia(reloj.ahora());
+    let mut salida = Vec::new();
+    for v in super::tareas::por_vencer(&mut tx, hoy, dias).await? {
+        let empleado = tx
+            .empleado(v.contrato.empleado_id)
+            .await?
+            .ok_or(AppError::NoEncontrado("empleado"))?;
+        let nombre = tx
+            .persona(empleado.persona_id)
+            .await?
+            .map(|p| p.nombre)
+            .unwrap_or_default();
+        salida.push(ContratoPorVencer {
+            contrato_id: v.contrato.id,
+            empleado_id: empleado.id,
+            codigo: empleado.codigo,
+            nombre,
+            fecha_fin: v.fin,
+            fecha_limite_preaviso: v.limite_preaviso,
+        });
+    }
+    Ok(salida)
+}

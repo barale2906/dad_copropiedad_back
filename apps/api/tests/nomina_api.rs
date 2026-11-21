@@ -319,6 +319,21 @@ async fn el_aprendiz_llega_por_planilla_con_vista_previa(pool: PgPool) {
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
+async fn los_contratos_por_vencer_responden_con_su_plazo(pool: PgPool) {
+    let g = gimnasio(pool).await;
+
+    let (s, v) = g.pedir(Method::GET, "/contratos/por-vencer", None).await;
+    let (s_max, v_max) = g
+        .pedir(Method::GET, "/contratos/por-vencer?dias=121", None)
+        .await;
+
+    assert_eq!(s, StatusCode::OK, "{v}");
+    assert!(v.is_array());
+    assert_eq!(s_max, StatusCode::UNPROCESSABLE_ENTITY, "{v_max}");
+    assert_eq!(v_max["error"]["codigo"], "validacion");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
 async fn sin_el_modulo_la_nomina_responde_403(pool: PgPool) {
     let g = gimnasio(pool).await;
     sqlx::query("DELETE FROM modulos_habilitados WHERE tenant_id = $1::uuid")

@@ -9,7 +9,10 @@
 //!   cesantías, consignación de las cesantías y prima.
 
 use chrono::{Days, NaiveDate};
-use domain::{Modulo, Permiso, nomina::reportes::recordatorios_legales};
+use domain::{
+    Modulo, Permiso,
+    nomina::{TipoContratoLaboral, reportes::recordatorios_legales},
+};
 
 use super::TxNomina;
 use crate::{
@@ -18,7 +21,8 @@ use crate::{
     outbox::PrioridadSalida,
     puertos::{
         RegistroOutbox, Reloj, RepositorioModulos as _, RepositorioTickets, Transaccion,
-        UnidadDeTrabajo, nomina::DirectorioNomina,
+        UnidadDeTrabajo,
+        nomina::{ContratoLaboral, DirectorioNomina},
     },
 };
 
@@ -32,6 +36,44 @@ pub trait TxAvisosNomina: TxNomina + RepositorioTickets + RegistroOutbox {}
 
 impl<T> TxAvisosNomina for T where T: TxNomina + RepositorioTickets + RegistroOutbox {}
 
+/// Contrato a término fijo (sin terminar) que vence dentro del plazo consultado.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct Vencimiento {
+    pub contrato: ContratoLaboral,
+    pub fin: NaiveDate,
+    /// Último día para entregar el preaviso ([`DIAS_PREAVISO`] antes del fin).
+    pub limite_preaviso: NaiveDate,
+}
+
+/// Contratos a término fijo sin terminar cuya fecha final cae en `[hoy, hoy + dias]`, del más
+/// próximo al más lejano. La misma regla del aviso por correo y del inicio de la nómina.
+pub(crate) async fn por_vencer<T: TxNomina>(
+    tx: &mut T,
+    hoy: NaiveDate,
+    dias: u64,
+) -> AppResult<Vec<Vencimiento>> {
+    let limite = hoy.checked_add_days(Days::new(dias)).unwrap_or(hoy);
+    let mut v: Vec<Vencimiento> = tx
+        .contratos_en(hoy, limite)
+        .await?
+        .into_iter()
+        .filter(|c| c.tipo == TipoContratoLaboral::TerminoFijo && c.fecha_terminacion.is_none())
+        .filter_map(|c| {
+            let fin = c.fecha_fin.filter(|f| *f >= hoy && *f <= limite)?;
+            let limite_preaviso = fin
+                .checked_sub_days(Days::new(DIAS_PREAVISO))
+                .unwrap_or(fin);
+            Some(Vencimiento {
+                contrato: c,
+                fin,
+                limite_preaviso,
+            })
+        })
+        .collect();
+    v.sort_by_key(|x| (x.fin, x.contrato.id));
+    Ok(v)
+}
+
 /// Encola los avisos pendientes de una entidad. Devuelve cuántos avisos (no correos) encoló.
 pub(crate) async fn avisar_en<T: TxAvisosNomina>(
     tx: &mut T,
@@ -39,16 +81,12 @@ pub(crate) async fn avisar_en<T: TxAvisosNomina>(
     hoy: NaiveDate,
 ) -> AppResult<usize> {
     let mut n = 0;
-    let limite = hoy.checked_add_days(Days::new(DIAS_AVISO)).unwrap_or(hoy);
-    for c in tx.contratos_en(hoy, limite).await? {
-        let Some(fin) = c.fecha_fin else { continue };
-        if c.tipo != domain::nomina::TipoContratoLaboral::TerminoFijo
-            || c.fecha_terminacion.is_some()
-            || fin < hoy
-            || fin > limite
-        {
-            continue;
-        }
+    for Vencimiento {
+        contrato: c,
+        fin,
+        limite_preaviso: preaviso,
+    } in por_vencer(tx, hoy, DIAS_AVISO).await?
+    {
         let referencia = format!("{}:{fin}", c.id);
         if tx
             .aviso_enviado("vencimiento_contrato", &referencia)
@@ -61,9 +99,6 @@ pub(crate) async fn avisar_en<T: TxAvisosNomina>(
             .await?
             .map(|e| e.codigo.as_str().to_owned())
             .unwrap_or_default();
-        let preaviso = fin
-            .checked_sub_days(Days::new(DIAS_PREAVISO))
-            .unwrap_or(fin);
         let texto = if preaviso >= hoy {
             format!(
                 "El contrato a término fijo del empleado {codigo} vence el {fin}. Si no se va a \

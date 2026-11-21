@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-693 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+694 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -40,7 +40,7 @@ sesión de persona.
 - [cartera](#cartera) (63): Cartera de la propiedad horizontal (módulo `contabilidad_ph`, `/copropiedades/{copropiedad_id}/cartera/...`): conceptos de cobro, políticas de cartera, módulos de contribución, presupuesto y su ejecución, cuotas extraordinarias, liquidación de expensas con cuentas de cobro, recaudo por bien con imputación y pronto pago, notas crédito, cartera inicial, estado de cuenta y cuadre contra el mayor
 - [tributario](#tributario) (15): Tributario de cualquier entidad (plan 15): catálogos de IVA, ICA y exógena, perfil tributario versionado que confirma el contador, resoluciones de numeración, documentos electrónicos (factura, nota crédito, documento soporte) con su proveedor, facturas recibidas por XML con eventos RADIAN, preparación de retención, IVA e ICA, información exógena y beneficiarios finales. El sistema prepara; presentar y firmar lo hace el responsable tributario
 - [facturacion](#facturacion) (42): Facturación de cualquier entidad, con o sin contabilidad (plan 18): catálogo de productos y servicios, facturas de venta con número interno, pago manual sin tesorería, documentos electrónicos, compras para el documento soporte, facturas recibidas, libros de ventas y compras y paquete de XML y PDF para el contador. Con contabilidad cada documento se contabiliza solo
-- [nomina](#nomina) (37): Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
+- [nomina](#nomina) (38): Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (personas de la entidad) con sus contratos laborales versionados, prórroga y terminación, e importación masiva. Los salarios y las cuentas solo se ven con `nomina.salarios.ver`
 
 ## salud
 
@@ -907,6 +907,7 @@ Nómina de cualquier entidad (plan 16): catálogo laboral vigente, empleados (pe
 | GET | `/entidades/{entidad_id}/nomina/empleados` | Empleados de la entidad con su estado de hoy. | `nomina.ver` |  | 200 `PaginaRespuesta_EmpleadoResumenRespuesta` | 403 |
 | POST | `/entidades/{entidad_id}/nomina/empleados` | Da de alta un empleado con su primer contrato (crea la persona si no está en la entidad). | `nomina.empleados.gestionar` | `NuevoEmpleadoPeticion` | 201 `FichaEmpleadoRespuesta` | 403, 409, 422 |
 | GET | `/entidades/{entidad_id}/nomina/empleados/{empleado_id}` | Ficha del empleado con todos sus contratos y versiones (salarios y cuentas solo con `nomina.salarios.ver`). | `nomina.ver` |  | 200 `FichaEmpleadoRespuesta` | 403 |
+| GET | `/entidades/{entidad_id}/nomina/contratos/por-vencer` | Contratos a término fijo sin terminar que vencen en los próximos días (los mismos del aviso por correo), del más próximo al más lejano. | `nomina.ver` |  | 200 `[ContratoPorVencerRespuesta]` | 403, 422 |
 | POST | `/entidades/{entidad_id}/nomina/empleados/{empleado_id}/contratos` | Agrega un contrato a un empleado (no se cruza en fechas con sus otros contratos). | `nomina.empleados.gestionar` | `NuevoContratoLaboralPeticion` | 201 `ContratoConVersionesRespuesta` | 403, 409, 422 |
 | POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/versiones` | Modifica las condiciones del contrato desde una fecha (una versión nueva; las anteriores no cambian). | `nomina.empleados.gestionar` | `ModificacionContratoPeticion` | 201 `VersionContratoRespuesta` | 403, 409, 422 |
 | POST | `/entidades/{entidad_id}/nomina/contratos/{contrato_id}/prorroga` | Prorroga un contrato a término fijo. | `nomina.empleados.gestionar` | `ProrrogaContratoPeticion` | 200 `ContratoLaboralRespuesta` | 403, 409, 422 |
