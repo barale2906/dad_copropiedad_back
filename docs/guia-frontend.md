@@ -227,8 +227,11 @@ cuenta con su tipo.
   - El correo al cliente sale al buzón que él registró ante la DIAN como facturador; si no está
     registrado, al `correo_facturacion` del tercero.
   - Para el contador externo (`facturacion.exportar`): `GET …/libro-ventas`, `…/libro-compras`
-    (CSV) y `…/paquete` (ZIP con XML y PDF), todos con `?desde=&hasta=` y la cabecera
-    `X-Contenido-Sha256`.
+    (CSV) y `…/paquete`, todos con `?desde=&hasta=` y la cabecera `X-Contenido-Sha256`. El
+    paquete es el ZIP para **conservar** los documentos del periodo: `emitidos/` (XML firmado,
+    `AttachedDocument` y PDF), `recibidos/` (XML de las facturas recibidas), `eventos/` (RADIAN)
+    e `indice.csv` con el CUFE y el SHA-256 de cada archivo. Conviene ofrecerlo como «Descargar
+    mis documentos» por mes.
   - Si la entidad habilita la contabilidad después: `POST …/contabilizacion` con el periodo
     contabiliza lo facturado (informe con `contabilizadas`, `pagadas_a_mano` y `fallidas`).
   - **Habilitación con el motor propio** (`facturacion.configurar`; el certificado exige

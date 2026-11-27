@@ -64,3 +64,18 @@ Además, la tesorería (contabilidad) importaba el código de las ventas para ap
   informe las señala para que el contador registre su recaudo.
 - Pendiente: la nota débito electrónica (el tipo existe en el esquema; falta decidir cómo se
   recauda) y la habilitación ante la DIAN por entidad (plan 18, parte B).
+
+## Adenda (2026-11-27): paquete para conservar los documentos
+Tras la respuesta de la DIAN a la consulta del motor propio (ADR 0021, adenda del 2026-11-27),
+el facturador debe poder llevarse sus documentos en cualquier momento. El paquete del periodo
+(`GET /entidades/{id}/facturacion/paquete`, `facturacion.exportar`) deja de ser solo XML + PDF
+para el contador y pasa a ser la copia completa del periodo:
+- `emitidos/`: XML firmado, `AttachedDocument` (con la respuesta de la DIAN) y PDF de cada
+  documento transmitido (validado, enviado o en contingencia);
+- `recibidos/`: el XML original de cada factura recibida con fecha en el periodo;
+- `eventos/`: los `ApplicationResponse` firmados de los eventos RADIAN de unos y otros;
+- `indice.csv`: archivo, clase, documento, CUFE, estado, fecha y SHA-256 de cada archivo.
+
+Mismo endpoint, permiso y auditoría (huella del ZIP). Un periodo con más de `LIMITE_DOCUMENTOS`
+documentos se rechaza como antes: se exporta por periodos más cortos.
+

@@ -789,3 +789,59 @@ async fn la_nota_debito_se_contabiliza_y_suma_a_la_cartera_del_cliente(pool: PgP
         "factura más nota: {edades}"
     );
 }
+
+/// El paquete del periodo lleva el XML de cada factura recibida y un índice con su CUFE y su
+/// huella, para que la entidad conserve sus documentos fuera de la plataforma.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_paquete_del_periodo_conserva_las_facturas_recibidas_con_su_indice(pool: PgPool) {
+    let e = empresa(pool).await;
+    let recibida = e
+        .crear(
+            "/facturacion/recibidas",
+            json!({ "nombre_archivo": "fv-SETP990000123.xml",
+                    "archivo_base64": STANDARD.encode(FACTURA_UBL) }),
+        )
+        .await;
+
+    let (s, tipo, zip) = e
+        .api
+        .pedir_texto(
+            &format!(
+                "/api/v1/entidades/{}/facturacion/paquete?desde=2026-03-01&hasta=2026-03-31",
+                e.id
+            ),
+            &e.gerente,
+        )
+        .await;
+
+    assert_eq!((s, tipo.as_str()), (StatusCode::OK, "application/zip"));
+    assert!(zip.starts_with("PK"), "es un ZIP");
+    assert!(zip.contains("indice.csv"));
+    assert!(zip.contains("archivo,clase,documento,cufe,estado,fecha,sha256"));
+    assert!(zip.contains("recibidos/900373115-SETP990000123.xml"));
+    assert!(zip.contains(recibida["cufe"].as_str().expect("cufe")));
+    assert!(
+        zip.contains("<cbc:ID>SETP990000123</cbc:ID>"),
+        "el XML original va adentro"
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn el_paquete_de_un_periodo_sin_documentos_solo_trae_el_indice(pool: PgPool) {
+    let e = empresa(pool).await;
+
+    let (s, _, zip) = e
+        .api
+        .pedir_texto(
+            &format!(
+                "/api/v1/entidades/{}/facturacion/paquete?desde=2020-01-01&hasta=2020-01-31",
+                e.id
+            ),
+            &e.gerente,
+        )
+        .await;
+
+    assert_eq!(s, StatusCode::OK);
+    assert!(zip.contains("indice.csv"));
+    assert!(!zip.contains("recibidos/") && !zip.contains("emitidos/"));
+}
