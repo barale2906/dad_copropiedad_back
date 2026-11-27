@@ -132,6 +132,79 @@ impl fmt::Debug for ContrasenaNueva {
     }
 }
 
+/// Tipo de dispositivo desde el que se inicia sesión, deducido del `User-Agent`: navegador (o la
+/// app) y sistema operativo, **sin versiones** (una actualización del navegador no es un
+/// dispositivo nuevo). Sirve para avisar al titular de un inicio de sesión desde un dispositivo
+/// que no había usado; no identifica un equipo físico.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TipoDispositivo {
+    /// `Chrome`, `Firefox`, `Edge`, `Safari`, `Opera`, `App DAD` o `Otro navegador`.
+    pub navegador: &'static str,
+    /// `Windows`, `Android`, `iPhone`, `iPad`, `macOS`, `Linux` u `Otro sistema`.
+    pub sistema: &'static str,
+}
+
+impl TipoDispositivo {
+    /// Deduce el tipo desde el `User-Agent`; `None` si no llegó.
+    pub fn desde_agente(agente: Option<&str>) -> Option<Self> {
+        let a = agente?.trim();
+        if a.is_empty() {
+            return None;
+        }
+        let navegador = if a.contains("Dart/") || a.contains("dad-app") {
+            "App DAD"
+        } else if a.contains("Edg/") || a.contains("EdgA/") || a.contains("EdgiOS/") {
+            "Edge"
+        } else if a.contains("OPR/") || a.contains("Opera") {
+            "Opera"
+        } else if a.contains("Firefox/") || a.contains("FxiOS/") {
+            "Firefox"
+        } else if a.contains("Chrome/") || a.contains("CriOS/") {
+            "Chrome"
+        } else if a.contains("Safari/") {
+            "Safari"
+        } else {
+            "Otro navegador"
+        };
+        // El orden importa: Android se anuncia como Linux y el iPhone como «like Mac OS X».
+        let sistema = if a.contains("Android") {
+            "Android"
+        } else if a.contains("iPhone") {
+            "iPhone"
+        } else if a.contains("iPad") {
+            "iPad"
+        } else if a.contains("Windows") {
+            "Windows"
+        } else if a.contains("Mac OS X") || a.contains("Macintosh") {
+            "macOS"
+        } else if a.contains("Linux") || a.contains("X11") {
+            "Linux"
+        } else {
+            "Otro sistema"
+        };
+        Some(Self { navegador, sistema })
+    }
+}
+
+impl fmt::Display for TipoDispositivo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} en {}", self.navegador, self.sistema)
+    }
+}
+
+/// ¿Se avisa al titular de este inicio de sesión? Sí cuando el tipo de dispositivo no aparece
+/// entre los de sus sesiones anteriores. No se avisa en el primer inicio de sesión de la cuenta
+/// (no hay contra qué comparar) ni cuando no se sabe desde dónde se entró.
+pub fn avisar_dispositivo_nuevo(
+    anteriores: &[Option<TipoDispositivo>],
+    actual: Option<&TipoDispositivo>,
+) -> bool {
+    match actual {
+        None => false,
+        Some(actual) => !anteriores.is_empty() && !anteriores.iter().flatten().any(|d| d == actual),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -184,5 +257,58 @@ mod tests {
         }
         let c = ContrasenaNueva::new("secreto-muy-largo").expect("válida");
         assert!(!format!("{c:?}").contains("secreto"));
+    }
+
+    const CHROME_WINDOWS: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
+                                  (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+    const SAFARI_IPHONE: &str = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) \
+                                 AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 \
+                                 Mobile/15E148 Safari/604.1";
+    const CHROME_ANDROID: &str = "Mozilla/5.0 (Linux; Android 14; SM-A145M) AppleWebKit/537.36 \
+                                  (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
+    const EDGE_WINDOWS: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
+                                (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0";
+
+    fn tipo(a: &str) -> TipoDispositivo {
+        TipoDispositivo::desde_agente(Some(a)).expect("agente")
+    }
+
+    #[test]
+    fn el_tipo_de_dispositivo_sale_del_agente_sin_versiones() {
+        assert_eq!(tipo(CHROME_WINDOWS).to_string(), "Chrome en Windows");
+        assert_eq!(tipo(SAFARI_IPHONE).to_string(), "Safari en iPhone");
+        assert_eq!(tipo(CHROME_ANDROID).to_string(), "Chrome en Android");
+        assert_eq!(tipo(EDGE_WINDOWS).to_string(), "Edge en Windows");
+        assert_eq!(TipoDispositivo::desde_agente(Some("  ")), None);
+        assert_eq!(TipoDispositivo::desde_agente(None), None);
+    }
+
+    #[test]
+    fn otra_version_del_mismo_navegador_no_es_un_dispositivo_nuevo() {
+        let nuevo = CHROME_WINDOWS.replace("131.0.0.0", "132.0.6834.83");
+        assert_eq!(tipo(&nuevo), tipo(CHROME_WINDOWS));
+    }
+
+    #[test]
+    fn se_avisa_solo_si_el_dispositivo_no_se_habia_usado() {
+        let anteriores = vec![Some(tipo(CHROME_WINDOWS)), None];
+
+        assert!(avisar_dispositivo_nuevo(
+            &anteriores,
+            Some(&tipo(SAFARI_IPHONE))
+        ));
+        assert!(!avisar_dispositivo_nuevo(
+            &anteriores,
+            Some(&tipo(CHROME_WINDOWS))
+        ));
+    }
+
+    #[test]
+    fn el_primer_inicio_o_un_agente_desconocido_no_avisan() {
+        assert!(!avisar_dispositivo_nuevo(&[], Some(&tipo(CHROME_WINDOWS))));
+        assert!(!avisar_dispositivo_nuevo(
+            &[Some(tipo(CHROME_WINDOWS))],
+            None
+        ));
     }
 }

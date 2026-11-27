@@ -252,6 +252,14 @@ pub trait RepositorioSesiones: Send {
         ahora: DateTime<Utc>,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// `User-Agent` de las sesiones de la cuenta creadas desde `desde` (abiertas o cerradas), para
+    /// reconocer los dispositivos que ya usó.
+    fn agentes_recientes(
+        &mut self,
+        cuenta: CuentaId,
+        desde: DateTime<Utc>,
+    ) -> impl Future<Output = AppResult<Vec<Option<String>>>> + Send;
+
     /// Revoca todas las sesiones abiertas de la cuenta. Devuelve cuántas.
     fn revocar_sesiones_de(
         &mut self,

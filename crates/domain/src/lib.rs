@@ -89,7 +89,10 @@ pub use copropiedad::{
 };
 pub use correo::DireccionCorreo;
 pub use cuadro_coeficientes::{EstadoCuadro, RevisionCuadro, TipoCuadro};
-pub use cuenta::{ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario};
+pub use cuenta::{
+    ContrasenaNueva, EstadoCuenta, Identificador, NombreUsuario, TipoDispositivo,
+    avisar_dispositivo_nuevo,
+};
 pub use directorio::{
     CategoriaElegible, Cobertura, CodigoCategoria, Coordenadas, EstadoResena, EstadoVerificacion,
     TipoCobertura, Ubicacion, busqueda::CanalSolicitud,
