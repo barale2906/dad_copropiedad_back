@@ -93,6 +93,8 @@ async fn campana_activa(p: &Ph, gestora: &str, id: &str) -> (String, String) {
         .await;
     assert_eq!(s, StatusCode::CREATED, "{c}");
     let campana = c["id"].as_str().expect("id").to_owned();
+    let imagen = subir_imagen(p, gestora, PNG).await;
+    assert_eq!(imagen.0, StatusCode::CREATED, "{}", imagen.1);
     let (s, cr) = p
         .api
         .pedir(
@@ -102,7 +104,8 @@ async fn campana_activa(p: &Ph, gestora: &str, id: &str) -> (String, String) {
             Some(json!({
                 "formato": "oferta_cupon", "titulo": "10 % en arreglos",
                 "texto": "Presente el código en el local",
-                "condiciones": "Válido hasta fin de mes", "cupon_codigo": "rosa10"
+                "condiciones": "Válido hasta fin de mes", "cupon_codigo": "rosa10",
+                "imagen_archivo_id": imagen.1["id"]
             })),
         )
         .await;
@@ -147,6 +150,22 @@ async fn campana_activa(p: &Ph, gestora: &str, id: &str) -> (String, String) {
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v["estado"], "activa");
     (campana, creativo)
+}
+
+/// Cabecera de un PNG: basta para que la validación por contenido lo reconozca.
+const PNG: &[u8] = &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13];
+
+/// Sube una imagen de la publicidad como `quien`.
+async fn subir_imagen(p: &Ph, quien: &str, contenido: &[u8]) -> (StatusCode, Value) {
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    p.api
+        .pedir(
+            Method::POST,
+            "/api/v1/plataforma/publicidad/imagenes",
+            Some(quien),
+            Some(json!({ "nombre_archivo": "promo.png", "archivo_base64": STANDARD.encode(contenido) })),
+        )
+        .await
 }
 
 async fn autorizar(p: &Ph, token: &str) {
@@ -198,6 +217,12 @@ async fn solo_el_propietario_que_autorizo_ve_la_oferta_y_el_comercio_la_redime(p
     autorizar(&p, &dueno).await;
     let (_, v) = p.api.pedir(Method::GET, &piezas, Some(&dueno), None).await;
     assert_eq!(v[0]["creativo_id"], creativo.as_str());
+    assert!(
+        v[0]["imagen_url"]
+            .as_str()
+            .is_some_and(|u| u.contains("/archivos/descarga")),
+        "la pieza trae el enlace firmado de su imagen: {v}"
+    );
     assert_eq!(v[0]["tiene_cupon"], true);
     assert!(
         v[0].get("cupon_codigo").is_none(),
@@ -485,4 +510,56 @@ async fn el_empleado_de_una_empresa_que_autorizo_ve_el_directorio_y_las_piezas(p
     let (s, v) = p.api.pedir(Method::GET, &piezas, Some(&eva), None).await;
     assert_eq!(s, StatusCode::OK, "{v}");
     assert_eq!(v.as_array().map(Vec::len), Some(1), "{v}");
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn la_gestora_pone_el_logo_del_comercio_y_solo_se_aceptan_imagenes(pool: PgPool) {
+    let p = ph(pool).await;
+    let gestora = gestora(&p).await;
+    let id = comercio(&p, &gestora).await;
+
+    let (s, pdf) = subir_imagen(&p, &gestora, b"%PDF-1.7\x00\x01").await;
+    let (_, imagen) = subir_imagen(&p, &gestora, PNG).await;
+    let (s_logo, logo) = p
+        .api
+        .pedir(
+            Method::PUT,
+            &format!("/api/v1/plataforma/publicidad/anunciantes/{id}/logo"),
+            Some(&gestora),
+            Some(json!({ "archivo_id": imagen["id"] })),
+        )
+        .await;
+    let (_, anunciante) = p
+        .api
+        .pedir(
+            Method::GET,
+            &format!("/api/v1/plataforma/publicidad/anunciantes/{id}"),
+            Some(&gestora),
+            None,
+        )
+        .await;
+    let (s_otro, _) = p
+        .api
+        .pedir(
+            Method::PUT,
+            &format!("/api/v1/plataforma/publicidad/anunciantes/{id}/logo"),
+            Some(&gestora),
+            Some(json!({ "archivo_id": uuid::Uuid::now_v7() })),
+        )
+        .await;
+
+    assert_eq!(
+        s,
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "un PDF no es una imagen: {pdf}"
+    );
+    assert_eq!(imagen["tipo"], "image/png");
+    assert!(
+        imagen["url"]
+            .as_str()
+            .is_some_and(|u| u.contains("/archivos/descarga"))
+    );
+    assert_eq!(s_logo, StatusCode::OK, "{logo}");
+    assert_eq!(anunciante["logo_archivo_id"], imagen["id"], "{anunciante}");
+    assert_eq!(s_otro, StatusCode::NOT_FOUND, "una imagen que no existe");
 }

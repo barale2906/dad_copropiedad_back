@@ -612,6 +612,8 @@ pub struct AnuncianteRespuesta {
     pub motivo_estado: Option<String>,
     pub creado_en: DateTime<Utc>,
     pub actualizado_en: DateTime<Utc>,
+    /// Logo (archivo de la plataforma); se cambia con `PUT …/publicidad/anunciantes/{id}/logo`.
+    pub logo_archivo_id: Option<Uuid>,
     /// `null` si todavía no tiene ficha.
     pub ficha: Option<FichaAnuncianteRespuesta>,
 }
@@ -630,6 +632,7 @@ pub(super) fn anunciante_respuesta(a: Anunciante, ficha: Option<Ficha>) -> Anunc
         motivo_estado: a.motivo_estado,
         creado_en: a.creado_en,
         actualizado_en: a.actualizado_en,
+        logo_archivo_id: a.logo.map(domain::ArchivoId::as_uuid),
         ficha: ficha.map(Into::into),
     }
 }

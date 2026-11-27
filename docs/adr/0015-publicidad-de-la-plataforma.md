@@ -65,3 +65,18 @@ módulo de contabilidad).
 - Los cupones son códigos por oferta (con límite de usos), no uno por residente.
 - Las autorizaciones de publicidad dadas antes bajo la política de una PH (solo en
   desarrollo) no cumplen el CHECK nuevo (`NOT VALID`); en producción no las hay.
+
+## Adenda (2026-11-27): imágenes de la publicidad
+Se resuelve el pendiente de las imágenes con un **almacén de archivos de la plataforma**:
+- Tabla `archivos_plataforma` (sin tenant, `solo_plataforma`, solo inserción) y claves en la
+  carpeta del UUID nulo del mismo almacén (`ClaveArchivo::de_plataforma`); ninguna entidad tiene
+  ese id (UUID v7). Mismo puerto `AlmacenArchivos` y mismo enlace firmado de descarga.
+- Solo JPEG, PNG o WebP de hasta 2 MB, validados por contenido
+  (`TipoArchivo::validar_imagen_publicidad`).
+- `creativos.imagen_archivo_id` (parte del contenido: cambiarla devuelve el creativo a
+  moderación) y `anunciantes.logo_archivo_id`. `piezas_publicidad` devuelve el id y el tipo de la
+  imagen, y la API la entrega como un enlace firmado de una hora (`imagen_url`).
+
+Siguen pendientes los documentos del anunciante (soportes de verificación) y mostrar el logo en
+el directorio de cada entidad (`fichas_directorio_copropiedad`).
+

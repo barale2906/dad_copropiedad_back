@@ -81,6 +81,23 @@ pub trait AlmacenArchivos: Send + Sync {
     fn url_temporal(&self, descarga: &DescargaArchivo) -> AppResult<String>;
 }
 
+/// Archivos de la **plataforma** (imágenes de la publicidad y logos de los comercios): fuera de
+/// toda entidad, en su propia carpeta del almacén ([`ClaveArchivo::de_plataforma`]). Solo se
+/// insertan: una imagen nueva es otro archivo.
+pub trait RepositorioArchivosPlataforma: Send {
+    /// Registra un archivo ya guardado en el almacén.
+    fn insertar_archivo_plataforma(
+        &mut self,
+        archivo: &Archivo,
+    ) -> impl Future<Output = AppResult<()>> + Send;
+
+    /// Archivo de la plataforma por id.
+    fn archivo_plataforma(
+        &mut self,
+        id: ArchivoId,
+    ) -> impl Future<Output = AppResult<Option<Archivo>>> + Send;
+}
+
 /// Empaqueta varios archivos en uno ZIP (p. ej. los XML y PDF de un periodo para el contador).
 pub trait Empaquetador: Send + Sync {
     /// ZIP con los archivos dados (nombre dentro del ZIP, contenido), en ese orden.

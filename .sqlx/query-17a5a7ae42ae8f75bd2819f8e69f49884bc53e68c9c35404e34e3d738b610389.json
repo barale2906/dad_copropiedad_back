@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE anunciantes\n             SET nombre_comercial = $2, direccion = $3, municipio_dane = $4, latitud = $5,\n                 longitud = $6, estado_verificacion = $7, motivo_estado = $8, actualizado_en = $9,\n                 logo_archivo_id = $10\n             WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Numeric",
+        "Numeric",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "17a5a7ae42ae8f75bd2819f8e69f49884bc53e68c9c35404e34e3d738b610389"
+}

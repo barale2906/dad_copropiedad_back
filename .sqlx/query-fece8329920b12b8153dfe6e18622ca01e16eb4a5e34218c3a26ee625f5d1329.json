@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, organizacion_id, nombre_comercial, direccion, municipio_dane, latitud,\n                        longitud, estado_verificacion, motivo_estado, creado_por, creado_en,\n                        actualizado_en\n                 FROM anunciantes WHERE id = $1 FOR UPDATE",
+  "query": "SELECT id, organizacion_id, nombre_comercial, direccion, municipio_dane, latitud,\n                        longitud, estado_verificacion, motivo_estado, creado_por, creado_en,\n                        actualizado_en, logo_archivo_id\n                 FROM anunciantes WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -134,6 +134,17 @@
             "name": "actualizado_en"
           }
         }
+      },
+      {
+        "ordinal": 12,
+        "name": "logo_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "anunciantes",
+            "name": "logo_archivo_id"
+          }
+        }
       }
     ],
     "parameters": {
@@ -153,8 +164,9 @@
       true,
       true,
       false,
-      false
+      false,
+      true
     ]
   },
-  "hash": "342c7a9901d65a80575d0efce566cb3544ef0f8aa790d565df62322335ad2416"
+  "hash": "fece8329920b12b8153dfe6e18622ca01e16eb4a5e34218c3a26ee625f5d1329"
 }

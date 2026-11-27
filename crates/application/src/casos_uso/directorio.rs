@@ -224,6 +224,7 @@ where
         creado_por: ctx.actor_id,
         creado_en: ahora,
         actualizado_en: ahora,
+        logo: None,
     };
     tx.insertar_anunciante(&anunciante).await?;
     let detalle = DetalleAuditoria::vacio().con("organizacion_id", organizacion_id.to_string())?;

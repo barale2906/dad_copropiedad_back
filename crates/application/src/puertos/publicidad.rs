@@ -391,6 +391,8 @@ pub struct PiezaPublicidad {
     pub anunciante_id: AnuncianteId,
     pub nombre_comercial: String,
     pub contenido: ContenidoCreativo,
+    /// Tipo de la imagen del contenido, para firmar su enlace de descarga.
+    pub imagen_tipo: Option<domain::TipoArchivo>,
 }
 
 /// Persona que puede recibir un mensaje masivo (autorizó la publicidad).

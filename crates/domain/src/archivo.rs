@@ -102,6 +102,30 @@ impl TipoArchivo {
         }
     }
 
+    /// Tamaño máximo de una imagen de la publicidad (creativos y logos): se muestra en la app y en
+    /// las pantallas del lobby, así que debe cargar rápido.
+    pub const TAMANO_MAXIMO_IMAGEN_PUBLICIDAD: u64 = 2 * MB;
+
+    /// Valida una imagen de la publicidad de la plataforma: JPEG, PNG o WebP (no HEIC, que los
+    /// navegadores no muestran) de hasta [`Self::TAMANO_MAXIMO_IMAGEN_PUBLICIDAD`].
+    ///
+    /// # Errors
+    ///
+    /// Los de [`Self::validar`]; [`DominioError::TipoArchivoNoAdmitido`] si no es una de esas
+    /// imágenes; [`DominioError::ArchivoDemasiadoGrande`] si pasa del máximo.
+    pub fn validar_imagen_publicidad(contenido: &[u8]) -> Result<Self, DominioError> {
+        let tipo = Self::validar(contenido)?;
+        if !matches!(tipo, Self::Jpeg | Self::Png | Self::Webp) {
+            return Err(DominioError::TipoArchivoNoAdmitido);
+        }
+        if contenido.len() as u64 > Self::TAMANO_MAXIMO_IMAGEN_PUBLICIDAD {
+            return Err(DominioError::ArchivoDemasiadoGrande {
+                maximo_bytes: Self::TAMANO_MAXIMO_IMAGEN_PUBLICIDAD,
+            });
+        }
+        Ok(tipo)
+    }
+
     /// Valida un contenido subido: no vacío, de un tipo admitido y dentro del tamaño máximo.
     ///
     /// # Errors
@@ -302,6 +326,12 @@ impl ClaveArchivo {
         ))
     }
 
+    /// Clave de un archivo de la **plataforma** (imágenes de la publicidad, logos): va en la
+    /// carpeta del UUID nulo, que ninguna entidad puede tener (sus ids son UUID v7).
+    pub fn de_plataforma(archivo: ArchivoId) -> Self {
+        Self::new(TenantId::from_uuid(Uuid::nil()), archivo)
+    }
+
     /// Valida una clave leída de la base de datos o de una URL firmada.
     ///
     /// # Errors
@@ -499,5 +529,40 @@ mod pruebas_planillas {
             TipoArchivo::validar_planilla(b""),
             Err(DominioError::ArchivoVacio)
         );
+    }
+
+    #[test]
+    fn la_publicidad_solo_acepta_imagenes_livianas_que_muestra_un_navegador() {
+        let png = [
+            &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A][..],
+            &[0; 16],
+        ]
+        .concat();
+        assert_eq!(
+            TipoArchivo::validar_imagen_publicidad(&png),
+            Ok(TipoArchivo::Png)
+        );
+        assert_eq!(
+            TipoArchivo::validar_imagen_publicidad(b"%PDF-1.7\x00\x01"),
+            Err(DominioError::TipoArchivoNoAdmitido)
+        );
+        let grande = [&png[..], &vec![0; 2 * 1024 * 1024][..]].concat();
+        assert!(matches!(
+            TipoArchivo::validar_imagen_publicidad(&grande),
+            Err(DominioError::ArchivoDemasiadoGrande { .. })
+        ));
+    }
+
+    #[test]
+    fn la_clave_de_la_plataforma_va_en_su_propia_carpeta_y_se_puede_leer() {
+        let id = ArchivoId::nuevo();
+        let clave = ClaveArchivo::de_plataforma(id);
+
+        assert!(
+            clave
+                .as_str()
+                .starts_with("00000000-0000-0000-0000-000000000000/")
+        );
+        assert_eq!(ClaveArchivo::parse(clave.as_str()), Ok(clave));
     }
 }

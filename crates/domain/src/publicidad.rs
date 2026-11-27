@@ -664,6 +664,8 @@ pub struct ContenidoCreativo {
     /// Plantilla de marketing aprobada en Meta (obligatoria en
     /// [`FormatoCreativo::MensajeWhatsapp`]).
     pub plantilla_whatsapp: Option<String>,
+    /// Imagen (archivo de la plataforma). Cambiarla es cambiar el contenido: vuelve a moderación.
+    pub imagen: Option<crate::ArchivoId>,
 }
 
 fn texto(
@@ -1069,7 +1071,19 @@ mod tests {
             es_promocion: false,
             cupon: None,
             plantilla_whatsapp: None,
+            imagen: None,
         }
+    }
+
+    #[test]
+    fn validar_el_contenido_conserva_su_imagen() {
+        let imagen = crate::ArchivoId::nuevo();
+        let c = ContenidoCreativo {
+            imagen: Some(imagen),
+            ..contenido(FormatoCreativo::Banner)
+        };
+
+        assert_eq!(c.validado().expect("válido").imagen, Some(imagen));
     }
 
     #[test]

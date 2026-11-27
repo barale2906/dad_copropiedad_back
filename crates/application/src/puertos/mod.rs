@@ -46,7 +46,7 @@ pub use acceso::{
     RepositorioDispositivosPush,
 };
 pub use actas::GeneradorActas;
-pub use archivos::{AlmacenArchivos, RepositorioArchivos};
+pub use archivos::{AlmacenArchivos, RepositorioArchivos, RepositorioArchivosPlataforma};
 pub use asambleas::{DirectorioAsambleas, RepositorioAsambleas, RepositorioLineasWhatsapp};
 pub use auditoria::LecturaAuditoria;
 pub use cartera::RepositorioCartera;

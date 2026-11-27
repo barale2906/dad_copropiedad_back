@@ -21,9 +21,9 @@
 use crate::{
     casos_uso::tickets::TxTickets,
     puertos::{
-        RegistroAuditoria, RepositorioDirectorio, RepositorioDirectorioPlataforma,
-        RepositorioProteccionDatos, RepositorioPublicidad, RepositorioPublicidadPlataforma,
-        identidad::RepositorioOrganizaciones,
+        RegistroAuditoria, RepositorioArchivosPlataforma, RepositorioDirectorio,
+        RepositorioDirectorioPlataforma, RepositorioProteccionDatos, RepositorioPublicidad,
+        RepositorioPublicidadPlataforma, identidad::RepositorioOrganizaciones,
     },
 };
 
@@ -37,6 +37,7 @@ pub trait TxPublicidadPlataforma:
     RepositorioPublicidadPlataforma
     + RepositorioDirectorioPlataforma
     + RepositorioOrganizaciones
+    + RepositorioArchivosPlataforma
     + RegistroAuditoria
 {
 }
@@ -45,6 +46,7 @@ impl<T> TxPublicidadPlataforma for T where
     T: RepositorioPublicidadPlataforma
         + RepositorioDirectorioPlataforma
         + RepositorioOrganizaciones
+        + RepositorioArchivosPlataforma
         + RegistroAuditoria
 {
 }

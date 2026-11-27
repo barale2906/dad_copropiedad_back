@@ -67,3 +67,18 @@ contabilizador.
   PDF de egresos y recibos, comisiones de la pasarela en la liquidación, certificados con el PDF
   adjunto al correo (hoy el correo lleva el detalle en el texto), cartera de proveedores por
   edades y rutas de roles para entidades sin vertical.
+
+## Adenda (2026-11-27): soportes en PDF y cuentas por pagar por edades
+De los pendientes de arriba quedan resueltos:
+- **PDF de recibos y egresos** (`casos_uso::contabilidad::soportes`): se generan al vuelo con la
+  tabla de `infra-pdf`; muestran el número del comprobante, a qué se aplicó el recibo (y el
+  anticipo) o qué facturas y gastos cubre el egreso, y marcan la anulación. El egreso lleva
+  espacio para la firma del beneficiario.
+- **Certificados con el PDF adjunto**: el certificado de retenciones (y las cuentas de cobro de
+  la cartera de la PH, ADR 0019) viajan por el outbox con su PDF como `AdjuntoCorreo`.
+- **Cuentas por pagar por edades** (`cuentas_por_pagar::por_pagar_por_edades`): neto a pagar −
+  pagado de las facturas registradas, causadas o pagadas en parte, por tramo de días vencidos;
+  usa el mismo agrupador que la cartera de clientes (`cuentas_por_cobrar::agrupar_por_edades`).
+
+Siguen pendientes: el adaptador de la pasarela y su webhook (espera la elección de la pasarela),
+las comisiones de la pasarela en la liquidación y las rutas de roles para entidades sin vertical.
