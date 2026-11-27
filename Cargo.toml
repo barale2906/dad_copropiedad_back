@@ -127,11 +127,19 @@ todo = "warn"
 print_stdout = "warn"
 
 [profile.dev]
-# Compilación más rápida de dependencias en desarrollo sin perder depuración del código propio
+# Depuración mínima del código propio (números de línea en los backtraces): binarios pequeños.
 debug = "line-tables-only"
+# En Linux la información de depuración queda en los objetos y no se copia a cada ejecutable.
+split-debuginfo = "unpacked"
 
 [profile.dev.package."*"]
+# Dependencias algo optimizadas (pruebas más rápidas) y sin información de depuración (menos disco).
 opt-level = 1
+debug = false
+
+[profile.dev.build-override]
+# Macros procedurales y build scripts optimizados: `sqlx::query!` y utoipa expanden más rápido.
+opt-level = 3
 
 [profile.release]
 lto = "thin"
