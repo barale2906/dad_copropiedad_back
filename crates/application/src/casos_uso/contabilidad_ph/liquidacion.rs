@@ -7,6 +7,7 @@
 //! Reliquidar el mismo periodo no duplica cobros (QA-005: índice único y una liquidación
 //! vigente por periodo).
 
+use crate::puertos::correo::AdjuntoCorreo;
 use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Datelike, NaiveDate, Utc};
@@ -1078,14 +1079,17 @@ pub struct EnvioCuentas {
 }
 
 /// Envía por correo (outbox) cada cuenta de cobro de la liquidación a su pagador (el tenedor si
-/// lo hay, si no el propietario representante). El saldo va solo en el cuerpo del correo.
+/// lo hay, si no el propietario representante), con la cuenta en PDF adjunta y su detalle en el
+/// cuerpo.
 ///
 /// # Errors
 ///
 /// [`AppError::SinPermiso`] sin `cartera.liquidar`; [`AppError::NoEncontrado`];
-/// [`AppError::Conflicto`] si la liquidación está anulada.
-pub async fn enviar_cuentas_cobro<U>(
+/// [`AppError::Conflicto`] si la liquidación está anulada; [`AppError::Infraestructura`] si
+/// falla un PDF.
+pub async fn enviar_cuentas_cobro<U, G>(
     unidad: &U,
+    generador: &G,
     reloj: &impl Reloj,
     ctx: &Contexto,
     liquidacion: LiquidacionExpensasId,
@@ -1093,6 +1097,7 @@ pub async fn enviar_cuentas_cobro<U>(
 where
     U: UnidadDeTrabajo,
     U::Transaccion: TxCartera,
+    G: GeneradorActas,
 {
     let mut tx = abrir(unidad, reloj, ctx, Permiso::CarteraLiquidar).await?;
     let l = tx
@@ -1107,11 +1112,12 @@ where
         sin_correo: 0,
     };
     for cuenta in tx.cuentas_cobro(Some(liquidacion), None).await? {
-        let a = armar_cuenta(&mut tx, cuenta).await?;
+        let a = armar_cuenta(&mut tx, cuenta.clone()).await?;
         let Some(para) = a.correo.clone() else {
             envio.sin_correo += 1;
             continue;
         };
+        let pdf = pdf_cuenta_cobro_en(&mut tx, generador, reloj, cuenta).await?;
         let mut cuerpo = format!("{}\n{}\n\n", a.entidad, subtitulo(&a));
         for f in filas_cuenta(&a) {
             cuerpo.push_str(&f.join(" | "));
@@ -1124,7 +1130,11 @@ where
                 asunto: format!("Cuenta de cobro {}", numero_cuenta_cobro(&a.cuenta)),
                 texto: cuerpo,
                 html: None,
-                adjuntos: Vec::new(),
+                adjuntos: vec![AdjuntoCorreo {
+                    nombre: format!("cuenta-cobro-{}.pdf", numero_cuenta_cobro(&a.cuenta)),
+                    tipo: "application/pdf".into(),
+                    contenido: pdf,
+                }],
             }),
         })
         .await?;
@@ -1132,7 +1142,7 @@ where
     }
     let detalle = DetalleAuditoria::vacio()
         .con("enviadas", envio.enviadas)?
-        .con("sin_correo", envio.sin_correo)?;
+        .con("no_enviadas", envio.sin_correo)?;
     tx.registrar(
         EventoAuditoria::ok(ACCION_ENVIAR, "liquidacion_expensas", liquidacion.as_uuid())
             .con_detalle(detalle),

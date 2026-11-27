@@ -393,6 +393,7 @@ pub async fn enviar_certificado(
 ) -> ApiResult<(StatusCode, Json<EnvioCertificadoRespuesta>)> {
     let para = uc::enviar_certificado_retenciones(
         &state.unidad,
+        &state.actas,
         &RelojSistema,
         &en.ctx,
         PersonaId::from_uuid(ruta.1),

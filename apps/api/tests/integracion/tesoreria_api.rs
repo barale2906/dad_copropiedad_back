@@ -438,6 +438,21 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         (s, &envio["para"]),
         (StatusCode::ACCEPTED, &json!("fe@proveedor.co"))
     );
+    let (nombre, tipo): (String, String) = sqlx::query_as(
+        "SELECT payload->'adjuntos'->0->>'nombre', payload->'adjuntos'->0->>'tipo' FROM outbox
+          WHERE canal = 'correo' AND destino = 'fe@proveedor.co'",
+    )
+    .fetch_one(&e.api.duenio)
+    .await
+    .expect("correo del certificado");
+    assert_eq!(
+        (nombre.as_str(), tipo.as_str()),
+        (
+            "certificado-retenciones-2026-01-01-2026-12-31.pdf",
+            "application/pdf"
+        ),
+        "el certificado viaja en PDF"
+    );
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
