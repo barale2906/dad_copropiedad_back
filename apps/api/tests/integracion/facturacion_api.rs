@@ -268,6 +268,26 @@ async fn una_empresa_sin_contabilidad_factura_de_punta_a_punta(pool: PgPool) {
     );
     assert!(csv.contains("FE1") && csv.contains(fe["cufe"].as_str().expect("cufe")));
 
+    // Paquete del periodo para conservar los documentos: el PDF de la factura y su índice.
+    let (s, tipo, zip) = t
+        .api
+        .pedir_texto(
+            &format!(
+                "/api/v1/entidades/{}/facturacion/paquete?desde=2000-01-01&hasta=2099-12-31",
+                t.id
+            ),
+            &t.gerente,
+        )
+        .await;
+    assert_eq!((s, tipo.as_str()), (StatusCode::OK, "application/zip"));
+    assert!(
+        zip.contains("emitidos/factura-FE1.pdf"),
+        "PDF de la factura"
+    );
+    assert!(
+        zip.contains("representacion_grafica") && zip.contains(fe["cufe"].as_str().expect("cufe"))
+    );
+
     // La plataforma ve el consumo de la empresa (para cobrar el módulo).
     let (s, consumo) = t
         .api

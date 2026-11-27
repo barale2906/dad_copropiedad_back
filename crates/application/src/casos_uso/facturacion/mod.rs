@@ -9,8 +9,8 @@
 //! - [`contabilizacion`]: contabilizar lo facturado antes de tener contabilidad.
 //! - [`habilitacion`]: habilitación de la entidad ante la DIAN con el motor propio (software,
 //!   certificado, set de pruebas, producción y rangos).
-//! - [`exportaciones`]: libros de ventas y compras en CSV y paquete ZIP de XML y PDF para el
-//!   contador externo.
+//! - [`exportaciones`]: libros de ventas y compras en CSV y paquete ZIP del periodo (emitidos,
+//!   recibidos y eventos RADIAN con su índice) para conservar los documentos y para el contador.
 //! - [`documentos`]: factura electrónica, nota crédito, documento soporte, reintentos,
 //!   representación gráfica y facturas recibidas con RADIAN, por el [`ProveedorFacturacion`].
 //!

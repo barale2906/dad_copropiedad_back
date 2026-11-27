@@ -102,7 +102,10 @@ pub async fn libro_compras(
     responder(uc::libro_compras(&state.unidad, &RelojSistema, &en.ctx, q.desde, q.hasta).await?)
 }
 
-/// ZIP con el XML y el PDF de cada documento electrónico transmitido en el periodo.
+/// ZIP para conservar los documentos electrónicos del periodo: en `emitidos/` el XML firmado, el
+/// `AttachedDocument` y el PDF de cada documento transmitido; en `recibidos/` el XML de cada
+/// factura recibida; en `eventos/` los eventos RADIAN firmados; e `indice.csv` con el documento,
+/// el CUFE, el estado, la fecha y el SHA-256 de cada archivo.
 #[utoipa::path(
     get,
     path = "/paquete",
