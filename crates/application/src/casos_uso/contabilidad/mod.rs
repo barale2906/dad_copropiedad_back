@@ -32,6 +32,7 @@ pub mod declaraciones;
 pub mod periodos;
 pub mod plantillas;
 pub mod reportes;
+pub mod soportes;
 pub mod tesoreria;
 
 use domain::Modulo;

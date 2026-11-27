@@ -48,6 +48,18 @@ impl Empresa {
             .await
     }
 
+    /// Descarga un PDF de la entidad y devuelve su tipo y si empieza como PDF.
+    async fn pdf(&self, sufijo: &str) -> (StatusCode, String, bool) {
+        let (s, tipo, cuerpo) = self
+            .api
+            .pedir_texto(
+                &format!("/api/v1/entidades/{}{sufijo}", self.id),
+                &self.gerente,
+            )
+            .await;
+        (s, tipo, cuerpo.starts_with("%PDF"))
+    }
+
     async fn crear(&self, sufijo: &str, cuerpo: Value) -> Value {
         let (s, v) = self.pedir(Method::POST, sufijo, Some(cuerpo)).await;
         assert!(s.is_success(), "{sufijo}: {s} {v}");
@@ -303,6 +315,15 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         )
         .await;
     assert_eq!(recibo["sin_aplicar"], json!("0.00"));
+    assert_eq!(
+        e.pdf(&format!(
+            "/contabilidad/tesoreria/recibos/{}/pdf",
+            id(&recibo)
+        ))
+        .await,
+        (StatusCode::OK, "application/pdf".to_owned(), true),
+        "el recibo se entrega en PDF"
+    );
     let (_, f) = e
         .pedir(
             Method::GET,
@@ -399,6 +420,19 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         )
         .await;
     assert_eq!((s, &v["estado"]), (StatusCode::OK, &json!("pagado")), "{v}");
+    assert_eq!(
+        e.pdf(&format!("/contabilidad/tesoreria/egresos/{egreso_id}/pdf"))
+            .await,
+        (StatusCode::OK, "application/pdf".to_owned(), true),
+        "el comprobante de egreso se entrega en PDF"
+    );
+    let (s, _, _) = e
+        .pdf(&format!(
+            "/contabilidad/tesoreria/egresos/{}/pdf",
+            uuid::Uuid::now_v7()
+        ))
+        .await;
+    assert_eq!(s, StatusCode::NOT_FOUND, "un egreso que no existe");
     let (_, compra) = e
         .pedir(
             Method::GET,
@@ -454,7 +488,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         "el certificado viaja en PDF"
     );
 
-    // Lo que se le debe al proveedor aparece en las cuentas por pagar por edades.
+    // La compra se pagó completa con el egreso: no se le debe nada al proveedor.
     let (s, edades) = e
         .pedir(
             Method::GET,
@@ -462,13 +496,7 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
             None,
         )
         .await;
-    assert_eq!(s, StatusCode::OK, "{edades}");
-    assert_eq!(edades[0]["persona_id"], json!(e.proveedor), "{edades}");
-    assert!(
-        edades[0]["tramos"]
-            .as_array()
-            .is_some_and(|t| !t.is_empty())
-    );
+    assert_eq!((s, &edades), (StatusCode::OK, &json!([])), "{edades}");
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]
