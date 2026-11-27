@@ -1,8 +1,8 @@
 //! Exportaciones para el contador externo (plan 18 fase A4): la entidad que solo factura con la
 //! plataforma entrega a quien lleva su contabilidad (en otro programa) el **libro de ventas**, el
-//! **libro de compras** (facturas recibidas) en CSV y el **paquete** con los XML y PDF de sus
-//! documentos electrónicos del periodo en un ZIP. Cada exportación queda en la auditoría con su
-//! huella SHA-256, como los libros contables.
+//! **libro de compras** (facturas recibidas) en CSV y el **paquete** ZIP con los documentos
+//! electrónicos del periodo (emitidos, recibidos y eventos RADIAN, con un índice de huellas).
+//! Cada exportación queda en la auditoría con su huella SHA-256, como los libros contables.
 
 use chrono::NaiveDate;
 use domain::{
@@ -20,11 +20,10 @@ use crate::{
     AppError, AppResult, Contexto,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
     puertos::{
-        AlmacenArchivos, GeneradorActas, RegistroAuditoria, Reloj, RepositorioArchivos as _,
-        Transaccion, UnidadDeTrabajo,
+        AlmacenArchivos, GeneradorActas, RegistroAuditoria, Reloj, Transaccion, UnidadDeTrabajo,
         archivos::Empaquetador,
         tesoreria::FiltroFacturas,
-        tributario::{FiltroDocumentos, FiltroRecibidas},
+        tributario::{FiltroDocumentos, FiltroRecibidas, RegistroRadian},
     },
 };
 
@@ -263,12 +262,115 @@ where
     .await
 }
 
-/// Paquete ZIP con el XML y el PDF de cada documento electrónico transmitido (validado, enviado
-/// o en contingencia) creado en el periodo.
+/// Encabezado de `indice.csv` dentro del paquete.
+const ENCABEZADO_INDICE: [&str; 7] = [
+    "archivo",
+    "clase",
+    "documento",
+    "cufe",
+    "estado",
+    "fecha",
+    "sha256",
+];
+
+/// Archivos del paquete y su índice: cada archivo agregado deja una fila con su huella SHA-256,
+/// para que quien conserva los documentos compruebe que no cambiaron.
+#[derive(Default)]
+struct Paquete {
+    archivos: Vec<(String, Vec<u8>)>,
+    indice: Vec<Vec<String>>,
+}
+
+/// Datos de la fila del índice que no salen del archivo (documento, CUFE, estado y fecha).
+struct Referencia<'a> {
+    documento: &'a str,
+    cufe: &'a str,
+    estado: &'a str,
+    fecha: String,
+}
+
+impl Paquete {
+    fn agregar(&mut self, nombre: String, clase: &str, r: &Referencia<'_>, contenido: Vec<u8>) {
+        self.indice.push(vec![
+            nombre.clone(),
+            clase.to_owned(),
+            r.documento.to_owned(),
+            r.cufe.to_owned(),
+            r.estado.to_owned(),
+            r.fecha.clone(),
+            hex::encode(Sha256::digest(&contenido)),
+        ]);
+        self.archivos.push((nombre, contenido));
+    }
+
+    /// Archivos con `indice.csv` al principio.
+    fn cerrar(mut self) -> Vec<(String, Vec<u8>)> {
+        let indice = a_csv(&ENCABEZADO_INDICE, &self.indice);
+        self.archivos
+            .insert(0, ("indice.csv".to_owned(), indice.into_bytes()));
+        self.archivos
+    }
+}
+
+/// Lee del almacén el archivo registrado con ese id.
+async fn leer<T: TxFacturacion>(
+    tx: &mut T,
+    almacen: &impl AlmacenArchivos,
+    archivo: domain::ArchivoId,
+    que: &'static str,
+) -> AppResult<Vec<u8>> {
+    let a = tx
+        .buscar(archivo)
+        .await?
+        .ok_or(AppError::NoEncontrado(que))?;
+    almacen.obtener(&a.clave).await
+}
+
+/// Agrega los `ApplicationResponse` firmados de unos eventos RADIAN a `eventos/`.
+async fn agregar_eventos<T: TxFacturacion>(
+    tx: &mut T,
+    almacen: &impl AlmacenArchivos,
+    paquete: &mut Paquete,
+    base: &str,
+    cufe: &str,
+    eventos: Vec<RegistroRadian>,
+) -> AppResult<()> {
+    for e in eventos {
+        let Some(xml) = e.xml_archivo_id else {
+            continue;
+        };
+        let nombre = format!(
+            "eventos/{base}-{}-{}.xml",
+            e.tipo.codigo(),
+            e.numero.as_deref().unwrap_or("sin-numero")
+        );
+        let contenido = leer(tx, almacen, xml, "XML del evento RADIAN").await?;
+        let referencia = Referencia {
+            documento: base,
+            cufe,
+            estado: &e.estado,
+            fecha: e.creado_en.date_naive().to_string(),
+        };
+        paquete.agregar(nombre, "evento_radian", &referencia, contenido);
+    }
+    Ok(())
+}
+
+/// Paquete ZIP para conservar los documentos electrónicos del periodo (y entregarlos al
+/// contador):
+///
+/// - `emitidos/`: de cada documento transmitido (validado, enviado o en contingencia) creado en
+///   el periodo, el XML firmado, el `AttachedDocument` (con la respuesta de la DIAN) y el PDF;
+/// - `recibidos/`: el XML de cada factura recibida con fecha en el periodo;
+/// - `eventos/`: los eventos RADIAN firmados de unos y otros;
+/// - `indice.csv`: una fila por archivo con su documento, CUFE, estado, fecha y SHA-256.
+///
+/// El facturador es quien conserva sus documentos (Res. 000227 de 2025, título 5): con este
+/// paquete puede llevárselos en cualquier momento, periodo por periodo.
 ///
 /// # Errors
 ///
-/// Los de [`libro_ventas`]; [`AppError::Infraestructura`] si no se lee un XML o falla el PDF.
+/// Los de [`libro_ventas`]; [`AppError::Infraestructura`] si no se lee un archivo o falla el PDF.
 pub async fn paquete_documentos<U, A, G, E>(
     unidad: &U,
     (almacen, generador, empaquetador, pie): (&A, &G, &E, Option<&str>),
@@ -297,7 +399,19 @@ where
         )
         .await?;
     sin_truncar(documentos.len(), LIMITE_DOCUMENTOS)?;
-    let mut archivos = Vec::new();
+    let recibidas = tx
+        .facturas_recibidas(
+            &FiltroRecibidas {
+                estado: None,
+                desde: Some(desde),
+                hasta: Some(hasta),
+            },
+            LIMITE_DOCUMENTOS,
+        )
+        .await?;
+    sin_truncar(recibidas.len(), LIMITE_DOCUMENTOS)?;
+
+    let mut paquete = Paquete::default();
     let mut registros = 0;
     for d in documentos.iter().filter(|d| {
         matches!(
@@ -313,23 +427,62 @@ where
             d.prefijo,
             d.numero.unwrap_or_default()
         );
+        let cufe = d.cufe.clone().unwrap_or_default();
+        let referencia = Referencia {
+            documento: &base,
+            cufe: &cufe,
+            estado: d.estado.as_str(),
+            fecha: d.creado_en.date_naive().to_string(),
+        };
         if let Some(xml) = d.xml_archivo_id {
-            let archivo = tx
-                .buscar(xml)
-                .await?
-                .ok_or(AppError::NoEncontrado("XML del documento"))?;
-            archivos.push((
-                format!("{base}.xml"),
-                almacen.obtener(&archivo.clave).await?,
-            ));
+            let contenido = leer(&mut tx, almacen, xml, "XML del documento").await?;
+            paquete.agregar(
+                format!("emitidos/{base}.xml"),
+                "xml",
+                &referencia,
+                contenido,
+            );
         }
-        archivos.push((
-            format!("{base}.pdf"),
-            pdf_documento(&mut tx, generador, reloj, d, pie).await?,
-        ));
+        if let Some(adjunto) = d.adjunto_archivo_id {
+            let contenido = leer(&mut tx, almacen, adjunto, "AttachedDocument").await?;
+            paquete.agregar(
+                format!("emitidos/{base}-adjunto.xml"),
+                "attached_document",
+                &referencia,
+                contenido,
+            );
+        }
+        let pdf = pdf_documento(&mut tx, generador, reloj, d, pie).await?;
+        paquete.agregar(
+            format!("emitidos/{base}.pdf"),
+            "representacion_grafica",
+            &referencia,
+            pdf,
+        );
+        let eventos = tx.eventos_radian_documento(d.id).await?;
+        agregar_eventos(&mut tx, almacen, &mut paquete, &base, &cufe, eventos).await?;
         registros += 1;
     }
-    let zip = empaquetador.empaquetar(&archivos)?;
+    for f in &recibidas {
+        let base = format!("{}-{}{}", f.emisor_nit, f.prefijo, f.numero);
+        let referencia = Referencia {
+            documento: &base,
+            cufe: &f.cufe,
+            estado: f.estado.as_str(),
+            fecha: f.fecha.to_string(),
+        };
+        let contenido = leer(&mut tx, almacen, f.archivo_id, "XML de la factura recibida").await?;
+        paquete.agregar(
+            format!("recibidos/{base}.xml"),
+            "factura_recibida",
+            &referencia,
+            contenido,
+        );
+        let eventos = tx.eventos_radian(f.id).await?;
+        agregar_eventos(&mut tx, almacen, &mut paquete, &base, &f.cufe, eventos).await?;
+        registros += 1;
+    }
+    let zip = empaquetador.empaquetar(&paquete.cerrar())?;
     cerrar(
         tx,
         ctx,

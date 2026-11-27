@@ -53190,7 +53190,7 @@
         "tags": [
           "facturacion"
         ],
-        "summary": "ZIP con el XML y el PDF de cada documento electrónico transmitido en el periodo.",
+        "summary": "ZIP para conservar los documentos electrónicos del periodo: en `emitidos/` el XML firmado, el\n`AttachedDocument` y el PDF de cada documento transmitido; en `recibidos/` el XML de cada\nfactura recibida; en `eventos/` los eventos RADIAN firmados; e `indice.csv` con el documento,\nel CUFE, el estado, la fecha y el SHA-256 de cada archivo.",
         "operationId": "facturacion_paquete",
         "parameters": [
           {
