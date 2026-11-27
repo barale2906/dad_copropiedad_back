@@ -847,7 +847,7 @@ pub struct TramoRespuesta {
     pub saldo: Decimal,
 }
 
-/// Cartera de un cliente por edades.
+/// Saldo de un tercero (cliente o proveedor) por edades.
 #[derive(Debug, Serialize, ToSchema)]
 pub struct FilaCarteraRespuesta {
     pub persona_id: Uuid,

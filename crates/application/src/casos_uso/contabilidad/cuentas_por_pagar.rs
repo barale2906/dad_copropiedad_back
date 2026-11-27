@@ -1027,3 +1027,36 @@ where
     tx.confirmar().await?;
     Ok(para)
 }
+
+/// Cuentas por pagar por edades a la fecha de corte: el saldo de cada factura de proveedor
+/// registrada, causada o pagada en parte con fecha hasta el corte (neto a pagar − pagado), en el
+/// tramo de sus días vencidos y agrupado por proveedor. Ordenada por mayor saldo.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `contabilidad.ver`.
+pub async fn por_pagar_por_edades<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    corte: NaiveDate,
+) -> AppResult<Vec<super::cuentas_por_cobrar::FilaCartera>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxTesoreria,
+{
+    let mut tx = abrir(unidad, reloj, ctx, Permiso::ContabilidadVer).await?;
+    let saldos: Vec<_> = tx
+        .facturas_proveedor_con_saldo(corte)
+        .await?
+        .into_iter()
+        .map(|f| {
+            (
+                f.persona_id,
+                f.vencimiento,
+                f.neto_pagar.valor() - f.pagado.valor(),
+            )
+        })
+        .collect();
+    super::cuentas_por_cobrar::agrupar_por_edades(&mut tx, corte, saldos).await
+}

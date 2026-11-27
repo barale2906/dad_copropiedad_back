@@ -511,6 +511,13 @@ pub trait RepositorioFacturas: Send {
         id: FacturaVentaId,
     ) -> impl Future<Output = AppResult<()>> + Send;
 
+    /// Facturas de proveedor con saldo por pagar (registradas, causadas o pagadas en parte) con
+    /// fecha hasta el corte.
+    fn facturas_proveedor_con_saldo(
+        &mut self,
+        corte: NaiveDate,
+    ) -> impl Future<Output = AppResult<Vec<FacturaProveedor>>> + Send;
+
     /// Facturas de venta con saldo (emitidas o pagadas en parte) con fecha hasta el corte.
     fn facturas_venta_con_saldo(
         &mut self,

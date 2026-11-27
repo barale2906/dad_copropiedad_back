@@ -453,6 +453,22 @@ async fn venta_recaudo_compra_y_pago_de_punta_a_punta(pool: PgPool) {
         ),
         "el certificado viaja en PDF"
     );
+
+    // Lo que se le debe al proveedor aparece en las cuentas por pagar por edades.
+    let (s, edades) = e
+        .pedir(
+            Method::GET,
+            "/contabilidad/cuentas-por-pagar/edades?corte=2026-12-31",
+            None,
+        )
+        .await;
+    assert_eq!(s, StatusCode::OK, "{edades}");
+    assert_eq!(edades[0]["persona_id"], json!(e.proveedor), "{edades}");
+    assert!(
+        edades[0]["tramos"]
+            .as_array()
+            .is_some_and(|t| !t.is_empty())
+    );
 }
 
 #[sqlx::test(migrator = "MIGRACIONES")]

@@ -48433,6 +48433,76 @@
         ]
       }
     },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/edades": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Cuentas por pagar por edades a la fecha de corte: saldo de cada factura de proveedor (neto a\npagar − pagado) en el tramo de sus días vencidos, por proveedor.",
+        "operationId": "tesoreria_edades",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas por pagar por proveedor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaCarteraRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-cobrar/edades": {
       "get": {
         "tags": [
@@ -70195,7 +70265,7 @@
       },
       "FilaCarteraRespuesta": {
         "type": "object",
-        "description": "Cartera de un cliente por edades.",
+        "description": "Saldo de un tercero (cliente o proveedor) por edades.",
         "required": [
           "persona_id",
           "nombre",

@@ -1522,3 +1522,95 @@ async fn evento_repetido_de_la_pasarela_crea_un_solo_recibo_y_el_reverso_lo_anul
     assert_eq!(r.estado, EstadoRecibo::Anulado);
     assert_eq!(e.saldo("1110").await, d(0));
 }
+
+/// Lo que se debe a cada proveedor por edades: neto a pagar − pagado, en el tramo de sus días
+/// vencidos; lo pagado en parte cuenta por su saldo.
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn las_cuentas_por_pagar_por_edades_suman_el_saldo_de_cada_proveedor(pool: PgPool) {
+    let e = entorno(pool).await;
+    e.concepto(
+        "servicios",
+        ImpuestoRetencion::Renta,
+        "4",
+        fecha(2026, 1, 1),
+    )
+    .await;
+    e.concepto("reteiva", ImpuestoRetencion::Iva, "15", fecha(2026, 1, 1))
+        .await;
+    let proveedor = e.tercero("Proveedor", "900555666", responsable()).await;
+    let vieja = cxp::registrar_factura_proveedor(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        e.factura_proveedor(proveedor, "100", fecha(2026, 3, 5)),
+    )
+    .await
+    .expect("factura vieja");
+    cxp::causar_factura_proveedor(&e.unidad, &RelojFijo, &e.contador, vieja.id)
+        .await
+        .expect("causar");
+    let abono = tes::registrar_egreso(
+        &e.unidad,
+        &RelojFijo,
+        &e.tesorero,
+        NuevoEgreso {
+            cuenta_tesoreria: e.banco.id,
+            persona: proveedor,
+            fecha: fecha(2026, 3, 15),
+            medio: MedioEgreso::Transferencia,
+            referencia: None,
+            descripcion: "Abono factura 100".into(),
+            soporte_archivo_id: None,
+            facturas: vec![(vieja.id, m(121_500))],
+            gastos: Vec::new(),
+        },
+    )
+    .await
+    .expect("egreso");
+    tes::autorizar_egreso(&e.unidad, &RelojFijo, &e.contador, abono.id)
+        .await
+        .expect("autorizar");
+    tes::pagar_egreso(&e.unidad, &RelojFijo, &e.tesorero, abono.id, None)
+        .await
+        .expect("pagar");
+    cxp::registrar_factura_proveedor(
+        &e.unidad,
+        &RelojFijo,
+        &e.contador,
+        e.factura_proveedor(proveedor, "200", fecha(2026, 7, 10)),
+    )
+    .await
+    .expect("factura reciente");
+
+    let edades = cxp::por_pagar_por_edades(&e.unidad, &RelojFijo, &e.contador, fecha(2026, 7, 15))
+        .await
+        .expect("edades");
+
+    assert_eq!(edades.len(), 1);
+    assert_eq!(edades[0].persona_id, proveedor);
+    assert_eq!(edades[0].total, d(1_000_000 + 1_121_500));
+    let tramos: Vec<_> = edades[0]
+        .tramos
+        .iter()
+        .map(|(t, v)| (t.as_str(), *v))
+        .collect();
+    assert_eq!(
+        tramos,
+        vec![("de_1_a_30", d(1_121_500)), ("mas_de_90", d(1_000_000))]
+    );
+}
+
+#[sqlx::test(migrator = "MIGRACIONES")]
+async fn sin_contabilidad_ver_no_se_consultan_las_cuentas_por_pagar(pool: PgPool) {
+    let e = entorno(pool).await;
+
+    let r = cxp::por_pagar_por_edades(
+        &e.unidad,
+        &RelojFijo,
+        &Contexto::de_cuenta(e.tenant, CuentaId::nuevo(), Default::default()),
+        fecha(2026, 7, 15),
+    )
+    .await;
+
+    assert!(matches!(r, Err(AppError::SinPermiso(_))), "{r:?}");
+}

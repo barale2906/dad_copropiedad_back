@@ -596,6 +596,29 @@ impl RepositorioFacturas for TransaccionPg {
         Ok(())
     }
 
+    async fn facturas_proveedor_con_saldo(
+        &mut self,
+        corte: NaiveDate,
+    ) -> AppResult<Vec<FacturaProveedor>> {
+        sqlx::query_as!(
+            FilaFacturaProveedor,
+            "SELECT id, persona_id, prefijo, numero, fecha, vencimiento, descripcion, origen_tipo,
+                    origen_id, cufe, archivo_id, subtotal, iva, retenciones, neto_pagar, pagado,
+                    estado, excepcion_duplicado, excepcion_autorizada_por, comprobante_id,
+                    motivo_anulacion, registrada_por, registrada_en
+             FROM facturas_proveedor
+             WHERE estado IN ('registrada', 'causada', 'pagada_parcial') AND fecha <= $1
+             ORDER BY persona_id, vencimiento",
+            corte
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .into_iter()
+        .map(|f| f.a_factura(Vec::new()))
+        .collect()
+    }
+
     async fn facturas_venta_con_saldo(&mut self, corte: NaiveDate) -> AppResult<Vec<FacturaVenta>> {
         sqlx::query_as!(
             FilaFacturaVenta,
