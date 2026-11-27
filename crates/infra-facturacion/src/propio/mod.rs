@@ -2,7 +2,8 @@
 //!
 //! Genera, firma y transmite los documentos directamente a la DIAN, sin proveedor tecnológico:
 //! la entidad se habilita con este software en la modalidad de desarrollo informático propio o
-//! adquirido (Res. 000165 de 2023, art. 28 num. 2.1; el fabricante es GISLA SAS). Sigue el
+//! adquirido (Res. 000165 de 2023, art. 28 num. 2.1, compilada en el título 5 de la
+//! Res. 000227 de 2025; el fabricante es GISLA SAS). Sigue el
 //! anexo técnico de factura electrónica de venta **versión 1.9**.
 //!
 //! | Pieza | Módulo |

@@ -118,7 +118,8 @@ enum_texto!(AmbienteDian {
     Produccion => "produccion",
 });
 
-/// Estado de la habilitación de una entidad con el motor propio (Res. 000165 de 2023).
+/// Estado de la habilitación de una entidad con el motor propio (Res. 000165 de 2023,
+/// compilada en el título 5 de la Res. 000227 de 2025).
 ///
 /// ```text
 /// Registrado ──▶ EnPruebas ──▶ Habilitado ──▶ Produccion
