@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT creativo_id AS \"creativo_id!\", campana_id AS \"campana_id!\",\n                      anunciante_id AS \"anunciante_id!\", nombre_comercial AS \"nombre_comercial!\",\n                      anunciante_verificado AS \"anunciante_verificado!\", formato AS \"formato!\",\n                      titulo AS \"titulo!\", texto AS \"texto!\", boton, enlace, condiciones,\n                      es_promocion AS \"es_promocion!\", cupon_codigo, plantilla_whatsapp,\n                      estado_creativo AS \"estado_creativo!\", estado_campana AS \"estado_campana!\",\n                      inicio AS \"inicio!\", fin AS \"fin!\", modelo AS \"modelo!\", tarifa,\n                      presupuesto_total AS \"presupuesto_total!\", presupuesto_diario,\n                      consumido AS \"consumido!\", consumido_hoy AS \"consumido_hoy!\",\n                      impresiones_hoy AS \"impresiones_hoy!\"\n               FROM piezas_publicidad($1, $2)",
+  "query": "SELECT creativo_id AS \"creativo_id!\", campana_id AS \"campana_id!\",\n                      anunciante_id AS \"anunciante_id!\", nombre_comercial AS \"nombre_comercial!\",\n                      anunciante_verificado AS \"anunciante_verificado!\", formato AS \"formato!\",\n                      titulo AS \"titulo!\", texto AS \"texto!\", boton, enlace, condiciones,\n                      es_promocion AS \"es_promocion!\", cupon_codigo, plantilla_whatsapp,\n                      estado_creativo AS \"estado_creativo!\", estado_campana AS \"estado_campana!\",\n                      inicio AS \"inicio!\", fin AS \"fin!\", modelo AS \"modelo!\", tarifa,\n                      presupuesto_total AS \"presupuesto_total!\", presupuesto_diario,\n                      consumido AS \"consumido!\", consumido_hoy AS \"consumido_hoy!\",\n                      impresiones_hoy AS \"impresiones_hoy!\", imagen_archivo_id, imagen_tipo\n               FROM piezas_publicidad($1, $2)",
   "describe": {
     "columns": [
       {
@@ -152,6 +152,18 @@
         "name": "impresiones_hoy!",
         "type_info": "Int8",
         "origin": "Expression"
+      },
+      {
+        "ordinal": 25,
+        "name": "imagen_archivo_id",
+        "type_info": "Uuid",
+        "origin": "Expression"
+      },
+      {
+        "ordinal": 26,
+        "name": "imagen_tipo",
+        "type_info": "Text",
+        "origin": "Expression"
       }
     ],
     "parameters": {
@@ -185,8 +197,10 @@
       null,
       null,
       null,
+      null,
+      null,
       null
     ]
   },
-  "hash": "b384146d40488598c5721bffeb9cff792dd11f242243b6a758c6e2a9a8adbb64"
+  "hash": "3ec1d73851117814995448d965adafe124a932f08dec2481422db8a9d1639334"
 }

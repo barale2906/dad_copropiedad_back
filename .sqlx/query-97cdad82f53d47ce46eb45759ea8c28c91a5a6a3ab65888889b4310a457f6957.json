@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,\n                    condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,\n                    actualizado_en\n             FROM creativos WHERE id = $1",
+  "query": "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,\n                    condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,\n                    plantilla_whatsapp, imagen_archivo_id, estado, motivo_estado, cargado_por,\n                    revisado_por, creado_en,\n                    actualizado_en\n             FROM creativos WHERE campana_id = $1 ORDER BY id",
   "describe": {
     "columns": [
       {
@@ -159,6 +159,17 @@
       },
       {
         "ordinal": 14,
+        "name": "imagen_archivo_id",
+        "type_info": "Uuid",
+        "origin": {
+          "Table": {
+            "table": "creativos",
+            "name": "imagen_archivo_id"
+          }
+        }
+      },
+      {
+        "ordinal": 15,
         "name": "estado",
         "type_info": "Text",
         "origin": {
@@ -169,7 +180,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "motivo_estado",
         "type_info": "Text",
         "origin": {
@@ -180,7 +191,7 @@
         }
       },
       {
-        "ordinal": 16,
+        "ordinal": 17,
         "name": "cargado_por",
         "type_info": "Uuid",
         "origin": {
@@ -191,7 +202,7 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "revisado_por",
         "type_info": "Uuid",
         "origin": {
@@ -202,7 +213,7 @@
         }
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "creado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -213,7 +224,7 @@
         }
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "actualizado_en",
         "type_info": "Timestamptz",
         "origin": {
@@ -244,6 +255,7 @@
       true,
       false,
       true,
+      true,
       false,
       true,
       true,
@@ -252,5 +264,5 @@
       false
     ]
   },
-  "hash": "d3871713eaafde231d38662464ebd1655e1c56ef4c9b3150e6b0d576799343cc"
+  "hash": "97cdad82f53d47ce46eb45759ea8c28c91a5a6a3ab65888889b4310a457f6957"
 }

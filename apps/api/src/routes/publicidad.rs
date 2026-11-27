@@ -29,9 +29,9 @@ use application::{
 use axum::{extract::State, http::StatusCode};
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    AnuncianteId, CampanaId, CodigoCategoria, CodigoDane, CreativoId, EstadoLiquidacion,
-    FormatoCreativo, MedioAutorizacion, ModeloCobro, ObjetivoCampana, Segmentacion, TenantId,
-    TipoCopropiedad, TipoEntidad,
+    AnuncianteId, ArchivoId, CampanaId, CodigoCategoria, CodigoDane, CreativoId, EstadoLiquidacion,
+    FormatoCreativo, MedioAutorizacion, ModeloCobro, NombreArchivo, ObjetivoCampana, Segmentacion,
+    TenantId, TipoCopropiedad, TipoEntidad,
     publicidad::{CodigoCupon, ContenidoCreativo, Cupon},
 };
 use rust_decimal::Decimal;
@@ -62,6 +62,8 @@ pub fn rutas_plataforma() -> OpenApiRouter<AppState> {
         .routes(routes!(ver_campana, editar_campana))
         .routes(routes!(cambiar_estado_campana))
         .routes(routes!(crear_creativo))
+        .routes(routes!(subir_imagen))
+        .routes(routes!(poner_logo))
         .routes(routes!(editar_creativo))
         .routes(routes!(metricas))
         .routes(routes!(leads))
@@ -302,6 +304,9 @@ pub struct CreativoPeticion {
     pub cupon_limite: Option<u32>,
     /// Solo en `mensaje_whatsapp`: plantilla de marketing aprobada en Meta.
     pub plantilla_whatsapp: Option<String>,
+    /// Imagen subida antes con `POST /plataforma/publicidad/imagenes`. Cambiarla devuelve el
+    /// creativo a moderación.
+    pub imagen_archivo_id: Option<Uuid>,
 }
 
 impl TryFrom<CreativoPeticion> for ContenidoCreativo {
@@ -327,6 +332,7 @@ impl TryFrom<CreativoPeticion> for ContenidoCreativo {
                 })
                 .transpose()?,
             plantilla_whatsapp: p.plantilla_whatsapp,
+            imagen: p.imagen_archivo_id.map(ArchivoId::from_uuid),
         })
     }
 }
@@ -348,6 +354,7 @@ pub struct CreativoRespuesta {
     pub cupon_limite: Option<u32>,
     pub cupon_usos: u32,
     pub plantilla_whatsapp: Option<String>,
+    pub imagen_archivo_id: Option<Uuid>,
     /// `pendiente`, `aprobado` o `rechazado`.
     #[schema(value_type = crate::esquemas::EstadoCreativo)]
     pub estado: String,
@@ -371,6 +378,7 @@ impl From<Creativo> for CreativoRespuesta {
             cupon_limite: k.cupon.as_ref().and_then(|x| x.limite_usos),
             cupon_usos: c.cupon_usos,
             plantilla_whatsapp: k.plantilla_whatsapp,
+            imagen_archivo_id: k.imagen.map(ArchivoId::as_uuid),
             estado: c.estado.as_str().to_owned(),
             motivo_estado: c.motivo_estado,
         }
@@ -1674,6 +1682,8 @@ pub struct PiezaRespuesta {
     /// Si es una oferta con cupón (el código se pide con `…/cupon`).
     pub tiene_cupon: bool,
     pub vence_en: DateTime<Utc>,
+    /// Enlace firmado de la imagen (vale una hora; no lleva sesión). `null` si no tiene.
+    pub imagen_url: Option<String>,
 }
 
 impl From<PiezaPublicidad> for PiezaRespuesta {
@@ -1692,8 +1702,33 @@ impl From<PiezaPublicidad> for PiezaRespuesta {
             es_promocion: k.es_promocion,
             tiene_cupon: k.cupon.is_some(),
             vence_en: p.candidata.fin,
+            imagen_url: None,
         }
     }
+}
+
+/// Piezas con el enlace firmado de su imagen.
+fn piezas_respuesta(
+    state: &AppState,
+    piezas: Vec<PiezaPublicidad>,
+) -> ApiResult<Vec<PiezaRespuesta>> {
+    piezas
+        .into_iter()
+        .map(|p| {
+            let imagen = match (p.contenido.imagen, p.imagen_tipo) {
+                (Some(id), Some(tipo)) => Some(portal::enlace_imagen(
+                    state.archivos.as_ref(),
+                    &RelojSistema,
+                    id,
+                    tipo,
+                )?),
+                _ => None,
+            };
+            let mut r = PiezaRespuesta::from(p);
+            r.imagen_url = imagen;
+            Ok(r)
+        })
+        .collect()
 }
 
 /// Piezas para el residente (vacío si no autorizó la publicidad o la PH no tiene el módulo).
@@ -1713,7 +1748,7 @@ pub async fn piezas(
     en: EnEntidad,
 ) -> ApiResult<Json<Vec<PiezaRespuesta>>> {
     let v = entrega::piezas_para_residente(&state.unidad, &RelojSistema, &en.ctx).await?;
-    Ok(Json(v.into_iter().map(Into::into).collect()))
+    Ok(Json(piezas_respuesta(&state, v)?))
 }
 
 /// Eventos de una pieza.
@@ -1891,5 +1926,124 @@ pub async fn pantalla(
     p: PantallaLobby,
 ) -> ApiResult<Json<Vec<PiezaRespuesta>>> {
     let v = entrega::piezas_pantalla(&state.unidad, &RelojSistema, p.tenant, &p.token).await?;
-    Ok(Json(v.into_iter().map(Into::into).collect()))
+    Ok(Json(piezas_respuesta(&state, v)?))
+}
+
+// ---------------------------------------------------------------------------------------------
+// Imágenes de la publicidad
+// ---------------------------------------------------------------------------------------------
+
+/// Imagen a subir (en Base64 dentro del JSON, como los demás archivos de la API).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ImagenPeticion {
+    #[schema(example = "promo-diciembre.png")]
+    pub nombre_archivo: String,
+    /// JPEG, PNG o WebP de hasta 2 MB.
+    pub archivo_base64: String,
+}
+
+/// Imagen subida.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ImagenRespuesta {
+    /// Va en `imagen_archivo_id` del creativo o en el logo del comercio.
+    pub id: Uuid,
+    #[schema(example = "image/png")]
+    pub tipo: String,
+    pub tamano_bytes: u64,
+    /// Enlace firmado para verla (vale una hora).
+    pub url: String,
+}
+
+/// Sube una imagen de la publicidad (creativo o logo de un comercio).
+#[utoipa::path(
+    post,
+    path = "/publicidad/imagenes",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    request_body = ImagenPeticion,
+    responses(
+        (status = CREATED, description = "Imagen subida", body = ImagenRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.publicidad.gestionar` ni `plataforma.directorio.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
+        (status = UNPROCESSABLE_ENTITY, description = "No es JPEG, PNG o WebP, o pasa de 2 MB", body = ErrorRespuesta),
+    )
+)]
+pub async fn subir_imagen(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+    Json(p): Json<ImagenPeticion>,
+) -> ApiResult<(StatusCode, Json<ImagenRespuesta>)> {
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    let contenido = STANDARD.decode(p.archivo_base64.trim()).map_err(|_| {
+        ApiError::App(AppError::Validacion(
+            "`archivo_base64` no es Base64 válido".into(),
+        ))
+    })?;
+    let nombre = NombreArchivo::new(&p.nombre_archivo).map_err(|e| ApiError::App(e.into()))?;
+    let a = portal::subir_imagen(
+        &state.plataforma,
+        state.archivos.as_ref(),
+        &RelojSistema,
+        &c.ctx,
+        nombre,
+        contenido,
+    )
+    .await?;
+    let url = portal::enlace_imagen(state.archivos.as_ref(), &RelojSistema, a.id, a.tipo)?;
+    Ok((
+        StatusCode::CREATED,
+        Json(ImagenRespuesta {
+            id: a.id.as_uuid(),
+            tipo: a.tipo.as_str().to_owned(),
+            tamano_bytes: a.tamano_bytes,
+            url,
+        }),
+    ))
+}
+
+/// Logo de un comercio (`null` lo quita).
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct LogoPeticion {
+    /// Imagen subida con `POST /plataforma/publicidad/imagenes`.
+    pub archivo_id: Option<Uuid>,
+}
+
+/// Logo vigente del comercio.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct LogoRespuesta {
+    pub anunciante_id: Uuid,
+    pub logo_archivo_id: Option<Uuid>,
+}
+
+/// Pone o quita el logo de un comercio.
+#[utoipa::path(
+    put,
+    path = "/publicidad/anunciantes/{anunciante_id}/logo",
+    tag = ETIQUETA_PUBLICIDAD,
+    security(("bearer" = [])),
+    params(("anunciante_id" = Uuid, Path, description = "Comercio")),
+    request_body = LogoPeticion,
+    responses(
+        (status = OK, description = "Logo guardado", body = LogoRespuesta),
+        (status = FORBIDDEN, description = "Sin `plataforma.directorio.gestionar` (`sin_permiso`)", body = ErrorRespuesta),
+        (status = NOT_FOUND, description = "No existe el comercio o la imagen", body = ErrorRespuesta),
+    )
+)]
+pub async fn poner_logo(
+    State(state): State<AppState>,
+    OperadorPlataforma(c): OperadorPlataforma,
+    Path(anunciante): Path<Uuid>,
+    Json(p): Json<LogoPeticion>,
+) -> ApiResult<Json<LogoRespuesta>> {
+    let a = portal::poner_logo(
+        &state.plataforma,
+        &RelojSistema,
+        &c.ctx,
+        AnuncianteId::from_uuid(anunciante),
+        p.archivo_id.map(ArchivoId::from_uuid),
+    )
+    .await?;
+    Ok(Json(LogoRespuesta {
+        anunciante_id: a.id.as_uuid(),
+        logo_archivo_id: a.logo.map(ArchivoId::as_uuid),
+    }))
 }

@@ -74,7 +74,9 @@ fn pieza(
             }),
             plantilla_whatsapp: (formato == FormatoCreativo::MensajeWhatsapp)
                 .then(|| "oferta_semanal".to_owned()),
+            imagen: None,
         },
+        imagen_tipo: None,
     }
 }
 

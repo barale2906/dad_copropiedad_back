@@ -3869,6 +3869,150 @@
         ]
       }
     },
+    "/api/v1/plataforma/publicidad/imagenes": {
+      "post": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Sube una imagen de la publicidad (creativo o logo de un comercio).",
+        "operationId": "publicidad_subir_imagen",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImagenPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Imagen subida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImagenRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.publicidad.gestionar` ni `plataforma.directorio.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No es JPEG, PNG o WebP, o pasa de 2 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/plataforma/publicidad/anunciantes/{anunciante_id}/logo": {
+      "put": {
+        "tags": [
+          "publicidad"
+        ],
+        "summary": "Pone o quita el logo de un comercio.",
+        "operationId": "publicidad_poner_logo",
+        "parameters": [
+          {
+            "name": "anunciante_id",
+            "in": "path",
+            "description": "Comercio",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoPeticion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Logo guardado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `plataforma.directorio.gestionar` (`sin_permiso`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el comercio o la imagen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}": {
       "put": {
         "tags": [
@@ -58376,6 +58520,14 @@
             "type": "string",
             "format": "date-time"
           },
+          "logo_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Logo (archivo de la plataforma); se cambia con `PUT …/publicidad/anunciantes/{id}/logo`."
+          },
           "ficha": {
             "oneOf": [
               {
@@ -64383,6 +64535,14 @@
               "null"
             ],
             "description": "Solo en `mensaje_whatsapp`: plantilla de marketing aprobada en Meta."
+          },
+          "imagen_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Imagen subida antes con `POST /plataforma/publicidad/imagenes`. Cambiarla devuelve el\ncreativo a moderación."
           }
         }
       },
@@ -64511,6 +64671,13 @@
               "string",
               "null"
             ]
+          },
+          "imagen_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           },
           "estado": {
             "$ref": "#/components/schemas/EstadoCreativo",
@@ -71315,6 +71482,54 @@
           }
         }
       },
+      "ImagenPeticion": {
+        "type": "object",
+        "description": "Imagen a subir (en Base64 dentro del JSON, como los demás archivos de la API).",
+        "required": [
+          "nombre_archivo",
+          "archivo_base64"
+        ],
+        "properties": {
+          "nombre_archivo": {
+            "type": "string",
+            "example": "promo-diciembre.png"
+          },
+          "archivo_base64": {
+            "type": "string",
+            "description": "JPEG, PNG o WebP de hasta 2 MB."
+          }
+        }
+      },
+      "ImagenRespuesta": {
+        "type": "object",
+        "description": "Imagen subida.",
+        "required": [
+          "id",
+          "tipo",
+          "tamano_bytes",
+          "url"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Va en `imagen_archivo_id` del creativo o en el logo del comercio."
+          },
+          "tipo": {
+            "type": "string",
+            "example": "image/png"
+          },
+          "tamano_bytes": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "url": {
+            "type": "string",
+            "description": "Enlace firmado para verla (vale una hora)."
+          }
+        }
+      },
       "ImportacionRespuesta": {
         "type": "object",
         "description": "Importación.",
@@ -72786,6 +73001,40 @@
             ],
             "format": "uuid",
             "description": "Persona que atendió la llamada (si contestó)."
+          }
+        }
+      },
+      "LogoPeticion": {
+        "type": "object",
+        "description": "Logo de un comercio (`null` lo quita).",
+        "properties": {
+          "archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Imagen subida con `POST /plataforma/publicidad/imagenes`."
+          }
+        }
+      },
+      "LogoRespuesta": {
+        "type": "object",
+        "description": "Logo vigente del comercio.",
+        "required": [
+          "anunciante_id"
+        ],
+        "properties": {
+          "anunciante_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "logo_archivo_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -77437,6 +77686,14 @@
                   "type": "string",
                   "format": "date-time"
                 },
+                "logo_archivo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid",
+                  "description": "Logo (archivo de la plataforma); se cambia con `PUT …/publicidad/anunciantes/{id}/logo`."
+                },
                 "ficha": {
                   "oneOf": [
                     {
@@ -78347,6 +78604,13 @@
                     "string",
                     "null"
                   ]
+                },
+                "imagen_archivo_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "uuid"
                 },
                 "estado": {
                   "$ref": "#/components/schemas/EstadoCreativo",
@@ -81367,6 +81631,13 @@
           "vence_en": {
             "type": "string",
             "format": "date-time"
+          },
+          "imagen_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Enlace firmado de la imagen (vale una hora; no lleva sesión). `null` si no tiene."
           }
         }
       },

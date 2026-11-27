@@ -333,6 +333,7 @@ fn banner() -> ContenidoCreativo {
         es_promocion: false,
         cupon: None,
         plantilla_whatsapp: None,
+        imagen: None,
     }
 }
 
@@ -568,6 +569,7 @@ async fn el_masivo_sale_con_prioridad_9_solo_a_quien_autorizo(pool: PgPool) {
             ContenidoCreativo {
                 formato: FormatoCreativo::MensajeWhatsapp,
                 plantilla_whatsapp: Some("oferta_semanal".into()),
+                imagen: None,
                 ..banner()
             },
         )

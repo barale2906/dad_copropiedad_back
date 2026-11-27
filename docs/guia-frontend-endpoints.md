@@ -4,7 +4,7 @@
 > Ante cualquier diferencia manda el contrato. Las convenciones (sesión, errores,
 > paginación, archivos…) están en [guia-frontend.md](guia-frontend.md).
 
-697 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
+699 operaciones. Rutas sin el prefijo `/api/v1`. **Permiso**: el que exige la
 operación según su respuesta 403; en cursiva, la regla cuando no es un permiso (ser el
 titular, la papeleta, el enlace firmado…); vacío = basta la sesión o la credencial.
 **Errores propios**: además de 401 y 404, que imponen la sesión y la entidad. 🔓 = sin
@@ -33,7 +33,7 @@ sesión de persona.
 - [acceso](#acceso) (52): Control de acceso (plan 05): visitas con aviso al primer respondiente y escalamiento (2 min a todos los residentes, 5 min llamada), pre-autorizaciones con QR firmado, correspondencia con avisos cada 24 h y entrega con firma o foto, minuta, bitácora, credenciales, autorizaciones, biometría con consentimiento y la API de los puentes (`/api/v1/puentes`)
 - [proteccion_datos](#proteccion-datos) (13): Protección de datos personales (Ley 1581 de 2012): política de tratamiento versionada, autorizaciones por finalidad, consultas y reclamos del titular con plazos en días hábiles y prórroga, «mis datos»
 - [auditoria](#auditoria) (1): Consulta de la auditoría de la copropiedad (solo lectura; nunca trae datos personales)
-- [publicidad](#publicidad) (38): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
+- [publicidad](#publicidad) (40): Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, moderación, tarifas, política y liquidación en `/plataforma/publicidad`, y en la copropiedad las piezas, eventos, cupones y reportes solo para residentes que autorizaron la publicidad. Las copropiedades no venden ni configuran pauta
 - [plataforma](#plataforma) (76): Operación de la plataforma (exige segundo factor)
 - [contabilidad](#contabilidad) (51): Contabilidad de cualquier entidad: configuración, plan de cuentas (PUC), terceros, periodos, comprobantes de partida doble, reglas, plantillas, reportes y estados financieros (`/entidades/{entidad_id}/contabilidad`)
 - [tesoreria](#tesoreria) (42): Tesorería de cualquier entidad: cuentas de tesorería, recibos de caja, egresos con autorización de otra cuenta, facturas de proveedores con retenciones, facturas de venta y cartera, extractos y conciliación bancaria (`/entidades/{entidad_id}/contabilidad/...`). Cada documento se contabiliza con la regla de su evento; anular es revertir
@@ -533,6 +533,8 @@ Publicidad de la plataforma (plan 08): portal del anunciante en `/anunciantes`, 
 | PUT | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}` | Edita la campaña (una aprobada o pausada vuelve a borrador y a moderación). | `plataforma.publicidad.gestionar` | `CampanaPeticion` | 200 `CampanaRespuesta` | 403, 422 |
 | POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/estado` | Envía a revisión, activa, pausa o finaliza la campaña. | `plataforma.publicidad.gestionar` | `AccionCampanaPeticion` | 200 `CampanaRespuesta` | 403, 409, 422 |
 | POST | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos` | Agrega un creativo (queda pendiente de moderación). | `plataforma.publicidad.gestionar` | `CreativoPeticion` | 201 `CreativoRespuesta` | 403, 409, 422 |
+| POST | `/plataforma/publicidad/imagenes` | Sube una imagen de la publicidad (creativo o logo de un comercio). | `plataforma.publicidad.gestionar` `plataforma.directorio.gestionar` | `ImagenPeticion` | 201 `ImagenRespuesta` | 403, 422 |
+| PUT | `/plataforma/publicidad/anunciantes/{anunciante_id}/logo` | Pone o quita el logo de un comercio. | `plataforma.directorio.gestionar` | `LogoPeticion` | 200 `LogoRespuesta` | 403 |
 | PUT | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/creativos/{creativo_id}` | Edita un creativo (si cambia, vuelve a moderación). | `plataforma.publicidad.gestionar` | `CreativoPeticion` | 200 `CreativoRespuesta` | 403, 409 |
 | GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/campanas/{campana_id}/metricas` | Métricas agregadas de la campaña. | `plataforma.publicidad.gestionar` |  | 200 `MetricasRespuesta` | 403 |
 | GET | `/plataforma/publicidad/anunciantes/{anunciante_id}/leads` | Contactos que los residentes autorizaron compartirle al comercio (nombre y celular, para esa solicitud). | `plataforma.publicidad.gestionar` |  | 200 `PaginaRespuesta_LeadRespuesta` | 403 |

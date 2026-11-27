@@ -19,9 +19,9 @@ use application::{
 };
 use chrono::{DateTime, Utc};
 use domain::{
-    AnuncianteId, Calificacion, Cobertura, CodigoCategoria, CodigoDane, Coordenadas, CuentaId,
-    DireccionCorreo, EstadoResena, EstadoVerificacion, OrganizacionId, ResenaId, Telefono,
-    TenantId, TipoCobertura, Ubicacion,
+    AnuncianteId, ArchivoId, Calificacion, Cobertura, CodigoCategoria, CodigoDane, Coordenadas,
+    CuentaId, DireccionCorreo, EstadoResena, EstadoVerificacion, OrganizacionId, ResenaId,
+    Telefono, TenantId, TipoCobertura, Ubicacion,
 };
 use rust_decimal::Decimal;
 use uuid::Uuid;
@@ -120,6 +120,7 @@ pub(crate) struct FilaAnunciante {
     pub(crate) creado_por: Option<Uuid>,
     pub(crate) creado_en: DateTime<Utc>,
     pub(crate) actualizado_en: DateTime<Utc>,
+    pub(crate) logo_archivo_id: Option<Uuid>,
 }
 
 impl TryFrom<FilaAnunciante> for Anunciante {
@@ -137,6 +138,7 @@ impl TryFrom<FilaAnunciante> for Anunciante {
             creado_por: f.creado_por.map(CuentaId::from_uuid),
             creado_en: f.creado_en,
             actualizado_en: f.actualizado_en,
+            logo: f.logo_archivo_id.map(ArchivoId::from_uuid),
         })
     }
 }
@@ -153,7 +155,7 @@ impl TransaccionPlataformaPg {
                 FilaAnunciante,
                 "SELECT id, organizacion_id, nombre_comercial, direccion, municipio_dane, latitud,
                         longitud, estado_verificacion, motivo_estado, creado_por, creado_en,
-                        actualizado_en
+                        actualizado_en, logo_archivo_id
                  FROM anunciantes WHERE id = $1 FOR UPDATE",
                 id.as_uuid(),
             )
@@ -164,7 +166,7 @@ impl TransaccionPlataformaPg {
                 FilaAnunciante,
                 "SELECT id, organizacion_id, nombre_comercial, direccion, municipio_dane, latitud,
                         longitud, estado_verificacion, motivo_estado, creado_por, creado_en,
-                        actualizado_en
+                        actualizado_en, logo_archivo_id
                  FROM anunciantes WHERE id = $1",
                 id.as_uuid(),
             )
@@ -354,7 +356,7 @@ impl RepositorioDirectorioPlataforma for TransaccionPlataformaPg {
             FilaAnunciante,
             "SELECT id, organizacion_id, nombre_comercial, direccion, municipio_dane, latitud,
                     longitud, estado_verificacion, motivo_estado, creado_por, creado_en,
-                    actualizado_en
+                    actualizado_en, logo_archivo_id
              FROM anunciantes
              WHERE ($1::text IS NULL OR estado_verificacion = $1)
                AND ($2::text IS NULL OR normalizar(nombre_comercial) LIKE '%' || normalizar($2) || '%')
@@ -380,7 +382,8 @@ impl RepositorioDirectorioPlataforma for TransaccionPlataformaPg {
         sqlx::query!(
             "UPDATE anunciantes
              SET nombre_comercial = $2, direccion = $3, municipio_dane = $4, latitud = $5,
-                 longitud = $6, estado_verificacion = $7, motivo_estado = $8, actualizado_en = $9
+                 longitud = $6, estado_verificacion = $7, motivo_estado = $8, actualizado_en = $9,
+                 logo_archivo_id = $10
              WHERE id = $1",
             a.id.as_uuid(),
             a.nombre_comercial,
@@ -391,6 +394,7 @@ impl RepositorioDirectorioPlataforma for TransaccionPlataformaPg {
             a.estado.as_str(),
             a.motivo_estado,
             a.actualizado_en,
+            a.logo.map(ArchivoId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await

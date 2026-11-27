@@ -23,11 +23,11 @@ use application::{
 };
 use chrono::{DateTime, Duration, NaiveDate, Utc};
 use domain::{
-    AnuncianteId, CampanaId, CanalPublicidad, CodigoCategoria, CodigoCupon, CodigoDane, CreativoId,
-    CuentaId, EstadoCampana, EstadoCreativo, EstadoLiquidacion, FormatoCreativo, LiquidacionId,
-    MedioAutorizacion, ModeloCobro, Nit, ObjetivoCampana, OrganizacionId, PersonaId,
-    PoliticaPublicidadId, Segmentacion, SolicitudProveedorId, Telefono, TenantId, TipoCopropiedad,
-    TipoEntidad,
+    AnuncianteId, ArchivoId, CampanaId, CanalPublicidad, CodigoCategoria, CodigoCupon, CodigoDane,
+    CreativoId, CuentaId, EstadoCampana, EstadoCreativo, EstadoLiquidacion, FormatoCreativo,
+    LiquidacionId, MedioAutorizacion, ModeloCobro, Nit, ObjetivoCampana, OrganizacionId, PersonaId,
+    PoliticaPublicidadId, Segmentacion, SolicitudProveedorId, Telefono, TenantId, TipoArchivo,
+    TipoCopropiedad, TipoEntidad,
     publicidad::{
         ContenidoCreativo, Conteo, Cupon, FRECUENCIA_MASIVA_DIAS, PiezaCandidata, Presupuesto,
     },
@@ -153,6 +153,7 @@ struct FilaCreativo {
     cupon_limite: Option<i32>,
     cupon_usos: i32,
     plantilla_whatsapp: Option<String>,
+    imagen_archivo_id: Option<Uuid>,
     estado: String,
     motivo_estado: Option<String>,
     cargado_por: Option<Uuid>,
@@ -190,6 +191,7 @@ impl TryFrom<FilaCreativo> for Creativo {
                 es_promocion: f.es_promocion,
                 cupon: cupon(f.cupon_codigo.as_deref(), f.cupon_limite)?,
                 plantilla_whatsapp: f.plantilla_whatsapp,
+                imagen: f.imagen_archivo_id.map(ArchivoId::from_uuid),
             },
             cupon_usos: u32::try_from(f.cupon_usos).unwrap_or(0),
             estado: EstadoCreativo::try_from(f.estado.as_str())?,
@@ -647,9 +649,9 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             "INSERT INTO creativos (id, campana_id, anunciante_id, formato, titulo, texto, boton,
                  enlace, condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
                  plantilla_whatsapp, estado, motivo_estado, creado_en, actualizado_en,
-                 cargado_por, revisado_por)
+                 cargado_por, revisado_por, imagen_archivo_id)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
-                     $17, $18, $19, $20)",
+                     $17, $18, $19, $20, $21)",
             c.id.as_uuid(),
             c.campana_id.as_uuid(),
             c.anunciante_id.as_uuid(),
@@ -670,6 +672,7 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             c.actualizado_en,
             c.cargado_por.map(CuentaId::as_uuid),
             c.revisado_por.map(CuentaId::as_uuid),
+            k.imagen.map(ArchivoId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
@@ -684,7 +687,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             "UPDATE creativos SET formato = $2, titulo = $3, texto = $4, boton = $5, enlace = $6,
                  condiciones = $7, es_promocion = $8, cupon_codigo = $9, cupon_limite = $10,
                  plantilla_whatsapp = $11, estado = $12, motivo_estado = $13,
-                 actualizado_en = $14, cargado_por = $15, revisado_por = $16
+                 actualizado_en = $14, cargado_por = $15, revisado_por = $16,
+                 imagen_archivo_id = $17
              WHERE id = $1",
             c.id.as_uuid(),
             k.formato.as_str(),
@@ -702,6 +706,7 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             c.actualizado_en,
             c.cargado_por.map(CuentaId::as_uuid),
             c.revisado_por.map(CuentaId::as_uuid),
+            k.imagen.map(ArchivoId::as_uuid),
         )
         .execute(&mut *self.tx)
         .await
@@ -714,7 +719,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             FilaCreativo,
             "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,
                     condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
-                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,
+                    plantilla_whatsapp, imagen_archivo_id, estado, motivo_estado, cargado_por,
+                    revisado_por, creado_en,
                     actualizado_en
              FROM creativos WHERE id = $1",
             id.as_uuid(),
@@ -731,7 +737,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             FilaCreativo,
             "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,
                     condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
-                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,
+                    plantilla_whatsapp, imagen_archivo_id, estado, motivo_estado, cargado_por,
+                    revisado_por, creado_en,
                     actualizado_en
              FROM creativos WHERE campana_id = $1 ORDER BY id",
             campana.as_uuid(),
@@ -749,7 +756,8 @@ impl RepositorioPublicidadPlataforma for TransaccionPlataformaPg {
             FilaCreativo,
             "SELECT id, campana_id, anunciante_id, formato, titulo, texto, boton, enlace,
                     condiciones, es_promocion, cupon_codigo, cupon_limite, cupon_usos,
-                    plantilla_whatsapp, estado, motivo_estado, cargado_por, revisado_por, creado_en,
+                    plantilla_whatsapp, imagen_archivo_id, estado, motivo_estado, cargado_por,
+                    revisado_por, creado_en,
                     actualizado_en
              FROM creativos
              WHERE estado = 'pendiente' AND ($1::uuid IS NULL OR id > $1)
@@ -1250,7 +1258,7 @@ impl RepositorioPublicidad for TransaccionPg {
                       inicio AS "inicio!", fin AS "fin!", modelo AS "modelo!", tarifa,
                       presupuesto_total AS "presupuesto_total!", presupuesto_diario,
                       consumido AS "consumido!", consumido_hoy AS "consumido_hoy!",
-                      impresiones_hoy AS "impresiones_hoy!"
+                      impresiones_hoy AS "impresiones_hoy!", imagen_archivo_id, imagen_tipo
                FROM piezas_publicidad($1, $2)"#,
             &formatos,
             ahora,
@@ -1291,7 +1299,13 @@ impl RepositorioPublicidad for TransaccionPg {
                         es_promocion: f.es_promocion,
                         cupon: cupon(f.cupon_codigo.as_deref(), None)?,
                         plantilla_whatsapp: f.plantilla_whatsapp,
+                        imagen: f.imagen_archivo_id.map(ArchivoId::from_uuid),
                     },
+                    imagen_tipo: f
+                        .imagen_tipo
+                        .as_deref()
+                        .map(TipoArchivo::try_from)
+                        .transpose()?,
                 })
             })
             .collect()

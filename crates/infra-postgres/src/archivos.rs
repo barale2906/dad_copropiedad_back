@@ -1,9 +1,10 @@
-//! Repositorio de archivos (`archivos`) sobre la transacción del tenant.
+//! Repositorio de archivos (`archivos`) sobre la transacción del tenant, y de los archivos de la
+//! plataforma (`archivos_plataforma`) sobre la de la plataforma.
 
 use application::{
     AppError, AppResult, Pagina, SolicitudPagina,
     puertos::{
-        RepositorioArchivos,
+        RepositorioArchivos, RepositorioArchivosPlataforma,
         archivos::{Archivo, FiltroArchivos},
     },
 };
@@ -13,7 +14,7 @@ use domain::{
 };
 use uuid::Uuid;
 
-use crate::TransaccionPg;
+use crate::{TransaccionPg, TransaccionPlataformaPg};
 
 struct FilaArchivo {
     id: Uuid,
@@ -162,5 +163,44 @@ impl RepositorioArchivos for TransaccionPg {
             return Err(AppError::NoEncontrado("archivo"));
         }
         Ok(())
+    }
+}
+
+impl RepositorioArchivosPlataforma for TransaccionPlataformaPg {
+    async fn insertar_archivo_plataforma(&mut self, a: &Archivo) -> AppResult<()> {
+        sqlx::query!(
+            "INSERT INTO archivos_plataforma (id, clave, almacen, nombre_original, tipo_mime,
+                                              tamano_bytes, sha256, subido_por, creado_en)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+            a.id.as_uuid(),
+            a.clave.as_str(),
+            a.almacen.as_str(),
+            a.nombre_original.as_str(),
+            a.tipo.as_str(),
+            i64::try_from(a.tamano_bytes).map_err(AppError::infra)?,
+            a.sha256,
+            a.subido_por.map(CuentaId::as_uuid),
+            a.creado_en,
+        )
+        .execute(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?;
+        Ok(())
+    }
+
+    async fn archivo_plataforma(&mut self, id: ArchivoId) -> AppResult<Option<Archivo>> {
+        // Los archivos de la plataforma son públicos (imágenes de la publicidad).
+        sqlx::query_as!(
+            FilaArchivo,
+            r#"SELECT id, clave, almacen, nombre_original, tipo_mime, tamano_bytes, sha256,
+                      'publico' AS "clasificacion!", subido_por, creado_en
+               FROM archivos_plataforma WHERE id = $1"#,
+            id.as_uuid(),
+        )
+        .fetch_optional(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)?
+        .map(Archivo::try_from)
+        .transpose()
     }
 }

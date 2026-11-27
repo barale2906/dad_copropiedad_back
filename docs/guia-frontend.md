@@ -710,6 +710,12 @@ contables, consumo de facturación electrónica, moderación del directorio y la
   reemplaza, `DELETE` lo revoca) y exclusiones de entidades (`/plataforma/publicidad/exclusiones`).
   **Otra cuenta** modera (quien cargó o editó recibe 409 `conflicto`). El token de la pantalla del
   lobby también se vuelve a consultar con `GET /plataforma/publicidad/pantallas/{id}`.
+  **Imágenes**: `POST /plataforma/publicidad/imagenes` (`nombre_archivo` + `archivo_base64`; JPEG,
+  PNG o WebP de hasta 2 MB) devuelve su `id` y un `url` para previsualizar; el `id` va en
+  `imagen_archivo_id` del creativo (cambiarla lo devuelve a moderación) o en
+  `PUT /plataforma/publicidad/anunciantes/{id}/logo` (`{ "archivo_id": … }`, `null` lo quita).
+  Las piezas (`…/publicidad/piezas` y la pantalla del lobby) traen `imagen_url`: un enlace
+  firmado que vale una hora y no lleva sesión (descargarla y guardarla en caché).
 
 - **Cobros** (ADR 0024, `/plataforma/cobros/…`): catálogo de productos con tarifas versionadas
   (`ModeloTarifa`; una tarifa nueva desde una fecha, nunca se edita), suscripción de cada entidad

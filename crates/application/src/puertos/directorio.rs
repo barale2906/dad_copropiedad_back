@@ -61,6 +61,8 @@ pub struct Anunciante {
     pub creado_por: Option<CuentaId>,
     pub creado_en: DateTime<Utc>,
     pub actualizado_en: DateTime<Utc>,
+    /// Logo (archivo de la plataforma).
+    pub logo: Option<domain::ArchivoId>,
 }
 
 /// Datos de contacto que el anunciante publica en su ficha.
@@ -185,7 +187,7 @@ pub trait RepositorioDirectorioPlataforma: Send {
         pagina: SolicitudPagina,
     ) -> impl Future<Output = AppResult<Pagina<Anunciante>>> + Send;
 
-    /// Guarda nombre, dirección, ubicación, estado y motivo.
+    /// Guarda nombre, dirección, ubicación, estado, motivo y logo.
     fn actualizar_anunciante(
         &mut self,
         anunciante: &Anunciante,

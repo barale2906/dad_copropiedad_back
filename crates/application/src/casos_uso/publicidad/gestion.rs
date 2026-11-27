@@ -10,8 +10,9 @@
 
 use chrono::{DateTime, Utc};
 use domain::{
-    AnuncianteId, CampanaId, CodigoCategoria, CodigoCupon, CreativoId, EstadoCampana,
-    EstadoCreativo, ModeloCobro, ObjetivoCampana, Permiso, Segmentacion, TenantId,
+    AnuncianteId, ArchivoId, CampanaId, ClasificacionArchivo, ClaveArchivo, CodigoCategoria,
+    CodigoCupon, CreativoId, EstadoCampana, EstadoCreativo, ModeloCobro, NombreArchivo,
+    ObjetivoCampana, Permiso, Segmentacion, TenantId, TipoArchivo,
     copropiedad::texto_obligatorio,
     publicidad::{
         ContenidoCreativo, Conteo, Presupuesto, ajustar_al_presupuesto, costo, presupuesto_agotado,
@@ -21,7 +22,12 @@ use domain::{
 use rust_decimal::Decimal;
 
 use super::TxPublicidadPlataforma;
-use crate::puertos::{RegistroAuditoria, RepositorioPublicidadPlataforma};
+use crate::casos_uso::archivos::sha256_hex;
+use crate::puertos::{
+    AlmacenArchivos, RegistroAuditoria, RepositorioArchivosPlataforma,
+    RepositorioDirectorioPlataforma as _, RepositorioPublicidadPlataforma,
+    archivos::{Archivo, DescargaArchivo},
+};
 use crate::{
     AppError, AppResult, ContextoPlataforma, Pagina, SolicitudPagina,
     auditoria::{AccionAuditoria, DetalleAuditoria, EventoAuditoria},
@@ -41,8 +47,9 @@ pub(crate) const ACCION_EDITAR_CAMPANA: AccionAuditoria =
     AccionAuditoria::new("publicidad.campana.editar");
 pub(crate) const ACCION_ESTADO_CAMPANA: AccionAuditoria =
     AccionAuditoria::new("publicidad.campana.cambiar_estado");
-pub(crate) const ACCION_CREATIVO: AccionAuditoria =
-    AccionAuditoria::new("publicidad.creativo.guardar");
+pub(crate) const ACCION_IMAGEN: AccionAuditoria = AccionAuditoria::new("publicidad.imagen.subir");
+const ACCION_LOGO: AccionAuditoria = AccionAuditoria::new("publicidad.anunciante.logo");
+const ACCION_CREATIVO: AccionAuditoria = AccionAuditoria::new("publicidad.creativo.guardar");
 pub(crate) const ACCION_REDIMIR: AccionAuditoria = AccionAuditoria::new("publicidad.cupon.redimir");
 pub(crate) const ACCION_ENLACE: AccionAuditoria =
     AccionAuditoria::new("publicidad.enlace_comercio.generar");
@@ -397,6 +404,9 @@ where
     let ahora = reloj.ahora();
     let mut tx = unidad.iniciar_plataforma(ctx).await?;
     anunciante_para(&mut tx, ctx, anunciante).await?;
+    if let Some(imagen) = contenido.imagen {
+        imagen_existente(&mut tx, imagen).await?;
+    }
     let c = campana_de(&mut tx, anunciante, campana).await?;
     if !c.estado.editable() {
         return Err(AppError::Conflicto(
@@ -790,4 +800,144 @@ where
 {
     ctx.exigir(Permiso::PlataformaPublicidadGestionar)?;
     unidad.iniciar_plataforma(ctx).await?.exclusiones().await
+}
+
+// ---------------------------------------------------------------------------------------------
+// Imágenes de la publicidad (creativos y logos)
+// ---------------------------------------------------------------------------------------------
+
+/// Vigencia del enlace firmado de una imagen: alcanza para que la app o la pantalla del lobby la
+/// descarguen y la guarden en su caché.
+pub const VIGENCIA_ENLACE_IMAGEN: chrono::Duration = chrono::Duration::hours(1);
+
+async fn imagen_existente<T: TxPublicidadPlataforma>(
+    tx: &mut T,
+    id: ArchivoId,
+) -> AppResult<Archivo> {
+    tx.archivo_plataforma(id)
+        .await?
+        .ok_or(AppError::NoEncontrado("imagen"))
+}
+
+/// Sube una imagen de la publicidad (para un creativo o el logo de un comercio): JPEG, PNG o
+/// WebP de hasta 2 MB, validada por su contenido. Queda en la carpeta de la plataforma del
+/// almacén; el nombre original no va a la auditoría.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.publicidad.gestionar` ni
+/// `plataforma.directorio.gestionar`; [`AppError::Dominio`] si no es una imagen admitida o pasa
+/// del tamaño; [`AppError::Infraestructura`] si falla el almacén.
+pub async fn subir_imagen<UP, A>(
+    unidad: &UP,
+    almacen: &A,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    nombre: NombreArchivo,
+    contenido: Vec<u8>,
+) -> AppResult<Archivo>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+    A: AlmacenArchivos,
+{
+    if ctx.exigir(Permiso::PlataformaPublicidadGestionar).is_err() {
+        ctx.exigir(Permiso::PlataformaDirectorioGestionar)?;
+    }
+    let tipo = TipoArchivo::validar_imagen_publicidad(&contenido)?;
+    let id = ArchivoId::nuevo();
+    let archivo = Archivo {
+        id,
+        clave: ClaveArchivo::de_plataforma(id),
+        almacen: almacen.almacen(),
+        nombre_original: nombre,
+        tipo,
+        tamano_bytes: contenido.len() as u64,
+        sha256: sha256_hex(&contenido),
+        clasificacion: ClasificacionArchivo::Publico,
+        subido_por: ctx.actor_id,
+        creado_en: reloj.ahora(),
+    };
+    almacen.guardar(&archivo.clave, &contenido).await?;
+    let resultado = async {
+        let mut tx = unidad.iniciar_plataforma(ctx).await?;
+        tx.insertar_archivo_plataforma(&archivo).await?;
+        let detalle = DetalleAuditoria::vacio()
+            .con("tipo", tipo.as_str())?
+            .con("tamano_bytes", archivo.tamano_bytes)?;
+        tx.registrar(
+            EventoAuditoria::ok(ACCION_IMAGEN, "archivo_plataforma", id.as_uuid())
+                .con_detalle(detalle),
+        )
+        .await?;
+        tx.confirmar().await
+    }
+    .await;
+    if let Err(e) = resultado {
+        // Sin la fila, los bytes quedarían huérfanos: se borran (si falla, solo se registra).
+        if let Err(borrado) = almacen.eliminar(&archivo.clave).await {
+            tracing::warn!(error = %borrado, "no se pudo borrar una imagen huérfana");
+        }
+        return Err(e);
+    }
+    Ok(archivo)
+}
+
+/// Pone (o quita, con `None`) el logo de un comercio: una imagen ya subida con [`subir_imagen`].
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `plataforma.directorio.gestionar`; [`AppError::NoEncontrado`]
+/// si el comercio o la imagen no existen.
+pub async fn poner_logo<UP>(
+    unidad: &UP,
+    reloj: &impl Reloj,
+    ctx: &ContextoPlataforma,
+    anunciante: AnuncianteId,
+    logo: Option<ArchivoId>,
+) -> AppResult<Anunciante>
+where
+    UP: UnidadDeTrabajoPlataforma,
+    UP::Transaccion: TxPublicidadPlataforma,
+{
+    ctx.exigir(Permiso::PlataformaDirectorioGestionar)?;
+    let mut tx = unidad.iniciar_plataforma(ctx).await?;
+    let mut a = tx
+        .anunciante_para_actualizar(anunciante)
+        .await?
+        .ok_or(AppError::NoEncontrado("anunciante"))?;
+    if let Some(id) = logo {
+        imagen_existente(&mut tx, id).await?;
+    }
+    a.logo = logo;
+    a.actualizado_en = reloj.ahora();
+    tx.actualizar_anunciante(&a).await?;
+    let detalle = DetalleAuditoria::vacio().con("con_logo", logo.is_some())?;
+    tx.registrar(
+        EventoAuditoria::ok(ACCION_LOGO, "anunciante", anunciante.as_uuid()).con_detalle(detalle),
+    )
+    .await?;
+    tx.confirmar().await?;
+    Ok(a)
+}
+
+/// Enlace firmado de una imagen de la publicidad, para que la app, la web o la pantalla del
+/// lobby la descarguen sin sesión durante [`VIGENCIA_ENLACE_IMAGEN`]. Quien llama ya decidió que
+/// la pieza se puede mostrar.
+///
+/// # Errors
+///
+/// [`AppError::Infraestructura`] si no se puede firmar.
+pub fn enlace_imagen(
+    almacen: &impl AlmacenArchivos,
+    reloj: &impl Reloj,
+    id: ArchivoId,
+    tipo: TipoArchivo,
+) -> AppResult<String> {
+    almacen.url_temporal(&DescargaArchivo {
+        clave: ClaveArchivo::de_plataforma(id),
+        tipo,
+        nombre: NombreArchivo::new(&format!("imagen.{}", tipo.extension()))?,
+        vence_en: reloj.ahora() + VIGENCIA_ENLACE_IMAGEN,
+    })
 }
