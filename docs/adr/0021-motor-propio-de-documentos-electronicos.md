@@ -1,7 +1,7 @@
 # ADR 0021 · Motor propio de documentos electrónicos
 
-- **Estado:** aceptada. La modalidad comercial con terceros espera la respuesta de la DIAN a la
-  consulta 2026DP000413434.
+- **Estado:** aceptada. La DIAN respondió la consulta 2026DP000413434 (oficio 100153157-18879
+  del 2026-11-26, ver la adenda final); el escenario SaaS con terceros sigue sin confirmar.
 - **Fecha:** 2026-11-13
 - **Plan:** `docs/planes/17-motor-propio-documentos-electronicos.md` (fases 1–4 construidas; 5–7
   diseñadas)
@@ -9,7 +9,8 @@
 ## Contexto
 El ADR 0020 dejó el puerto `ProveedorFacturacion` con un proveedor simulado y previó un motor
 propio (D3 etapa 2). Se analizó la documentación técnica de la DIAN: anexo técnico de factura
-electrónica de venta **v1.9** (Res. 000165 de 2023) y su caja de herramientas (edición 2026). Se
+electrónica de venta **v1.9** (Res. 000165 de 2023, hoy compilada en el título 5 de la
+Res. 000227 de 2025) y su caja de herramientas (edición 2026). Se
 revisaron también los requisitos para ser proveedor tecnológico (art. 55 de la Res. 000165:
 patrimonio de al menos 20.000 UVT, PP&E de al menos 10.000 UVT, ISO 27001, visita de la DIAN,
 personal acreditado y renovación cada 5 años). El art. 28 num. 2.1 permite que el facturador se
@@ -146,3 +147,41 @@ software, sin que este sea proveedor tecnológico.
   nota crédito (anular una nota débito queda para después).
 - **Pendiente**: Schematron con Saxon y el piloto con el `.p12` de GISLA.
 
+## Adenda (2026-11-27): respuesta de la DIAN a la consulta 2026DP000413434
+Oficio 100153157-18879 del 2026-11-26 de la Subdirección de Factura Electrónica y Soluciones
+Operativas. Es una **orientación general, no un concepto**: solo la Subdirección de Normativa y
+Doctrina interpreta la norma con efecto vinculante.
+
+- **Norma vigente:** la Res. 000165 de 2023 está compilada en el **título 5 de la Res. 000227 de
+  2025** (resolución única en materia tributaria, aduanera y cambiaria). El anexo técnico **1.9**
+  sigue vigente. El Concepto 013246 de 2025 (subnumeral 3.1.3.1 del Concepto Unificado 0106 de
+  2022) define software propio (lo desarrolla el facturador) y adquirido (lo compra a un tercero).
+- **Software en la nube del fabricante:** alojar el aplicativo en infraestructura del fabricante,
+  administrar el servidor, mantener, actualizar y dar soporte **no son, por sí solos**, un
+  criterio que determine la modalidad.
+- **¿GISLA debe ser proveedor tecnológico en el escenario SaaS (a)?** Sin respuesta directa: se
+  decide por las **actividades que efectivamente se desarrollen** dentro del sistema de
+  facturación (art. 616-4 del Estatuto Tributario, art. 1.6.1.4.2.4 del Decreto 1625 de 2016),
+  no por el nombre del servicio, el modelo de negocio ni la infraestructura. Como el SaaS genera,
+  transmite y conserva desde servidores de GISLA, el riesgo sigue abierto.
+- **Certificado:** es de cada facturador y se usa en todo el proceso, firma y WS-Security. Ya se
+  cumple (`CredencialFirma` por entidad).
+- **Registro e identificadores:** cada facturador se habilita y registra el software por su
+  cuenta y recibe sus propios identificadores (SoftwareID). Ya se cumple
+  (`configuraciones_facturacion` por entidad; `ProviderID` = NIT del facturador).
+
+**Consecuencias:**
+- El motor no cambia. Las citas a la Res. 000165 se mantienen y se aclara que está compilada en
+  la Res. 000227.
+- El piloto con GISLA sigue sin bloqueos.
+- **Para clientes externos**, hasta tener un concepto favorable de Normativa y Doctrina o de un
+  asesor tributario, se ofrece: (b) despliegue en la infraestructura del cliente
+  (`docker-compose.prod.yml`) o un proveedor tecnológico como otro adaptador de
+  `ProveedorFacturacion`. Si se ofrece SaaS, la operación queda en manos del facturador: contrato
+  de licencia de uso (no de servicio de facturación), el cliente compra su certificado, registra
+  el software y carga sus credenciales, y puede exportar en cualquier momento todos sus XML y
+  AttachedDocument.
+- **Pendiente:** decidir si se eleva a Normativa y Doctrina una consulta con una sola pregunta:
+  si alojar y operar en servidores del fabricante la generación, transmisión y conservación de
+  los documentos de un facturador con su propio certificado y SoftwareID es prestar el servicio
+  del art. 616-4.

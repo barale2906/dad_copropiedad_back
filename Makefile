@@ -19,7 +19,7 @@ SHELL := /bin/bash
 	    api gateway dev superusuario \
 	    check fmt fmt-check lint test test-rapido cov verificar doc doc-items doc-abrir openapi guia-endpoints \
 	    migrar migracion revertir migraciones sqlx-prepare \
-	    deny audit build release limpiar
+	    deny audit build release limpiar limpiar-viejo tamano
 
 help: ## Muestra esta ayuda
 	@awk 'BEGIN {FS = ":.*##"} \
@@ -27,12 +27,12 @@ help: ## Muestra esta ayuda
 	    /^[a-zA-Z_-]+:.*##/ { printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 ##@ Inicio del proyecto
-herramientas: ## Instala las herramientas de desarrollo (sqlx-cli, nextest, bacon, deny, audit, llvm-cov)
+herramientas: ## Instala las herramientas de desarrollo (sqlx-cli, nextest, bacon, deny, audit, llvm-cov, sweep)
 	@if command -v cargo-binstall >/dev/null 2>&1; then \
-	    $(CARGO) binstall -y sqlx-cli cargo-nextest bacon cargo-deny cargo-audit cargo-llvm-cov; \
+	    $(CARGO) binstall -y sqlx-cli cargo-nextest bacon cargo-deny cargo-audit cargo-llvm-cov cargo-sweep; \
 	else \
 	    $(CARGO) install sqlx-cli --no-default-features --features rustls,postgres; \
-	    $(CARGO) install --locked cargo-nextest bacon cargo-deny cargo-audit cargo-llvm-cov; \
+	    $(CARGO) install --locked cargo-nextest bacon cargo-deny cargo-audit cargo-llvm-cov cargo-sweep; \
 	fi
 
 env: ## Crea .env a partir de .env.example (no sobrescribe uno existente)
@@ -125,7 +125,7 @@ doc-abrir: ## Genera y abre la documentación en el navegador
 	RUSTDOCFLAGS="-D warnings" $(CARGO) doc --workspace --no-deps --open
 
 openapi: ## Regenera el contrato apps/api/openapi.json tras cambiar rutas o DTOs (revisar el diff)
-	ACTUALIZAR_OPENAPI=1 $(CARGO) nextest run -p api --test contrato_openapi
+	ACTUALIZAR_OPENAPI=1 $(CARGO) nextest run -p api --test integracion contrato_openapi
 
 guia-endpoints: ## Regenera docs/guia-frontend-endpoints.md (índice del contrato para el frontend)
 	python3 scripts/indice_endpoints.py
@@ -161,5 +161,14 @@ build: ## Compila en modo desarrollo
 release: ## Compila binarios optimizados (target/release)
 	$(CARGO) build --workspace --release
 
-limpiar: ## Borra artefactos de compilación (target/)
+limpiar: ## Borra artefactos de compilación (target/); la siguiente compilación parte de cero
 	$(CARGO) clean
+
+DIAS ?= 7
+limpiar-viejo: ## Borra de target/ lo que no se usó en DIAS días (7 por defecto); conserva lo reciente
+	@command -v cargo-sweep >/dev/null || { echo "Falta cargo-sweep: make herramientas"; exit 1; }
+	$(CARGO) sweep --time $(DIAS)
+	@du -sh target 2>/dev/null || true
+
+tamano: ## Muestra cuánto ocupa target/ por carpeta
+	@du -sh target target/* 2>/dev/null | sort -h

@@ -25,7 +25,8 @@ jobs:
   calidad:
     name: Formato, lint, pruebas y documentación
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Sin caché (Cargo.lock cambió) se compila todo desde cero en el runner: margen holgado.
+    timeout-minutes: 50
 
     services:
       postgres:
@@ -62,6 +63,9 @@ jobs:
           cargo --version
 
       - uses: Swatinem/rust-cache@v2
+        with:
+          # Guarda la caché aunque falle una prueba: el siguiente intento no recompila todo.
+          cache-on-failure: true
 
       - name: Instalar cargo-nextest
         uses: taiki-e/install-action@v2

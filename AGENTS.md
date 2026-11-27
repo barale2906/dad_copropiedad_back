@@ -121,7 +121,7 @@ Al agregar o retirar una tecnología, actualizar esta tabla (ver premisa).
 | Contenedores | Docker Compose · `Dockerfile` multi-stage | En uso | `docker-compose.yml` (desarrollo) y `docker-compose.prod.yml` (referencia del VPS: postgres ajustado por RAM con `PG_*`, `migracion`, api, gateway, límites de memoria y pools por variable). Imagen `rust:1.99-slim-bookworm` → `debian:bookworm-slim`, usuario no root, `tini`. Etapa opcional `--target carga` con `dad_carga`. |
 | CI/CD | GitHub Actions · GHCR | En uso | `.github/workflows/ci.yml`: fmt, clippy, pruebas con PostgreSQL, rustdoc, cargo-deny y job `imagen` (construye en cada PR; publica `ghcr.io/…:sha-<commit>` en `main`). El despliegue al VPS es manual con `docs/despliegue.md`. |
 | Despliegue | VPS Ubuntu + Nginx (HestiaCP) + Docker Compose | En uso | Guía en `docs/despliegue.md`: Nginx con TLS y `X-Real-IP`, migraciones como paso explícito (`dad_admin migrar`), respaldos. |
-| Calidad | rustfmt · clippy · nextest · llvm-cov · cargo-deny · cargo-audit · bacon | En uso | |
+| Calidad | rustfmt · clippy · nextest · llvm-cov · cargo-deny · cargo-audit · bacon · cargo-sweep | En uso | `cargo-sweep` (`make limpiar-viejo`) borra de `target/` lo que no se usa. Perfil `dev`: dependencias sin información de depuración y macros procedurales optimizadas (`Cargo.toml`). |
 | Prueba de carga | `apps/carga` (`dad_carga`, Rust + reqwest) | En uso | Solo HTTP contra un entorno de prueba (nunca producción): siembra N PH por la API y mide navegación y votación simultáneas (p50/p95/p99). Guía en `docs/despliegue.md` §9. |
 | Frontend (otro repo) | Vue 3 + TypeScript (Angular posible) | Externo | Consume el OpenAPI y genera su cliente tipado. |
 | Apps móviles (otro repo) | Flutter (Android + iOS) | Previsto | Mismo contrato OpenAPI que la web; push con FCM: registran el token en `/api/v1/yo/dispositivos-push`. |
@@ -163,11 +163,11 @@ dos familias complementarias:
 |---|---|---|
 | Unitarias de dominio | Reglas puras: estados, quórum, mayorías, coeficientes, secreto del voto | `#[cfg(test)]` en el mismo archivo de `crates/domain` |
 | Casos de uso | Orquestación y errores de aplicación | `crates/application`, con dobles en memoria de los puertos |
-| Integración de BD | Esquema, RLS, triggers, restricciones, repositorios | `crates/infra-postgres/tests/` con `#[sqlx::test(migrator = …)]`; operar como la app con `SET LOCAL ROLE dad_app` |
+| Integración de BD | Esquema, RLS, triggers, restricciones, repositorios | `crates/infra-postgres/tests/integracion/` con `#[sqlx::test(migrator = …)]`; operar como la app con `SET LOCAL ROLE dad_app` |
 | Adaptadores externos | Firma, parseo y normalización de payloads | `crates/infra-*` con fixtures reales (JSON de ejemplo de Meta) |
-| Funcionales de API | Endpoint completo: petición → respuesta y efectos | `tower::ServiceExt::oneshot` sobre el `router` de cada app (`apps/*/src/routes`); con BD real vía `#[sqlx::test]` cuando aplique |
+| Funcionales de API | Endpoint completo: petición → respuesta y efectos | `tower::ServiceExt::oneshot` sobre el `router` de cada app (`apps/*/src/routes`), en `apps/api/tests/integracion/`; con BD real vía `#[sqlx::test]` cuando aplique |
 | Concurrencia | Emisiones simultáneas del mismo bien privado → un único voto | `tokio::spawn` + `#[sqlx::test]` |
-| Contrato | El OpenAPI generado coincide con `apps/api/openapi.json` | `apps/api/tests/contrato_openapi.rs`; regenerar a propósito con `make openapi` |
+| Contrato | El OpenAPI generado coincide con `apps/api/openapi.json` | `apps/api/tests/integracion/contrato_openapi.rs`; regenerar a propósito con `make openapi` |
 
 Reglas:
 - Cada regla de negocio tiene al menos un caso positivo y uno negativo; cada invariante de §9 tiene una prueba que fallaría si se rompe.
@@ -177,6 +177,7 @@ Reglas:
 - Un bug corregido llega con la prueba que lo reproduce.
 - Cobertura orientativa ≥ 80 % en `domain` y `application` (`make cov`); el número no sustituye probar los casos importantes.
 - `make test-rapido` corre sin BD; `make test` requiere `make up`.
+- **Un ejecutable de pruebas de integración por crate**: `tests/integracion/main.rs` declara un `mod` por archivo (helpers en `tests/integracion/comun/`). Una prueba nueva va como módulo ahí, nunca como archivo suelto en `tests/`: cada archivo suelto es un ejecutable que enlaza todo el stack (cientos de MB y su tiempo de enlazado). Filtrar con `cargo nextest run -p api --test integracion <filtro>`.
 
 ## 7. Documentación
 El código se documenta para poder **generar** la documentación de referencia y la de la API REST.
@@ -202,7 +203,7 @@ Alternativa a utoipa: `aide` (genera OpenAPI desde los tipos de Axum). Se elige 
 - **Un `operationId` por operación**: `openapi::nombrar_operaciones` antepone la etiqueta al nombre del handler (`tickets_listar`); si dos handlers de un mismo módulo se llaman igual, uno lleva `operation_id = "…"` en su `#[utoipa::path]` (prueba `cada_operacion_tiene_un_id_unico`). Un campo que solo existe en la respuesta de un DTO compartido con la entrada se declara `#[schema(read_only)]`, nunca con `skip_deserializing` (utoipa lo omitiría del contrato).
 - **Un nombre por esquema**: si dos DTO se llaman igual en módulos distintos, utoipa publica uno solo sin avisar; el segundo lleva `#[schema(as = NombrePropio)]` (prueba `cada_esquema_tiene_un_nombre_unico`).
 - Un campo o parámetro que es un enum del dominio (o un `String` que se llena con su `as_str()`) se anota con su **esquema con nombre**: `#[schema(value_type = crate::esquemas::EstadoTicket)]` (o `Option<…>` / `Vec<…>`; `#[param(…)]` en filtros). Un enum nuevo se declara en `api::esquemas` (tipo espejo; los valores salen de `TODOS`). Nunca `value_type = String` para un enum: el cliente del frontend perdería los valores.
-- Las respuestas 401/403/404 que imponen los extractores de sesión las agrega `openapi::completar_respuestas_comunes`; cada handler documenta además sus errores propios y **declara su 403 nombrando el permiso** (`Sin \`modulo.recurso.accion\` (\`sin_permiso\`)…`), la regla que no es un permiso (titular, papeleta…) o «No exige permisos». La prueba `cada_prohibido_nombra_su_permiso` (`apps/api/tests/contrato_openapi.rs`) lo exige. Las rutas con `LimiteAuth`/`LimitePublico` documentan el 429.
+- Las respuestas 401/403/404 que imponen los extractores de sesión las agrega `openapi::completar_respuestas_comunes`; cada handler documenta además sus errores propios y **declara su 403 nombrando el permiso** (`Sin \`modulo.recurso.accion\` (\`sin_permiso\`)…`), la regla que no es un permiso (titular, papeleta…) o «No exige permisos». La prueba `cada_prohibido_nombra_su_permiso` (`apps/api/tests/integracion/contrato_openapi.rs`) lo exige. Las rutas con `LimiteAuth`/`LimitePublico` documentan el 429.
 - Lo que el contrato no cuenta (sesión y renovación, reintentos, paginación, archivos, WebSocket, cabeceras de credenciales, flujos de cada módulo, estados) está en `docs/guia-frontend.md`: actualizarla cuando cambie una de esas convenciones o el flujo de un módulo. Tras `make openapi`, regenerar `docs/guia-frontend-endpoints.md` con `make guia-endpoints` en el mismo PR.
 - Rutas: `/api/v1/copropiedades/{copropiedad_id}/…` (recursos de una copropiedad; `/capacidades` da los permisos de la cuenta y los módulos contratados), `/api/v1/yo/…` (cuenta autenticada), `/api/v1/plataforma/…` (global; usuarios de la plataforma en `/plataforma/cuentas`). Los usuarios de una entidad, en `/api/v1/entidades/{entidad_id}/usuarios`. Cada handler se registra con `utoipa_axum::routes!` en su módulo de `apps/api/src/routes/`.
 - Rutas sin sesión o con credenciales adivinables llevan el extractor `LimiteAuth` o `LimitePublico` (`api::limite`).
@@ -311,10 +312,11 @@ Una tarea está terminada solo si:
 | Prueba de carga | — | `docker build --target carga -t dad_carga .` · `dad_carga sembrar …` / `dad_carga ejecutar …` (`docs/despliegue.md` §9) |
 | Revertir en producción | `docker compose -f docker-compose.prod.yml run --rm migracion dad_admin revertir --hasta <versión> --confirmar` | Tras un respaldo; ver `docs/despliegue.md` §5 |
 | Imagen de producción | — | `docker build -t dad_copropiedad:local .` |
+| Espacio en disco | `make tamano` · `make limpiar-viejo` (`DIAS=7`) · `make limpiar` | `du -sh target/*` · `cargo sweep --time 7` · `cargo clean` |
 | Verificación completa | `make verificar` | `cargo fmt --all --check && cargo lint && cargo pruebas` |
 | Pruebas | `make test` · `make test-rapido` · `make cov` | `cargo pruebas` (nextest) + `cargo test --workspace --doc` (doctests) |
 | Documentación | `make doc` (incluye `make doc-items`: ítems públicos sin `///`) | `cargo doc --workspace --no-deps` |
-| Contrato OpenAPI | `make openapi` | `ACTUALIZAR_OPENAPI=1 cargo nextest run -p api --test contrato_openapi` |
+| Contrato OpenAPI | `make openapi` | `ACTUALIZAR_OPENAPI=1 cargo nextest run -p api --test integracion contrato_openapi` |
 | Índice de endpoints para el frontend | `make guia-endpoints` | `python3 scripts/indice_endpoints.py` → `docs/guia-frontend-endpoints.md` |
 | Migraciones | `make migracion NOMBRE=x` · `make migrar` · `make revertir` | `sqlx migrate add -r x` … |
 | Dependencias | `make deny` · `make audit` | `cargo deny check` · `cargo audit` |
