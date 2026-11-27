@@ -453,6 +453,21 @@ impl RepositorioSesiones for TransaccionPlataformaPg {
         Ok(())
     }
 
+    async fn agentes_recientes(
+        &mut self,
+        cuenta: CuentaId,
+        desde: DateTime<Utc>,
+    ) -> AppResult<Vec<Option<String>>> {
+        sqlx::query_scalar!(
+            "SELECT agente FROM sesiones WHERE cuenta_id = $1 AND creada_en >= $2",
+            cuenta.as_uuid(),
+            desde,
+        )
+        .fetch_all(&mut *self.tx)
+        .await
+        .map_err(AppError::infra)
+    }
+
     async fn sesion_por_acceso(&mut self, hash: &str) -> AppResult<Option<Sesion>> {
         Ok(sqlx::query_as!(
             FilaSesion,

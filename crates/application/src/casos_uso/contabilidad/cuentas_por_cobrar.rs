@@ -82,7 +82,7 @@ pub(crate) async fn desaplicar_de_factura<T: TxTesoreria>(
     tx.actualizar_factura_venta(&f).await
 }
 
-/// Cartera de un cliente por tramos de edad.
+/// Saldo de un tercero (cliente o proveedor) por tramos de edad.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FilaCartera {
     pub persona_id: PersonaId,
@@ -109,22 +109,44 @@ where
     U::Transaccion: TxTesoreria,
 {
     let mut tx = abrir(unidad, reloj, ctx, Permiso::ContabilidadVer).await?;
-    let mut por_cliente: BTreeMap<PersonaId, FilaCartera> = BTreeMap::new();
-    for f in tx.facturas_venta_con_saldo(corte).await? {
-        let saldo = f.total.valor() - f.pagado.valor();
+    let saldos: Vec<_> = tx
+        .facturas_venta_con_saldo(corte)
+        .await?
+        .into_iter()
+        .map(|f| {
+            (
+                f.persona_id,
+                f.vencimiento,
+                f.total.valor() - f.pagado.valor(),
+            )
+        })
+        .collect();
+    agrupar_por_edades(&mut tx, corte, saldos).await
+}
+
+/// Agrupa saldos `(tercero, vencimiento, saldo)` por tercero y tramo de edad a la fecha de corte
+/// (omite los saldos en cero). Ordenada por mayor saldo y luego por nombre. La usan la cartera de
+/// clientes y la de proveedores.
+pub(crate) async fn agrupar_por_edades<T: TxTesoreria>(
+    tx: &mut T,
+    corte: NaiveDate,
+    saldos: Vec<(PersonaId, NaiveDate, Decimal)>,
+) -> AppResult<Vec<FilaCartera>> {
+    let mut por_tercero: BTreeMap<PersonaId, FilaCartera> = BTreeMap::new();
+    for (persona, vencimiento, saldo) in saldos {
         if saldo.is_zero() {
             continue;
         }
-        let fila = match por_cliente.entry(f.persona_id) {
+        let fila = match por_tercero.entry(persona) {
             std::collections::btree_map::Entry::Occupied(o) => o.into_mut(),
             std::collections::btree_map::Entry::Vacant(v) => {
                 let nombre = tx
-                    .persona(f.persona_id)
+                    .persona(persona)
                     .await?
                     .map(|p| p.nombre)
                     .unwrap_or_default();
                 v.insert(FilaCartera {
-                    persona_id: f.persona_id,
+                    persona_id: persona,
                     nombre,
                     tramos: BTreeMap::new(),
                     total: Decimal::ZERO,
@@ -133,11 +155,11 @@ where
         };
         *fila
             .tramos
-            .entry(TramoEdad::de(f.vencimiento, corte))
+            .entry(TramoEdad::de(vencimiento, corte))
             .or_default() += saldo;
         fila.total += saldo;
     }
-    let mut filas: Vec<FilaCartera> = por_cliente.into_values().collect();
+    let mut filas: Vec<FilaCartera> = por_tercero.into_values().collect();
     filas.sort_by(|a, b| b.total.cmp(&a.total).then(a.nombre.cmp(&b.nombre)));
     Ok(filas)
 }

@@ -43,6 +43,7 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(ver_certificado))
         .routes(routes!(certificado_pdf))
         .routes(routes!(enviar_certificado))
+        .routes(routes!(edades))
 }
 
 /// Fecha de vigencia.
@@ -393,6 +394,7 @@ pub async fn enviar_certificado(
 ) -> ApiResult<(StatusCode, Json<EnvioCertificadoRespuesta>)> {
     let para = uc::enviar_certificado_retenciones(
         &state.unidad,
+        &state.actas,
         &RelojSistema,
         &en.ctx,
         PersonaId::from_uuid(ruta.1),
@@ -406,4 +408,29 @@ pub async fn enviar_certificado(
             para: para.as_str().to_owned(),
         }),
     ))
+}
+
+/// Cuentas por pagar por edades a la fecha de corte: saldo de cada factura de proveedor (neto a
+/// pagar − pagado) en el tramo de sus días vencidos, por proveedor.
+#[utoipa::path(
+    get,
+    path = "/cuentas-por-pagar/edades",
+    tag = ETIQUETA_TESORERIA,
+    security(("bearer" = [])),
+    params(
+        ("entidad_id" = Uuid, Path, description = "Entidad"),
+        super::cuentas_por_cobrar::CorteParametros
+    ),
+    responses(
+        (status = OK, description = "Cuentas por pagar por proveedor", body = Vec<FilaCarteraRespuesta>),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver` o sin el módulo", body = ErrorRespuesta),
+    )
+)]
+pub async fn edades(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Query(q): Query<super::cuentas_por_cobrar::CorteParametros>,
+) -> ApiResult<Json<Vec<FilaCarteraRespuesta>>> {
+    let v = uc::por_pagar_por_edades(&state.unidad, &RelojSistema, &en.ctx, q.corte).await?;
+    Ok(Json(v.into_iter().map(Into::into).collect()))
 }

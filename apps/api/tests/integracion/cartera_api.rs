@@ -250,6 +250,29 @@ async fn liquidar_recaudar_y_consultar_la_cartera_de_punta_a_punta(pool: PgPool)
     assert_eq!(s, StatusCode::OK);
     assert_eq!(tipo, "application/pdf");
 
+    // Al enviarlas, cada cuenta con correo viaja con su PDF adjunto.
+    let liquidacion = liquidado["liquidacion"]["id"]
+        .as_str()
+        .expect("liquidación");
+    let (s, envio) = e
+        .pedir(
+            Method::POST,
+            &format!("/cartera/liquidaciones/{liquidacion}/envio"),
+            None,
+        )
+        .await;
+    assert!(s.is_success(), "{envio}");
+    let con_pdf: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM outbox WHERE canal = 'correo'
+            AND payload->>'asunto' LIKE 'Cuenta de cobro%'
+            AND payload->'adjuntos'->0->>'tipo' = 'application/pdf'
+            AND payload->'adjuntos'->0->>'nombre' LIKE 'cuenta-cobro-CB-%.pdf'",
+    )
+    .fetch_one(&e.api.duenio)
+    .await
+    .expect("correos de cuentas de cobro");
+    assert_eq!(Some(con_pdf), envio["enviadas"].as_i64(), "{envio}");
+
     let recaudo = crear(
         &e,
         "/cartera/recaudos",

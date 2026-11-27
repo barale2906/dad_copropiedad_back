@@ -126,7 +126,11 @@ cuenta con su tipo.
   cabecera `X-Contenido-Sha256` y queda en la auditoría.
 - **Tesorería** (ADR 0018, etiqueta `tesoreria`): `/contabilidad/tesoreria/…` (cuentas,
   recibos, egresos, extractos y conciliación), `/contabilidad/cuentas-por-pagar/…` y
-  `/contabilidad/cuentas-por-cobrar/edades` (cartera de clientes). Las facturas de venta están en
+  `/contabilidad/cuentas-por-cobrar/edades` (cartera de clientes) y
+  `/contabilidad/cuentas-por-pagar/edades` (lo que se debe a cada proveedor, mismo formato; ambos
+  con `?corte=`). El recibo de caja y el comprobante de egreso se descargan en PDF
+  (`GET …/tesoreria/recibos/{id}/pdf`, `…/tesoreria/egresos/{id}/pdf`; el egreso trae espacio
+  para la firma del beneficiario). Las facturas de venta están en
   la facturación (abajo). Los documentos no se editan ni se borran: se **anulan** con
   `POST …/anulacion` y un motivo (se revierte su comprobante). Un egreso pasa por
   `…/autorizacion` (otra cuenta: si es la misma responde 409 `conflicto`) y `…/pago`. El extracto

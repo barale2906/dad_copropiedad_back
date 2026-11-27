@@ -4,6 +4,7 @@
 //!
 //! Flujo mínimo: registrar → causar → egreso (autorizar y pagar) → conciliar.
 
+use crate::puertos::correo::AdjuntoCorreo;
 use std::collections::BTreeSet;
 
 use chrono::{Datelike, NaiveDate};
@@ -926,6 +927,14 @@ where
     G: GeneradorActas,
 {
     let c = certificado_retenciones(unidad, reloj, ctx, persona, desde, hasta).await?;
+    pdf_certificado(generador, reloj, &c).await
+}
+
+async fn pdf_certificado<G: GeneradorActas>(
+    generador: &G,
+    reloj: &impl Reloj,
+    c: &CertificadoRetenciones,
+) -> AppResult<Vec<u8>> {
     generador
         .tabla(&TablaPdf {
             titulo: "Certificado de retenciones".into(),
@@ -946,7 +955,7 @@ where
             columnas: ["Impuesto", "Concepto", "Tarifa", "Base", "Retenido"]
                 .map(str::to_owned)
                 .to_vec(),
-            filas: filas_texto(&c),
+            filas: filas_texto(c),
             generada: reloj.ahora().format("%Y-%m-%d %H:%M UTC").to_string(),
             qr: None,
             pie: None,
@@ -954,14 +963,16 @@ where
         .await
 }
 
-/// Envía el certificado por correo (outbox) al correo de facturación del tercero o, si no lo
-/// tiene, a su correo. Devuelve la dirección.
+/// Envía el certificado por correo (outbox), con el PDF adjunto, al correo de facturación del
+/// tercero o, si no lo tiene, a su correo. Devuelve la dirección.
 ///
 /// # Errors
 ///
-/// Los de [`certificado_retenciones`]; [`AppError::Validacion`] si el tercero no tiene correo.
-pub async fn enviar_certificado_retenciones<U>(
+/// Los de [`certificado_retenciones`]; [`AppError::Validacion`] si el tercero no tiene correo;
+/// [`AppError::Infraestructura`] si falla el PDF.
+pub async fn enviar_certificado_retenciones<U, G>(
     unidad: &U,
+    generador: &G,
     reloj: &impl Reloj,
     ctx: &Contexto,
     persona: PersonaId,
@@ -971,6 +982,7 @@ pub async fn enviar_certificado_retenciones<U>(
 where
     U: UnidadDeTrabajo,
     U::Transaccion: TxTesoreria + RegistroOutbox,
+    G: GeneradorActas,
 {
     let mut tx = abrir(
         unidad,
@@ -981,6 +993,7 @@ where
     .await?;
     let (c, correo) = armar_certificado(&mut tx, persona, desde, hasta).await?;
     let para = correo.ok_or_else(|| validacion("el tercero no tiene correo"))?;
+    let pdf = pdf_certificado(generador, reloj, &c).await?;
     let mut cuerpo = format!(
         "{} certifica las retenciones practicadas a {} entre {} y {}:\n\n",
         c.entidad, c.tercero, c.desde, c.hasta
@@ -996,7 +1009,11 @@ where
             asunto: format!("Certificado de retenciones · {}", c.entidad),
             texto: cuerpo,
             html: None,
-            adjuntos: Vec::new(),
+            adjuntos: vec![AdjuntoCorreo {
+                nombre: format!("certificado-retenciones-{}-{}.pdf", c.desde, c.hasta),
+                tipo: "application/pdf".into(),
+                contenido: pdf,
+            }],
         }),
     })
     .await?;
@@ -1009,4 +1026,37 @@ where
     .await?;
     tx.confirmar().await?;
     Ok(para)
+}
+
+/// Cuentas por pagar por edades a la fecha de corte: el saldo de cada factura de proveedor
+/// registrada, causada o pagada en parte con fecha hasta el corte (neto a pagar − pagado), en el
+/// tramo de sus días vencidos y agrupado por proveedor. Ordenada por mayor saldo.
+///
+/// # Errors
+///
+/// [`AppError::SinPermiso`] sin `contabilidad.ver`.
+pub async fn por_pagar_por_edades<U>(
+    unidad: &U,
+    reloj: &impl Reloj,
+    ctx: &Contexto,
+    corte: NaiveDate,
+) -> AppResult<Vec<super::cuentas_por_cobrar::FilaCartera>>
+where
+    U: UnidadDeTrabajo,
+    U::Transaccion: TxTesoreria,
+{
+    let mut tx = abrir(unidad, reloj, ctx, Permiso::ContabilidadVer).await?;
+    let saldos: Vec<_> = tx
+        .facturas_proveedor_con_saldo(corte)
+        .await?
+        .into_iter()
+        .map(|f| {
+            (
+                f.persona_id,
+                f.vencimiento,
+                f.neto_pagar.valor() - f.pagado.valor(),
+            )
+        })
+        .collect();
+    super::cuentas_por_cobrar::agrupar_por_edades(&mut tx, corte, saldos).await
 }

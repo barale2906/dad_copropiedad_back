@@ -9,7 +9,7 @@
 use chrono::{DateTime, Duration, Utc};
 use domain::{
     ConjuntoPermisos, ContrasenaNueva, CuentaId, DireccionCorreo, EstadoCuenta, Identificador,
-    NombreUsuario, SesionId,
+    NombreUsuario, SesionId, TipoDispositivo, avisar_dispositivo_nuevo,
 };
 
 use crate::{
@@ -47,6 +47,8 @@ pub(crate) const ACCION_ACTIVAR_SEGUNDO_FACTOR: AccionAuditoria =
 pub const VIDA_ACCESO: Duration = Duration::minutes(30);
 /// Vencimiento absoluto de una sesión normal.
 pub const VIDA_SESION: Duration = Duration::days(30);
+/// Hasta dónde se miran las sesiones anteriores para reconocer un dispositivo ya usado.
+pub const MEMORIA_DISPOSITIVOS: Duration = Duration::days(180);
 /// Vencimiento absoluto en un equipo compartido (un turno de portería).
 pub const VIDA_SESION_COMPARTIDA: Duration = Duration::hours(12);
 /// Tiempo para escribir el código TOTP tras la contraseña.
@@ -408,8 +410,11 @@ pub async fn iniciar_sesion<UP, H>(
 ) -> AppResult<ResultadoInicio>
 where
     UP: UnidadDeTrabajoPlataforma,
-    UP::Transaccion:
-        RepositorioCuentas + RepositorioSesiones + RepositorioPlataforma + RegistroAuditoria,
+    UP::Transaccion: RepositorioCuentas
+        + RepositorioSesiones
+        + RepositorioPlataforma
+        + RegistroAuditoria
+        + RegistroOutbox,
     H: HashContrasenas,
 {
     let ahora = reloj.ahora();
@@ -496,15 +501,67 @@ where
             entidades: tx.membresias(cuenta.id).await?,
         })
     };
+    let avisado =
+        avisar_si_dispositivo_nuevo(&mut tx, &cuenta, sesion.agente.as_deref(), ahora).await?;
     tx.insertar_sesion(&sesion).await?;
     let detalle = DetalleAuditoria::vacio()
         .con("sesion_id", sesion.id.to_string())?
         .con("equipo_compartido", sesion.equipo_compartido)?
-        .con("segundo_factor_pendiente", sesion.segundo_factor_pendiente)?;
+        .con("segundo_factor_pendiente", sesion.segundo_factor_pendiente)?
+        .con("aviso_dispositivo_nuevo", avisado)?;
     tx.registrar(evento_cuenta(ACCION_INICIAR_SESION, cuenta.id).con_detalle(detalle))
         .await?;
     tx.confirmar().await?;
     Ok(resultado)
+}
+
+/// Si la cuenta entra desde un tipo de dispositivo que no usó en [`MEMORIA_DISPOSITIVOS`] y tiene
+/// correo, le avisa por correo (outbox) para que cambie la contraseña si no fue ella. Se mira
+/// antes de guardar la sesión nueva. Devuelve si avisó.
+async fn avisar_si_dispositivo_nuevo<T>(
+    tx: &mut T,
+    cuenta: &Cuenta,
+    agente: Option<&str>,
+    ahora: DateTime<Utc>,
+) -> AppResult<bool>
+where
+    T: RepositorioSesiones + RegistroOutbox,
+{
+    let Some(correo) = &cuenta.correo else {
+        return Ok(false);
+    };
+    let actual = TipoDispositivo::desde_agente(agente);
+    let anteriores: Vec<_> = tx
+        .agentes_recientes(cuenta.id, ahora - MEMORIA_DISPOSITIVOS)
+        .await?
+        .iter()
+        .map(|a| TipoDispositivo::desde_agente(a.as_deref()))
+        .collect();
+    let Some(dispositivo) = actual.filter(|d| avisar_dispositivo_nuevo(&anteriores, Some(d)))
+    else {
+        return Ok(false);
+    };
+    // Colombia no tiene horario de verano: UTC−5 todo el año.
+    let hora = ahora
+        .with_timezone(&chrono::FixedOffset::west_opt(5 * 3600).expect("UTC−5 es válido"))
+        .format("%Y-%m-%d %H:%M");
+    tx.encolar(EventoSaliente {
+        prioridad: PrioridadSalida::Confirmacion,
+        mensaje: MensajeOutbox::Correo(CorreoSaliente {
+            para: correo.clone(),
+            asunto: "Nuevo inicio de sesión en DAD Copropiedad".into(),
+            texto: format!(
+                "Hola, {}.\n\nSe inició sesión en su cuenta desde {dispositivo} el {hora} (hora de \
+                 Colombia).\n\nSi fue usted, no tiene que hacer nada. Si no lo reconoce, cambie su \
+                 contraseña y cierre todas las sesiones desde «Mi cuenta».",
+                cuenta.nombre_mostrar
+            ),
+            html: None,
+            adjuntos: Vec::new(),
+        }),
+    })
+    .await?;
+    Ok(true)
 }
 
 /// Completa el inicio de sesión con el código TOTP.

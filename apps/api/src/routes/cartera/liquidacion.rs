@@ -281,6 +281,7 @@ pub async fn enviar_cuentas(
 ) -> ApiResult<Json<EnvioCuentasRespuesta>> {
     let e = liq::enviar_cuentas_cobro(
         &state.unidad,
+        &state.actas,
         &RelojSistema,
         &en.ctx,
         LiquidacionExpensasId::from_uuid(ruta.1),

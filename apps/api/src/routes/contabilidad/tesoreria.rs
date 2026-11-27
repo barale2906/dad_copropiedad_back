@@ -1,13 +1,18 @@
 //! Cuentas de tesorería, recibos de caja y egresos (plan 13 fase 1).
 
 use application::{
+    casos_uso::contabilidad::soportes,
     casos_uso::contabilidad::tesoreria::{
         self as uc, CambioCuentaTesoreria, NuevaCuentaTesoreria, NuevoEgreso, NuevoGasto,
         NuevoRecibo,
     },
     puertos::{RelojSistema, tesoreria::FiltroRecibos},
 };
-use axum::{extract::State, http::StatusCode};
+use axum::{
+    extract::State,
+    http::{StatusCode, header},
+    response::{IntoResponse, Response},
+};
 use chrono::NaiveDate;
 use domain::{
     ArchivoId, CuentaTesoreriaId, EgresoId, FacturaProveedorId, FacturaVentaId, PersonaId,
@@ -35,10 +40,12 @@ pub fn rutas() -> OpenApiRouter<AppState> {
         .routes(routes!(actualizar_cuenta))
         .routes(routes!(listar_recibos, registrar_recibo))
         .routes(routes!(ver_recibo))
+        .routes(routes!(recibo_pdf))
         .routes(routes!(aplicar_recibo))
         .routes(routes!(anular_recibo))
         .routes(routes!(listar_egresos, registrar_egreso))
         .routes(routes!(ver_egreso))
+        .routes(routes!(egreso_pdf))
         .routes(routes!(autorizar_egreso))
         .routes(routes!(pagar_egreso))
         .routes(routes!(anular_egreso))
@@ -528,4 +535,76 @@ pub async fn anular_egreso(
     )
     .await?;
     Ok(Json(e.into()))
+}
+
+fn pdf(nombre: String, contenido: Vec<u8>) -> Response {
+    (
+        [
+            (header::CONTENT_TYPE, "application/pdf".to_owned()),
+            (
+                header::CONTENT_DISPOSITION,
+                format!("attachment; filename=\"{nombre}\""),
+            ),
+        ],
+        contenido,
+    )
+        .into_response()
+}
+
+/// El recibo de caja en PDF (para entregar a quien pagó): pagador, valor, medio, a qué se aplicó y
+/// el número de su comprobante; si está anulado, lo dice.
+#[utoipa::path(
+    get,
+    path = "/tesoreria/recibos/{recibo_id}/pdf",
+    tag = ETIQUETA_TESORERIA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("recibo_id" = Uuid, Path, description = "Recibo")),
+    responses(
+        (status = OK, description = "PDF del recibo", content_type = "application/pdf", body = Vec<u8>),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver` o sin el módulo", body = ErrorRespuesta),
+    )
+)]
+pub async fn recibo_pdf(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<Response> {
+    let contenido = soportes::recibo_pdf(
+        &state.unidad,
+        &state.actas,
+        &RelojSistema,
+        &en.ctx,
+        ReciboCajaId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(pdf(format!("recibo-caja-{}.pdf", ruta.1), contenido))
+}
+
+/// El comprobante de egreso en PDF (para la firma del beneficiario): a quién se pagó, cuánto, qué
+/// facturas y gastos cubre, su estado y el número de su comprobante.
+#[utoipa::path(
+    get,
+    path = "/tesoreria/egresos/{egreso_id}/pdf",
+    tag = ETIQUETA_TESORERIA,
+    security(("bearer" = [])),
+    params(("entidad_id" = Uuid, Path, description = "Entidad"), ("egreso_id" = Uuid, Path, description = "Egreso")),
+    responses(
+        (status = OK, description = "PDF del egreso", content_type = "application/pdf", body = Vec<u8>),
+        (status = FORBIDDEN, description = "Sin `contabilidad.ver` o sin el módulo", body = ErrorRespuesta),
+    )
+)]
+pub async fn egreso_pdf(
+    State(state): State<AppState>,
+    en: EnEntidad,
+    Path(ruta): Path<(Uuid, Uuid)>,
+) -> ApiResult<Response> {
+    let contenido = soportes::egreso_pdf(
+        &state.unidad,
+        &state.actas,
+        &RelojSistema,
+        &en.ctx,
+        EgresoId::from_uuid(ruta.1),
+    )
+    .await?;
+    Ok(pdf(format!("egreso-{}.pdf", ruta.1), contenido))
 }

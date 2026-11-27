@@ -46909,6 +46909,79 @@
         ]
       }
     },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/recibos/{recibo_id}/pdf": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "El recibo de caja en PDF (para entregar a quien pagó): pagador, valor, medio, a qué se aplicó y\nel número de su comprobante; si está anulado, lo dice.",
+        "operationId": "tesoreria_recibo_pdf",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "recibo_id",
+            "in": "path",
+            "description": "Recibo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del recibo",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/recibos/{recibo_id}/aplicaciones": {
       "post": {
         "tags": [
@@ -47296,6 +47369,79 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EgresoRespuesta"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/tesoreria/egresos/{egreso_id}/pdf": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "El comprobante de egreso en PDF (para la firma del beneficiario): a quién se pagó, cuánto, qué\nfacturas y gastos cubre, su estado y el número de su comprobante.",
+        "operationId": "tesoreria_egreso_pdf",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "egreso_id",
+            "in": "path",
+            "description": "Egreso",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF del egreso",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
                 }
               }
             }
@@ -48417,6 +48563,76 @@
           },
           "422": {
             "description": "El tercero no tiene correo (`validacion`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/entidades/{entidad_id}/contabilidad/cuentas-por-pagar/edades": {
+      "get": {
+        "tags": [
+          "tesoreria"
+        ],
+        "summary": "Cuentas por pagar por edades a la fecha de corte: saldo de cada factura de proveedor (neto a\npagar − pagado) en el tramo de sus días vencidos, por proveedor.",
+        "operationId": "tesoreria_edades",
+        "parameters": [
+          {
+            "name": "entidad_id",
+            "in": "path",
+            "description": "Entidad",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "corte",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cuentas por pagar por proveedor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilaCarteraRespuesta"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sin sesión o token vencido (`no_autenticado`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorRespuesta"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sin `contabilidad.ver` o sin el módulo",
             "content": {
               "application/json": {
                 "schema": {
@@ -70195,7 +70411,7 @@
       },
       "FilaCarteraRespuesta": {
         "type": "object",
-        "description": "Cartera de un cliente por edades.",
+        "description": "Saldo de un tercero (cliente o proveedor) por edades.",
         "required": [
           "persona_id",
           "nombre",
